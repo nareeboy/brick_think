@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+out/
+build/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Testing
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Supabase local state
+supabase/.temp/
+supabase/.branches/
+
+# Local-only documentation per project guideline
+docs/
+
+# Generated brick assets land here at build time, but the source pipeline output is committed
+# (so deploys do not need to run the pipeline). Override per file in .gitkeep where required.
