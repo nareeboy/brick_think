@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/nareshshan/IdeaProjects/brick-think/brick_think remote -v)",
+      "Bash(git -C /Users/nareshshan/IdeaProjects/brick-think/brick_think status)",
+      "Bash(gh auth *)",
+      "Bash(git -C /Users/nareshshan/IdeaProjects/brick-think/brick_think add README.md)",
+      "Bash(git -C /Users/nareshshan/IdeaProjects/brick-think/brick_think commit -m ' *)",
+      "Bash(git -C /Users/nareshshan/IdeaProjects/brick-think/brick_think push -u origin main)",
+      "Bash(pnpm -v)",
+      "Bash(npm -v)",
+      "Bash(git config *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(pnpm test *)",
+      "Bash(git commit -m ' *)",
+      "Bash(pnpm format *)",
+      "Bash(pnpm build *)",
+      "Bash(unzip -p BrickThink_PRD.docx word/document.xml)",
+      "Bash(python3 -c \" import sys, re, html xml = sys.stdin.read\\(\\) paragraphs = re.findall\\(r'<w:p[^>]*>\\(.*?\\)</w:p>', xml, re.DOTALL\\) out = [] for p in paragraphs: style_match = re.search\\(r'<w:pStyle w:val=\\\\\"\\([^\\\\\"]+\\)\\\\\"', p\\) style = style_match.group\\(1\\) if style_match else '' texts = re.findall\\(r'<w:t[^>]*>\\(.*?\\)</w:t>', p, re.DOTALL\\) line = ''.join\\(html.unescape\\(t\\) for t in texts\\) if style.startswith\\('Heading'\\): level = ''.join\\(c for c in style if c.isdigit\\(\\)\\) or '1' out.append\\('#' * int\\(level\\) + ' ' + line\\) elif style == 'Title': out.append\\('# ' + line\\) else: out.append\\(line\\) print\\('\\\\n'.join\\(out\\)\\) \")",
+      "Bash(gh run *)",
+      "Bash(pnpm bricks:placeholders)",
+      "Bash(pnpm bricks:ingest)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm dev *)",
+      "Read(//Users/nareshshan/.claude/plugins/**)",
+      "Read(//Users/nareshshan/.claude/skills/**)",
+      "Read(//Users/nareshshan/.claude/projects/**)",
+      "Bash(gh api *)",
+      "Bash(pnpm add *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npm view *)",
+      "Bash(xargs -r kill -9)",
+      "Bash(node run.js /tmp/playwright-test-signin.js)"
+    ]
+  }
+}
