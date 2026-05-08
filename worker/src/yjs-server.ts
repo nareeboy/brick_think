@@ -1,7 +1,15 @@
+import { existsSync } from 'node:fs';
 import { createServer, type IncomingMessage } from 'node:http';
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 
+import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
+
+const localEnv = join(process.cwd(), '.env.local');
+if (existsSync(localEnv)) {
+  loadEnv({ path: localEnv, override: false });
+}
 import * as Y from 'yjs';
 import { WebSocketServer, type WebSocket } from 'ws';
 

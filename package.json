@@ -38,6 +38,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.3",
+    "dotenv": "^17.4.2",
     "konva": "^10.0.0",
     "next": "^15.1.6",
     "pg": "^8.20.0",
