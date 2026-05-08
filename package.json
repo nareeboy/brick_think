@@ -20,17 +20,23 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "bench:canvas": "playwright test e2e/canvas-bench.spec.ts --reporter=list",
     "bricks:placeholders": "tsx scripts/bricks/generate-placeholders.ts",
     "bricks:ingest": "tsx scripts/bricks/ingest.ts"
   },
   "dependencies": {
+    "konva": "^10.0.0",
     "next": "^15.1.6",
+    "pixi.js": "^8.6.6",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-konva": "^19.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@next/eslint-plugin-next": "^15.1.6",
+    "@playwright/test": "^1.49.1",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.7",
