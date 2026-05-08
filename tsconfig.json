@@ -1,5 +1,18 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", ".next", "dist", "coverage", "playwright-report", "test-results"]
+  "compilerOptions": {
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    ".next/cache",
+    "dist",
+    "coverage",
+    "playwright-report",
+    "test-results"
+  ]
 }
