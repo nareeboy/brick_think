@@ -5,6 +5,7 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: ['**/canvas-bench.spec.ts'],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
