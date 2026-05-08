@@ -1,0 +1,13 @@
+# Railway worker service config. Point a separate Railway service at this
+# repo and set its config path to worker/railway.toml. The worker shares
+# the root package.json so the build still happens at the repo root.
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "pnpm worker:start"
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
