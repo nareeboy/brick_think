@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 32" data-brick-category="window" data-brick-code="window-arched-1x2">
+  <rect x="0.5" y="0.5" width="15" height="31" rx="2" ry="2" fill="var(--brick-fill, #9bb7d4)" stroke="#1f1f1f" stroke-width="0.6" stroke-opacity="0.4"/>
+  <circle cx="8" cy="8" r="3" fill="var(--brick-fill, #9bb7d4)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
+  <circle cx="8" cy="24" r="3" fill="var(--brick-fill, #9bb7d4)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
+</svg>

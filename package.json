@@ -19,7 +19,9 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "bricks:placeholders": "tsx scripts/bricks/generate-placeholders.ts",
+    "bricks:ingest": "tsx scripts/bricks/ingest.ts"
   },
   "dependencies": {
     "next": "^15.1.6",
@@ -43,6 +45,7 @@
     "postcss": "^8.5.1",
     "prettier": "^3.4.2",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
     "vitest": "^3.0.4"
