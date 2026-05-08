@@ -24,6 +24,8 @@
     "bench:canvas": "playwright test e2e/canvas-bench.spec.ts --reporter=list",
     "bricks:placeholders": "tsx scripts/bricks/generate-placeholders.ts",
     "bricks:ingest": "tsx scripts/bricks/ingest.ts",
+    "stripe:seed": "tsx scripts/stripe/seed-products.ts",
+    "stripe:listen": "stripe listen --forward-to http://localhost:3000/api/stripe/webhook",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
@@ -39,7 +41,8 @@
     "pixi.js": "^8.6.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-konva": "^19.0.0"
+    "react-konva": "^19.0.0",
+    "stripe": "^22.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

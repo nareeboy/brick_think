@@ -1,10 +1,13 @@
 import 'server-only';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { requireSupabaseServiceEnv } from './env';
-import type { Database } from './types.generated';
 
-export type ServiceSupabaseClient = ReturnType<typeof createClient<Database>>;
+// Loose typing until `pnpm db:types` regenerates lib/db/types.generated.ts.
+// The placeholder Database type collapses table inserts to never under
+// strict checks, so we deliberately do not pass a Database generic here.
+// Phase 4 reinstates strict row typing once the schema is mature.
+export type ServiceSupabaseClient = SupabaseClient;
 
 let cached: ServiceSupabaseClient | null = null;
 
@@ -17,7 +20,7 @@ let cached: ServiceSupabaseClient | null = null;
 export function getServiceSupabaseClient(): ServiceSupabaseClient {
   if (cached) return cached;
   const env = requireSupabaseServiceEnv();
-  cached = createClient<Database>(env.url, env.serviceRoleKey, {
+  cached = createClient(env.url, env.serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   return cached;
