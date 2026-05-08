@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function BuilderPage() {
   return (
-    <div className="min-h-[100dvh] bg-[#15130F] text-zinc-100">
+    <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div
         className="mx-auto flex max-w-[1600px] flex-col gap-4 px-3 py-3 md:px-5 md:py-5"
         style={{ minHeight: '100dvh' }}
@@ -27,17 +27,17 @@ export default function BuilderPage() {
 
 function TopBar() {
   return (
-    <header className="flex items-center justify-between gap-4 rounded-2xl border border-white/5 bg-[#1B1814] px-4 py-3">
+    <header className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-900/10 bg-white px-4 py-3">
       <Link
         href="/app"
-        className="group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-[12px] text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
+        className="group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-[12px] text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
         Back to library
       </Link>
 
       <div className="flex flex-1 items-baseline justify-center gap-3">
-        <h1 className="text-[22px] font-semibold tracking-tight text-zinc-50 md:text-[26px]">
+        <h1 className="text-[22px] font-semibold tracking-tight text-zinc-950md:text-[26px]">
           Model — BT0317
         </h1>
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
@@ -62,7 +62,7 @@ function ViewToggle() {
     { id: 'annot', label: 'Annotations', icon: <AnnotationIcon className="h-4 w-4" /> },
   ];
   return (
-    <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#22201C] p-1">
+    <div className="flex items-center gap-1 rounded-full border border-zinc-900/10 bg-zinc-50 p-1">
       {items.map((it) => (
         <button
           key={it.id}
@@ -70,8 +70,10 @@ function ViewToggle() {
           aria-label={it.label}
           aria-pressed={it.active}
           tabIndex={-1}
-          className={`inline-flex h-8 w-9 items-center justify-center rounded-full text-zinc-400 transition-colors ${
-            it.active ? 'bg-white text-zinc-900' : 'hover:text-zinc-100'
+          className={`inline-flex h-8 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors ${
+            it.active
+              ? 'bg-zinc-900 text-white shadow-[0_4px_10px_-4px_rgba(0,0,0,0.3)]'
+              : 'hover:text-zinc-900'
           }`}
         >
           {it.icon}
@@ -109,7 +111,7 @@ function LeftPanel({ className = '' }: { className?: string }) {
           <button
             type="button"
             tabIndex={-1}
-            className="text-zinc-500 hover:text-zinc-300"
+            className="text-zinc-500 hover:text-zinc-700"
             aria-label="Reset scale"
           >
             <RotateIcon className="h-3.5 w-3.5" />
@@ -127,8 +129,8 @@ function LeftPanel({ className = '' }: { className?: string }) {
 
       <Panel>
         <div className="mb-4 flex items-center justify-between">
-          <p className="text-[14px] font-semibold text-zinc-100">Parameters</p>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 font-mono text-[10px] text-zinc-900">
+          <p className="text-[14px] font-semibold text-zinc-900">Parameters</p>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900 px-2.5 py-1 font-mono text-[10px] text-white">
             <SparkleIcon className="h-3 w-3" />
             Cap 6.7 kg
           </span>
@@ -158,18 +160,18 @@ function LeftPanel({ className = '' }: { className?: string }) {
 }
 
 function Panel({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-white/5 bg-[#1B1814] p-5">{children}</div>;
+  return <div className="rounded-2xl border border-zinc-900/10 bg-white p-5">{children}</div>;
 }
 
 function PanelHeader({ title, reset }: { title: string; reset?: boolean }) {
   return (
     <div className="mb-4 flex items-center justify-between">
-      <p className="text-[14px] font-semibold text-zinc-100">{title}</p>
+      <p className="text-[14px] font-semibold text-zinc-900">{title}</p>
       {reset ? (
         <button
           type="button"
           tabIndex={-1}
-          className="text-zinc-500 hover:text-zinc-300"
+          className="text-zinc-500 hover:text-zinc-700"
           aria-label="Reset"
         >
           <RotateIcon className="h-3.5 w-3.5" />
@@ -202,13 +204,13 @@ function NumberRow({
           className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 transition-colors ${
             i === highlightIndex
               ? 'border-[#c0613d] bg-[#c0613d]/10'
-              : 'border-white/8 bg-[#22201C] hover:border-white/20'
+              : 'border-zinc-900/10 bg-zinc-50 hover:border-zinc-900/20'
           }`}
         >
           <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
             {axis}
           </span>
-          <span className="ml-auto font-mono text-[12px] tabular-nums text-zinc-100">{val}</span>
+          <span className="ml-auto font-mono text-[12px] tabular-nums text-zinc-900">{val}</span>
           {i === highlightIndex ? <ChevronDown className="h-3 w-3 text-[#c0613d]" /> : null}
         </div>
       ))}
@@ -220,16 +222,16 @@ function Slider({ label, value, pct }: { label: string; value: string; pct: numb
   return (
     <div className="mt-4 first:mt-0">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[12px] text-zinc-300">{label}</span>
-        <span className="font-mono text-[11px] tabular-nums text-zinc-400">{value}</span>
+        <span className="text-[12px] text-zinc-700">{label}</span>
+        <span className="font-mono text-[11px] tabular-nums text-zinc-500">{value}</span>
       </div>
-      <div className="relative h-1 rounded-full bg-white/10">
+      <div className="relative h-1 rounded-full bg-zinc-900/10">
         <div
           className="absolute inset-y-0 left-0 rounded-full bg-[#c0613d]"
           style={{ width: `${pct}%` }}
         />
         <div
-          className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.5)] ring-1 ring-black/40"
+          className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white shadow-[0_2px_6px_rgba(60,30,15,0.18)] ring-1 ring-zinc-900/15"
           style={{ left: `calc(${pct}% - 7px)` }}
         />
       </div>
@@ -239,9 +241,9 @@ function Slider({ label, value, pct }: { label: string; value: string; pct: numb
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-white/8 bg-[#22201C] px-3 py-2.5">
+    <div className="rounded-xl border border-zinc-900/10 bg-zinc-50 px-3 py-2.5">
       <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">{label}</p>
-      <p className="mt-1 font-mono text-[14px] tabular-nums text-zinc-100">{value}</p>
+      <p className="mt-1 font-mono text-[14px] tabular-nums text-zinc-900">{value}</p>
     </div>
   );
 }
@@ -251,14 +253,14 @@ function Stat({ label, value }: { label: string; value: string }) {
 function CanvasStage({ className = '' }: { className?: string }) {
   return (
     <section
-      className={`relative overflow-hidden rounded-2xl border border-white/5 bg-[#181511] ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#FBF7F1] ${className}`}
     >
       {/* subtle dot grid background */}
       <div
         aria-hidden="true"
         className="absolute inset-0 opacity-[0.45]"
         style={{
-          backgroundImage: 'radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)',
+          backgroundImage: 'radial-gradient(rgba(60,30,15,0.10) 1px, transparent 1px)',
           backgroundSize: '22px 22px',
         }}
       />
@@ -315,7 +317,7 @@ function CanvasStage({ className = '' }: { className?: string }) {
         >
           <PlusIcon className="h-5 w-5" />
         </button>
-        <div className="inline-flex items-center gap-1 rounded-2xl border border-white/10 bg-[#1B1814] p-1.5">
+        <div className="inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white p-1.5">
           <ToolButton aria-label="Group selection">
             <FrameIcon className="h-4 w-4" />
           </ToolButton>
@@ -337,7 +339,7 @@ function CanvasStage({ className = '' }: { className?: string }) {
       </div>
 
       {/* status pill top-left */}
-      <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#1B1814]/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-400 backdrop-blur">
+      <div className="absolute left-5 top-5 inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/80 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500 backdrop-blur">
         <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-[#c0613d]" />
         17:42 remaining · 4 cursors
       </div>
@@ -584,8 +586,8 @@ function MiniDim({ value, color, axis }: { value: string; color: string; axis: s
 
 function Gizmo() {
   return (
-    <div className="relative h-20 w-20 rounded-full border border-white/10 bg-[#1B1814]/80 backdrop-blur">
-      <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-300" />
+    <div className="relative h-20 w-20 rounded-full border border-zinc-900/10 bg-white/80 backdrop-blur">
+      <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-700" />
       <Axis label="Z" color="#3b6f8a" rotate={-90} />
       <Axis label="X" color="#c0613d" rotate={210} />
       <Axis label="Y" color="#7da97a" rotate={330} />
@@ -614,7 +616,7 @@ function ToolButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButto
     <button
       type="button"
       tabIndex={-1}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/5 hover:text-zinc-100"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
       {...props}
     >
       {children}
@@ -637,7 +639,7 @@ function RightPanel({ className = '' }: { className?: string }) {
             type="text"
             tabIndex={-1}
             placeholder="Search"
-            className="w-full rounded-xl border border-white/10 bg-[#22201C] py-2 pl-8 pr-3 text-[12px] text-zinc-200 placeholder:text-zinc-500 outline-none focus:border-[#c0613d]/50"
+            className="w-full rounded-xl border border-zinc-900/10 bg-zinc-50 py-2 pl-8 pr-3 text-[12px] text-zinc-800 placeholder:text-zinc-500 outline-none focus:border-[#c0613d]/50"
           />
         </div>
 
@@ -681,7 +683,7 @@ function RightPanel({ className = '' }: { className?: string }) {
                 style={{
                   background: c,
                   boxShadow:
-                    'inset 0 0 0 1px rgba(255,255,255,0.08), 0 1px 0 rgba(255,255,255,0.12) inset',
+                    'inset 0 0 0 1px rgba(60,30,15,0.20), 0 1px 0 rgba(255,255,255,0.35) inset',
                 }}
               />
             ),
@@ -706,7 +708,7 @@ function Group({
       <button
         type="button"
         tabIndex={-1}
-        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-zinc-200 hover:bg-white/5"
+        className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] text-zinc-800 hover:bg-zinc-900/5"
       >
         <FolderIcon className="h-3.5 w-3.5 text-[#c0613d]" />
         <span className="flex-1 font-medium">{title}</span>
@@ -737,22 +739,22 @@ function Layer({
   return (
     <div
       className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors ${
-        active ? 'bg-[#c0613d]/15 text-zinc-50' : 'text-zinc-300 hover:bg-white/5'
+        active ? 'bg-[#c0613d]/12 text-zinc-900' : 'text-zinc-700 hover:bg-zinc-900/5'
       }`}
     >
       <span className="text-[10px]" style={{ color }}>
         {icon}
       </span>
       <span className="flex-1 truncate">{label}</span>
-      {visibleHint ? <EyeIcon className="h-3.5 w-3.5 text-zinc-400" /> : null}
+      {visibleHint ? <EyeIcon className="h-3.5 w-3.5 text-zinc-500" /> : null}
     </div>
   );
 }
 
 function Modifier({ label, hint }: { label: string; hint: string }) {
   return (
-    <div className="mt-2 flex items-center justify-between rounded-xl border border-white/8 bg-[#22201C] px-3 py-2 first:mt-0">
-      <span className="text-[12px] text-zinc-200">{label}</span>
+    <div className="mt-2 flex items-center justify-between rounded-xl border border-zinc-900/10 bg-zinc-50 px-3 py-2 first:mt-0">
+      <span className="text-[12px] text-zinc-800">{label}</span>
       <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
         {hint}
       </span>
