@@ -27,3 +27,8 @@ export const PixiBenchLoader = dynamic(() => import('./PixiBench').then((m) => m
   ssr: false,
   loading: () => <Loading label="Loading benchmark..." />,
 });
+
+export const YjsSpikeLoader = dynamic(() => import('./YjsSpike').then((m) => m.YjsSpike), {
+  ssr: false,
+  loading: () => <Loading label="Connecting to the Yjs server..." />,
+});

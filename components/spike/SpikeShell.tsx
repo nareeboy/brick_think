@@ -7,6 +7,7 @@ const NAV = [
   { href: '/spike/konva/bench', label: 'Konva bench' },
   { href: '/spike/pixi', label: 'Pixi demo' },
   { href: '/spike/pixi/bench', label: 'Pixi bench' },
+  { href: '/spike/yjs', label: 'Yjs PoC' },
 ];
 
 interface SpikeShellProps {

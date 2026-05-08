@@ -27,6 +27,11 @@ const ROUTES = [
     title: 'Pixi benchmark',
     body: 'Same load profile as the Konva benchmark, rendered through Pixi.',
   },
+  {
+    href: '/spike/yjs',
+    title: 'Yjs collaboration PoC',
+    body: 'Two browser tabs share a canvas in real time. Presence cursors and idle persistence to Postgres.',
+  },
 ];
 
 export default function SpikeIndexPage() {
