@@ -118,6 +118,22 @@ export function BrickCanvasMockup() {
               </div>
             ))}
 
+            {/* planted flag — real piece on top of brick 'e' */}
+            <img
+              src="/marketing/pieces/flag-banner.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute select-none"
+              style={{
+                left: '60%',
+                top: '30%',
+                width: '18%',
+                transform: 'rotate(-6deg)',
+                transformOrigin: 'bottom left',
+                filter: 'drop-shadow(0 6px 8px rgba(60,30,15,0.25))',
+              }}
+            />
+
             {/* presence cursors */}
             <div className="pointer-events-none absolute left-[58%] top-[28%] flex items-center gap-1.5">
               <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="#3b6f8a">
