@@ -1,3 +1,4 @@
+// marketing landing — root route. cache-bust marker: bt-marketing-2026-05-11
 import Link from 'next/link';
 
 import { BrickCanvasMockup } from '@/components/marketing/brick-canvas-mockup';
