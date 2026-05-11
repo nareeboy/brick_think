@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 96" data-brick-category="brick" data-brick-code="brick-1x6">
-  <rect x="0.5" y="0.5" width="15" height="95" rx="2" ry="2" fill="var(--brick-fill, #c0613d)" stroke="#1f1f1f" stroke-width="0.6" stroke-opacity="0.4"/>
-  <circle cx="8" cy="8" r="3" fill="var(--brick-fill, #c0613d)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="8" cy="24" r="3" fill="var(--brick-fill, #c0613d)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="8" cy="40" r="3" fill="var(--brick-fill, #c0613d)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="8" cy="56" r="3" fill="var(--brick-fill, #c0613d)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="8" cy="72" r="3" fill="var(--brick-fill, #c0613d)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="8" cy="88" r="3" fill="var(--brick-fill, #c0613d)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-</svg>

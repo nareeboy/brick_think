@@ -18,39 +18,9 @@ const PIECE_CATEGORIES: { id: BrickCategory | 'all'; label: string }[] = [
   { id: 'connector', label: 'Connect' },
 ];
 
-const FEATURED_PIECES = [
-  'brick-1x1',
-  'brick-1x2',
-  'brick-2x2',
-  'brick-2x4',
-  'brick-1x6',
-  'plate-2x2',
-  'plate-2x4',
-  'plate-2x6',
-  'slope-2x2',
-  'slope-curve-2x2',
-  'round-2x2',
-  'window-1x2',
-  'door-1x2',
-  'flower-1x1',
-  'tree-2x2',
-  'fence-1x4',
-  'figure-head',
-  'figure-torso',
-  'connector-line',
-  'connector-arrow',
-  'label-1x2',
-  'baseplate-8x8',
-] as const;
-
 export function PiecesDrawer() {
   const [open, setOpen] = useState(false);
-
-  const pieces = FEATURED_PIECES.map((code) => {
-    const def = CANONICAL_BRICKS.find((b) => b.code === code);
-    if (!def) throw new Error(`Unknown featured brick ${code}`);
-    return def;
-  });
+  const pieces = CANONICAL_BRICKS;
 
   return (
     <>
@@ -157,7 +127,7 @@ function PieceTile({ brick, active }: { brick: BrickDefinition; active?: boolean
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/bricks/${brick.code}.svg`}
+          src={brick.image}
           alt=""
           loading="lazy"
           draggable={false}

@@ -14,15 +14,16 @@ import {
 export interface BrickInstance {
   id: string;
   code: string;
-  studsX: number;
-  studsY: number;
+  image: string;
+  width: number;
+  height: number;
   x: number;
   y: number;
   rotation: number;
-  colour: string;
 }
 
-export const CANVAS_SCALE = 4;
+export const MIN_PIECE_SIZE = 16;
+export const MAX_PIECE_SIZE = 2000;
 export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 4;
 export const ZOOM_STEP = 1.25;

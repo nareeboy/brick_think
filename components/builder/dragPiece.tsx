@@ -12,13 +12,9 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
-import { BRICK_BASE_UNIT, type BrickDefinition } from '@/lib/bricks/types';
+import type { BrickDefinition } from '@/lib/bricks/types';
 
-import {
-  CANVAS_SCALE,
-  useBuilderState,
-  type BrickInstance,
-} from './builderState';
+import { useBuilderState, type BrickInstance } from './builderState';
 
 const DROP_TARGET_ATTR = 'data-drop-target';
 export const CANVAS_DROP_TARGET = 'canvas';
@@ -122,12 +118,12 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
           ? crypto.randomUUID()
           : `brick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         code: current.def.code,
-        studsX: current.def.studsX,
-        studsY: current.def.studsY,
+        image: current.def.image,
+        width: current.def.width,
+        height: current.def.height,
         x,
         y,
         rotation: 0,
-        colour: current.def.defaultColour,
       };
       setBricks((prev) => [...prev, instance]);
       cancel();
@@ -201,8 +197,8 @@ interface DragGhostProps {
 
 function DragGhost({ def, x, y, zoom, overCanvas }: DragGhostProps) {
   if (typeof document === 'undefined') return null;
-  const width = def.studsX * BRICK_BASE_UNIT * CANVAS_SCALE * zoom;
-  const height = def.studsY * BRICK_BASE_UNIT * CANVAS_SCALE * zoom;
+  const width = def.width * zoom;
+  const height = def.height * zoom;
   return createPortal(
     <div
       aria-hidden="true"
@@ -224,7 +220,7 @@ function DragGhost({ def, x, y, zoom, overCanvas }: DragGhostProps) {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={`/bricks/${def.code}.svg`}
+        src={def.image}
         alt=""
         draggable={false}
         style={{ width: '100%', height: '100%', display: 'block' }}

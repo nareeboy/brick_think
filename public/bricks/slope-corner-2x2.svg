@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" data-brick-category="slope" data-brick-code="slope-corner-2x2">
-  <rect x="0.5" y="0.5" width="31" height="31" rx="2" ry="2" fill="var(--brick-fill, #6c7693)" stroke="#1f1f1f" stroke-width="0.6" stroke-opacity="0.4"/>
-  <circle cx="8" cy="8" r="3" fill="var(--brick-fill, #6c7693)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="8" cy="24" r="3" fill="var(--brick-fill, #6c7693)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="24" cy="8" r="3" fill="var(--brick-fill, #6c7693)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-  <circle cx="24" cy="24" r="3" fill="var(--brick-fill, #6c7693)" stroke="#1f1f1f" stroke-width="0.4" stroke-opacity="0.35"/>
-</svg>
