@@ -26,5 +26,5 @@ export default async function AppHomePage() {
     redirect('/sign-in?next=%2Fapp');
   }
 
-  return <Builder userBar={<UserBar email={user.email} />} backHref="/" backLabel="Home" />;
+  return <Builder userBar={<UserBar email={user.email} />} />;
 }

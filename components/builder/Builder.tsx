@@ -1,19 +1,12 @@
-import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { BuilderCanvasLoader } from './canvasLoader';
 
 interface BuilderProps {
   userBar?: ReactNode;
-  backHref?: string;
-  backLabel?: string;
 }
 
-export function Builder({
-  userBar,
-  backHref = '/app',
-  backLabel = 'Back to library',
-}: BuilderProps) {
+export function Builder({ userBar }: BuilderProps) {
   return (
     <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div
@@ -21,7 +14,7 @@ export function Builder({
         style={{ minHeight: '100dvh' }}
       >
         {userBar}
-        <TopBar backHref={backHref} backLabel={backLabel} />
+        <TopBar />
         <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-12">
           <LeftPanel className="md:col-span-3" />
           <CanvasStage className="md:col-span-6" />
@@ -34,19 +27,11 @@ export function Builder({
 
 /* ---------------- Top bar ---------------- */
 
-function TopBar({ backHref, backLabel }: { backHref: string; backLabel: string }) {
+function TopBar() {
   return (
     <header className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-900/10 bg-white px-4 py-3">
-      <Link
-        href={backHref}
-        className="group inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 text-[12px] text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        {backLabel}
-      </Link>
-
       <div className="flex flex-1 items-baseline justify-center gap-3">
-        <h1 className="text-[22px] font-semibold tracking-tight text-zinc-950md:text-[26px]">
+        <h1 className="text-[22px] font-semibold tracking-tight text-zinc-950 md:text-[26px]">
           Model — BT0317
         </h1>
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
