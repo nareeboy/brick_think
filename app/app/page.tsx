@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   title: 'Builder',
 };
 
+export const dynamic = 'force-dynamic';
+
 export default async function AppHomePage() {
   if (!isSupabaseConfigured()) {
     redirect('/sign-in?reason=unconfigured&next=%2Fapp');
