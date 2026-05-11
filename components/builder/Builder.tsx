@@ -31,9 +31,16 @@ function LeftPanel({ className = '' }: { className?: string }) {
         <ModelTitle />
       </Panel>
 
-      <Panel className="flex min-h-0 flex-1 flex-col">
-        <PanelHeader title="Layers" />
-        <div className="relative shrink-0">
+      <details
+        open
+        className="group/layers flex min-h-0 shrink-0 flex-col rounded-2xl border border-zinc-900/10 bg-white p-5 open:flex-1"
+      >
+        <summary className="flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
+          <p className="text-[14px] font-semibold text-zinc-900">Layers</p>
+          <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-zinc-500 transition-transform group-open/layers:rotate-0" />
+        </summary>
+
+        <div className="relative mt-4 shrink-0">
           <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-500">
             <SearchIcon className="h-3.5 w-3.5" />
           </span>
@@ -69,7 +76,7 @@ function LeftPanel({ className = '' }: { className?: string }) {
             <Layer icon={<CircleGlyph />} label="Cable mount" color="#c0613d" />
           </Group>
         </div>
-      </Panel>
+      </details>
 
       <button
         type="button"
@@ -87,24 +94,6 @@ function Panel({ children, className = '' }: { children: React.ReactNode; classN
   return (
     <div className={`rounded-2xl border border-zinc-900/10 bg-white p-5 ${className}`}>
       {children}
-    </div>
-  );
-}
-
-function PanelHeader({ title, reset }: { title: string; reset?: boolean }) {
-  return (
-    <div className="mb-4 flex items-center justify-between">
-      <p className="text-[14px] font-semibold text-zinc-900">{title}</p>
-      {reset ? (
-        <button
-          type="button"
-          tabIndex={-1}
-          className="text-zinc-500 hover:text-zinc-700"
-          aria-label="Reset"
-        >
-          <RotateIcon className="h-3.5 w-3.5" />
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -136,30 +125,20 @@ function CanvasStage({ className = '' }: { className?: string }) {
       {/* live Konva canvas */}
       <BuilderCanvasLoader />
 
-      {/* bottom toolbar */}
-      <div className="absolute inset-x-0 bottom-5 flex items-center justify-center gap-2">
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-label="Add brick"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#c0613d] text-white shadow-[0_10px_24px_-12px_rgba(192,97,61,0.8)] transition-colors hover:bg-[#cf6e47]"
-        >
-          <PlusIcon className="h-5 w-5" />
-        </button>
-        <div className="inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white p-1.5">
-          <ToolButton aria-label="Group selection">
-            <FrameIcon className="h-4 w-4" />
-          </ToolButton>
-          <ToolButton aria-label="Cut">
-            <ScissorsIcon className="h-4 w-4" />
-          </ToolButton>
-          <ToolButton aria-label="Duplicate">
-            <DuplicateIcon className="h-4 w-4" />
-          </ToolButton>
-          <ToolButton aria-label="Lock">
-            <LockIcon className="h-4 w-4" />
-          </ToolButton>
-        </div>
+      {/* top-right tool group (sits left of the PiecesDrawer lego button) */}
+      <div className="absolute right-20 top-5 z-30 inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white/85 p-1.5 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur">
+        <ToolButton aria-label="Group selection">
+          <FrameIcon className="h-4 w-4" />
+        </ToolButton>
+        <ToolButton aria-label="Cut">
+          <ScissorsIcon className="h-4 w-4" />
+        </ToolButton>
+        <ToolButton aria-label="Duplicate">
+          <DuplicateIcon className="h-4 w-4" />
+        </ToolButton>
+        <ToolButton aria-label="Lock">
+          <LockIcon className="h-4 w-4" />
+        </ToolButton>
       </div>
 
       <PiecesDrawer />
@@ -262,42 +241,6 @@ function ChevronDown({ className = '' }: { className?: string }) {
       aria-hidden="true"
     >
       <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function RotateIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M21 12a9 9 0 1 1-3-6.7" />
-      <path d="M21 4v5h-5" />
-    </svg>
-  );
-}
-
-function PlusIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
     </svg>
   );
 }
