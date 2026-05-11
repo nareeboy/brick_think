@@ -41,7 +41,6 @@ export function LayersPanel() {
     moveBrick,
   } = useBuilderState();
 
-  const [search, setSearch] = useState('');
   const [hint, setHint] = useState<DropHint | null>(null);
   const [dragKind, setDragKind] = useState<'brick' | 'group' | null>(null);
 
@@ -51,13 +50,6 @@ export function LayersPanel() {
     for (const b of bricks) m.get(b.groupId)?.push(b);
     return m;
   }, [groups, bricks]);
-
-  const lower = search.trim().toLowerCase();
-  const matchesSearch = (b: BrickInstance): boolean => {
-    if (!lower) return true;
-    const name = (NAME_BY_CODE.get(b.code) ?? b.code).toLowerCase();
-    return name.includes(lower) || b.code.toLowerCase().includes(lower);
-  };
 
   function clearDrag() {
     setHint(null);
@@ -188,22 +180,8 @@ export function LayersPanel() {
         </div>
       </summary>
 
-      <div className="relative mt-4 shrink-0">
-        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-500">
-          <SearchIcon className="h-3.5 w-3.5" />
-        </span>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          tabIndex={-1}
-          placeholder="Search"
-          className="w-full rounded-xl border border-zinc-900/10 bg-zinc-50 py-2 pl-8 pr-3 text-[12px] text-zinc-800 placeholder:text-zinc-500 outline-none focus:border-[#c0613d]/50"
-        />
-      </div>
-
       <div
-        className="-mr-2 mt-1 min-h-0 flex-1 overflow-y-auto pr-2"
+        className="-mr-2 mt-4 min-h-0 flex-1 overflow-y-auto pr-2"
         onDragLeave={(e) => {
           const related = e.relatedTarget as Node | null;
           if (!related || !e.currentTarget.contains(related)) setHint(null);
@@ -218,8 +196,6 @@ export function LayersPanel() {
             bricks={bricksByGroup.get(g.id) ?? []}
             active={g.id === activeGroupId}
             selectedId={selectedId}
-            search={lower}
-            matchesSearch={matchesSearch}
             hint={hint}
             onSetActive={setActiveGroup}
             onToggleCollapsed={toggleGroupCollapsed}
@@ -247,8 +223,6 @@ interface GroupBlockProps {
   bricks: BrickInstance[];
   active: boolean;
   selectedId: string | null;
-  search: string;
-  matchesSearch: (b: BrickInstance) => boolean;
   hint: DropHint | null;
   onSetActive: (id: string) => void;
   onToggleCollapsed: (id: string) => void;
@@ -274,8 +248,6 @@ function GroupBlock({
   bricks,
   active,
   selectedId,
-  search,
-  matchesSearch,
   hint,
   onSetActive,
   onToggleCollapsed,
@@ -294,7 +266,6 @@ function GroupBlock({
 }: GroupBlockProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(group.name);
-  const visibleBricks = search ? bricks.filter(matchesSearch) : bricks;
   const dimmed = !group.visible;
 
   return (
@@ -396,12 +367,12 @@ function GroupBlock({
 
       {!group.collapsed ? (
         <div className="mt-0.5 space-y-0.5 pl-4">
-          {visibleBricks.length === 0 ? (
+          {bricks.length === 0 ? (
             <p className="px-2 py-1 text-[11px] text-zinc-400">
-              {search ? 'No matches.' : 'Drop a piece on the canvas.'}
+              Drop a piece on the canvas.
             </p>
           ) : (
-            visibleBricks.map((b) => (
+            bricks.map((b) => (
               <BrickRow
                 key={b.id}
                 brick={b}
@@ -552,24 +523,6 @@ function ChevronDown({ className = '' }: { className?: string }) {
       aria-hidden="true"
     >
       <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
-function SearchIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
     </svg>
   );
 }

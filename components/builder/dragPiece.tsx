@@ -102,19 +102,31 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
     function onUp(ev: PointerEvent) {
       const current = dragRef.current;
       if (!current || ev.pointerId !== current.pointerId) return;
-      if (!current.active) {
-        cancel();
-        return;
-      }
-      const target = findDropTarget(ev.clientX, ev.clientY);
-      if (!target) {
-        cancel();
-        return;
-      }
-      const rect = target.getBoundingClientRect();
       const { pan, zoom } = viewRef.current;
-      const x = (ev.clientX - rect.left - pan.x) / zoom;
-      const y = (ev.clientY - rect.top - pan.y) / zoom;
+      let x: number;
+      let y: number;
+      if (current.active) {
+        const target = findDropTarget(ev.clientX, ev.clientY);
+        if (!target) {
+          cancel();
+          return;
+        }
+        const rect = target.getBoundingClientRect();
+        x = (ev.clientX - rect.left - pan.x) / zoom;
+        y = (ev.clientY - rect.top - pan.y) / zoom;
+      } else {
+        // Tap-to-add: place at the visible canvas center.
+        const target = document.querySelector(
+          `[${DROP_TARGET_ATTR}="${CANVAS_DROP_TARGET}"]`,
+        ) as HTMLElement | null;
+        if (!target) {
+          cancel();
+          return;
+        }
+        const rect = target.getBoundingClientRect();
+        x = (rect.width / 2 - pan.x) / zoom;
+        y = (rect.height / 2 - pan.y) / zoom;
+      }
       const instance: BrickInstance = {
         id: makeBrickId(),
         groupId: activeGroupRef.current,

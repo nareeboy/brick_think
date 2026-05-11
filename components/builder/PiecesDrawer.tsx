@@ -1,26 +1,62 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import type { BrickCategory, BrickDefinition } from '@/lib/bricks/types';
 
 import { useDragPiece } from './dragPiece';
 
-const PIECE_CATEGORIES: { id: BrickCategory | 'all'; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'brick', label: 'Bricks' },
-  { id: 'plate', label: 'Plates' },
-  { id: 'slope', label: 'Slopes' },
-  { id: 'window', label: 'Windows' },
-  { id: 'decorative', label: 'Decor' },
-  { id: 'figure', label: 'Figures' },
-  { id: 'connector', label: 'Connect' },
+const CATEGORY_LABELS: Record<BrickCategory, string> = {
+  brick: 'Bricks',
+  plate: 'Plates',
+  slope: 'Slopes',
+  round: 'Round',
+  window: 'Windows',
+  door: 'Doors',
+  decorative: 'Decor',
+  figure: 'Figures',
+  connector: 'Connect',
+  specialty: 'Specialty',
+};
+
+const CATEGORY_ORDER: BrickCategory[] = [
+  'brick',
+  'plate',
+  'slope',
+  'round',
+  'window',
+  'door',
+  'decorative',
+  'figure',
+  'connector',
+  'specialty',
 ];
+
+type FilterId = 'all' | BrickCategory;
 
 export function PiecesDrawer() {
   const [open, setOpen] = useState(false);
-  const pieces = CANONICAL_BRICKS;
+  const [filter, setFilter] = useState<FilterId>('all');
+
+  const categories = useMemo<{ id: FilterId; label: string }[]>(() => {
+    const present = new Set(CANONICAL_BRICKS.map((b) => b.category));
+    return [
+      { id: 'all' as const, label: 'All' },
+      ...CATEGORY_ORDER.filter((c) => present.has(c)).map((c) => ({
+        id: c,
+        label: CATEGORY_LABELS[c],
+      })),
+    ];
+  }, []);
+
+  const pieces = useMemo(
+    () =>
+      filter === 'all'
+        ? CANONICAL_BRICKS
+        : CANONICAL_BRICKS.filter((b) => b.category === filter),
+    [filter],
+  );
 
   return (
     <>
@@ -66,40 +102,41 @@ export function PiecesDrawer() {
             </button>
           </div>
 
-          <div className="space-y-3 px-5 pt-4">
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-500">
-                <SearchIcon className="h-3.5 w-3.5" />
-              </span>
-              <input
-                type="text"
-                placeholder="Search pieces"
-                className="w-full rounded-xl border border-zinc-900/10 bg-zinc-50 py-2 pl-8 pr-3 text-[12px] text-zinc-800 placeholder:text-zinc-500 outline-none focus:border-[#c0613d]/50"
-              />
-            </div>
+          <div className="px-5 pt-4">
             <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-              {PIECE_CATEGORIES.map((cat, i) => (
-                <button
-                  type="button"
-                  key={cat.id}
-                  className={`shrink-0 rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] transition-colors ${
-                    i === 0
-                      ? 'border-transparent bg-zinc-900 text-white'
-                      : 'border-zinc-900/10 bg-zinc-50 text-zinc-600 hover:border-zinc-900/20 hover:text-zinc-900'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
+              {categories.map((cat) => {
+                const active = cat.id === filter;
+                return (
+                  <button
+                    type="button"
+                    key={cat.id}
+                    onClick={() => setFilter(cat.id)}
+                    aria-pressed={active}
+                    className={`shrink-0 cursor-pointer rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] transition-colors ${
+                      active
+                        ? 'border-transparent bg-zinc-900 text-white'
+                        : 'border-zinc-900/10 bg-zinc-50 text-zinc-600 hover:border-zinc-900/20 hover:text-zinc-900'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 pt-3">
-            <div className="grid grid-cols-3 gap-2">
-              {pieces.map((p, i) => (
-                <PieceTile key={p.code} brick={p} active={i === 3} />
-              ))}
-            </div>
+            {pieces.length === 0 ? (
+              <p className="px-1 py-6 text-center font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                No pieces in this category
+              </p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {pieces.map((p) => (
+                  <PieceTile key={p.code} brick={p} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -107,19 +144,15 @@ export function PiecesDrawer() {
   );
 }
 
-function PieceTile({ brick, active }: { brick: BrickDefinition; active?: boolean }) {
+function PieceTile({ brick }: { brick: BrickDefinition }) {
   const { startDrag } = useDragPiece();
   return (
     <button
       type="button"
       title={brick.name}
-      aria-label={`Drag ${brick.name} onto the canvas`}
+      aria-label={`Add ${brick.name} — click to place, or drag onto the canvas`}
       onPointerDown={(e) => startDrag(brick, e)}
-      className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-colors touch-none cursor-grab active:cursor-grabbing ${
-        active
-          ? 'border-[#c0613d] bg-[#c0613d]/10'
-          : 'border-zinc-900/10 bg-zinc-50 hover:border-zinc-900/25 hover:bg-white'
-      }`}
+      className="group flex flex-col items-center gap-1.5 rounded-xl border border-zinc-900/10 bg-zinc-50 p-2 transition-colors touch-none cursor-pointer active:cursor-grabbing hover:border-zinc-900/25 hover:bg-white"
     >
       <span
         className="relative flex aspect-square w-full items-center justify-center rounded-lg bg-white"
@@ -179,20 +212,3 @@ function CloseIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function SearchIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
