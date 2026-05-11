@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { BuilderCanvasLoader } from './canvasLoader';
+import { ModelTitle } from './ModelTitle';
 import { PiecesDrawer } from './PiecesDrawer';
 
 interface BuilderProps {
@@ -27,11 +28,7 @@ function LeftPanel({ className = '' }: { className?: string }) {
   return (
     <aside className={`flex min-h-0 flex-col gap-4 ${className}`}>
       <Panel>
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Model</p>
-        <h1 className="mt-1 text-[22px] font-semibold tracking-tight text-zinc-950">BT0317</h1>
-        <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Stage 03 · Shared model
-        </p>
+        <ModelTitle />
       </Panel>
 
       <Panel className="flex min-h-0 flex-1 flex-col">
@@ -136,10 +133,6 @@ function CanvasStage({ className = '' }: { className?: string }) {
         }}
       />
 
-      {/* X axis (bottom-left to top-right diagonal feel via labels) */}
-      <AxisRail side="x" ticks={[14, 24, 34, 44, 54, 64, 74, 84]} color="#c0613d" label="X" />
-      <AxisRail side="y" ticks={[154, 164, 174, 184, 194]} color="#7da97a" label="Y" />
-
       {/* live Konva canvas */}
       <BuilderCanvasLoader />
 
@@ -169,85 +162,8 @@ function CanvasStage({ className = '' }: { className?: string }) {
         </div>
       </div>
 
-      {/* gizmo bottom-right */}
-      <div className="absolute bottom-5 right-5 hidden md:block">
-        <Gizmo />
-      </div>
-
       <PiecesDrawer />
     </section>
-  );
-}
-
-function AxisRail({
-  side,
-  ticks,
-  color,
-  label,
-}: {
-  side: 'x' | 'y';
-  ticks: number[];
-  color: string;
-  label: string;
-}) {
-  const isX = side === 'x';
-  return (
-    <div
-      aria-hidden="true"
-      className={`absolute font-mono text-[9px] tabular-nums text-zinc-500 ${
-        isX ? 'bottom-20 left-12 right-1/3' : 'bottom-20 right-12 left-1/3'
-      }`}
-    >
-      <div className="relative">
-        <div
-          className="h-px w-full"
-          style={{
-            background: `linear-gradient(${isX ? 'to right' : 'to left'}, ${color}99, ${color}11)`,
-          }}
-        />
-        <div className={`mt-1 flex justify-between ${isX ? 'flex-row' : 'flex-row-reverse'}`}>
-          {ticks.map((t) => (
-            <span key={t}>{t}</span>
-          ))}
-        </div>
-        <span
-          className="absolute -top-3.5 font-mono text-[10px] tracking-[0.16em]"
-          style={{
-            color,
-            [isX ? 'right' : 'left']: 0,
-          }}
-        >
-          {label}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function Gizmo() {
-  return (
-    <div className="relative h-20 w-20 rounded-full border border-zinc-900/10 bg-white/80 backdrop-blur">
-      <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-zinc-700" />
-      <Axis label="Z" color="#3b6f8a" rotate={-90} />
-      <Axis label="X" color="#c0613d" rotate={210} />
-      <Axis label="Y" color="#7da97a" rotate={330} />
-    </div>
-  );
-}
-
-function Axis({ label, color, rotate }: { label: string; color: string; rotate: number }) {
-  return (
-    <div
-      className="absolute left-1/2 top-1/2 h-px w-7 origin-left"
-      style={{
-        transform: `translate(0, -50%) rotate(${rotate}deg)`,
-        background: color,
-      }}
-    >
-      <span className="absolute -right-3 -top-1 font-mono text-[9px]" style={{ color }}>
-        {label}
-      </span>
-    </div>
   );
 }
 
