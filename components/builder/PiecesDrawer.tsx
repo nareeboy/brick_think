@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import type { BrickCategory, BrickDefinition } from '@/lib/bricks/types';
 
+import { useDragPiece } from './dragPiece';
+
 const PIECE_CATEGORIES: { id: BrickCategory | 'all'; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'brick', label: 'Bricks' },
@@ -57,7 +59,7 @@ export function PiecesDrawer() {
         aria-label={open ? 'Close pieces' : 'Open pieces'}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className={`absolute right-5 top-5 z-30 inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-colors ${
+        className={`absolute right-5 top-5 z-30 inline-flex h-11 w-11 !cursor-pointer items-center justify-center rounded-2xl border transition-colors ${
           open
             ? 'border-transparent bg-zinc-900 text-white shadow-[0_10px_24px_-12px_rgba(0,0,0,0.35)]'
             : 'border-zinc-900/10 bg-white/85 text-zinc-700 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur hover:bg-white hover:text-zinc-900'
@@ -136,11 +138,14 @@ export function PiecesDrawer() {
 }
 
 function PieceTile({ brick, active }: { brick: BrickDefinition; active?: boolean }) {
+  const { startDrag } = useDragPiece();
   return (
     <button
       type="button"
       title={brick.name}
-      className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-colors ${
+      aria-label={`Drag ${brick.name} onto the canvas`}
+      onPointerDown={(e) => startDrag(brick, e)}
+      className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 transition-colors touch-none cursor-grab active:cursor-grabbing ${
         active
           ? 'border-[#c0613d] bg-[#c0613d]/10'
           : 'border-zinc-900/10 bg-zinc-50 hover:border-zinc-900/25 hover:bg-white'
@@ -153,12 +158,13 @@ function PieceTile({ brick, active }: { brick: BrickDefinition; active?: boolean
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={`/bricks/${brick.code}.svg`}
-          alt={brick.name}
+          alt=""
           loading="lazy"
-          className="max-h-[70%] max-w-[70%]"
+          draggable={false}
+          className="max-h-[70%] max-w-[70%] pointer-events-none select-none"
         />
       </span>
-      <span className="w-full truncate text-center font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-600">
+      <span className="w-full truncate text-center font-mono text-[9px] uppercase tracking-[0.14em] text-zinc-600 pointer-events-none">
         {brick.code.replace(/^.+?-/, '')}
       </span>
     </button>

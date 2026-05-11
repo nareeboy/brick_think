@@ -8,7 +8,14 @@ import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import { BRICK_BASE_UNIT } from '@/lib/bricks/types';
 import { loadBrickImage } from '@/lib/canvas/brickImage';
 
-const SCALE = 4;
+import {
+  CANVAS_SCALE as SCALE,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  ZOOM_STEP,
+  useBuilderState,
+  type BrickInstance,
+} from './builderState';
 
 interface SeedSpec {
   code: string;
@@ -27,17 +34,6 @@ const SEED: readonly SeedSpec[] = [
   { code: 'connector-line', dx: 40, dy: 130, rotation: 90 },
   { code: 'figure-head', dx: 200, dy: 110 },
 ];
-
-interface BrickInstance {
-  id: string;
-  code: string;
-  studsX: number;
-  studsY: number;
-  x: number;
-  y: number;
-  rotation: number;
-  colour: string;
-}
 
 function makeSeedBricks(width: number, height: number): BrickInstance[] {
   const cx = width / 2;
@@ -118,9 +114,14 @@ function BrickNode({ brick, selected, onSelect, onMove, onRotate }: BrickNodePro
 export function BuilderCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const [bricks, setBricks] = useState<BrickInstance[]>([]);
+  const { bricks, setBricks, view, zoomBy } = useBuilderState();
+  const { pan, zoom } = view;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const seededRef = useRef(false);
+
+  function zoomFromCenter(factor: number) {
+    zoomBy(factor, { x: size.width / 2, y: size.height / 2 });
+  }
 
   useEffect(() => {
     const el = containerRef.current;
@@ -139,8 +140,8 @@ export function BuilderCanvas() {
     if (seededRef.current) return;
     if (size.width === 0 || size.height === 0) return;
     seededRef.current = true;
-    setBricks(makeSeedBricks(size.width, size.height));
-  }, [size]);
+    setBricks((prev) => (prev.length > 0 ? prev : makeSeedBricks(size.width, size.height)));
+  }, [size, setBricks]);
 
   function handleStageMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
     if (e.target === e.target.getStage()) setSelectedId(null);
@@ -159,21 +160,107 @@ export function BuilderCanvas() {
   return (
     <div ref={containerRef} className="absolute inset-0">
       {size.width > 0 && size.height > 0 ? (
-        <Stage width={size.width} height={size.height} onMouseDown={handleStageMouseDown}>
-          <Layer>
-            {bricks.map((b) => (
-              <BrickNode
-                key={b.id}
-                brick={b}
-                selected={selectedId === b.id}
-                onSelect={setSelectedId}
-                onMove={handleMove}
-                onRotate={handleRotate}
-              />
-            ))}
-          </Layer>
-        </Stage>
+        <>
+          <Stage
+            width={size.width}
+            height={size.height}
+            x={pan.x}
+            y={pan.y}
+            scaleX={zoom}
+            scaleY={zoom}
+            onMouseDown={handleStageMouseDown}
+          >
+            <Layer>
+              {bricks.map((b) => (
+                <BrickNode
+                  key={b.id}
+                  brick={b}
+                  selected={selectedId === b.id}
+                  onSelect={setSelectedId}
+                  onMove={handleMove}
+                  onRotate={handleRotate}
+                />
+              ))}
+            </Layer>
+          </Stage>
+          <div className="pointer-events-none absolute inset-0 z-30">
+            <div className="pointer-events-auto absolute bottom-5 right-5 inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white/85 p-1.5 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur">
+              <ZoomButton
+                aria-label="Zoom out"
+                disabled={zoom <= MIN_ZOOM + 1e-6}
+                onClick={() => zoomFromCenter(1 / ZOOM_STEP)}
+              >
+                <ZoomOutIcon className="h-4 w-4" />
+              </ZoomButton>
+              <span className="min-w-[3ch] select-none px-1 text-center text-[11px] font-medium tabular-nums text-zinc-600">
+                {Math.round(zoom * 100)}%
+              </span>
+              <ZoomButton
+                aria-label="Zoom in"
+                disabled={zoom >= MAX_ZOOM - 1e-6}
+                onClick={() => zoomFromCenter(ZOOM_STEP)}
+              >
+                <ZoomInIcon className="h-4 w-4" />
+              </ZoomButton>
+            </div>
+          </div>
+        </>
       ) : null}
     </div>
+  );
+}
+
+function ZoomButton({
+  children,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      type="button"
+      tabIndex={-1}
+      className="inline-flex h-9 w-9 !cursor-pointer items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 disabled:!cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-500"
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ZoomInIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+      <path d="M8 11h6" />
+      <path d="M11 8v6" />
+    </svg>
+  );
+}
+
+function ZoomOutIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+      <path d="M8 11h6" />
+    </svg>
   );
 }
