@@ -14,7 +14,7 @@ import { createPortal } from 'react-dom';
 
 import type { BrickDefinition } from '@/lib/bricks/types';
 
-import { useBuilderState, type BrickInstance } from './builderState';
+import { makeBrickId, useBuilderState, type BrickInstance } from './builderState';
 
 const DROP_TARGET_ATTR = 'data-drop-target';
 export const CANVAS_DROP_TARGET = 'canvas';
@@ -39,9 +39,11 @@ interface DragPieceContext {
 const Ctx = createContext<DragPieceContext | null>(null);
 
 export function DragPieceProvider({ children }: { children: ReactNode }) {
-  const { setBricks, view } = useBuilderState();
+  const { addBrick, view, activeGroupId } = useBuilderState();
   const viewRef = useRef(view);
   viewRef.current = view;
+  const activeGroupRef = useRef(activeGroupId);
+  activeGroupRef.current = activeGroupId;
 
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -114,9 +116,8 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
       const x = (ev.clientX - rect.left - pan.x) / zoom;
       const y = (ev.clientY - rect.top - pan.y) / zoom;
       const instance: BrickInstance = {
-        id: typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? crypto.randomUUID()
-          : `brick-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: makeBrickId(),
+        groupId: activeGroupRef.current,
         code: current.def.code,
         image: current.def.image,
         width: current.def.width,
@@ -124,8 +125,9 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
         x,
         y,
         rotation: 0,
+        visible: true,
       };
-      setBricks((prev) => [...prev, instance]);
+      addBrick(instance);
       cancel();
     }
 
@@ -149,7 +151,7 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('pointercancel', onCancel);
       window.removeEventListener('keydown', onKey);
     };
-  }, [drag, cancel, setBricks]);
+  }, [drag, cancel, addBrick]);
 
   useEffect(() => {
     if (!drag?.active) return;

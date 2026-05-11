@@ -1,7 +1,7 @@
 'use client';
 
 import type Konva from 'konva';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image as KImage, Layer, Stage, Transformer } from 'react-konva';
 
 import { loadBrickImage } from '@/lib/canvas/brickImage';
@@ -126,12 +126,32 @@ function BrickNode({
 export function BuilderCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const { bricks, setBricks, view, zoomBy } = useBuilderState();
+  const {
+    groups,
+    bricks,
+    selectedId,
+    selectBrick,
+    updateBrick,
+    deleteBrick,
+    view,
+    zoomBy,
+  } = useBuilderState();
   const { pan, zoom } = view;
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [interacting, setInteracting] = useState(false);
   const transformerRef = useRef<Konva.Transformer | null>(null);
   const nodeRegistry = useRef(new Map<string, Konva.Image>());
+
+  const visibleBricks = useMemo(() => {
+    const groupVisible = new Map<string, boolean>();
+    for (const g of groups) groupVisible.set(g.id, g.visible);
+    // Draw order = panel bottom-to-top, so reverse `bricks` (which is panel
+    // top-to-bottom, grouped by groupId in `groups` order). Hidden bricks /
+    // bricks in hidden groups are excluded entirely.
+    const visible = bricks.filter(
+      (b) => b.visible && groupVisible.get(b.groupId) !== false,
+    );
+    return visible.slice().reverse();
+  }, [bricks, groups]);
 
   function zoomFromCenter(factor: number) {
     zoomBy(factor, { x: size.width / 2, y: size.height / 2 });
@@ -171,27 +191,26 @@ export function BuilderCanvas() {
   }
 
   function handleStageMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
-    if (e.target === e.target.getStage()) setSelectedId(null);
+    if (e.target === e.target.getStage()) selectBrick(null);
   }
 
   function handleMove(id: string, x: number, y: number) {
-    setBricks((prev) => prev.map((b) => (b.id === id ? { ...b, x, y } : b)));
+    updateBrick(id, { x, y });
   }
 
   function handleRotate(id: string) {
-    setBricks((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, rotation: (b.rotation + 90) % 360 } : b)),
-    );
+    const brick = bricks.find((b) => b.id === id);
+    if (!brick) return;
+    updateBrick(id, { rotation: (brick.rotation + 90) % 360 });
   }
 
   function handleResize(id: string, width: number, height: number) {
-    setBricks((prev) => prev.map((b) => (b.id === id ? { ...b, width, height } : b)));
+    updateBrick(id, { width, height });
   }
 
   function handleDelete(id: string) {
-    setBricks((prev) => prev.filter((b) => b.id !== id));
+    deleteBrick(id);
     nodeRegistry.current.delete(id);
-    setSelectedId((curr) => (curr === id ? null : curr));
   }
 
   useEffect(() => {
@@ -226,12 +245,12 @@ export function BuilderCanvas() {
             onMouseDown={handleStageMouseDown}
           >
             <Layer>
-              {bricks.map((b) => (
+              {visibleBricks.map((b) => (
                 <BrickNode
                   key={b.id}
                   brick={b}
                   selected={selectedId === b.id}
-                  onSelect={setSelectedId}
+                  onSelect={selectBrick}
                   onMove={handleMove}
                   onRotate={handleRotate}
                   onResize={handleResize}
