@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { BuilderCanvasLoader } from './canvasLoader';
+
 interface BuilderProps {
   userBar?: ReactNode;
   backHref?: string;
@@ -306,8 +308,8 @@ function CanvasStage({ className = '' }: { className?: string }) {
       <AxisRail side="x" ticks={[14, 24, 34, 44, 54, 64, 74, 84]} color="#c0613d" label="X" />
       <AxisRail side="y" ticks={[154, 164, 174, 184, 194]} color="#7da97a" label="Y" />
 
-      {/* the model */}
-      <BrickModel />
+      {/* live Konva canvas */}
+      <BuilderCanvasLoader />
 
       {/* annotation popover */}
       <div className="pointer-events-none absolute left-[20%] top-[36%] hidden md:block">
@@ -397,159 +399,6 @@ function AxisRail({
       </div>
     </div>
   );
-}
-
-function BrickModel() {
-  // Isometric stack of bricks, drawn with simple parallelograms
-  return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      <svg
-        viewBox="0 0 600 480"
-        className="h-[80%] w-auto max-w-[80%] drop-shadow-[0_30px_30px_rgba(0,0,0,0.5)]"
-        aria-hidden="true"
-      >
-        <defs>
-          <filter id="brick-shadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="0" dy="4" stdDeviation="3" floodOpacity="0.35" />
-          </filter>
-          <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2a2722" />
-            <stop offset="100%" stopColor="#1A1714" />
-          </linearGradient>
-        </defs>
-
-        {/* baseplate */}
-        <IsoBrick cx={300} cy={400} cols={8} rows={6} h={10} fill="#1f1f1f" />
-
-        {/* row 1 */}
-        <IsoBrick cx={210} cy={350} cols={2} rows={2} h={28} fill="#c0613d" />
-        <IsoBrick cx={310} cy={358} cols={4} rows={2} h={28} fill="#d8a85d" />
-        <IsoBrick cx={420} cy={344} cols={2} rows={2} h={28} fill="#3b6f8a" />
-
-        {/* row 2 */}
-        <IsoBrick cx={250} cy={300} cols={3} rows={2} h={28} fill="#8a9a78" />
-        <IsoBrick cx={380} cy={290} cols={3} rows={2} h={28} fill="#5b3a8a" />
-
-        {/* row 3 */}
-        <IsoBrick cx={310} cy={244} cols={4} rows={2} h={28} fill="#c0613d" highlight />
-
-        {/* row 4 stud caps */}
-        <IsoBrick cx={300} cy={196} cols={2} rows={1} h={20} fill="#1f1f1f" />
-        <IsoBrick cx={350} cy={170} cols={1} rows={1} h={20} fill="#d8a85d" />
-
-        {/* antenna */}
-        <IsoBrick cx={355} cy={140} cols={1} rows={1} h={36} fill="#c0613d" />
-      </svg>
-    </div>
-  );
-}
-
-function IsoBrick({
-  cx,
-  cy,
-  cols,
-  rows,
-  h,
-  fill,
-  highlight,
-}: {
-  cx: number;
-  cy: number;
-  cols: number;
-  rows: number;
-  h: number;
-  fill: string;
-  highlight?: boolean;
-}) {
-  const w = cols * 22;
-  const d = rows * 22;
-  // isometric projection: x' = (col-row)*cos(30), y' = (col+row)*sin(30)
-  const ix = w / 2;
-  const iy = w / 4;
-  const dx = d / 2;
-  const dy = d / 4;
-
-  type P = readonly [number, number];
-  const A: P = [cx, cy - h / 2 - iy - dy];
-  const B: P = [cx + ix, cy - h / 2 - iy + dy];
-  const C: P = [cx + ix - dx, cy - h / 2 + dy + iy];
-  const D: P = [cx - dx, cy - h / 2 + iy - dy];
-
-  const Bb: P = [B[0], B[1] + h];
-  const Cb: P = [C[0], C[1] + h];
-  const Db: P = [D[0], D[1] + h];
-
-  const lighten = adjust(fill, 18);
-  const darken = adjust(fill, -22);
-
-  return (
-    <g filter="url(#brick-shadow)">
-      {/* right face */}
-      <polygon
-        points={`${B[0]},${B[1]} ${C[0]},${C[1]} ${Cb[0]},${Cb[1]} ${Bb[0]},${Bb[1]}`}
-        fill={darken}
-      />
-      {/* left face */}
-      <polygon
-        points={`${D[0]},${D[1]} ${C[0]},${C[1]} ${Cb[0]},${Cb[1]} ${Db[0]},${Db[1]}`}
-        fill={adjust(fill, -10)}
-      />
-      {/* top face */}
-      <polygon
-        points={`${A[0]},${A[1]} ${B[0]},${B[1]} ${C[0]},${C[1]} ${D[0]},${D[1]}`}
-        fill={lighten}
-        stroke={highlight ? '#fff' : 'rgba(0,0,0,0.35)'}
-        strokeWidth={highlight ? 1.5 : 0.6}
-      />
-      {/* studs */}
-      {Array.from({ length: cols * rows }).map((_, i) => {
-        const r = Math.floor(i / cols);
-        const c = i % cols;
-        const sx =
-          A[0] +
-          ((c + 0.5) * (B[0] - A[0])) / cols +
-          ((r + 0.5) * (D[0] - A[0])) / rows -
-          (D[0] - A[0]) / (2 * rows);
-        const sy =
-          A[1] +
-          ((c + 0.5) * (B[1] - A[1])) / cols +
-          ((r + 0.5) * (D[1] - A[1])) / rows -
-          (D[1] - A[1]) / (2 * rows);
-        return (
-          <ellipse
-            key={i}
-            cx={sx}
-            cy={sy}
-            rx={5}
-            ry={2.4}
-            fill={lighten}
-            stroke="rgba(0,0,0,0.35)"
-            strokeWidth={0.5}
-          />
-        );
-      })}
-      {highlight ? (
-        <polygon
-          points={`${A[0]},${A[1]} ${B[0]},${B[1]} ${C[0]},${C[1]} ${D[0]},${D[1]}`}
-          fill="none"
-          stroke="#c0613d"
-          strokeWidth={2}
-        />
-      ) : null}
-    </g>
-  );
-}
-
-function adjust(hex: string, amt: number): string {
-  const m = hex.replace('#', '');
-  const num = parseInt(m, 16);
-  let r = (num >> 16) + amt;
-  let g = ((num >> 8) & 0xff) + amt;
-  let b = (num & 0xff) + amt;
-  r = Math.max(0, Math.min(255, r));
-  g = Math.max(0, Math.min(255, g));
-  b = Math.max(0, Math.min(255, b));
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
 function Annotation() {
