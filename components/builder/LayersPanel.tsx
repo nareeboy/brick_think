@@ -159,7 +159,7 @@ export function LayersPanel() {
   return (
     <details
       open
-      className="group/layers flex min-h-0 shrink-0 flex-col rounded-2xl border border-zinc-900/10 bg-white p-5 open:flex-1"
+      className="group/layers flex min-h-0 shrink-0 flex-col open:flex-1"
     >
       <summary className="flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
         <p className="text-[14px] font-semibold text-zinc-900">Layers</p>
