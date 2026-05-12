@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 
+import { SaveVersionModal } from './SaveVersionModal';
+import { VersionHistoryPanel } from './VersionHistoryPanel';
+
 import { BuilderProvider, useBuilderState } from './builderState';
 import { BuilderCanvasLoader } from './canvasLoader';
 import { CANVAS_DROP_TARGET, DragPieceProvider } from './dragPiece';
@@ -93,7 +96,10 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
         }`}
       >
         <ModelTitle />
-        <SaveStatus />
+        <div className="flex items-center justify-between gap-2">
+          <SaveStatus />
+          <HistoryButton />
+        </div>
         <LayersPanel />
         <SaveBuildButton />
         {footer ? (
@@ -105,16 +111,34 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
 }
 
 function SaveBuildButton() {
-  const { save } = useBuilderState();
+  const { modelId, groups, bricks } = useBuilderState();
+  const [open, setOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  if (!modelId) return null;
+
   return (
-    <button
-      type="button"
-      onClick={save}
-      className="group mt-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#c0613d] py-4 text-[15px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-all hover:bg-[#cf6e47] active:translate-y-[1px]"
-    >
-      Save build to canvas
-      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group mt-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#c0613d] py-4 text-[15px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-all hover:bg-[#cf6e47] active:translate-y-[1px]"
+      >
+        {savedFlash ? 'Version saved' : 'Save version'}
+      </button>
+      {open ? (
+        <SaveVersionModal
+          modelId={modelId}
+          canvasState={{ groups, bricks }}
+          onClose={() => setOpen(false)}
+          onSaved={() => {
+            setOpen(false);
+            setSavedFlash(true);
+            setTimeout(() => setSavedFlash(false), 2000);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 
@@ -193,24 +217,6 @@ function ChevronLeft({ className = '' }: { className?: string }) {
   );
 }
 
-function ArrowRight({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M5 12h14" />
-      <path d="m13 6 6 6-6 6" />
-    </svg>
-  );
-}
-
 function CheckIcon({ className = '' }: { className?: string }) {
   return (
     <svg
@@ -243,5 +249,29 @@ function CloseIcon({ className = '' }: { className?: string }) {
       <path d="M6 6 18 18" />
       <path d="M18 6 6 18" />
     </svg>
+  );
+}
+
+function HistoryButton() {
+  const { modelId } = useBuilderState();
+  const [open, setOpen] = useState(false);
+  if (!modelId) return null;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Version history"
+        title="Version history"
+        className="inline-flex h-7 cursor-pointer items-center rounded-md px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+      >
+        History
+      </button>
+      <VersionHistoryPanel
+        modelId={modelId}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
+    </>
   );
 }
