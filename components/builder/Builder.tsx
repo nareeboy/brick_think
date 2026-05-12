@@ -10,14 +10,26 @@ import { LayersPanel } from './LayersPanel';
 import { ModelTitle } from './ModelTitle';
 import { PiecesDrawer } from './PiecesDrawer';
 import { BrickGlyph } from './UserBar';
+import type { ModelDetail } from '@/lib/models/types';
 
 interface BuilderProps {
   userBar?: ReactNode;
+  initialModel?: ModelDetail;
 }
 
-export function Builder({ userBar }: BuilderProps) {
+export function Builder({ userBar, initialModel }: BuilderProps) {
   return (
-    <BuilderProvider>
+    <BuilderProvider
+      initial={
+        initialModel
+          ? {
+              modelId: initialModel.id,
+              title: initialModel.title,
+              canvasState: initialModel.canvas_state,
+            }
+          : undefined
+      }
+    >
       <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900 md:h-[100dvh] md:min-h-0 md:overflow-hidden">
         <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
           <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">

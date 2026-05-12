@@ -6,6 +6,9 @@ import { defineConfig } from 'vitest/config';
 const root = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
+  esbuild: {
+    jsx: 'automatic',
+  },
   resolve: {
     alias: {
       '@': resolve(root),
@@ -13,6 +16,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    environmentMatchGlobs: [['**/*.test.tsx', 'happy-dom']],
     globals: false,
     include: ['**/*.test.ts', '**/*.test.tsx'],
     exclude: ['node_modules/**', '.next/**', 'dist/**', 'coverage/**', 'e2e/**'],

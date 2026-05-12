@@ -31,6 +31,12 @@ export interface LayerGroup {
   visible: boolean;
 }
 
+export interface InitialBuilderState {
+  modelId: string;
+  title: string;
+  canvasState: { groups: LayerGroup[]; bricks: BrickInstance[] };
+}
+
 export const MIN_PIECE_SIZE = 16;
 export const MAX_PIECE_SIZE = 2000;
 export const MIN_ZOOM = 0.25;
@@ -76,6 +82,9 @@ interface View {
 }
 
 export interface BuilderState {
+  modelId: string | null;
+  title: string;
+  setTitle: (t: string) => void;
   groups: LayerGroup[];
   bricks: BrickInstance[];
   activeGroupId: string;
@@ -156,8 +165,27 @@ function findGroupInsertionStart(
   return findGroupInsertionEnd(bricks, groups, groupId);
 }
 
-export function BuilderProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<BuilderData>(makeInitialData);
+export function BuilderProvider({
+  initial,
+  children,
+}: {
+  initial?: InitialBuilderState;
+  children: ReactNode;
+}) {
+  const [data, setData] = useState<BuilderData>(() => {
+    if (initial && initial.canvasState.groups.length > 0) {
+      const firstGroupId = initial.canvasState.groups[0]!.id;
+      return {
+        groups: initial.canvasState.groups,
+        bricks: initial.canvasState.bricks,
+        activeGroupId: firstGroupId,
+        selectedId: null,
+      };
+    }
+    return makeInitialData();
+  });
+  const [title, setTitle] = useState<string>(initial?.title ?? 'Untitled model');
+  const modelId = initial?.modelId ?? null;
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [snapshot, setSnapshot] = useState<{
@@ -413,6 +441,9 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<BuilderState>(
     () => ({
+      modelId,
+      title,
+      setTitle,
       groups: data.groups,
       bricks: data.bricks,
       activeGroupId: data.activeGroupId,
@@ -444,6 +475,9 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     [
       data,
       view,
+      modelId,
+      title,
+      setTitle,
       zoomBy,
       selectBrick,
       setActiveGroup,
