@@ -30,7 +30,7 @@ function DesignCard({ model }: { model: ModelSummary }) {
   const [pending, start] = useTransition();
 
   const updated = new Date(model.updated_at);
-  const updatedLabel = updated.toLocaleString(undefined, {
+  const updatedLabel = updated.toLocaleString('en-GB', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -53,7 +53,7 @@ function DesignCard({ model }: { model: ModelSummary }) {
         type="button"
         onClick={() => setConfirming(true)}
         aria-label={`Delete ${model.title}`}
-        className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 opacity-0 transition-all hover:bg-zinc-900/5 hover:text-zinc-700 group-hover:opacity-100"
+        className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 opacity-0 transition-all hover:bg-zinc-900/5 hover:text-zinc-700 group-hover:opacity-100 focus-visible:opacity-100"
       >
         <TrashIcon className="h-4 w-4" />
       </button>
