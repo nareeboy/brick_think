@@ -21,7 +21,7 @@ for each row execute function public.touch_updated_at();
 create table public.model_versions (
   id            uuid primary key default gen_random_uuid(),
   model_id      uuid not null references public.models(id) on delete cascade,
-  label         text,
+  label         text check (label is null or length(label) between 1 and 200),
   canvas_state  jsonb not null,
   created_by    uuid not null references public.profiles(id),
   created_at    timestamptz not null default now()
@@ -49,7 +49,11 @@ create policy "Models: owner can delete"
   on public.models for delete to authenticated
   using (owner_profile_id = auth.uid());
 
-create policy "Versions: owner of model can read"
+-- model_versions is an append-only audit trail of canvas snapshots. There are
+-- intentionally no update or delete policies — versions are created via
+-- "Save version" and never modified. Deletion happens transitively through
+-- the on-delete-cascade FK to public.models.
+create policy "Model versions: owner of model can read"
   on public.model_versions for select to authenticated
   using (exists (
     select 1 from public.models m
@@ -57,7 +61,7 @@ create policy "Versions: owner of model can read"
       and m.owner_profile_id = auth.uid()
   ));
 
-create policy "Versions: owner of model can insert"
+create policy "Model versions: owner of model can insert"
   on public.model_versions for insert to authenticated
   with check (
     exists (
