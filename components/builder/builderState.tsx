@@ -219,6 +219,16 @@ export function BuilderProvider({
     payload: autosavePayload,
   });
 
+  useEffect(() => {
+    if (autosave.status !== 'dirty' && autosave.status !== 'saving') return;
+    function handler(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [autosave.status]);
+
   const zoomBy = useCallback(
     (factor: number, anchor: { x: number; y: number }) => {
       setZoom((prevZoom) => {

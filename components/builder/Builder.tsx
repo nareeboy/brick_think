@@ -8,6 +8,7 @@ import { BuilderCanvasLoader } from './canvasLoader';
 import { CANVAS_DROP_TARGET, DragPieceProvider } from './dragPiece';
 import { LayersPanel } from './LayersPanel';
 import { ModelTitle } from './ModelTitle';
+import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
 import { BrickGlyph } from './UserBar';
 import type { ModelDetail } from '@/lib/models/types';
@@ -92,6 +93,7 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
         }`}
       >
         <ModelTitle />
+        <SaveStatus />
         <LayersPanel />
         <SaveBuildButton />
         {footer ? (
