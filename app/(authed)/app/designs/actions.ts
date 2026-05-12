@@ -35,8 +35,15 @@ export async function createModelAction(): Promise<void> {
 
 export async function deleteModelAction(modelId: string): Promise<void> {
   const { supabase } = await requireUser();
-  const { error } = await supabase.from('models').delete().eq('id', modelId);
+  const { data, error } = await supabase
+    .from('models')
+    .delete()
+    .eq('id', modelId)
+    .select('id');
   if (error) throw new Error(`Failed to delete model: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error('Model not found or not owned by you');
+  }
   revalidatePath('/app/designs');
 }
 
