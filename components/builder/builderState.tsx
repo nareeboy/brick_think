@@ -11,6 +11,8 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useAutosave, type SaveStatus } from './useAutosave';
+
 export interface BrickInstance {
   id: string;
   groupId: string;
@@ -124,6 +126,10 @@ export interface BuilderState {
   rollback: () => void;
   toast: ToastState | null;
   dismissToast: () => void;
+
+  saveStatus: SaveStatus;
+  savedAtServer: number | null;
+  retrySave: () => void;
 }
 
 const Ctx = createContext<BuilderState | null>(null);
@@ -196,6 +202,22 @@ export function BuilderProvider({
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastIdRef = useRef(0);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const autosavePayload = useMemo(
+    () => ({
+      title,
+      canvas_state: {
+        groups: data.groups,
+        bricks: data.bricks,
+      },
+    }),
+    [title, data.groups, data.bricks],
+  );
+
+  const autosave = useAutosave({
+    modelId,
+    payload: autosavePayload,
+  });
 
   const zoomBy = useCallback(
     (factor: number, anchor: { x: number; y: number }) => {
@@ -471,6 +493,9 @@ export function BuilderProvider({
       rollback,
       toast,
       dismissToast,
+      saveStatus: autosave.status,
+      savedAtServer: autosave.lastSavedAt,
+      retrySave: autosave.retry,
     }),
     [
       data,
@@ -498,6 +523,9 @@ export function BuilderProvider({
       rollback,
       toast,
       dismissToast,
+      autosave.status,
+      autosave.lastSavedAt,
+      autosave.retry,
     ],
   );
 
