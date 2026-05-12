@@ -1,6 +1,5 @@
 import type { BrickInstance, LayerGroup } from '@/components/builder/builderState';
 import type { CanvasState } from './types';
-import { EMPTY_CANVAS_STATE } from './types';
 
 function isGroup(g: unknown): g is LayerGroup {
   if (!g || typeof g !== 'object') return false;
@@ -21,20 +20,20 @@ function isBrick(b: unknown): b is BrickInstance {
     typeof o.groupId === 'string' &&
     typeof o.code === 'string' &&
     typeof o.image === 'string' &&
-    typeof o.width === 'number' &&
-    typeof o.height === 'number' &&
-    typeof o.x === 'number' &&
-    typeof o.y === 'number' &&
-    typeof o.rotation === 'number' &&
+    Number.isFinite(o.width) &&
+    Number.isFinite(o.height) &&
+    Number.isFinite(o.x) &&
+    Number.isFinite(o.y) &&
+    Number.isFinite(o.rotation) &&
     typeof o.visible === 'boolean'
   );
 }
 
 export function parseCanvasState(raw: unknown): CanvasState {
-  if (!raw || typeof raw !== 'object') return EMPTY_CANVAS_STATE;
+  if (!raw || typeof raw !== 'object') return { groups: [], bricks: [] };
   const o = raw as Record<string, unknown>;
   if (!Array.isArray(o.groups) || !Array.isArray(o.bricks)) {
-    return EMPTY_CANVAS_STATE;
+    return { groups: [], bricks: [] };
   }
   const groups = o.groups.filter(isGroup);
   const groupIds = new Set(groups.map((g) => g.id));
