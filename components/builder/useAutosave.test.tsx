@@ -89,4 +89,29 @@ describe('useAutosave', () => {
     act(() => vi.advanceTimersByTime(2000));
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('retries with backoff after a failed save and lands on error after 3 attempts', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+    vi.stubGlobal('fetch', fetchMock);
+    const { result, rerender } = renderHook(
+      ({ payload }) =>
+        useAutosave({ modelId: 'm1', payload, debounceMs: 1000 }),
+      { initialProps: { payload: { v: 1 } } },
+    );
+
+    rerender({ payload: { v: 2 } });
+    act(() => vi.advanceTimersByTime(1000));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    act(() => vi.advanceTimersByTime(1000));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    act(() => vi.advanceTimersByTime(3000));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+
+    act(() => vi.advanceTimersByTime(9000));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+  });
 });

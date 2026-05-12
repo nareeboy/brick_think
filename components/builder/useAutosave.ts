@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 export type SaveStatus = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
 
+const RETRY_DELAYS_MS = [1000, 3000, 9000];
+
 interface Options<P> {
   modelId: string | null;
   payload: P;
@@ -28,6 +30,7 @@ export function useAutosave<P>({
   const lastFiredPayload = useRef<P | null>(null);
   const initialPayload = useRef<P>(payload);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attemptRef = useRef(0);
 
   async function doSave(p: P): Promise<void> {
     if (!modelId) return;
@@ -41,6 +44,7 @@ export function useAutosave<P>({
       if (!res.ok) throw new Error(`PATCH ${res.status}`);
       lastFiredPayload.current = p;
       setLastSavedAt(Date.now());
+      attemptRef.current = 0;
       if (pendingPayload.current !== null && pendingPayload.current !== p) {
         const next = pendingPayload.current;
         pendingPayload.current = null;
@@ -51,8 +55,17 @@ export function useAutosave<P>({
       inFlight.current = null;
       setStatus('saved');
     } catch {
+      if (attemptRef.current < RETRY_DELAYS_MS.length) {
+        const delay = RETRY_DELAYS_MS[attemptRef.current]!;
+        attemptRef.current += 1;
+        setTimeout(() => {
+          inFlight.current = doSave(p);
+        }, delay);
+        return;
+      }
       setStatus('error');
       inFlight.current = null;
+      return;
     }
   }
 
@@ -82,6 +95,7 @@ export function useAutosave<P>({
   function retry() {
     if (!modelId) return;
     if (inFlight.current) return;
+    attemptRef.current = 0;
     inFlight.current = doSave(payload);
   }
 
