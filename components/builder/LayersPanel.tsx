@@ -1,6 +1,14 @@
 'use client';
 
-import { useMemo, useState, type DragEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 
@@ -266,7 +274,23 @@ function GroupBlock({
 }: GroupBlockProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(group.name);
+  const inputRef = useRef<HTMLInputElement>(null);
   const dimmed = !group.visible;
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
+  function handleHeaderKeyDown(e: KeyboardEvent<HTMLDivElement>) {
+    if (e.target !== e.currentTarget) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSetActive(group.id);
+    }
+  }
 
   return (
     <div className="mt-3 first:mt-1">
@@ -276,11 +300,14 @@ function GroupBlock({
         <div className="mx-2 mb-1 h-[2px] rounded-full bg-[#c0613d]" />
       ) : null}
       <div
+        role="button"
+        tabIndex={0}
         draggable={!editing}
         onDragStart={(e) => onGroupDragStart(group.id, e)}
         onDragOver={(e) => onGroupHeaderDragOver(e, group)}
         onDrop={(e) => onGroupHeaderDrop(e, group)}
         onClick={() => onSetActive(group.id)}
+        onKeyDown={handleHeaderKeyDown}
         className={`flex w-full cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] transition-colors ${
           active
             ? 'bg-[#c0613d]/10 text-zinc-900'
@@ -308,7 +335,7 @@ function GroupBlock({
         <FolderIcon className="h-3.5 w-3.5 text-[#c0613d]" />
         {editing ? (
           <input
-            autoFocus
+            ref={inputRef}
             draggable={false}
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -440,11 +467,20 @@ function BrickRow({
         <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" />
       ) : null}
       <div
+        role="button"
+        tabIndex={0}
         draggable
         onDragStart={(e) => onDragStart(brick.id, e)}
         onDragOver={(e) => onDragOver(e, brick)}
         onDrop={(e) => onDrop(e, brick)}
         onClick={() => onSelect(brick.id)}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(brick.id);
+          }
+        }}
         className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors ${
           selected
             ? 'bg-[#c0613d]/12 text-zinc-900'
