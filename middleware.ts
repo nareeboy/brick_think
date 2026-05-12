@@ -1,8 +1,11 @@
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 import { updateSession } from '@/lib/db/middleware';
 
 export function middleware(request: NextRequest) {
+  if (request.nextUrl.pathname === '/builder' || request.nextUrl.pathname.startsWith('/builder/')) {
+    return NextResponse.redirect(new URL('/app/designs', request.url));
+  }
   return updateSession(request);
 }
 
