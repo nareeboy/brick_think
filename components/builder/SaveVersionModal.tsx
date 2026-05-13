@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useBuilderState } from './builderState';
 
 interface Props {
   modelId: string;
@@ -14,6 +15,7 @@ export function SaveVersionModal({ modelId, canvasState, onClose, onSaved }: Pro
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { captureAndUploadThumbnail } = useBuilderState();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -34,6 +36,7 @@ export function SaveVersionModal({ modelId, canvasState, onClose, onSaved }: Pro
         body: JSON.stringify({ label: label.trim() || null, canvas_state: canvasState }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      void captureAndUploadThumbnail();
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save version');
