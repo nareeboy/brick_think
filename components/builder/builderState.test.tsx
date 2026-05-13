@@ -58,7 +58,7 @@ describe('thumbnail capture trigger', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     try {
       const captureMock = vi
-        .fn<[], Promise<Blob | null>>()
+        .fn<() => Promise<Blob | null>>()
         .mockResolvedValue(new Blob([new Uint8Array([0x89])], { type: 'image/png' }));
 
       const initial = {
@@ -145,9 +145,10 @@ describe('thumbnail capture trigger', () => {
       await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
 
       const fetchCalls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
-      const thumbnailCall = fetchCalls.find(
-        ([url]: [string]) => typeof url === 'string' && url.includes('/thumbnail'),
-      );
+      const thumbnailCall = fetchCalls.find((args: unknown[]) => {
+        const url = args[0];
+        return typeof url === 'string' && url.includes('/thumbnail');
+      });
       expect(thumbnailCall).toBeUndefined();
     } finally {
       vi.useRealTimers();
