@@ -65,27 +65,50 @@ export async function restoreModelAction(modelId: string): Promise<void> {
 
 export async function purgeModelAction(modelId: string): Promise<void> {
   const { supabase } = await requireUser();
+  // Capture thumbnail path before deletion — storage.objects has no FK
+  // cascade, so we must explicitly clean up after the row is gone.
   const { data, error } = await supabase
     .from('models')
     .delete()
     .eq('id', modelId)
     .not('deleted_at', 'is', null)
-    .select('id');
+    .select('id, thumbnail_path');
   if (error) throw new Error(`Failed to purge model: ${error.message}`);
   if (!data || data.length === 0) {
     throw new Error('Model not in trash or not owned by you');
+  }
+  const paths = data
+    .map((r) => r.thumbnail_path)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+  if (paths.length > 0) {
+    const cleanup = await supabase.storage.from('model-thumbnails').remove(paths);
+    if (cleanup.error) {
+      console.error('failed to clean up thumbnails on purge', paths, cleanup.error);
+    }
   }
   revalidatePath('/app/designs/trash');
 }
 
 export async function emptyTrashAction(): Promise<void> {
   const { supabase, user } = await requireUser();
-  const { error } = await supabase
+  // Capture thumbnail paths before deletion — storage.objects has no FK
+  // cascade, so we must explicitly clean up after the rows are gone.
+  const { data, error } = await supabase
     .from('models')
     .delete()
     .eq('owner_profile_id', user.id)
-    .not('deleted_at', 'is', null);
+    .not('deleted_at', 'is', null)
+    .select('id, thumbnail_path');
   if (error) throw new Error(`Failed to empty trash: ${error.message}`);
+  const paths = (data ?? [])
+    .map((r) => r.thumbnail_path)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+  if (paths.length > 0) {
+    const cleanup = await supabase.storage.from('model-thumbnails').remove(paths);
+    if (cleanup.error) {
+      console.error('failed to clean up thumbnails on empty-trash', paths, cleanup.error);
+    }
+  }
   revalidatePath('/app/designs/trash');
 }
 
