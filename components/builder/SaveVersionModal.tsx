@@ -36,6 +36,10 @@ export function SaveVersionModal({ modelId, canvasState, onClose, onSaved }: Pro
         body: JSON.stringify({ label: label.trim() || null, canvas_state: canvasState }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Fire-and-forget: the upload races a possible immediate navigation to
+      // /app/designs. If the user reloads the list page within ~1 s, they
+      // may see the previous thumbnail until the next refresh. Awaiting here
+      // would block the modal close on a network round-trip; keep it snappy.
       void captureAndUploadThumbnail();
       onSaved();
     } catch (e) {
