@@ -22,6 +22,7 @@ export async function generateMetadata({
     .from('models')
     .select('title')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
   return { title: data?.title ? `${data.title} · Builder` : 'Builder' };
 }
@@ -45,6 +46,7 @@ export default async function DesignBuilderPage({
     .from('models')
     .select('id, title, canvas_state, updated_at')
     .eq('id', id)
+    .is('deleted_at', null)
     .single();
   if (error || !data) notFound();
 

@@ -26,6 +26,7 @@ export default async function DesignsPage() {
     supabase
       .from('models')
       .select('id, title, updated_at')
+      .is('deleted_at', null)
       .order('updated_at', { ascending: false }),
     supabase
       .from('models')
