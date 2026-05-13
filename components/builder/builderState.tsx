@@ -256,6 +256,9 @@ export function BuilderProvider({
     prevAutosaveStatusRef.current = autosave.status;
     if (hasCapturedThisSession.current) return;
     if (prev !== 'saving' || autosave.status !== 'saved') return;
+    // Defer until BuilderCanvas has mounted and registered its capture fn.
+    // Otherwise we'd permanently burn the session flag with no retry.
+    if (!captureFnRef.current) return;
     hasCapturedThisSession.current = true;
     void captureAndUploadThumbnail();
   }, [autosave.status, captureAndUploadThumbnail]);

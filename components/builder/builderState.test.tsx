@@ -154,4 +154,59 @@ describe('thumbnail capture trigger', () => {
       vi.useRealTimers();
     }
   });
+
+  it('defers when no fn is registered yet, then fires once on a later transition', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const initial = {
+        modelId: 'm3',
+        title: 'T',
+        canvasState: {
+          groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
+          bricks: [],
+        },
+      };
+      const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initial) });
+
+      // First save cycle WITHOUT a registered capture: must not burn the session.
+      act(() => {
+        result.current.addBrick({
+          id: 'b1',
+          groupId: 'g1',
+          code: 'A',
+          image: '',
+          width: 50,
+          height: 50,
+          x: 10,
+          y: 10,
+          rotation: 0,
+          visible: true,
+        });
+      });
+      act(() => {
+        vi.advanceTimersByTime(1100);
+      });
+      await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
+
+      // Now register a capture fn (simulates BuilderCanvas mounting late).
+      const captureMock = vi
+        .fn<() => Promise<Blob | null>>()
+        .mockResolvedValue(new Blob([new Uint8Array([0x89])], { type: 'image/png' }));
+      act(() => {
+        result.current.registerThumbnailCapture(captureMock);
+      });
+
+      // Drive a second save cycle. The capture must fire now.
+      act(() => {
+        result.current.updateBrick('b1', { x: 30 });
+      });
+      act(() => {
+        vi.advanceTimersByTime(1100);
+      });
+      await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
+      await waitFor(() => expect(captureMock).toHaveBeenCalledTimes(1));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
