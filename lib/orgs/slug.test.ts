@@ -27,6 +27,19 @@ describe('suggestSlug', () => {
     expect(suggestSlug('   ')).toBe('');
     expect(suggestSlug('!!!')).toBe('');
   });
+
+  it('returns empty string when input collapses below the minimum length', () => {
+    expect(suggestSlug('x')).toBe('');
+    expect(suggestSlug('  Z  ')).toBe('');
+    expect(suggestSlug('!1!')).toBe('');
+  });
+
+  it('truncates at the last hyphen within the 40-char window', () => {
+    // 11-char unit repeated 5 times = 55 chars; first 40 contains hyphens.
+    // First 40: "abcdefghij-abcdefghij-abcdefghij-abcdefg" (last hyphen at index 32)
+    // Expected slice: "abcdefghij-abcdefghij-abcdefghij" (32 chars)
+    expect(suggestSlug('abcdefghij-'.repeat(5))).toBe('abcdefghij-abcdefghij-abcdefghij');
+  });
 });
 
 describe('isValidSlug', () => {

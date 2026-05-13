@@ -11,6 +11,7 @@ export function suggestSlug(input: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
+  if (cleaned.length < MIN_SLUG_LENGTH) return '';
   if (cleaned.length <= MAX_SLUG_LENGTH) return cleaned;
   // Truncate at the last hyphen within the window if there is one.
   const truncated = cleaned.slice(0, MAX_SLUG_LENGTH);
