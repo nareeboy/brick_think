@@ -43,13 +43,16 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
   }
   if (!data) throw new Error('Failed to create organisation: no id returned');
 
-  // Make the new org the user's active context immediately.
+  // Best-effort: switch the active context to the new org. If this fails,
+  // the org was still created — the user can switch via the header switcher.
   const profileUpdate = await supabase
     .from('profiles')
     .update({ active_org_id: data.id })
     .eq('id', user.id);
   if (profileUpdate.error) {
-    throw new Error(`Org created but switching context failed: ${profileUpdate.error.message}`);
+    console.error(
+      `Org ${data.id} created but switching active context failed: ${profileUpdate.error.message}`,
+    );
   }
 
   revalidatePath('/app/orgs');
@@ -59,6 +62,7 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
 
 export type AddMemberResult =
   | { kind: 'ok' }
+  | { kind: 'invalid_input' }
   | { kind: 'unknown_email' }
   | { kind: 'already_member' }
   | { kind: 'forbidden' };
@@ -69,7 +73,7 @@ export async function addOrgMemberAction(
 ): Promise<AddMemberResult> {
   const { supabase } = await requireUser();
   const trimmed = email.trim();
-  if (trimmed.length === 0) return { kind: 'unknown_email' };
+  if (trimmed.length === 0) return { kind: 'invalid_input' };
 
   // citext column => case-insensitive match.
   const { data: profile, error: profileError } = await supabase
@@ -80,8 +84,9 @@ export async function addOrgMemberAction(
   if (profileError) throw new Error(`Lookup failed: ${profileError.message}`);
   if (!profile) return { kind: 'unknown_email' };
 
-  // Pre-check membership for a clean error path. The unique PK would
-  // raise 23505 anyway; this gives the form a friendlier message.
+  // Eagerly check for an existing membership to surface a clear UI error
+  // before hitting the unique constraint. The 23505 fallback on insert
+  // handles the race between two simultaneous adds.
   const { count, error: countError } = await supabase
     .from('org_memberships')
     .select('profile_id', { count: 'exact', head: true })
