@@ -1,5 +1,6 @@
 // marketing landing — root route. cache-bust marker: bt-marketing-2026-05-11
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { BrickCanvasMockup } from '@/components/marketing/brick-canvas-mockup';
 
@@ -82,7 +83,20 @@ const TIERS = [
   },
 ];
 
-export default function HomePage() {
+interface HomePageProps {
+  searchParams: Promise<{ code?: string; error_description?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const { code, error_description } = await searchParams;
+  if (code) {
+    const params = new URLSearchParams({ code, next: '/app/designs' });
+    redirect(`/auth/callback?${params.toString()}`);
+  }
+  if (error_description) {
+    redirect(`/sign-in?error=${encodeURIComponent(error_description)}`);
+  }
+
   return (
     <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <NavBar />
