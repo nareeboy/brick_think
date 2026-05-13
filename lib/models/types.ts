@@ -22,3 +22,9 @@ export interface ModelVersionSummary {
   label: string | null;
   created_at: string;
 }
+
+export interface TrashedModelSummary {
+  id: string;
+  title: string;
+  deleted_at: string;
+}
