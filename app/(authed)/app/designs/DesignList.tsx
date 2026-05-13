@@ -149,7 +149,7 @@ function DeleteConfirmDialog({
           Delete this design?
         </h2>
         <p id={descId} className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-          &ldquo;{modelTitle}&rdquo; will be removed. This cannot be undone.
+          &ldquo;{modelTitle}&rdquo; moves to Trash. You can restore it within 30 days.
         </p>
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
