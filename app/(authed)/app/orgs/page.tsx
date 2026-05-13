@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
@@ -13,6 +14,9 @@ interface OrgWithCount extends OrgSummary {
 }
 
 export default async function OrgsPage() {
+  if (!isSupabaseConfigured()) {
+    redirect('/sign-in?reason=unconfigured&next=%2Fapp%2Forgs');
+  }
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -55,48 +59,50 @@ export default async function OrgsPage() {
   }));
 
   return (
-    <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            BrickThink
-          </p>
-          <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">
-            Organisations
-          </h1>
-        </div>
-        <Link
-          href="/app/orgs/new"
-          className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
-        >
-          New organisation
-        </Link>
-      </header>
+    <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
+        <header className="flex items-center justify-between gap-4">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              BrickThink
+            </p>
+            <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">
+              Organisations
+            </h1>
+          </div>
+          <Link
+            href="/app/orgs/new"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
+          >
+            New organisation
+          </Link>
+        </header>
 
-      {orgs.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center text-[13px] text-zinc-500">
-          No organisations yet. Create one to share designs with teammates.
-        </p>
-      ) : (
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {orgs.map((o) => (
-            <li
-              key={o.id}
-              className="rounded-2xl border border-zinc-900/10 bg-white p-4 transition-colors hover:bg-[#FAF7F1]"
-            >
-              <Link href={`/app/orgs/${o.id}`} className="block">
-                <p className="truncate text-[15px] font-semibold text-zinc-950">{o.name}</p>
-                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                  {o.slug} · {o.role}
-                </p>
-                <p className="mt-2 text-[12px] text-zinc-600">
-                  {o.member_count} member{o.member_count === 1 ? '' : 's'}
-                </p>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+        {orgs.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center text-[13px] text-zinc-500">
+            No organisations yet. Create one to share designs with teammates.
+          </p>
+        ) : (
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {orgs.map((o) => (
+              <li
+                key={o.id}
+                className="rounded-2xl border border-zinc-900/10 bg-white p-4 transition-colors hover:bg-[#FAF7F1]"
+              >
+                <Link href={`/app/orgs/${o.id}`} aria-label={`Open ${o.name}`} className="block">
+                  <p className="truncate text-[15px] font-semibold text-zinc-950">{o.name}</p>
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                    {o.slug} · {o.role}
+                  </p>
+                  <p className="mt-2 text-[12px] text-zinc-600">
+                    {o.member_count} member{o.member_count === 1 ? '' : 's'}
+                  </p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </main>
   );
 }
