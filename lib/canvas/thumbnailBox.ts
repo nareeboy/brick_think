@@ -35,6 +35,8 @@ export function padBbox(r: Rect, ratio: number): Rect {
   };
 }
 
+// Caller invariant: r.width > 0 and r.height > 0. Upstream callers guard
+// (e.g. nodes.length === 0 → skip) so this isn't enforced here.
 export function fitToBox(
   r: Rect,
   maxW: number,

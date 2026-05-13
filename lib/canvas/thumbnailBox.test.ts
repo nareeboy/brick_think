@@ -17,6 +17,12 @@ describe('unionRects', () => {
   it('throws on empty input — callers must guard for empty canvases', () => {
     expect(() => unionRects([])).toThrow();
   });
+
+  it('handles a negative-origin rect in the union', () => {
+    const a = { x: -10, y: -5, width: 30, height: 20 };
+    const b = { x: 20, y: 5, width: 5, height: 30 };
+    expect(unionRects([a, b])).toEqual({ x: -10, y: -5, width: 35, height: 40 });
+  });
 });
 
 describe('padBbox', () => {
@@ -24,6 +30,11 @@ describe('padBbox', () => {
     const r = { x: 0, y: 0, width: 100, height: 50 };
     // 8% padding: 8 on the width axis (so 4 each side); 4 on the height axis (so 2 each side)
     expect(padBbox(r, 0.08)).toEqual({ x: -4, y: -2, width: 108, height: 54 });
+  });
+
+  it('preserves non-zero origin', () => {
+    const r = { x: 10, y: 20, width: 100, height: 50 };
+    expect(padBbox(r, 0.08)).toEqual({ x: 6, y: 18, width: 108, height: 54 });
   });
 });
 
