@@ -19,7 +19,7 @@ export default defineConfig({
     environmentMatchGlobs: [['**/*.test.tsx', 'happy-dom']],
     globals: false,
     include: ['**/*.test.ts', '**/*.test.tsx'],
-    exclude: ['node_modules/**', '.next/**', 'dist/**', 'coverage/**', 'e2e/**'],
+    exclude: ['node_modules/**', '.next/**', '.claude/**', 'dist/**', 'coverage/**', 'e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
