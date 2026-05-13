@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import { BuilderProvider, useBuilderState } from './builderState';
@@ -37,5 +37,36 @@ describe('BuilderProvider initial state', () => {
     expect(result.current.groups[0]?.name).toBe('Roof');
     expect(result.current.bricks).toHaveLength(1);
     expect(result.current.bricks[0]?.x).toBe(10);
+  });
+});
+
+describe('BuilderProvider readOnly', () => {
+  it('readOnly provider blocks mutations and reports readOnly via context', () => {
+    const initial = {
+      modelId: 'm1',
+      title: 'Locked',
+      canvasState: {
+        groups: [{ id: 'g1', name: 'Roof', collapsed: false, visible: true }],
+        bricks: [],
+      },
+    };
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <BuilderProvider initial={initial} readOnly>{children}</BuilderProvider>
+    );
+    const { result } = renderHook(() => useBuilderState(), { wrapper: Wrapper });
+
+    expect(result.current.readOnly).toBe(true);
+    const beforeBricks = result.current.bricks.length;
+    act(() => {
+      result.current.addBrick({
+        id: 'b1', groupId: 'g1', code: 'A', image: '',
+        width: 50, height: 50, x: 0, y: 0, rotation: 0, visible: true,
+      });
+    });
+    expect(result.current.bricks).toHaveLength(beforeBricks);
+    act(() => {
+      result.current.setTitle('Hijack');
+    });
+    expect(result.current.title).toBe('Locked');
   });
 });
