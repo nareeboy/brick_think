@@ -23,7 +23,10 @@ export async function POST(
     .eq('id', id)
     .is('deleted_at', null)
     .single();
-  if (selectErr && selectErr.code !== 'PGRST116') {
+  if (selectErr) {
+    if (selectErr.code === 'PGRST116') {
+      return NextResponse.json({ error: 'not found' }, { status: 404 });
+    }
     return NextResponse.json({ error: selectErr.message }, { status: 500 });
   }
   if (!row) return NextResponse.json({ error: 'not found' }, { status: 404 });
@@ -65,6 +68,13 @@ export async function POST(
     .select('thumbnail_path, thumbnail_updated_at')
     .single();
   if (updErr || !updated) {
+    // Storage object was just uploaded but the row update failed; remove the
+    // orphan rather than leaving unreferenced bytes in the bucket. Cleanup is
+    // best-effort and shouldn't mask the original error.
+    const cleanup = await supabase.storage.from('model-thumbnails').remove([path]);
+    if (cleanup.error) {
+      console.error('failed to clean up orphan thumbnail', path, cleanup.error);
+    }
     return NextResponse.json(
       { error: updErr?.message ?? 'update failed' },
       { status: 500 },
