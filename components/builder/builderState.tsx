@@ -120,10 +120,6 @@ export interface BuilderState {
     beforeBrickId: string | null,
   ) => void;
 
-  savedAt: number | null;
-  hasSavedVersion: boolean;
-  save: () => void;
-  rollback: () => void;
   toast: ToastState | null;
   dismissToast: () => void;
 
@@ -194,13 +190,7 @@ export function BuilderProvider({
   const modelId = initial?.modelId ?? null;
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [snapshot, setSnapshot] = useState<{
-    groups: LayerGroup[];
-    bricks: BrickInstance[];
-  } | null>(null);
-  const [savedAt, setSavedAt] = useState<number | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
-  const toastIdRef = useRef(0);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const autosavePayload = useMemo(
@@ -244,11 +234,6 @@ export function BuilderProvider({
     },
     [],
   );
-
-  const showToast = useCallback((message: string) => {
-    toastIdRef.current += 1;
-    setToast({ id: toastIdRef.current, message });
-  }, []);
 
   const dismissToast = useCallback(() => setToast(null), []);
 
@@ -438,37 +423,6 @@ export function BuilderProvider({
     [],
   );
 
-  const save = useCallback(() => {
-    setSnapshot({
-      groups: data.groups.map((g) => ({ ...g })),
-      bricks: data.bricks.map((b) => ({ ...b })),
-    });
-    setSavedAt(Date.now());
-    showToast('Build saved to canvas');
-  }, [data.groups, data.bricks, showToast]);
-
-  const rollback = useCallback(() => {
-    if (!snapshot) return;
-    setData((d) => {
-      const restoredGroups = snapshot.groups.map((g) => ({ ...g }));
-      const restoredBricks = snapshot.bricks.map((b) => ({ ...b }));
-      const activeStillValid = restoredGroups.some(
-        (g) => g.id === d.activeGroupId,
-      );
-      const selectedStillValid =
-        d.selectedId !== null &&
-        restoredBricks.some((b) => b.id === d.selectedId);
-      return {
-        groups: restoredGroups,
-        bricks: restoredBricks,
-        activeGroupId: activeStillValid
-          ? d.activeGroupId
-          : restoredGroups[0]?.id ?? d.activeGroupId,
-        selectedId: selectedStillValid ? d.selectedId : null,
-      };
-    });
-  }, [snapshot]);
-
   const view = useMemo<View>(() => ({ pan, zoom }), [pan, zoom]);
 
   const value = useMemo<BuilderState>(
@@ -497,10 +451,6 @@ export function BuilderProvider({
       deleteBrick,
       toggleBrickVisible,
       moveBrick,
-      savedAt,
-      hasSavedVersion: snapshot !== null,
-      save,
-      rollback,
       toast,
       dismissToast,
       saveStatus: autosave.status,
@@ -527,10 +477,6 @@ export function BuilderProvider({
       deleteBrick,
       toggleBrickVisible,
       moveBrick,
-      savedAt,
-      snapshot,
-      save,
-      rollback,
       toast,
       dismissToast,
       autosave.status,
