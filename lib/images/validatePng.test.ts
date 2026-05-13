@@ -4,6 +4,9 @@ import { isPng } from './validatePng';
 
 const PNG_MAGIC = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
+// Pass `bytes.buffer.slice(...)` rather than `bytes` to satisfy strict typing:
+// `Uint8Array<ArrayBufferLike>` from @types/node is not assignable to `BlobPart`
+// in this project's TS config (which expects `ArrayBuffer`).
 function blobFrom(bytes: Uint8Array, type = 'image/png'): Blob {
   const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
   return new Blob([buffer], { type });
