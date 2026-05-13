@@ -31,6 +31,9 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
+# Claude Code local workspaces (per-task git worktrees)
+.claude/worktrees/
+
 # Testing
 test-results/
 playwright-report/
