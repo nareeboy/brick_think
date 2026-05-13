@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { setActiveContextAction } from '@/app/(authed)/app/orgs/actions';
 import type { OrgSummary } from '@/lib/orgs/types';
@@ -17,6 +17,8 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
   const [pending, start] = useTransition();
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
+  const firstOptionRef = useRef<HTMLButtonElement>(null);
+  const listboxId = useId();
 
   const activeOrg = orgs.find((o) => o.id === activeOrgId) ?? null;
   const activeLabel = activeOrg ? activeOrg.name : 'Personal';
@@ -32,6 +34,7 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
     if (open) {
       window.addEventListener('mousedown', onClick);
       window.addEventListener('keydown', onKey);
+      firstOptionRef.current?.focus();
     }
     return () => {
       window.removeEventListener('mousedown', onClick);
@@ -58,6 +61,7 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={open ? listboxId : undefined}
         disabled={pending}
         className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-900/10 bg-white px-3 text-[13px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-900/5 disabled:opacity-60"
       >
@@ -69,7 +73,9 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
       </button>
       {open ? (
         <div
+          id={listboxId}
           role="listbox"
+          aria-label="Switch context"
           className="absolute right-0 top-12 z-30 w-64 overflow-hidden rounded-2xl border border-zinc-900/10 bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
         >
           <ContextItem
@@ -77,6 +83,7 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
             sub="Your private designs"
             active={activeOrgId === null}
             onSelect={() => pick(null)}
+            buttonRef={firstOptionRef}
           />
           {orgs.map((o) => (
             <ContextItem
@@ -106,14 +113,17 @@ function ContextItem({
   sub,
   active,
   onSelect,
+  buttonRef,
 }: {
   label: string;
   sub: string;
   active: boolean;
   onSelect: () => void;
+  buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       role="option"
       aria-selected={active}
