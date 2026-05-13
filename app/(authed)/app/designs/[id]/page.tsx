@@ -54,6 +54,7 @@ export default async function DesignBuilderPage({
     id: data.id,
     title: data.title,
     updated_at: data.updated_at,
+    thumbnail_url: null,
     canvas_state: parseCanvasState(data.canvas_state),
   };
 

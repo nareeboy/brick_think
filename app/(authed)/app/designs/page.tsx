@@ -25,7 +25,7 @@ export default async function DesignsPage() {
   const [listRes, trashRes] = await Promise.all([
     supabase
       .from('models')
-      .select('id, title, updated_at')
+      .select('id, title, updated_at, thumbnail_path, thumbnail_updated_at')
       .is('deleted_at', null)
       .order('updated_at', { ascending: false }),
     supabase
@@ -35,7 +35,40 @@ export default async function DesignsPage() {
   ]);
   if (listRes.error) throw new Error(`Failed to load designs: ${listRes.error.message}`);
   if (trashRes.error) throw new Error(`Failed to load trash count: ${trashRes.error.message}`);
-  const models: ModelSummary[] = listRes.data ?? [];
+
+  const rows = listRes.data ?? [];
+  const paths = rows
+    .map((r) => r.thumbnail_path)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+
+  const urlByPath = new Map<string, string>();
+  if (paths.length > 0) {
+    const signed = await supabase.storage
+      .from('model-thumbnails')
+      .createSignedUrls(paths, 60 * 60);
+    if (signed.error) {
+      console.error('thumbnail signing failed', signed.error);
+    } else {
+      for (const s of signed.data ?? []) {
+        if (s.path && s.signedUrl) urlByPath.set(s.path, s.signedUrl);
+      }
+    }
+  }
+
+  const models: ModelSummary[] = rows.map((r) => {
+    let thumbnail_url: string | null = null;
+    if (r.thumbnail_path && urlByPath.has(r.thumbnail_path)) {
+      const base = urlByPath.get(r.thumbnail_path)!;
+      const v = encodeURIComponent(r.thumbnail_updated_at ?? '');
+      thumbnail_url = `${base}&v=${v}`;
+    }
+    return {
+      id: r.id,
+      title: r.title,
+      updated_at: r.updated_at,
+      thumbnail_url,
+    };
+  });
   const trashCount = trashRes.count ?? 0;
 
   return (

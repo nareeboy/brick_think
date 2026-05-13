@@ -11,6 +11,7 @@ export interface ModelSummary {
   id: string;
   title: string;
   updated_at: string;
+  thumbnail_url: string | null;
 }
 
 export interface ModelDetail extends ModelSummary {
