@@ -44,7 +44,7 @@ export default async function DesignBuilderPage({
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, title, canvas_state, updated_at')
+    .select('id, title, canvas_state, updated_at, owner_profile_id, org_id')
     .eq('id', id)
     .is('deleted_at', null)
     .single();
@@ -57,10 +57,30 @@ export default async function DesignBuilderPage({
     canvas_state: parseCanvasState(data.canvas_state),
   };
 
+  const readOnly = data.owner_profile_id !== user.id;
+  const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
+
   return (
     <Builder
       userBar={<UserBar email={user.email} />}
       initialModel={initialModel}
+      readOnly={readOnly}
+      ownerLabel={ownerLabel}
+      orgId={data.org_id ?? null}
     />
   );
+}
+
+async function loadOwnerLabel(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  ownerProfileId: string,
+  readOnly: boolean,
+): Promise<string | null> {
+  if (!readOnly) return null;
+  const { data } = await supabase
+    .from('profiles')
+    .select('email, full_name')
+    .eq('id', ownerProfileId)
+    .single();
+  return data?.full_name ?? data?.email ?? null;
 }

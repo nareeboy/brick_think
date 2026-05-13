@@ -19,11 +19,21 @@ import type { ModelDetail } from '@/lib/models/types';
 interface BuilderProps {
   userBar?: ReactNode;
   initialModel?: ModelDetail;
+  readOnly?: boolean;
+  ownerLabel?: string | null;
+  orgId?: string | null;
 }
 
-export function Builder({ userBar, initialModel }: BuilderProps) {
+export function Builder({
+  userBar,
+  initialModel,
+  readOnly = false,
+  ownerLabel: _ownerLabel = null,
+  orgId: _orgId = null,
+}: BuilderProps) {
   return (
     <BuilderProvider
+      readOnly={readOnly}
       initial={
         initialModel
           ? {
@@ -98,6 +108,7 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
         <ModelTitle />
         <div className="flex items-center justify-between gap-2">
           <SaveStatus />
+          {/* TODO(Task 14): ShareToOrgMenu / read-only badge slot here */}
           <HistoryButton />
         </div>
         <LayersPanel />
@@ -111,11 +122,12 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
 }
 
 function SaveBuildButton() {
-  const { modelId, groups, bricks } = useBuilderState();
+  const { modelId, groups, bricks, readOnly } = useBuilderState();
   const [open, setOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
 
   if (!modelId) return null;
+  if (readOnly) return null;
 
   return (
     <>
