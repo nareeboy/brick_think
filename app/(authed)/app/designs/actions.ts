@@ -37,7 +37,7 @@ export async function deleteModelAction(modelId: string): Promise<void> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from('models')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', modelId)
     .select('id');
   if (error) throw new Error(`Failed to delete model: ${error.message}`);
@@ -45,6 +45,48 @@ export async function deleteModelAction(modelId: string): Promise<void> {
     throw new Error('Model not found or not owned by you');
   }
   revalidatePath('/app/designs');
+  revalidatePath('/app/designs/trash');
+}
+
+export async function restoreModelAction(modelId: string): Promise<void> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from('models')
+    .update({ deleted_at: null })
+    .eq('id', modelId)
+    .select('id');
+  if (error) throw new Error(`Failed to restore model: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error('Model not in trash or not owned by you');
+  }
+  revalidatePath('/app/designs');
+  revalidatePath('/app/designs/trash');
+}
+
+export async function purgeModelAction(modelId: string): Promise<void> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from('models')
+    .delete()
+    .eq('id', modelId)
+    .not('deleted_at', 'is', null)
+    .select('id');
+  if (error) throw new Error(`Failed to purge model: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error('Model not in trash or not owned by you');
+  }
+  revalidatePath('/app/designs/trash');
+}
+
+export async function emptyTrashAction(): Promise<void> {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase
+    .from('models')
+    .delete()
+    .eq('owner_profile_id', user.id)
+    .not('deleted_at', 'is', null);
+  if (error) throw new Error(`Failed to empty trash: ${error.message}`);
+  revalidatePath('/app/designs/trash');
 }
 
 export async function restoreVersionAction(
