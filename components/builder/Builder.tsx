@@ -14,7 +14,9 @@ import { ModelTitle } from './ModelTitle';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
 import { BrickGlyph } from './UserBar';
+import { ShareToOrgMenu } from './ShareToOrgMenu';
 import type { ModelDetail } from '@/lib/models/types';
+import type { OrgSummary } from '@/lib/orgs/types';
 
 interface BuilderProps {
   userBar?: ReactNode;
@@ -22,14 +24,16 @@ interface BuilderProps {
   readOnly?: boolean;
   ownerLabel?: string | null;
   orgId?: string | null;
+  orgs?: OrgSummary[];
 }
 
 export function Builder({
   userBar,
   initialModel,
   readOnly = false,
-  ownerLabel: _ownerLabel = null,
-  orgId: _orgId = null,
+  ownerLabel = null,
+  orgId = null,
+  orgs = [],
 }: BuilderProps) {
   return (
     <BuilderProvider
@@ -47,7 +51,14 @@ export function Builder({
       <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900 md:h-[100dvh] md:min-h-0 md:overflow-hidden">
         <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
           <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
-            <UnifiedSidebar footer={userBar} />
+            <UnifiedSidebar
+              footer={userBar}
+              readOnly={readOnly}
+              ownerLabel={ownerLabel}
+              initialModel={initialModel}
+              orgId={orgId}
+              orgs={orgs}
+            />
             <CanvasStage />
           </div>
         </div>
@@ -57,7 +68,21 @@ export function Builder({
   );
 }
 
-function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
+function UnifiedSidebar({
+  footer,
+  readOnly,
+  ownerLabel,
+  initialModel,
+  orgId,
+  orgs,
+}: {
+  footer?: ReactNode;
+  readOnly: boolean;
+  ownerLabel: string | null;
+  initialModel?: ModelDetail;
+  orgId: string | null;
+  orgs: OrgSummary[];
+}) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -108,8 +133,16 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
         <ModelTitle />
         <div className="flex items-center justify-between gap-2">
           <SaveStatus />
-          {/* TODO(Task 14): ShareToOrgMenu / read-only badge slot here */}
-          <HistoryButton />
+          <div className="flex items-center gap-2">
+            {readOnly ? (
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900/5 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                Read-only · {ownerLabel ?? 'shared'}
+              </span>
+            ) : initialModel ? (
+              <ShareToOrgMenu modelId={initialModel.id} orgs={orgs} currentOrgId={orgId} />
+            ) : null}
+            <HistoryButton />
+          </div>
         </div>
         <LayersPanel />
         <SaveBuildButton />
