@@ -13,6 +13,12 @@ export interface ModelSummary {
   updated_at: string;
 }
 
+export interface OrgModelSummary extends ModelSummary {
+  owner_profile_id: string;
+  owner_full_name: string | null;
+  owner_email: string;
+}
+
 export interface ModelDetail extends ModelSummary {
   canvas_state: CanvasState;
 }
