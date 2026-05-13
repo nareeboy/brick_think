@@ -51,6 +51,15 @@ export default async function DesignsPage() {
             </h1>
           </div>
           <div className="flex items-center gap-2">
+            <form action="/auth/sign-out" method="post">
+              <button
+                type="submit"
+                data-testid="sign-out-button"
+                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-3 text-[13px] font-medium text-zinc-600 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+              >
+                Sign out
+              </button>
+            </form>
             {trashCount > 0 ? (
               <Link
                 href="/app/designs/trash"
