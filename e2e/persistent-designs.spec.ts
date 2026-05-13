@@ -132,4 +132,38 @@ test.describe('persistent designs', () => {
       timeout: 15_000,
     });
   });
+
+  test('a thumbnail appears on the card after first edit + reload', async ({
+    signedInPage: page,
+  }) => {
+    await page.goto('/app/designs');
+    await page.getByRole('button', { name: /^new design$/i }).click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    const designId = page.url().split('/').pop();
+    if (!designId) throw new Error('could not extract design id from url');
+
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+    await page.getByRole('button', { name: /open pieces/i }).click();
+    await dragPieceOntoCanvas(page);
+    await expect(page.getByTestId('placed-brick')).toHaveCount(1);
+    await expect(page.getByTestId('save-status')).toHaveAttribute(
+      'data-status',
+      'saved',
+      { timeout: 15_000 },
+    );
+
+    // The thumbnail upload is fire-and-forget after the first save→saved
+    // transition. Give it a moment to complete before navigating away.
+    await page.waitForTimeout(2000);
+
+    await page.goto('/app/designs');
+    // Locate the card by the <a> element's own href — filter({ has }) only
+    // searches descendants, so it cannot match the <a>'s own href attribute.
+    const card = page.locator(`a[href$="${designId}"]`);
+    const thumb = card.getByTestId('design-thumb').locator('img');
+    await expect(thumb).toBeVisible({ timeout: 5000 });
+    const src = await thumb.getAttribute('src');
+    expect(src).toBeTruthy();
+    expect(src).toContain('model-thumbnails');
+  });
 });
