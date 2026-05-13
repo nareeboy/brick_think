@@ -8,9 +8,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const errorDescription = url.searchParams.get('error_description');
-  const next = url.searchParams.get('next') ?? '/app';
+  const next = url.searchParams.get('next') ?? '/app/designs';
 
-  const safeNext = next.startsWith('/') ? next : '/app';
+  const safeNext = next.startsWith('/') ? next : '/app/designs';
   const redirectUrl = new URL(safeNext, url.origin);
 
   if (errorDescription) {

@@ -62,8 +62,8 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
         }`}
       >
         <Link
-          href="/"
-          aria-label="BrickThink home"
+          href="/app/designs"
+          aria-label="Back to my designs"
           className="inline-flex items-center gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-zinc-900/5"
         >
           <BrickGlyph />
