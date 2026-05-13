@@ -149,6 +149,7 @@ function PieceTile({ brick }: { brick: BrickDefinition }) {
   return (
     <button
       type="button"
+      data-testid="piece-card"
       title={brick.name}
       aria-label={`Add ${brick.name} — click to place, or drag onto the canvas`}
       onPointerDown={(e) => startDrag(brick, e)}

@@ -173,6 +173,7 @@ function CanvasStage() {
   return (
     <DragPieceProvider>
       <section
+        data-testid="builder-canvas"
         data-drop-target={CANVAS_DROP_TARGET}
         className="relative min-h-[400px] flex-1 overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#FBF7F1] md:min-h-0"
       >

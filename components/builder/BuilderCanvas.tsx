@@ -233,6 +233,11 @@ export function BuilderCanvas() {
 
   return (
     <div ref={containerRef} className="absolute inset-0">
+      <ul aria-hidden="true" className="sr-only" data-testid="placed-brick-list">
+        {visibleBricks.map((b) => (
+          <li key={b.id} data-testid="placed-brick" data-brick-id={b.id} />
+        ))}
+      </ul>
       {size.width > 0 && size.height > 0 ? (
         <>
           <Stage
