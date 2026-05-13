@@ -23,6 +23,14 @@ export function ModelTitle() {
     if (!editing) setDraft(title);
   }, [title, editing]);
 
+  useEffect(() => {
+    const previous = document.title;
+    document.title = `${title} · Builder · BrickThink`;
+    return () => {
+      document.title = previous;
+    };
+  }, [title]);
+
   function startEditing() {
     setDraft(title);
     setEditing(true);
