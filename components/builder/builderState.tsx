@@ -126,6 +126,8 @@ export interface BuilderState {
   saveStatus: SaveStatus;
   savedAtServer: number | null;
   retrySave: () => void;
+  registerThumbnailCapture: (fn: (() => Promise<Blob | null>) | null) => void;
+  captureAndUploadThumbnail: () => Promise<void>;
 }
 
 const Ctx = createContext<BuilderState | null>(null);
@@ -193,6 +195,17 @@ export function BuilderProvider({
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const captureFnRef = useRef<(() => Promise<Blob | null>) | null>(null);
+  const hasCapturedThisSession = useRef(false);
+  const prevAutosaveStatusRef = useRef<SaveStatus>('idle');
+
+  const registerThumbnailCapture = useCallback(
+    (fn: (() => Promise<Blob | null>) | null) => {
+      captureFnRef.current = fn;
+    },
+    [],
+  );
+
   const autosavePayload = useMemo(
     () => ({
       title,
@@ -209,6 +222,25 @@ export function BuilderProvider({
     payload: autosavePayload,
   });
 
+  const captureAndUploadThumbnail = useCallback(async (): Promise<void> => {
+    if (!modelId) return;
+    const fn = captureFnRef.current;
+    if (!fn) return;
+    try {
+      const blob = await fn();
+      if (!blob) return;
+      const fd = new FormData();
+      fd.append('file', blob, 'thumbnail.png');
+      const res = await fetch(`/api/models/${modelId}/thumbnail`, {
+        method: 'POST',
+        body: fd,
+      });
+      if (!res.ok) throw new Error(`thumbnail POST ${res.status}`);
+    } catch (err) {
+      console.error('thumbnail upload failed', err);
+    }
+  }, [modelId]);
+
   useEffect(() => {
     if (autosave.status !== 'dirty' && autosave.status !== 'saving') return;
     function handler(e: BeforeUnloadEvent) {
@@ -218,6 +250,15 @@ export function BuilderProvider({
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [autosave.status]);
+
+  useEffect(() => {
+    const prev = prevAutosaveStatusRef.current;
+    prevAutosaveStatusRef.current = autosave.status;
+    if (hasCapturedThisSession.current) return;
+    if (prev !== 'saving' || autosave.status !== 'saved') return;
+    hasCapturedThisSession.current = true;
+    void captureAndUploadThumbnail();
+  }, [autosave.status, captureAndUploadThumbnail]);
 
   const zoomBy = useCallback(
     (factor: number, anchor: { x: number; y: number }) => {
@@ -456,6 +497,8 @@ export function BuilderProvider({
       saveStatus: autosave.status,
       savedAtServer: autosave.lastSavedAt,
       retrySave: autosave.retry,
+      registerThumbnailCapture,
+      captureAndUploadThumbnail,
     }),
     [
       data,
@@ -482,6 +525,8 @@ export function BuilderProvider({
       autosave.status,
       autosave.lastSavedAt,
       autosave.retry,
+      registerThumbnailCapture,
+      captureAndUploadThumbnail,
     ],
   );
 
