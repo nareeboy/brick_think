@@ -26,6 +26,12 @@ export default defineConfig({
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',
+    env: {
+      // Unlocks /api/test/sign-in so the signed-in fixture in e2e/fixtures.ts
+      // can mint a Supabase session without going through magic-link email.
+      // See the route file for the rest of the defence-in-depth.
+      E2E_AUTH_ENABLED: '1',
+    },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });
