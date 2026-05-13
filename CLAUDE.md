@@ -23,7 +23,17 @@ Implications:
 - `pnpm typecheck` — must exit 0.
 - `pnpm lint` — must exit 0.
 - `pnpm test` — Vitest, must exit 0.
-- `pnpm test:e2e` — Playwright; runs against a built server (`pnpm start`). Currently only covers unauthenticated flows; an authenticated fixture is a known follow-up.
+- `pnpm test:e2e` — Playwright; runs against a built server (`pnpm start`). Covers both unauthenticated flows ([e2e/auth.spec.ts](e2e/auth.spec.ts)) and authed flows via the `signedInPage` fixture in [e2e/fixtures.ts](e2e/fixtures.ts).
+
+### Playwright auth fixture
+
+`signedInPage` mints a Supabase session by posting to the dev-only [/api/test/sign-in](app/api/test/sign-in/route.ts) route. The route has three independent gates, all required: `E2E_AUTH_ENABLED=1` (set in [playwright.config.ts](playwright.config.ts) webServer env), a `localhost`/`127.0.0.1` host check, and an `@brick-think.test` email pattern. **Never set `E2E_AUTH_ENABLED` on Railway.** Read the comment at the top of the route file before adding, removing, or weakening any gate — `NODE_ENV` was deliberately *not* used as a gate (see the comment for why).
+
+### E2E workflow gotchas
+
+- **Don't run `pnpm dev` concurrently with `pnpm test:e2e`.** Playwright will reuse the dev server on port 3000 — silently skipping `webServer.env` so `E2E_AUTH_ENABLED` is missing and the sign-in route 404s. `next dev` also writes into `.next/` and corrupts the production build between runs.
+- If you need both running, use `PORT=3100 pnpm test:e2e`. Re-run `pnpm build` if you see "Could not find a production build in the '.next' directory".
+- The fixture creates one `e2e-<rand>@brick-think.test` auth user per test. They're harmless but accumulate — clean them out periodically with a SQL `delete from auth.users where email like 'e2e-%@brick-think.test'`.
 
 ## Process
 
