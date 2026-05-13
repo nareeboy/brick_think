@@ -80,6 +80,7 @@ export type Database = {
         Row: {
           canvas_state: Json
           created_at: string
+          deleted_at: string | null
           id: string
           owner_profile_id: string
           title: string
@@ -88,6 +89,7 @@ export type Database = {
         Insert: {
           canvas_state?: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           owner_profile_id: string
           title?: string
@@ -96,6 +98,7 @@ export type Database = {
         Update: {
           canvas_state?: Json
           created_at?: string
+          deleted_at?: string | null
           id?: string
           owner_profile_id?: string
           title?: string
@@ -476,6 +479,7 @@ export type Database = {
     Functions: {
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
+      purge_expired_trashed_models: { Args: never; Returns: undefined }
     }
     Enums: {
       org_role: "owner" | "admin" | "facilitator" | "member"
