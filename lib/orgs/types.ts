@@ -1,4 +1,3 @@
-// lib/orgs/types.ts
 import type { Database } from '@/lib/db/types.generated';
 
 export type OrgRole = Database['public']['Enums']['org_role'];
@@ -16,11 +15,6 @@ export interface OrgMember {
   full_name: string | null;
   avatar_url: string | null;
   role: OrgRole;
-}
-
-export interface OrgDetail extends OrgSummary {
-  members: OrgMember[];
-  member_count: number;
 }
 
 export type ActiveContext =
