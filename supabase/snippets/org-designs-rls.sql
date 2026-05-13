@@ -34,6 +34,7 @@ values ('dddddddd-dddd-dddd-dddd-dddddddddddd', '11111111-1111-1111-1111-1111111
 create or replace function pg_temp.as_user(p_uid uuid) returns void
 language plpgsql as $$
 begin
+  -- 'role' is the Postgres session-role GUC; set_config switches the active role for the rest of the transaction.
   perform set_config('role', 'authenticated', true);
   perform set_config('request.jwt.claim.sub', p_uid::text, true);
   perform set_config('request.jwt.claims', json_build_object('sub', p_uid::text)::text, true);
@@ -82,8 +83,7 @@ select pg_temp.assert(
   not exists (select 1 from public.models where id = 'cccccccc-cccc-cccc-cccc-cccccccccccc')
 );
 
--- Trigger: removing Bob doesn't affect anything (Bob owns no models in this org).
--- Now: Alice leaves the org -> her shared model.org_id goes to NULL.
+-- Alice leaves the org — the trigger should NULL out her shared model's org_id.
 reset role;
 delete from public.org_memberships
  where org_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
