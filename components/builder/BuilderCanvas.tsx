@@ -126,7 +126,6 @@ function BrickNode({
 
 export function BuilderCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<Konva.Stage | null>(null);
   const layerRef = useRef<Konva.Layer | null>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const {
@@ -271,7 +270,6 @@ export function BuilderCanvas() {
       {size.width > 0 && size.height > 0 ? (
         <>
           <Stage
-            ref={stageRef}
             width={size.width}
             height={size.height}
             x={pan.x}
