@@ -51,6 +51,22 @@ function DesignCard({ model }: { model: ModelSummary }) {
         className="block"
         aria-label={`Open ${model.title}`}
       >
+        <div
+          data-testid="design-thumb"
+          className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl border border-zinc-900/5 bg-[#FBF7F1]"
+        >
+          {model.thumbnail_url ? (
+            <img
+              src={model.thumbnail_url}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+          ) : (
+            <DotGridPlaceholder />
+          )}
+        </div>
         <p className="truncate text-[15px] font-semibold text-zinc-950">{model.title}</p>
         <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Updated {updatedLabel}
@@ -173,6 +189,20 @@ function DeleteConfirmDialog({
         </div>
       </div>
     </div>
+  );
+}
+
+function DotGridPlaceholder() {
+  return (
+    <div
+      aria-hidden="true"
+      data-testid="design-thumb-placeholder"
+      className="absolute inset-0"
+      style={{
+        backgroundImage: 'radial-gradient(rgba(60,30,15,0.10) 1px, transparent 1px)',
+        backgroundSize: '22px 22px',
+      }}
+    />
   );
 }
 
