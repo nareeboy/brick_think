@@ -4,7 +4,7 @@ import type Konva from 'konva';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image as KImage, Layer, Stage, Transformer } from 'react-konva';
 
-import { loadBrickImage } from '@/lib/canvas/brickImage';
+import { useBrickImage } from '@/components/canvas/BrickImage';
 
 import {
   MAX_PIECE_SIZE,
@@ -55,22 +55,8 @@ function BrickNode({
   onInteractStart,
   onInteractEnd,
 }: BrickNodeProps) {
-  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const image = useBrickImage(brick.image);
   const nodeRef = useRef<Konva.Image | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    loadBrickImage(brick.image)
-      .then((img) => {
-        if (active) setImage(img);
-      })
-      .catch((err: unknown) => {
-        console.error('Failed to load brick image', brick.image, err);
-      });
-    return () => {
-      active = false;
-    };
-  }, [brick.image]);
 
   if (!image) return null;
 
