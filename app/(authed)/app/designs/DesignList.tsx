@@ -56,6 +56,7 @@ function DesignCard({ model }: { model: ModelSummary }) {
           className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl border border-zinc-900/5 bg-[#FBF7F1]"
         >
           {model.thumbnail_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- deliberate per plan: Supabase signed URLs bypass next/image
             <img
               src={model.thumbnail_url}
               alt=""
