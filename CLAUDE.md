@@ -18,6 +18,14 @@ Implications:
 - Schema lives in [supabase/migrations/](supabase/migrations/); never apply DDL outside a migration on the local stack.
 - Remote pushes go via `pnpm db:link` / `db:push` (these scripts inline-load `SUPABASE_ACCESS_TOKEN` from `.env.local` because the machine's shared `supabase login` is on a different account). If a `supabase` subcommand isn't covered by an npm script, prefix it manually: `SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) pnpm exec supabase <cmd> --linked`.
 
+### Auth providers
+
+The sign-in page ([app/sign-in/page.tsx](app/sign-in/page.tsx)) supports magic link and Google OAuth. Post-sign-in destination is `/app/designs` — defaulted in three places ([app/sign-in/actions.ts](app/sign-in/actions.ts), [app/sign-in/page.tsx](app/sign-in/page.tsx), [app/auth/callback/route.ts](app/auth/callback/route.ts)); change all three together.
+
+- **Google OAuth (primary tested path).** Configured in Supabase Dashboard → Authentication → Providers → Google. The OAuth client lives in Google Cloud project `brickthink-auth`; redirect URI in Google **must** match `https://wreypwrvfpzjyijpyhkb.supabase.co/auth/v1/callback` exactly. App is still in Google's "Testing" mode — sign-in works only for the test users listed under OAuth consent screen until the app is published (needs verified domain + privacy policy first).
+- **Magic link.** Uses Supabase's built-in email service, which rate-limits at ~4 sends/hour per address. Custom SMTP via Resend is the planned upgrade — env vars `RESEND_API_KEY` / `RESEND_FROM_ADDRESS` exist in [.env.example](.env.example) but are unused; Supabase auth SMTP is configured in the Dashboard, not via app env. Blocked on owning a domain to verify in Resend.
+- **Redirect URLs allowlist.** Supabase falls back to Site URL and drops the `?next=` query param if `/auth/callback` isn't whitelisted under URL Configuration. As a defensive net, [app/page.tsx](app/page.tsx) forwards any stray `?code=` on `/` to `/auth/callback?...&next=/app/designs`. Don't remove the forwarder without confirming the allowlist covers wildcard query strings (`http://localhost:3000/**` or equivalent).
+
 ## Tooling expectations before commit
 
 - `pnpm typecheck` — must exit 0.
