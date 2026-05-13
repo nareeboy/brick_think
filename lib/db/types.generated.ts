@@ -83,6 +83,8 @@ export type Database = {
           deleted_at: string | null
           id: string
           owner_profile_id: string
+          thumbnail_path: string | null
+          thumbnail_updated_at: string | null
           title: string
           updated_at: string
         }
@@ -92,6 +94,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           owner_profile_id: string
+          thumbnail_path?: string | null
+          thumbnail_updated_at?: string | null
           title?: string
           updated_at?: string
         }
@@ -101,6 +105,8 @@ export type Database = {
           deleted_at?: string | null
           id?: string
           owner_profile_id?: string
+          thumbnail_path?: string | null
+          thumbnail_updated_at?: string | null
           title?: string
           updated_at?: string
         }
