@@ -174,6 +174,7 @@ export async function setModelOrgVisibilityAction(
     .from('models')
     .update({ org_id: orgId })
     .eq('id', modelId)
+    .is('deleted_at', null)
     .select('id');
   if (error) throw new Error(`Failed to update visibility: ${error.message}`);
   if (!data || data.length === 0) {
