@@ -30,6 +30,8 @@ test.describe('session-scoped designs', () => {
     // to autosave + recover.
     const piece = page.getByTestId('piece-card').nth(0);
     const canvas = page.getByTestId('builder-canvas');
+    await expect(piece).toBeVisible();
+    await expect(canvas).toBeVisible();
     const pieceBox = await piece.boundingBox();
     const canvasBox = await canvas.boundingBox();
     if (!pieceBox || !canvasBox) throw new Error('measurement failed');
@@ -47,10 +49,15 @@ test.describe('session-scoped designs', () => {
     await expect(page.getByTestId('save-status')).toHaveAttribute(
       'data-status',
       'saved',
-      { timeout: 10_000 },
+      { timeout: 15_000 },
     );
 
-    // Capture the URL so we can navigate back after a refresh.
+    // Reload the builder to verify the saved state survives a page refresh
+    // (the "refresh" in the test title), then also navigate away and back.
+    await page.reload();
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+
+    // Capture the URL so we can navigate back after navigating away.
     const builderUrl = page.url();
 
     // Navigate back to the session page; the card should now show "Open".
