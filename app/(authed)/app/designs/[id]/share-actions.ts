@@ -40,7 +40,7 @@ export async function createShareLink(
   // gives a friendlier error and is where the forward-compat gate lives.
   const modelRes = await supabase
     .from('models')
-    .select('id, owner_profile_id, org_id')
+    .select('id, owner_profile_id, org_id, session_id')
     .eq('id', modelId)
     .single();
   if (modelRes.error || !modelRes.data) {
@@ -55,14 +55,17 @@ export async function createShareLink(
   }
 
   // Org-shared and session-scoped designs are NOT shareable externally per
-  // Q7a/Q7b of the spec. Stream #1 (org-wide) has shipped, so the models.org_id
-  // check is active. Stream #2 (sessions) hasn't merged yet; the models.session_id
-  // check stays commented as a stub until that column exists on models.
+  // Q7a/Q7b of the spec. Stream #1 (org-wide) and stream #2 (sessions) have
+  // both shipped, so the models.org_id and models.session_id checks are
+  // both active. Keep the markers + comment so the tripwire test in
+  // share-actions.test.ts can verify the gates remain enforced.
   // FORWARD_COMPAT_GATE_BEGIN
   if (modelRes.data.org_id !== null) {
     throw new Error('Org-shared designs are not shareable.');
   }
-  // if (modelRes.data.session_id !== null) throw new Error('Session designs are not shareable.');
+  if (modelRes.data.session_id !== null) {
+    throw new Error('Session designs are not shareable.');
+  }
   // FORWARD_COMPAT_GATE_END
 
   const token = generateToken();

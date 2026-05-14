@@ -10,7 +10,7 @@ import { createShareLink, revokeShareLink } from './share-actions';
 
 function mockUser(
   userId: string | null,
-  modelOverrides: { org_id?: string | null } = {},
+  modelOverrides: { org_id?: string | null; session_id?: string | null } = {},
 ) {
   const inserted: unknown[] = [];
   const updated: { revoked_at?: string }[] = [];
@@ -24,6 +24,7 @@ function mockUser(
               id: 'm1',
               owner_profile_id: userId,
               org_id: modelOverrides.org_id ?? null,
+              session_id: modelOverrides.session_id ?? null,
             },
             error: null,
           }),
@@ -87,6 +88,11 @@ describe('createShareLink', () => {
     mockUser('u1', { org_id: 'org-1' });
     await expect(createShareLink('m1', '7d')).rejects.toThrow(/Org-shared designs are not shareable/);
   });
+
+  it('throws when the model is session-scoped (Q7b forward-compat gate)', async () => {
+    mockUser('u1', { session_id: 'sess-1' });
+    await expect(createShareLink('m1', '7d')).rejects.toThrow(/Session designs are not shareable/);
+  });
 });
 
 describe('revokeShareLink', () => {
@@ -119,10 +125,9 @@ describe('forward-compat tripwire', () => {
     expect(file).toMatch(/^\s+if \(modelRes\.data\.org_id !== null\) \{$/m);
   });
 
-  it('keeps the session_id check commented as a stub', () => {
-    // Stream #2 (sessions) hasn't merged yet; the column doesn't exist on
-    // models. The stub must stay commented to compile. When stream #2 ships,
-    // uncomment it and update this test to match the active form.
-    expect(file).toMatch(/^\s+\/\/ if \(modelRes\.data\.session_id !== null\)/m);
+  it('keeps the session_id check active (uncommented)', () => {
+    // Stream #2 (sessions) shipped 2026-05-14, so the session gate must be
+    // enforced. If someone re-comments this line, the test fails.
+    expect(file).toMatch(/^\s+if \(modelRes\.data\.session_id !== null\) \{$/m);
   });
 });
