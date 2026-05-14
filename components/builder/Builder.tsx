@@ -14,16 +14,30 @@ import { ModelTitle } from './ModelTitle';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
 import { BrickGlyph } from './UserBar';
+import { ShareToOrgMenu } from './ShareToOrgMenu';
 import type { ModelDetail } from '@/lib/models/types';
+import type { OrgSummary } from '@/lib/orgs/types';
 
 interface BuilderProps {
   userBar?: ReactNode;
   initialModel?: ModelDetail;
+  readOnly?: boolean;
+  ownerLabel?: string | null;
+  orgId?: string | null;
+  orgs?: OrgSummary[];
 }
 
-export function Builder({ userBar, initialModel }: BuilderProps) {
+export function Builder({
+  userBar,
+  initialModel,
+  readOnly = false,
+  ownerLabel = null,
+  orgId = null,
+  orgs = [],
+}: BuilderProps) {
   return (
     <BuilderProvider
+      readOnly={readOnly}
       initial={
         initialModel
           ? {
@@ -37,7 +51,14 @@ export function Builder({ userBar, initialModel }: BuilderProps) {
       <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900 md:h-[100dvh] md:min-h-0 md:overflow-hidden">
         <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
           <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
-            <UnifiedSidebar footer={userBar} />
+            <UnifiedSidebar
+              footer={userBar}
+              readOnly={readOnly}
+              ownerLabel={ownerLabel}
+              initialModel={initialModel}
+              orgId={orgId}
+              orgs={orgs}
+            />
             <CanvasStage />
           </div>
         </div>
@@ -47,7 +68,21 @@ export function Builder({ userBar, initialModel }: BuilderProps) {
   );
 }
 
-function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
+function UnifiedSidebar({
+  footer,
+  readOnly,
+  ownerLabel,
+  initialModel,
+  orgId,
+  orgs,
+}: {
+  footer?: ReactNode;
+  readOnly: boolean;
+  ownerLabel: string | null;
+  initialModel?: ModelDetail;
+  orgId: string | null;
+  orgs: OrgSummary[];
+}) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -98,7 +133,16 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
         <ModelTitle />
         <div className="flex items-center justify-between gap-2">
           <SaveStatus />
-          <HistoryButton />
+          <div className="flex items-center gap-2">
+            {readOnly ? (
+              <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900/5 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+                Read-only · {ownerLabel ?? 'shared'}
+              </span>
+            ) : initialModel ? (
+              <ShareToOrgMenu modelId={initialModel.id} orgs={orgs} currentOrgId={orgId} />
+            ) : null}
+            <HistoryButton />
+          </div>
         </div>
         <LayersPanel />
         <SaveBuildButton />
@@ -111,11 +155,12 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
 }
 
 function SaveBuildButton() {
-  const { modelId, groups, bricks } = useBuilderState();
+  const { modelId, groups, bricks, readOnly } = useBuilderState();
   const [open, setOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
 
   if (!modelId) return null;
+  if (readOnly) return null;
 
   return (
     <>

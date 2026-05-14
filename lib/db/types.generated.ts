@@ -82,6 +82,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
+          org_id: string | null
           owner_profile_id: string
           thumbnail_path: string | null
           thumbnail_updated_at: string | null
@@ -93,6 +94,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          org_id?: string | null
           owner_profile_id: string
           thumbnail_path?: string | null
           thumbnail_updated_at?: string | null
@@ -104,6 +106,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          org_id?: string | null
           owner_profile_id?: string
           thumbnail_path?: string | null
           thumbnail_updated_at?: string | null
@@ -111,6 +114,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "models_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "models_owner_profile_id_fkey"
             columns: ["owner_profile_id"]
@@ -251,6 +261,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_org_id: string | null
           avatar_url: string | null
           created_at: string
           email: string
@@ -259,6 +270,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_org_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email: string
@@ -267,6 +279,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_org_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string
@@ -274,7 +287,15 @@ export type Database = {
           id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_org_id_fkey"
+            columns: ["active_org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sessions: {
         Row: {

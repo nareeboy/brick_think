@@ -85,6 +85,7 @@ interface View {
 
 export interface BuilderState {
   modelId: string | null;
+  readOnly: boolean;
   title: string;
   setTitle: (t: string) => void;
   groups: LayerGroup[];
@@ -171,9 +172,11 @@ function findGroupInsertionStart(
 
 export function BuilderProvider({
   initial,
+  readOnly = false,
   children,
 }: {
   initial?: InitialBuilderState;
+  readOnly?: boolean;
   children: ReactNode;
 }) {
   const [data, setData] = useState<BuilderData>(() => {
@@ -206,6 +209,13 @@ export function BuilderProvider({
     [],
   );
 
+  function guard<Args extends unknown[], R>(
+    fn: (...args: Args) => R,
+    fallback: R,
+  ): (...args: Args) => R {
+    return (...args) => (readOnly ? fallback : fn(...args));
+  }
+
   const autosavePayload = useMemo(
     () => ({
       title,
@@ -220,6 +230,7 @@ export function BuilderProvider({
   const autosave = useAutosave({
     modelId,
     payload: autosavePayload,
+    disabled: readOnly,
   });
 
   const captureAndUploadThumbnail = useCallback(async (): Promise<void> => {
@@ -472,8 +483,9 @@ export function BuilderProvider({
   const value = useMemo<BuilderState>(
     () => ({
       modelId,
+      readOnly,
       title,
-      setTitle,
+      setTitle: guard(setTitle, undefined),
       groups: data.groups,
       bricks: data.bricks,
       activeGroupId: data.activeGroupId,
@@ -484,17 +496,17 @@ export function BuilderProvider({
       zoomBy,
       selectBrick,
       setActiveGroup,
-      addGroup,
-      renameGroup,
-      deleteGroup,
-      toggleGroupVisible,
-      toggleGroupCollapsed,
-      moveGroup,
-      addBrick,
-      updateBrick,
-      deleteBrick,
-      toggleBrickVisible,
-      moveBrick,
+      addGroup: guard(addGroup, ''),
+      renameGroup: guard(renameGroup, undefined),
+      deleteGroup: guard(deleteGroup, undefined),
+      toggleGroupVisible: guard(toggleGroupVisible, undefined),
+      toggleGroupCollapsed: guard(toggleGroupCollapsed, undefined),
+      moveGroup: guard(moveGroup, undefined),
+      addBrick: guard(addBrick, undefined),
+      updateBrick: guard(updateBrick, undefined),
+      deleteBrick: guard(deleteBrick, undefined),
+      toggleBrickVisible: guard(toggleBrickVisible, undefined),
+      moveBrick: guard(moveBrick, undefined),
       toast,
       dismissToast,
       saveStatus: autosave.status,
@@ -503,10 +515,13 @@ export function BuilderProvider({
       registerThumbnailCapture,
       captureAndUploadThumbnail,
     }),
+    // `guard` is an inline helper that closes over `readOnly`, which IS listed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       data,
       view,
       modelId,
+      readOnly,
       title,
       setTitle,
       zoomBy,
