@@ -14,8 +14,10 @@
 //   2. Host header is localhost / 127.0.0.1     ← Railway requests never match
 //   3. Request callerEmail matches @brick-think.test
 //
-// If any gate fails, the route responds 404 (or 400/403 for body errors) with
-// no body so its existence is not signalled to a probe.
+// If a gate fails, the route responds 404 with no body so its existence is
+// not signalled to a probe. Past-gate body errors (invalid JSON, bad email)
+// respond 400 with a JSON error code — those are reachable only by callers
+// already past the existence-hiding gates.
 //
 // If you find yourself needing to relax any of these, write a new dedicated
 // route instead and re-apply equivalent defence-in-depth.
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const callerEmail =
     typeof body.callerEmail === 'string' ? body.callerEmail.trim().toLowerCase() : '';
   if (!TEST_EMAIL_PATTERN.test(callerEmail)) {
-    return NextResponse.json({ error: 'email_not_allowed' }, { status: 403 });
+    return NextResponse.json({ error: 'email_not_allowed' }, { status: 400 });
   }
   const title =
     typeof body.title === 'string' && body.title.trim().length > 0
