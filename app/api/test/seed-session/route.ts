@@ -1,0 +1,190 @@
+// SECURITY: This route inserts sessions, stages, and (if missing) an
+// organisation + membership for a known test user, all via the service-role
+// client. It exists ONLY to support Playwright E2E tests against a local dev
+// stack.
+//
+// Why no NODE_ENV check: Playwright runs against `pnpm start` (i.e. `next
+// start`), which forces NODE_ENV = 'production' internally. Railway production
+// and preview environments also run with NODE_ENV = 'production'. A
+// NODE_ENV !== 'production' gate would either disable the route in our actual
+// test harness (useless) or give a false sense of security in prod. Instead
+// we rely on three independent gates, ALL of which must pass:
+//
+//   1. E2E_SESSIONS_ENABLED === '1'        ← never set this on Railway
+//   2. Host header is localhost / 127.0.0.1     ← Railway requests never match
+//   3. Request callerEmail matches @brick-think.test
+//
+// If any gate fails, the route responds 404 (or 400/403 for body errors) with
+// no body so its existence is not signalled to a probe.
+//
+// If you find yourself needing to relax any of these, write a new dedicated
+// route instead and re-apply equivalent defence-in-depth.
+
+import { NextResponse, type NextRequest } from 'next/server';
+
+import { getServiceSupabaseClient } from '@/lib/db/service';
+import type { StageType } from '@/lib/sessions/types';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const TEST_EMAIL_PATTERN = /^[a-z0-9._-]+@brick-think\.test$/i;
+const STAGE_ORDER: StageType[] = [
+  'skill_building',
+  'individual_model',
+  'shared_model',
+  'system_model',
+  'guiding_principles',
+];
+
+function isAllowedHost(host: string | null): boolean {
+  if (!host) return false;
+  const hostname = host.split(':')[0]?.toLowerCase() ?? '';
+  return hostname === 'localhost' || hostname === '127.0.0.1';
+}
+
+function isEnabled(request: NextRequest): boolean {
+  if (process.env.E2E_SESSIONS_ENABLED !== '1') return false;
+  return isAllowedHost(request.headers.get('host'));
+}
+
+function notFound(): NextResponse {
+  return new NextResponse(null, { status: 404 });
+}
+
+interface SeedBody {
+  callerEmail?: unknown;
+  title?: unknown;
+}
+
+export async function POST(request: NextRequest): Promise<NextResponse> {
+  if (!isEnabled(request)) return notFound();
+
+  let body: SeedBody;
+  try {
+    body = (await request.json()) as SeedBody;
+  } catch {
+    return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  const callerEmail =
+    typeof body.callerEmail === 'string' ? body.callerEmail.trim().toLowerCase() : '';
+  if (!TEST_EMAIL_PATTERN.test(callerEmail)) {
+    return NextResponse.json({ error: 'email_not_allowed' }, { status: 403 });
+  }
+  const title =
+    typeof body.title === 'string' && body.title.trim().length > 0
+      ? body.title.trim().slice(0, 200)
+      : `Test session ${Date.now()}`;
+
+  const admin = getServiceSupabaseClient();
+
+  // 1. Resolve the caller's profile by email. Must already exist (created by
+  //    a prior /api/test/sign-in call); otherwise 404.
+  const profileRes = await admin
+    .from('profiles')
+    .select('id, active_org_id')
+    .eq('email', callerEmail)
+    .maybeSingle();
+  if (profileRes.error) {
+    return NextResponse.json(
+      { error: 'profile_lookup_failed', detail: profileRes.error.message },
+      { status: 500 },
+    );
+  }
+  const profile = profileRes.data;
+  if (!profile) {
+    return NextResponse.json(
+      { error: 'profile_not_found', detail: 'sign in via /api/test/sign-in first' },
+      { status: 404 },
+    );
+  }
+
+  // 2. Ensure the caller has an active org. If not, create one + own
+  //    membership + flip active_org_id.
+  let orgId: string | null = profile.active_org_id;
+  if (!orgId) {
+    const orgRes = await admin
+      .from('organisations')
+      .insert({
+        name: 'Test org',
+        slug: `test-org-${profile.id.slice(0, 8)}`,
+        owner_id: profile.id,
+      })
+      .select('id')
+      .single();
+    if (orgRes.error || !orgRes.data) {
+      return NextResponse.json(
+        { error: 'org_create_failed', detail: orgRes.error?.message ?? 'unknown' },
+        { status: 500 },
+      );
+    }
+    orgId = orgRes.data.id;
+    const memberRes = await admin.from('org_memberships').insert({
+      org_id: orgId,
+      profile_id: profile.id,
+      role: 'owner',
+    });
+    if (memberRes.error) {
+      return NextResponse.json(
+        { error: 'membership_create_failed', detail: memberRes.error.message },
+        { status: 500 },
+      );
+    }
+    const profileUpdate = await admin
+      .from('profiles')
+      .update({ active_org_id: orgId })
+      .eq('id', profile.id);
+    if (profileUpdate.error) {
+      return NextResponse.json(
+        { error: 'profile_update_failed', detail: profileUpdate.error.message },
+        { status: 500 },
+      );
+    }
+  }
+
+  // 3. Create the session.
+  const sessionRes = await admin
+    .from('sessions')
+    .insert({
+      org_id: orgId,
+      facilitator_id: profile.id,
+      title,
+    })
+    .select('id')
+    .single();
+  if (sessionRes.error || !sessionRes.data) {
+    return NextResponse.json(
+      { error: 'session_create_failed', detail: sessionRes.error?.message ?? 'unknown' },
+      { status: 500 },
+    );
+  }
+  const sessionId = sessionRes.data.id;
+
+  // 4. Create the five canonical stages in enum order, position 0..4.
+  const stageRows = STAGE_ORDER.map((stage_type, position) => ({
+    session_id: sessionId,
+    stage_type,
+    position,
+  }));
+  const stagesRes = await admin
+    .from('stages')
+    .insert(stageRows)
+    .select('id, stage_type');
+  if (stagesRes.error || !stagesRes.data) {
+    return NextResponse.json(
+      { error: 'stages_create_failed', detail: stagesRes.error?.message ?? 'unknown' },
+      { status: 500 },
+    );
+  }
+
+  const stageIds = Object.fromEntries(
+    stagesRes.data.map((s) => [s.stage_type as StageType, s.id as string]),
+  ) as Record<StageType, string>;
+
+  return NextResponse.json({
+    sessionId,
+    orgId,
+    stageIds,
+  });
+}
