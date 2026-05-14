@@ -2,6 +2,7 @@
 
 import type Konva from 'konva';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { Image as KImage, Layer, Stage, Transformer } from 'react-konva';
 
 import { useBrickImage } from '@/components/canvas/BrickImage';
@@ -16,6 +17,8 @@ import {
   useBuilderState,
   type BrickInstance,
 } from './builderState';
+
+const PAN_DRAG_THRESHOLD_PX = 3;
 
 function selectionOverlay(
   brick: BrickInstance,
@@ -122,6 +125,7 @@ export function BuilderCanvas() {
     updateBrick,
     deleteBrick,
     view,
+    setPan,
     zoomBy,
     registerThumbnailCapture,
   } = useBuilderState();
@@ -129,6 +133,8 @@ export function BuilderCanvas() {
   const [interacting, setInteracting] = useState(false);
   const transformerRef = useRef<Konva.Transformer | null>(null);
   const nodeRegistry = useRef(new Map<string, Konva.Image>());
+  const panStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
 
   const visibleBricks = useMemo(() => {
     const groupVisible = new Map<string, boolean>();
@@ -180,7 +186,56 @@ export function BuilderCanvas() {
   }
 
   function handleStageMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
-    if (e.target === e.target.getStage()) selectBrick(null);
+    if (e.target !== e.target.getStage()) {
+      panStartRef.current = null;
+      return;
+    }
+    // Click started on empty stage. Arm a pan candidate; defer the deselect to
+    // pointerup-without-drag so dragging an empty area pans without losing the
+    // current selection.
+    panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
+  }
+
+  function handleContainerPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    // Konva's onMouseDown fires first (its native listener on .konvajs-content
+    // runs during bubble before React's delegated dispatcher). By this point
+    // panStartRef is either set (started on stage background) or null (started
+    // on a brick). All we add here is DOM pointer capture so pan tracking
+    // survives the pointer leaving the canvas mid-drag.
+    if (
+      panStartRef.current &&
+      typeof e.currentTarget.setPointerCapture === 'function'
+    ) {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
+  }
+
+  function handleContainerPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    const start = panStartRef.current;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (!isPanning) {
+      if (Math.hypot(dx, dy) < PAN_DRAG_THRESHOLD_PX) return;
+      setIsPanning(true);
+    }
+    start.x = e.clientX;
+    start.y = e.clientY;
+    setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+  }
+
+  function endPan(e: ReactPointerEvent<HTMLDivElement>) {
+    if (!panStartRef.current) return;
+    const wasPanning = isPanning;
+    panStartRef.current = null;
+    if (wasPanning) setIsPanning(false);
+    else selectBrick(null);
+    if (
+      typeof e.currentTarget.hasPointerCapture === 'function' &&
+      e.currentTarget.hasPointerCapture(e.pointerId)
+    ) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
   }
 
   function handleMove(id: string, x: number, y: number) {
@@ -247,7 +302,15 @@ export function BuilderCanvas() {
   const overlay = selectedBrick && !interacting ? selectionOverlay(selectedBrick, pan, zoom) : null;
 
   return (
-    <div ref={containerRef} className="absolute inset-0">
+    <div
+      ref={containerRef}
+      data-testid="builder-canvas-surface"
+      className={`absolute inset-0 touch-none ${isPanning ? 'cursor-grabbing' : ''}`}
+      onPointerDown={handleContainerPointerDown}
+      onPointerMove={handleContainerPointerMove}
+      onPointerUp={endPan}
+      onPointerCancel={endPan}
+    >
       <ul aria-hidden="true" className="sr-only" data-testid="placed-brick-list">
         {visibleBricks.map((b) => (
           <li key={b.id} data-testid="placed-brick" data-brick-id={b.id} />
@@ -314,7 +377,10 @@ export function BuilderCanvas() {
                 <TrashIcon className="h-4 w-4" />
               </button>
             ) : null}
-            <div className="pointer-events-auto absolute bottom-5 right-5 inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white/85 p-1.5 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur">
+            <div
+              className="pointer-events-auto absolute bottom-5 right-5 inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white/85 p-1.5 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <ZoomButton
                 aria-label="Zoom out"
                 disabled={zoom <= MIN_ZOOM + 1e-6}
