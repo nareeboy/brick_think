@@ -68,6 +68,28 @@ This is the second half of the fix: never push a WIP migration to remote just to
 - If you need both running, use `PORT=3100 pnpm test:e2e`. Re-run `pnpm build:e2e` if you see "Could not find a production build in the '.next' directory".
 - The fixture creates one `e2e-<rand>@brick-think.test` auth user per test and deletes it in fixture teardown via [/api/test/delete-user](app/api/test/delete-user/route.ts), so `auth.users` no longer accumulates. If a teardown ever fails (logged as `[e2e] cleanup failed …`), the fallback sweep is `delete from auth.users where email like 'e2e-%@brick-think.test'`. The delete route uses the same three-gate defence as `/api/test/sign-in` plus a hard refusal to touch any user whose email isn't in the test domain.
 
+### Playwright session-seed fixture
+
+`seededSession` (in [e2e/fixtures.ts](e2e/fixtures.ts)) creates a fresh session and its five stages per test via the dev-only [/api/test/seed-session](app/api/test/seed-session/route.ts) route. The route has three independent gates, all required: `E2E_SESSIONS_ENABLED=1` (set in [playwright.config.ts](playwright.config.ts) `webServer.env`), a `localhost`/`127.0.0.1` host check, and the same `@brick-think.test` email allowlist on `callerEmail`. **Never set `E2E_SESSIONS_ENABLED` on Railway.** Same defence-in-depth pattern as `/api/test/sign-in`; read the comment at the top of the route file before adding, removing, or weakening any gate.
+
+The fixture requires the caller to have signed in once first via `/api/test/sign-in` (the seed route looks up the profile row by email). It bootstraps an org + owner membership for a brand-new test user if `profiles.active_org_id` is null. The created session is owned by the caller as facilitator. The owner membership is inserted automatically by the `handle_new_organisation` DB trigger; the route only inserts the org row and updates `profiles.active_org_id`.
+
+Manual dev curl after `E2E_AUTH_ENABLED=1 E2E_SESSIONS_ENABLED=1 pnpm dev`:
+
+```bash
+curl -X POST http://localhost:3000/api/test/sign-in \
+  -H 'content-type: application/json' \
+  -d '{"email":"e2e-dev@brick-think.test"}'
+
+curl -X POST http://localhost:3000/api/test/seed-session \
+  -H 'content-type: application/json' \
+  -d '{"callerEmail":"e2e-dev@brick-think.test"}'
+```
+
+The returned `sessionId` plugs straight into `/app/sessions/<id>` in the browser.
+
+Sessions and stages accumulate over time alongside the test auth users. Clean periodically via SQL: `delete from public.sessions where title like 'Test session%';` (cascades to stages, models, and any future child rows).
+
 ## Process
 
 - Specs, plans, brainstorming output → `docs/superpowers/<specs|plans|followups>/`. **Do not commit them.**
