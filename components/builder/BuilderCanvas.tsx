@@ -39,6 +39,7 @@ function selectionOverlay(
 interface BrickNodeProps {
   brick: BrickInstance;
   selected: boolean;
+  panLocked: boolean;
   onSelect: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onRotate: (id: string) => void;
@@ -51,6 +52,7 @@ interface BrickNodeProps {
 function BrickNode({
   brick,
   selected,
+  panLocked,
   onSelect,
   onMove,
   onRotate,
@@ -78,7 +80,11 @@ function BrickNode({
       offsetX={brick.width / 2}
       offsetY={brick.height / 2}
       rotation={brick.rotation}
-      draggable
+      // While the user holds Space to pan, suppress brick interactions
+      // (select/drag/transform) so the pointer-down on a brick falls
+      // through to the canvas-level pan handler.
+      draggable={!panLocked}
+      listening={!panLocked}
       stroke={selected ? '#c0613d' : undefined}
       strokeWidth={selected ? 3 : 0}
       shadowColor={selected ? '#c0613d' : 'transparent'}
@@ -135,6 +141,9 @@ export function BuilderCanvas() {
   const nodeRegistry = useRef(new Map<string, Konva.Image>());
   const panStartRef = useRef<{ x: number; y: number } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
+  // Spacebar-held pan mode (Figma convention). When true, brick
+  // interactions are suppressed and any drag pans the canvas.
+  const [panLocked, setPanLocked] = useState(false);
 
   const visibleBricks = useMemo(() => {
     const groupVisible = new Map<string, boolean>();
@@ -186,14 +195,16 @@ export function BuilderCanvas() {
   }
 
   function handleStageMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
-    if (e.target !== e.target.getStage()) {
-      panStartRef.current = null;
+    if (panLocked || e.target === e.target.getStage()) {
+      // panLocked: every drag pans, even over a brick (Brick listening is
+      // already off via the panLocked prop, so this branch handles the
+      // empty-area case where the event reaches the Stage).
+      // Otherwise: click started on the empty stage background — arm a pan
+      // candidate and defer the deselect to pointerup-without-drag.
+      panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
       return;
     }
-    // Click started on empty stage. Arm a pan candidate; defer the deselect to
-    // pointerup-without-drag so dragging an empty area pans without losing the
-    // current selection.
-    panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
+    panStartRef.current = null;
   }
 
   function handleContainerPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
@@ -272,6 +283,40 @@ export function BuilderCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  // Spacebar held → pan-lock. Released → back to brick interaction. Skipped
+  // while an input is focused so typing a space in a label doesn't toggle
+  // canvas mode. preventDefault on the keydown stops space from scrolling
+  // the page when the canvas has no scroll container of its own.
+  useEffect(() => {
+    function shouldIgnore(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      return tag === 'INPUT' || tag === 'TEXTAREA' || target.isContentEditable;
+    }
+    function onDown(e: KeyboardEvent) {
+      if (e.code !== 'Space' || e.repeat) return;
+      if (shouldIgnore(e.target)) return;
+      e.preventDefault();
+      setPanLocked(true);
+    }
+    function onUp(e: KeyboardEvent) {
+      if (e.code !== 'Space') return;
+      setPanLocked(false);
+    }
+    function onBlur() {
+      // Window blur drops the keyup; clear the lock so it doesn't stick.
+      setPanLocked(false);
+    }
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
+      window.removeEventListener('blur', onBlur);
+    };
+  }, []);
+
   useEffect(() => {
     registerThumbnailCapture(async () => {
       await new Promise(requestAnimationFrame);
@@ -305,7 +350,9 @@ export function BuilderCanvas() {
     <div
       ref={containerRef}
       data-testid="builder-canvas-surface"
-      className={`absolute inset-0 touch-none ${isPanning ? 'cursor-grabbing' : ''}`}
+      className={`absolute inset-0 touch-none ${
+        isPanning ? 'cursor-grabbing' : panLocked ? 'cursor-grab' : ''
+      }`}
       onPointerDown={handleContainerPointerDown}
       onPointerMove={handleContainerPointerMove}
       onPointerUp={endPan}
@@ -333,6 +380,7 @@ export function BuilderCanvas() {
                   key={b.id}
                   brick={b}
                   selected={selectedId === b.id}
+                  panLocked={panLocked}
                   onSelect={selectBrick}
                   onMove={handleMove}
                   onRotate={handleRotate}
@@ -352,6 +400,8 @@ export function BuilderCanvas() {
                 anchorStroke="#c0613d"
                 anchorFill="#ffffff"
                 anchorCornerRadius={2}
+                // Suppress resize-handle interaction while space-pan is held.
+                listening={!panLocked}
                 boundBoxFunc={(oldBox, newBox) => {
                   if (newBox.width < MIN_PIECE_SIZE || newBox.height < MIN_PIECE_SIZE) return oldBox;
                   if (newBox.width > MAX_PIECE_SIZE || newBox.height > MAX_PIECE_SIZE) return oldBox;
