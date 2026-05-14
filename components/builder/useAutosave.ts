@@ -43,7 +43,17 @@ export function useAutosave<P>({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(p),
       });
-      if (!res.ok) throw new Error(`PATCH ${res.status}`);
+      if (!res.ok) {
+        // 4xx is terminal (no retry). The two cases we expect today:
+        //   404 — model was hard-deleted (purge / cron / dashboard).
+        //   410 — model was soft-deleted (trashed). Trigger refuses any
+        //          update while deleted_at IS NOT NULL.
+        // Anything in 5xx (or a network throw) goes through retry.
+        if (res.status >= 400 && res.status < 500) {
+          throw new Error(`PATCH ${res.status}`, { cause: 'terminal' });
+        }
+        throw new Error(`PATCH ${res.status}`);
+      }
       lastFiredPayload.current = p;
       setLastSavedAt(Date.now());
       attemptRef.current = 0;
@@ -56,8 +66,9 @@ export function useAutosave<P>({
       pendingPayload.current = null;
       inFlight.current = null;
       setStatus('saved');
-    } catch {
-      if (attemptRef.current < RETRY_DELAYS_MS.length) {
+    } catch (err) {
+      const terminal = err instanceof Error && err.cause === 'terminal';
+      if (!terminal && attemptRef.current < RETRY_DELAYS_MS.length) {
         const delay = RETRY_DELAYS_MS[attemptRef.current]!;
         attemptRef.current += 1;
         setTimeout(() => {

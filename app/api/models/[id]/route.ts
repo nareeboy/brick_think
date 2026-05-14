@@ -56,6 +56,13 @@ export async function PATCH(
     if (error.code === 'PGRST116') {
       return NextResponse.json({ error: 'not found' }, { status: 404 });
     }
+    // The reject_update_to_trashed_model trigger raises P0001 when the
+    // caller tries to mutate a row that has been soft-deleted. Surface
+    // as 410 Gone so the autosave hook treats this as a terminal error
+    // (no retry) rather than a transient 500.
+    if (error.code === 'P0001') {
+      return NextResponse.json({ error: 'model trashed' }, { status: 410 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   if (!data) return NextResponse.json({ error: 'not found' }, { status: 404 });
