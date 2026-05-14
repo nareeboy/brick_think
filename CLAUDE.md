@@ -58,6 +58,14 @@ E2E exercises the **local** Supabase stack (`pnpm db:start`), not the remote pro
 
 This is the second half of the fix: never push a WIP migration to remote just to make E2E pass. New migrations must apply cleanly via `pnpm db:reset` (against the local stack) before E2E.
 
+For interactive local-Supabase development (manually testing UI changes against the local stack with Mailpit for magic-link emails, no rate limits), `pnpm dev:e2e` is the symmetric wrapper around `next dev`. Use this instead of `pnpm dev` when you want sign-up to land in Mailpit at `http://127.0.0.1:54324` rather than going through the remote project's email service.
+
+### Kong stale-upstream after `pnpm db:reset`
+
+Local Supabase runs `kong` as the API gateway in front of `gotrue` (auth), `postgrest`, etc. Kong resolves each upstream's container IP at startup. `pnpm db:reset` restarts the auth container, which gets a new Docker IP — but Kong's resolved upstream still points at the old (now-dead) IP. Symptom: any call through `/auth/v1/...` returns `502 An invalid response was received from the upstream server`, often surfacing in the UI as a serialised empty-object `{}` error message because some Supabase JS clients lose the upstream's message in serialisation.
+
+Fix: `docker restart supabase_kong_brick_think` to force Kong to re-resolve upstreams. Takes ~2 seconds. Alternatively `pnpm db:stop && pnpm db:start` restarts everything cleanly.
+
 ### Playwright auth fixture
 
 `signedInPage` mints a Supabase session by posting to the dev-only [/api/test/sign-in](app/api/test/sign-in/route.ts) route. The route has three independent gates, all required: `E2E_AUTH_ENABLED=1` (set in [playwright.config.ts](playwright.config.ts) webServer env), a `localhost`/`127.0.0.1` host check, and an `@brick-think.test` email pattern. **Never set `E2E_AUTH_ENABLED` on Railway.** Read the comment at the top of the route file before adding, removing, or weakening any gate — `NODE_ENV` was deliberately *not* used as a gate (see the comment for why).
