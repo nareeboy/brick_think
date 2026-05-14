@@ -69,7 +69,6 @@ export default async function DesignsPage() {
       .select('id, title, updated_at, thumbnail_path, thumbnail_updated_at')
       .eq('owner_profile_id', user.id)
       .is('org_id', null)
-      .is('session_id', null)
       .order('updated_at', { ascending: false });
     if (error) throw new Error(`Failed to load designs: ${error.message}`);
     rows = (data ?? []) as RawRow[];
@@ -81,7 +80,6 @@ export default async function DesignsPage() {
         'id, title, updated_at, thumbnail_path, thumbnail_updated_at, owner_profile_id, profiles:owner_profile_id ( email, full_name )',
       )
       .eq('org_id', activeOrgId)
-      .is('session_id', null)
       .order('updated_at', { ascending: false });
     if (error) throw new Error(`Failed to load designs: ${error.message}`);
     rows = (data ?? []) as unknown as RawRow[];
