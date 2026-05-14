@@ -122,17 +122,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     orgId = orgRes.data.id;
-    const memberRes = await admin.from('org_memberships').insert({
-      org_id: orgId,
-      profile_id: profile.id,
-      role: 'owner',
-    });
-    if (memberRes.error) {
-      return NextResponse.json(
-        { error: 'membership_create_failed', detail: memberRes.error.message },
-        { status: 500 },
-      );
-    }
+    // Note: the handle_new_organisation trigger on public.organisations
+    // auto-inserts the owner membership row on org insert, so we do not
+    // insert into org_memberships manually here (that would be a duplicate).
     const profileUpdate = await admin
       .from('profiles')
       .update({ active_org_id: orgId })
