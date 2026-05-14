@@ -98,6 +98,18 @@ The returned `sessionId` plugs straight into `/app/sessions/<id>` in the browser
 
 Sessions and stages accumulate over time alongside the test auth users. Clean periodically via SQL: `delete from public.sessions where title like 'Test session%';` (cascades to stages, models, and any future child rows).
 
+## UI conventions
+
+### Org context lives on the page, not the global header
+
+The `ContextSwitcher` is rendered **inside each org-scoped list page**, not in the [GlobalHeader](components/app/GlobalHeader.tsx). The pattern (see [app/(authed)/app/designs/page.tsx](<app/(authed)/app/designs/page.tsx>) and [app/(authed)/app/sessions/page.tsx](<app/(authed)/app/sessions/page.tsx>) as the canonical references):
+
+1. Fetch `org_memberships` + `profiles.active_org_id` in the page's server component.
+2. Render the active context name (`activeOrgName ?? 'Personal'`) as the eyebrow above the page title — *not* the literal string "BrickThink".
+3. Beneath the title row, render `<label>Organisation:</label>` + `<ContextSwitcher orgs activeOrgId buttonId="organisation-switcher" />` so users know which menu controls what they're looking at.
+
+When you add a new org-scoped list page, follow the same shape rather than reintroducing a header-level switcher. The page-level placement makes "whose data is this?" visible without opening the menu, and keeps each list page self-contained.
+
 ## Process
 
 - Specs, plans, brainstorming output → `docs/superpowers/<specs|plans|followups>/`. **Do not commit them.**
