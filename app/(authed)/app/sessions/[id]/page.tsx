@@ -5,7 +5,7 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { StageRow } from '@/lib/sessions/types';
 
-import { SessionStageList } from './SessionStageList';
+import { SessionStageList, type ParticipantModel } from './SessionStageList';
 import { SessionTitle } from './SessionTitle';
 
 export const dynamic = 'force-dynamic';
@@ -59,35 +59,74 @@ export default async function SessionDetailPage({
   }
   const stages = (stagesRes.data ?? []) as StageRow[];
 
-  const ownedRes = await supabase
-    .from('models')
-    .select('id, title, updated_at, stage_id')
-    .eq('session_id', id)
-    .eq('owner_profile_id', user.id)
-    .is('deleted_at', null);
-  if (ownedRes.error) {
-    throw new Error(`Failed to load your session models: ${ownedRes.error.message}`);
-  }
-  const ownedModels = (ownedRes.data ?? []).filter(
-    (m): m is typeof m & { stage_id: string } => m.stage_id !== null,
-  );
-
-  // Rename permission mirrors the sessions UPDATE RLS: facilitator OR org
-  // admin. Org-admin check is via membership role; we resolve it here so the
-  // client component can render the title as plain text for non-authorised
-  // viewers (and skip the editing affordance entirely).
-  let canRename = session.facilitator_id === user.id;
-  if (!canRename) {
+  // Manage permission mirrors the sessions UPDATE/DELETE RLS: facilitator OR
+  // org admin. Drives rename, delete, edit-meta, and the participants view —
+  // anything that goes beyond "viewing the session as a participant".
+  let canManageSession = session.facilitator_id === user.id;
+  if (!canManageSession) {
     const { data: membership } = await supabase
       .from('org_memberships')
       .select('role')
       .eq('org_id', session.org_id)
       .eq('profile_id', user.id)
       .maybeSingle();
-    canRename =
+    canManageSession =
       membership !== null &&
       membership !== undefined &&
       (membership.role === 'owner' || membership.role === 'admin');
+  }
+
+  // Facilitators / admins see every participant's models grouped under the
+  // stage; participants see only their own. The RLS SELECT policy on `models`
+  // already permits session-org-members to read all session-scoped rows, so
+  // the gate here is purely UX (don't show participants a roster they can't
+  // act on anyway).
+  const modelsQueryBase = supabase
+    .from('models')
+    .select(
+      'id, title, updated_at, stage_id, owner_profile_id, profiles:owner_profile_id ( email, full_name )',
+    )
+    .eq('session_id', id)
+    .is('deleted_at', null);
+  const modelsRes = canManageSession
+    ? await modelsQueryBase
+    : await modelsQueryBase.eq('owner_profile_id', user.id);
+  if (modelsRes.error) {
+    throw new Error(`Failed to load session models: ${modelsRes.error.message}`);
+  }
+
+  interface ModelRowFromQuery {
+    id: string;
+    title: string;
+    updated_at: string;
+    stage_id: string | null;
+    owner_profile_id: string;
+    profiles: { email: string; full_name: string | null } | null;
+  }
+  const allModels = ((modelsRes.data ?? []) as unknown as ModelRowFromQuery[]).filter(
+    (m): m is ModelRowFromQuery & { stage_id: string } => m.stage_id !== null,
+  );
+  const ownedModels = allModels
+    .filter((m) => m.owner_profile_id === user.id)
+    .map(({ id: rowId, title, updated_at, stage_id }) => ({
+      id: rowId,
+      title,
+      updated_at,
+      stage_id,
+    }));
+  const participantsByStage: Record<string, ParticipantModel[]> = {};
+  if (canManageSession) {
+    for (const m of allModels) {
+      if (m.owner_profile_id === user.id) continue;
+      const label = m.profiles?.full_name?.trim() || m.profiles?.email || 'Unknown';
+      const list = participantsByStage[m.stage_id] ?? [];
+      list.push({
+        id: m.id,
+        title: m.title,
+        ownerLabel: label,
+      });
+      participantsByStage[m.stage_id] = list;
+    }
   }
 
   return (
@@ -101,7 +140,7 @@ export default async function SessionDetailPage({
             <SessionTitle
               sessionId={session.id}
               initialTitle={session.title}
-              canRename={canRename}
+              canRename={canManageSession}
             />
           </div>
         </header>
@@ -109,6 +148,7 @@ export default async function SessionDetailPage({
           sessionId={session.id}
           stages={stages}
           ownedModels={ownedModels}
+          participantsByStage={participantsByStage}
         />
       </div>
     </main>
