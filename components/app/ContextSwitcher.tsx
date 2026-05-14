@@ -65,9 +65,6 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
         disabled={pending}
         className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-900/10 bg-white px-3 text-[13px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-900/5 disabled:opacity-60"
       >
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Context
-        </span>
         <span>{activeLabel}</span>
         <ChevronIcon />
       </button>

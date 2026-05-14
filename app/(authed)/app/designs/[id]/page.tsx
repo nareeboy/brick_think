@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 
 import { Builder } from '@/components/builder/Builder';
-import { UserBar } from '@/components/builder/UserBar';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { parseCanvasState } from '@/lib/models/canvasState';
@@ -85,7 +84,6 @@ export default async function DesignBuilderPage({
 
   return (
     <Builder
-      userBar={<UserBar email={user.email} />}
       initialModel={initialModel}
       readOnly={readOnly}
       ownerLabel={ownerLabel}

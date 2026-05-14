@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { ContextSwitcher } from '@/components/app/ContextSwitcher';
+import { GlobalHeader } from '@/components/app/GlobalHeader';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
@@ -22,7 +21,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
   const [profileRes, membershipsRes] = await Promise.all([
     supabase
       .from('profiles')
-      .select('active_org_id')
+      .select('active_org_id, full_name, email')
       .eq('id', user.id)
       .single(),
     supabase
@@ -50,19 +49,18 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const activeOrgId = profileRes.data?.active_org_id ?? null;
+  const email = profileRes.data?.email ?? user.email ?? null;
+  const userName = profileRes.data?.full_name?.trim() || email || 'You';
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
-      <header className="flex items-center justify-between gap-4 border-b border-zinc-900/5 bg-white px-5 py-3">
-        <Link
-          href="/app/designs"
-          className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 hover:text-zinc-900"
-        >
-          BrickThink
-        </Link>
-        <ContextSwitcher orgs={orgs} activeOrgId={activeOrgId} />
-      </header>
-      <div className="flex-1">{children}</div>
+      <GlobalHeader
+        orgs={orgs}
+        activeOrgId={activeOrgId}
+        userName={userName}
+        userEmail={email}
+      />
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );
 }

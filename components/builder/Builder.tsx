@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 
 import { SaveVersionModal } from './SaveVersionModal';
 import { ShareModal } from './ShareModal';
@@ -14,13 +13,11 @@ import { LayersPanel } from './LayersPanel';
 import { ModelTitle } from './ModelTitle';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
-import { BrickGlyph } from './UserBar';
 import { ShareToOrgMenu } from './ShareToOrgMenu';
 import type { ModelDetail } from '@/lib/models/types';
 import type { OrgSummary } from '@/lib/orgs/types';
 
 interface BuilderProps {
-  userBar?: ReactNode;
   initialModel?: ModelDetail;
   readOnly?: boolean;
   ownerLabel?: string | null;
@@ -29,7 +26,6 @@ interface BuilderProps {
 }
 
 export function Builder({
-  userBar,
   initialModel,
   readOnly = false,
   ownerLabel = null,
@@ -49,11 +45,10 @@ export function Builder({
           : undefined
       }
     >
-      <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900 md:h-[100dvh] md:min-h-0 md:overflow-hidden">
-        <div className="mx-auto flex h-full max-w-[1600px] flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
+      <div className="flex min-h-0 flex-1 flex-col bg-[#FAF7F1] text-zinc-900 md:overflow-hidden">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
           <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
             <UnifiedSidebar
-              footer={userBar}
               readOnly={readOnly}
               ownerLabel={ownerLabel}
               initialModel={initialModel}
@@ -70,14 +65,12 @@ export function Builder({
 }
 
 function UnifiedSidebar({
-  footer,
   readOnly,
   ownerLabel,
   initialModel,
   orgId,
   orgs,
 }: {
-  footer?: ReactNode;
   readOnly: boolean;
   ownerLabel: string | null;
   initialModel?: ModelDetail;
@@ -92,46 +85,39 @@ function UnifiedSidebar({
         collapsed ? 'md:w-14' : 'md:w-[360px]'
       }`}
     >
-      <div
-        className={`flex items-center gap-2 border-b border-zinc-900/5 p-3 ${
-          collapsed ? 'md:flex-col md:gap-1 md:p-2' : ''
-        }`}
-      >
-        <Link
-          href="/app/designs"
-          aria-label="Back to my designs"
-          className="inline-flex items-center gap-2 rounded-md px-1 py-0.5 transition-colors hover:bg-zinc-900/5"
-        >
-          <BrickGlyph />
-          <span
-            className={`text-[14px] font-semibold tracking-tight text-zinc-900 ${
-              collapsed ? 'md:hidden' : ''
-            }`}
+      {collapsed ? (
+        <div className="hidden items-center justify-center p-2 md:flex">
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            aria-label="Expand sidebar"
+            title="Expand sidebar"
+            className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
           >
-            BrickThink
-          </span>
-        </Link>
-        <button
-          type="button"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={`hidden h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 md:inline-flex ${
-            collapsed ? '' : 'ml-auto'
-          }`}
-        >
-          <ChevronLeft
-            className={`h-3.5 w-3.5 transition-transform ${collapsed ? 'rotate-180' : ''}`}
-          />
-        </button>
-      </div>
+            <ChevronLeft className="h-3.5 w-3.5 rotate-180" />
+          </button>
+        </div>
+      ) : null}
 
       <div
         className={`flex min-h-0 flex-1 flex-col gap-4 p-5 ${
           collapsed ? 'md:hidden' : ''
         }`}
       >
-        <ModelTitle />
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">
+            <ModelTitle />
+          </div>
+          <button
+            type="button"
+            onClick={() => setCollapsed(true)}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+            className="hidden h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 md:inline-flex"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+        </div>
         <div className="flex items-center justify-between gap-2">
           <SaveStatus />
           <div className="flex items-center gap-2">
@@ -152,9 +138,6 @@ function UnifiedSidebar({
         </div>
         <LayersPanel />
         <SaveBuildButton />
-        {footer ? (
-          <div className="border-t border-zinc-900/5 pt-3">{footer}</div>
-        ) : null}
       </div>
     </aside>
   );
