@@ -24,6 +24,17 @@ export const SESSION_STATUSES: SessionStatus[] = [
   'archived',
 ];
 
+// Stage_type values in their canonical Serious Play order. Both the
+// session create action and the integration test harness use this to
+// insert the five stage rows in a fresh session.
+export const CANONICAL_STAGE_TYPES: StageType[] = [
+  'skill_building',
+  'individual_model',
+  'shared_model',
+  'system_model',
+  'guiding_principles',
+];
+
 export interface StageRow {
   id: string;
   session_id: string;

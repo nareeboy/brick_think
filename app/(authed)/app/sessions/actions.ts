@@ -8,6 +8,7 @@ import type { Json } from '@/lib/db/types.generated';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
 import {
+  CANONICAL_STAGE_TYPES,
   SESSION_MODES,
   SESSION_STATUSES,
   type SessionMode,
@@ -16,13 +17,6 @@ import {
 } from '@/lib/sessions/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const CANONICAL_STAGE_TYPES: StageType[] = [
-  'skill_building',
-  'individual_model',
-  'shared_model',
-  'system_model',
-  'guiding_principles',
-];
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();

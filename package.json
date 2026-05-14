@@ -23,6 +23,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "dotenv -e .env.test -- vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "stripe:seed": "tsx scripts/stripe/seed-products.ts",
     "stripe:listen": "stripe listen --forward-to http://localhost:3000/api/stripe/webhook",
