@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { ContextSwitcher } from '@/components/app/ContextSwitcher';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { ModelSummary, OrgModelSummary } from '@/lib/models/types';
+import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 import { DesignList } from './DesignList';
 import { NewDesignButton } from './NewDesignButton';
@@ -32,25 +34,37 @@ export default async function DesignsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in?next=%2Fapp%2Fdesigns');
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('active_org_id')
-    .eq('id', user.id)
-    .single();
-  if (profileError || !profile) {
-    throw new Error(`Failed to load profile: ${profileError?.message}`);
+  const [profileRes, membershipsRes] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('active_org_id')
+      .eq('id', user.id)
+      .single(),
+    supabase
+      .from('org_memberships')
+      .select('role, organisations:org_id ( id, name, slug )')
+      .eq('profile_id', user.id),
+  ]);
+  if (profileRes.error || !profileRes.data) {
+    throw new Error(`Failed to load profile: ${profileRes.error?.message}`);
   }
-  const activeOrgId = profile.active_org_id;
+  const activeOrgId = profileRes.data.active_org_id;
 
-  let activeOrgName: string | null = null;
-  if (activeOrgId) {
-    const { data: orgRow } = await supabase
-      .from('organisations')
-      .select('name')
-      .eq('id', activeOrgId)
-      .single();
-    activeOrgName = orgRow?.name ?? null;
-  }
+  const orgs: OrgSummary[] = (membershipsRes.data ?? [])
+    .map((row): OrgSummary | null => {
+      const org = (row as { organisations: { id: string; name: string; slug: string } | null }).organisations;
+      if (!org) return null;
+      return {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        role: (row as { role: OrgRole }).role,
+      };
+    })
+    .filter((o): o is OrgSummary => o !== null)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  const activeOrgName = orgs.find((o) => o.id === activeOrgId)?.name ?? null;
 
   const trashRes = await supabase
     .from('models')
@@ -141,25 +155,37 @@ export default async function DesignsPage() {
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-        <header className="flex items-center justify-between gap-4">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              BrickThink
-            </p>
-            <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">
-              {heading}
-            </h1>
+        <header className="flex flex-col gap-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                {activeOrgName ?? 'Personal'}
+              </p>
+              <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">
+                {heading}
+              </h1>
+            </div>
+            <div className="flex items-center gap-2">
+              {trashCount > 0 ? (
+                <Link
+                  href="/app/designs/trash"
+                  className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5"
+                >
+                  Trash ({trashCount})
+                </Link>
+              ) : null}
+              <NewDesignButton />
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {trashCount > 0 ? (
-              <Link
-                href="/app/designs/trash"
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5"
-              >
-                Trash ({trashCount})
-              </Link>
-            ) : null}
-            <NewDesignButton />
+          <div className="flex items-center gap-3">
+            <label className="text-[13px] font-medium text-zinc-600" htmlFor="organisation-switcher">
+              Organisation:
+            </label>
+            <ContextSwitcher
+              orgs={orgs}
+              activeOrgId={activeOrgId}
+              buttonId="organisation-switcher"
+            />
           </div>
         </header>
         <DesignList models={cards} viewerProfileId={user.id} />

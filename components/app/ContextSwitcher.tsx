@@ -10,9 +10,10 @@ import type { OrgSummary } from '@/lib/orgs/types';
 interface Props {
   orgs: OrgSummary[];
   activeOrgId: string | null;
+  buttonId?: string;
 }
 
-export function ContextSwitcher({ orgs, activeOrgId }: Props) {
+export function ContextSwitcher({ orgs, activeOrgId, buttonId }: Props) {
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
   const router = useRouter();
@@ -58,6 +59,7 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
     <div ref={containerRef} className="relative">
       <button
         type="button"
+        id={buttonId}
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -73,7 +75,7 @@ export function ContextSwitcher({ orgs, activeOrgId }: Props) {
           id={listboxId}
           role="listbox"
           aria-label="Switch context"
-          className="absolute right-0 top-12 z-30 w-64 overflow-hidden rounded-2xl border border-zinc-900/10 bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
+          className="absolute left-0 top-12 z-30 w-64 overflow-hidden rounded-2xl border border-zinc-900/10 bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
         >
           <ContextItem
             label="Personal"

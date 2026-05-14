@@ -1,19 +1,15 @@
 import Link from 'next/link';
 
 import { BrickGlyph } from '@/components/app/BrickGlyph';
-import { ContextSwitcher } from '@/components/app/ContextSwitcher';
 import { HeaderInner } from '@/components/app/HeaderInner';
 import { HeaderNav } from '@/components/app/HeaderNav';
-import type { OrgSummary } from '@/lib/orgs/types';
 
 interface Props {
-  orgs: OrgSummary[];
-  activeOrgId: string | null;
   userName: string;
   userEmail: string | null;
 }
 
-export function GlobalHeader({ orgs, activeOrgId, userName, userEmail }: Props) {
+export function GlobalHeader({ userName, userEmail }: Props) {
   return (
     <header className="shrink-0 border-b border-zinc-900/5 bg-white">
       <HeaderInner>
@@ -32,8 +28,6 @@ export function GlobalHeader({ orgs, activeOrgId, userName, userEmail }: Props) 
         </div>
 
         <div className="flex items-center gap-2">
-          <ContextSwitcher orgs={orgs} activeOrgId={activeOrgId} />
-          <div className="mx-1 hidden h-6 w-px bg-zinc-900/10 md:block" aria-hidden="true" />
           <span
             className="hidden max-w-[280px] truncate text-[13px] font-medium text-zinc-700 md:inline"
             title={userEmail ?? userName}
