@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
 
 import { SaveVersionModal } from './SaveVersionModal';
+import { ShareModal } from './ShareModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 
 import { BuilderProvider, useBuilderState } from './builderState';
@@ -98,7 +99,10 @@ function UnifiedSidebar({ footer }: { footer?: ReactNode }) {
         <ModelTitle />
         <div className="flex items-center justify-between gap-2">
           <SaveStatus />
-          <HistoryButton />
+          <div className="flex items-center gap-1">
+            <ShareButton />
+            <HistoryButton />
+          </div>
         </div>
         <LayersPanel />
         <SaveBuildButton />
@@ -250,6 +254,27 @@ function CloseIcon({ className = '' }: { className?: string }) {
       <path d="M6 6 18 18" />
       <path d="M18 6 6 18" />
     </svg>
+  );
+}
+
+function ShareButton() {
+  const { modelId } = useBuilderState();
+  const [open, setOpen] = useState(false);
+  if (!modelId) return null;
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="Share design"
+        title="Share design"
+        data-testid="share-button"
+        className="inline-flex h-7 cursor-pointer items-center rounded-md px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+      >
+        Share
+      </button>
+      <ShareModal modelId={modelId} open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }
 
