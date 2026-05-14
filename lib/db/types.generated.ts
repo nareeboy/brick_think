@@ -129,6 +129,8 @@ export type Database = {
           id: string
           org_id: string | null
           owner_profile_id: string
+          session_id: string | null
+          stage_id: string | null
           thumbnail_path: string | null
           thumbnail_updated_at: string | null
           title: string
@@ -141,6 +143,8 @@ export type Database = {
           id?: string
           org_id?: string | null
           owner_profile_id: string
+          session_id?: string | null
+          stage_id?: string | null
           thumbnail_path?: string | null
           thumbnail_updated_at?: string | null
           title?: string
@@ -153,6 +157,8 @@ export type Database = {
           id?: string
           org_id?: string | null
           owner_profile_id?: string
+          session_id?: string | null
+          stage_id?: string | null
           thumbnail_path?: string | null
           thumbnail_updated_at?: string | null
           title?: string
@@ -172,6 +178,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "models_stage_session_fk"
+            columns: ["stage_id", "session_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id", "session_id"]
           },
         ]
       }
