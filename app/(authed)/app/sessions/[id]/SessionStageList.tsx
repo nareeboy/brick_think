@@ -53,7 +53,7 @@ export function SessionStageList({
             </div>
             {owned ? (
               <div className="flex items-center gap-1">
-                <DeleteSessionModelButton modelId={owned.id} />
+                <DeleteSessionModelButton modelId={owned.id} modelTitle={owned.title} />
                 <Link
                   href={`/app/designs/${owned.id}`}
                   data-testid={`open-model-${stage.stage_type as StageType}`}
