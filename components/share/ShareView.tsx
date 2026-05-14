@@ -32,6 +32,10 @@ export function ShareView({ title, canvasState }: ShareViewProps) {
     [],
   );
 
+  const panBy = useCallback((dx: number, dy: number) => {
+    setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+  }, []);
+
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
       <header className="border-b border-zinc-900/10 bg-white px-5 py-4">
@@ -44,6 +48,7 @@ export function ShareView({ title, canvasState }: ShareViewProps) {
           pan={pan}
           zoom={zoom}
           onZoomBy={zoomBy}
+          onPanBy={panBy}
         />
         <div className="pointer-events-none absolute bottom-3 left-5 z-40">
           <Link
