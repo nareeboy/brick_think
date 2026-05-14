@@ -50,7 +50,19 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   const activeOrgId = profileRes.data?.active_org_id ?? null;
   const email = profileRes.data?.email ?? user.email ?? null;
-  const userName = profileRes.data?.full_name?.trim() || email || 'You';
+  // When profiles.full_name happens to equal the email's local part (e.g.
+  // Google OAuth backfilled "mail" from "mail@naresh-shan.com"), the name
+  // looks like a truncated email in the header. Fall through to the full
+  // email in that case. Legitimate names (containing a space, or distinct
+  // from the local part) are still preferred.
+  const fullName = profileRes.data?.full_name?.trim() || null;
+  const emailLocalPart = email?.split('@')[0]?.toLowerCase() ?? null;
+  const fullNameLooksLikeEmailPrefix =
+    fullName !== null &&
+    emailLocalPart !== null &&
+    fullName.toLowerCase() === emailLocalPart;
+  const userName =
+    (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
