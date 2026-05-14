@@ -20,7 +20,11 @@ export default defineConfig({
     navigationTimeout: 30_000,
   },
   webServer: {
-    command: 'pnpm start',
+    // start:e2e loads .env.test, which points NEXT_PUBLIC_SUPABASE_URL at the
+    // local stack (http://127.0.0.1:54321) instead of the remote project.
+    // Run `pnpm build:e2e` (also dotenv-wrapped) before `pnpm test:e2e` so the
+    // client bundle is baked against local Supabase too — see CLAUDE.md.
+    command: 'pnpm start:e2e',
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

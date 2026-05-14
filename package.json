@@ -12,7 +12,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:e2e": "dotenv -e .env.test -- next build",
     "start": "next start",
+    "start:e2e": "dotenv -e .env.test -- next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -65,6 +67,7 @@
     "@types/react-dom": "^19.0.3",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^3.0.4",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-jsx-a11y": "^6.10.2",

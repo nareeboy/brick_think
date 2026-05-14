@@ -49,7 +49,13 @@ The sign-in page ([app/sign-in/page.tsx](app/sign-in/page.tsx)) supports magic l
 - `pnpm typecheck` — must exit 0.
 - `pnpm lint` — must exit 0.
 - `pnpm test` — Vitest, must exit 0.
-- `pnpm test:e2e` — Playwright; runs against a built server (`pnpm start`). Covers both unauthenticated flows ([e2e/auth.spec.ts](e2e/auth.spec.ts)) and authed flows via the `signedInPage` fixture in [e2e/fixtures.ts](e2e/fixtures.ts).
+- `pnpm test:e2e` — Playwright; runs against a built server. **Build with `pnpm build:e2e` first** (not `pnpm build` — see below). Covers both unauthenticated flows ([e2e/auth.spec.ts](e2e/auth.spec.ts)) and authed flows via the `signedInPage` fixture in [e2e/fixtures.ts](e2e/fixtures.ts).
+
+### E2E env — local Supabase, not remote
+
+E2E exercises the **local** Supabase stack (`pnpm db:start`), not the remote project. `pnpm build:e2e` and `pnpm start:e2e` wrap `next build` / `next start` with `dotenv-cli` to load [.env.test](.env.test) instead of `.env.local`. `.env.test` is committed and contains the well-known Supabase CLI demo JWTs — public knowledge, only valid against `http://127.0.0.1:54321`. [playwright.config.ts](playwright.config.ts) `webServer.command` is `pnpm start:e2e`.
+
+This is the second half of the fix: never push a WIP migration to remote just to make E2E pass. New migrations must apply cleanly via `pnpm db:reset` (against the local stack) before E2E.
 
 ### Playwright auth fixture
 
@@ -58,7 +64,7 @@ The sign-in page ([app/sign-in/page.tsx](app/sign-in/page.tsx)) supports magic l
 ### E2E workflow gotchas
 
 - **Don't run `pnpm dev` concurrently with `pnpm test:e2e`.** Playwright will reuse the dev server on port 3000 — silently skipping `webServer.env` so `E2E_AUTH_ENABLED` is missing and the sign-in route 404s. `next dev` also writes into `.next/` and corrupts the production build between runs.
-- If you need both running, use `PORT=3100 pnpm test:e2e`. Re-run `pnpm build` if you see "Could not find a production build in the '.next' directory".
+- If you need both running, use `PORT=3100 pnpm test:e2e`. Re-run `pnpm build:e2e` if you see "Could not find a production build in the '.next' directory".
 - The fixture creates one `e2e-<rand>@brick-think.test` auth user per test. They're harmless but accumulate — clean them out periodically with a SQL `delete from auth.users where email like 'e2e-%@brick-think.test'`.
 
 ## Process
