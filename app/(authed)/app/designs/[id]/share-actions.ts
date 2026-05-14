@@ -88,3 +88,17 @@ export async function createShareLink(
     expiresAt: insertRes.data.expires_at,
   };
 }
+
+export async function revokeShareLink(linkId: string, modelId: string): Promise<void> {
+  const { supabase } = await requireUser();
+  const { data, error } = await supabase
+    .from('model_share_links')
+    .update({ revoked_at: new Date().toISOString() })
+    .eq('id', linkId)
+    .select('id');
+  if (error) throw new Error(`Failed to revoke share link: ${error.message}`);
+  if (!data || data.length === 0) {
+    throw new Error('Share link not found or not owned by you');
+  }
+  revalidatePath(`/app/designs/${modelId}`);
+}

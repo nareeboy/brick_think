@@ -1,10 +1,12 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/db/server', () => ({ createServerSupabaseClient: vi.fn() }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { createShareLink } from './share-actions';
+import { createShareLink, revokeShareLink } from './share-actions';
 
 function mockUser(userId: string | null) {
   const inserted: unknown[] = [];
@@ -65,5 +67,29 @@ describe('createShareLink', () => {
       }),
     });
     await expect(createShareLink('m1', '7d')).rejects.toThrow(/Model not found/);
+  });
+});
+
+describe('revokeShareLink', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('sets revoked_at on the link row', async () => {
+    const { updated } = mockUser('u1');
+    await revokeShareLink('l1', 'm1');
+    expect(updated.length).toBe(1);
+    expect(updated[0]?.revoked_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+});
+
+describe('forward-compat tripwire', () => {
+  it('share-actions.ts contains the documented org_id/session_id gate comment', () => {
+    const file = readFileSync(
+      path.join(process.cwd(), 'app/(authed)/app/designs/[id]/share-actions.ts'),
+      'utf8',
+    );
+    expect(file).toContain('FORWARD_COMPAT_GATE_BEGIN');
+    expect(file).toContain('FORWARD_COMPAT_GATE_END');
+    expect(file).toContain('models.org_id');
+    expect(file).toContain('models.session_id');
   });
 });
