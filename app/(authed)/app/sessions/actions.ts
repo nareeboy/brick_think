@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Json } from '@/lib/db/types.generated';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
-import { stageLabel } from '@/lib/sessions/stage-labels';
+import { defaultModelTitle } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -195,7 +195,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
     .from('models')
     .insert({
       owner_profile_id: user.id,
-      title: `${stageLabel(stageType)} model`,
+      title: defaultModelTitle(stageType),
       canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
       session_id: sessionId,
       stage_id: stageId,
