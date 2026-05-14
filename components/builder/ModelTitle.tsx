@@ -7,7 +7,7 @@ import { useBuilderState } from './builderState';
 const MAX_LENGTH = 200;
 
 export function ModelTitle() {
-  const { title, setTitle } = useBuilderState();
+  const { title, setTitle, readOnly } = useBuilderState();
   const [draft, setDraft] = useState(title);
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,7 +52,11 @@ export function ModelTitle() {
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
         Model
       </p>
-      {editing ? (
+      {readOnly ? (
+        <p className="-mx-1.5 mt-1 px-1.5 py-0.5 text-[22px] font-semibold tracking-tight text-zinc-950 truncate">
+          {title}
+        </p>
+      ) : editing ? (
         <input
           ref={inputRef}
           value={draft}

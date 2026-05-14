@@ -114,4 +114,27 @@ describe('useAutosave', () => {
 
     await waitFor(() => expect(result.current.status).toBe('error'));
   });
+
+  it('does not fetch when disabled', () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'm1', updated_at: new Date().toISOString() }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { rerender } = renderHook(
+      ({ payload }) =>
+        useAutosave({
+          modelId: 'm1',
+          payload,
+          debounceMs: 1000,
+          disabled: true,
+        }),
+      { initialProps: { payload: { v: 1 } } },
+    );
+
+    rerender({ payload: { v: 2 } });
+    act(() => vi.advanceTimersByTime(2000));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

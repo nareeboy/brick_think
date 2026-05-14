@@ -85,6 +85,7 @@ interface View {
 
 export interface BuilderState {
   modelId: string | null;
+  readOnly: boolean;
   title: string;
   setTitle: (t: string) => void;
   groups: LayerGroup[];
@@ -126,6 +127,8 @@ export interface BuilderState {
   saveStatus: SaveStatus;
   savedAtServer: number | null;
   retrySave: () => void;
+  registerThumbnailCapture: (fn: (() => Promise<Blob | null>) | null) => void;
+  captureAndUploadThumbnail: () => Promise<void>;
 }
 
 const Ctx = createContext<BuilderState | null>(null);
@@ -169,9 +172,11 @@ function findGroupInsertionStart(
 
 export function BuilderProvider({
   initial,
+  readOnly = false,
   children,
 }: {
   initial?: InitialBuilderState;
+  readOnly?: boolean;
   children: ReactNode;
 }) {
   const [data, setData] = useState<BuilderData>(() => {
@@ -193,6 +198,24 @@ export function BuilderProvider({
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const captureFnRef = useRef<(() => Promise<Blob | null>) | null>(null);
+  const hasCapturedThisSession = useRef(false);
+  const prevAutosaveStatusRef = useRef<SaveStatus>('idle');
+
+  const registerThumbnailCapture = useCallback(
+    (fn: (() => Promise<Blob | null>) | null) => {
+      captureFnRef.current = fn;
+    },
+    [],
+  );
+
+  function guard<Args extends unknown[], R>(
+    fn: (...args: Args) => R,
+    fallback: R,
+  ): (...args: Args) => R {
+    return (...args) => (readOnly ? fallback : fn(...args));
+  }
+
   const autosavePayload = useMemo(
     () => ({
       title,
@@ -207,7 +230,27 @@ export function BuilderProvider({
   const autosave = useAutosave({
     modelId,
     payload: autosavePayload,
+    disabled: readOnly,
   });
+
+  const captureAndUploadThumbnail = useCallback(async (): Promise<void> => {
+    if (!modelId) return;
+    const fn = captureFnRef.current;
+    if (!fn) return;
+    try {
+      const blob = await fn();
+      if (!blob) return;
+      const fd = new FormData();
+      fd.append('file', blob, 'thumbnail.png');
+      const res = await fetch(`/api/models/${modelId}/thumbnail`, {
+        method: 'POST',
+        body: fd,
+      });
+      if (!res.ok) throw new Error(`thumbnail POST ${res.status}`);
+    } catch (err) {
+      console.error('thumbnail upload failed', err);
+    }
+  }, [modelId]);
 
   useEffect(() => {
     if (autosave.status !== 'dirty' && autosave.status !== 'saving') return;
@@ -218,6 +261,18 @@ export function BuilderProvider({
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [autosave.status]);
+
+  useEffect(() => {
+    const prev = prevAutosaveStatusRef.current;
+    prevAutosaveStatusRef.current = autosave.status;
+    if (hasCapturedThisSession.current) return;
+    if (prev !== 'saving' || autosave.status !== 'saved') return;
+    // Defer until BuilderCanvas has mounted and registered its capture fn.
+    // Otherwise we'd permanently burn the session flag with no retry.
+    if (!captureFnRef.current) return;
+    hasCapturedThisSession.current = true;
+    void captureAndUploadThumbnail();
+  }, [autosave.status, captureAndUploadThumbnail]);
 
   const zoomBy = useCallback(
     (factor: number, anchor: { x: number; y: number }) => {
@@ -428,8 +483,9 @@ export function BuilderProvider({
   const value = useMemo<BuilderState>(
     () => ({
       modelId,
+      readOnly,
       title,
-      setTitle,
+      setTitle: guard(setTitle, undefined),
       groups: data.groups,
       bricks: data.bricks,
       activeGroupId: data.activeGroupId,
@@ -440,27 +496,32 @@ export function BuilderProvider({
       zoomBy,
       selectBrick,
       setActiveGroup,
-      addGroup,
-      renameGroup,
-      deleteGroup,
-      toggleGroupVisible,
-      toggleGroupCollapsed,
-      moveGroup,
-      addBrick,
-      updateBrick,
-      deleteBrick,
-      toggleBrickVisible,
-      moveBrick,
+      addGroup: guard(addGroup, ''),
+      renameGroup: guard(renameGroup, undefined),
+      deleteGroup: guard(deleteGroup, undefined),
+      toggleGroupVisible: guard(toggleGroupVisible, undefined),
+      toggleGroupCollapsed: guard(toggleGroupCollapsed, undefined),
+      moveGroup: guard(moveGroup, undefined),
+      addBrick: guard(addBrick, undefined),
+      updateBrick: guard(updateBrick, undefined),
+      deleteBrick: guard(deleteBrick, undefined),
+      toggleBrickVisible: guard(toggleBrickVisible, undefined),
+      moveBrick: guard(moveBrick, undefined),
       toast,
       dismissToast,
       saveStatus: autosave.status,
       savedAtServer: autosave.lastSavedAt,
       retrySave: autosave.retry,
+      registerThumbnailCapture,
+      captureAndUploadThumbnail,
     }),
+    // `guard` is an inline helper that closes over `readOnly`, which IS listed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       data,
       view,
       modelId,
+      readOnly,
       title,
       setTitle,
       zoomBy,
@@ -482,6 +543,8 @@ export function BuilderProvider({
       autosave.status,
       autosave.lastSavedAt,
       autosave.retry,
+      registerThumbnailCapture,
+      captureAndUploadThumbnail,
     ],
   );
 

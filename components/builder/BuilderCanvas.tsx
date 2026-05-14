@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image as KImage, Layer, Stage, Transformer } from 'react-konva';
 
 import { useBrickImage } from '@/components/canvas/BrickImage';
+import { fitToBox, padBbox, unionRects } from '@/lib/canvas/thumbnailBox';
 
 import {
   MAX_PIECE_SIZE,
@@ -111,6 +112,7 @@ function BrickNode({
 
 export function BuilderCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const layerRef = useRef<Konva.Layer | null>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const {
     groups,
@@ -121,6 +123,7 @@ export function BuilderCanvas() {
     deleteBrick,
     view,
     zoomBy,
+    registerThumbnailCapture,
   } = useBuilderState();
   const { pan, zoom } = view;
   const [interacting, setInteracting] = useState(false);
@@ -214,6 +217,32 @@ export function BuilderCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
+  useEffect(() => {
+    registerThumbnailCapture(async () => {
+      await new Promise(requestAnimationFrame);
+      const layer = layerRef.current;
+      if (!layer) return null;
+      const nodes = Array.from(nodeRegistry.current.values());
+      if (nodes.length === 0) return null;
+      const rects = nodes.map((n) =>
+        n.getClientRect({ skipTransform: false, relativeTo: layer }),
+      );
+      const bbox = unionRects(rects);
+      const padded = padBbox(bbox, 0.08);
+      const { scale } = fitToBox(padded, 400, 300);
+      const dataUrl = layer.toDataURL({
+        x: padded.x,
+        y: padded.y,
+        width: padded.width,
+        height: padded.height,
+        pixelRatio: scale,
+      });
+      const res = await fetch(dataUrl);
+      return res.blob();
+    });
+    return () => registerThumbnailCapture(null);
+  }, [registerThumbnailCapture]);
+
   const selectedBrick = selectedId ? bricks.find((b) => b.id === selectedId) ?? null : null;
   const overlay = selectedBrick && !interacting ? selectionOverlay(selectedBrick, pan, zoom) : null;
 
@@ -235,7 +264,7 @@ export function BuilderCanvas() {
             scaleY={zoom}
             onMouseDown={handleStageMouseDown}
           >
-            <Layer>
+            <Layer ref={layerRef}>
               {visibleBricks.map((b) => (
                 <BrickNode
                   key={b.id}

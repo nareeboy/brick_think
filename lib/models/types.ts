@@ -11,6 +11,13 @@ export interface ModelSummary {
   id: string;
   title: string;
   updated_at: string;
+  thumbnail_url: string | null;
+}
+
+export interface OrgModelSummary extends ModelSummary {
+  owner_profile_id: string;
+  owner_full_name: string | null;
+  owner_email: string;
 }
 
 export interface ModelDetail extends ModelSummary {

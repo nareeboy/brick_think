@@ -10,6 +10,7 @@ interface Options<P> {
   modelId: string | null;
   payload: P;
   debounceMs?: number;
+  disabled?: boolean;
 }
 
 export interface AutosaveResult {
@@ -22,6 +23,7 @@ export function useAutosave<P>({
   modelId,
   payload,
   debounceMs = 1000,
+  disabled = false,
 }: Options<P>): AutosaveResult {
   const [status, setStatus] = useState<SaveStatus>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
@@ -70,6 +72,7 @@ export function useAutosave<P>({
   }
 
   useEffect(() => {
+    if (disabled) return;
     if (!modelId) return;
     if (payload === initialPayload.current) return; // never saved yet, no change
     if (lastFiredPayload.current !== null && payload === lastFiredPayload.current) {
@@ -90,9 +93,10 @@ export function useAutosave<P>({
       if (timerRef.current) clearTimeout(timerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payload, modelId, debounceMs]);
+  }, [payload, modelId, debounceMs, disabled]);
 
   function retry() {
+    if (disabled) return;
     if (!modelId) return;
     if (inFlight.current) return;
     attemptRef.current = 0;
