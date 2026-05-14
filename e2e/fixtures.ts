@@ -38,7 +38,22 @@ export const test = base.extend<Fixtures>({
         `Test sign-in failed (${res.status()}): ${await res.text()}`,
       );
     }
-    await use(page);
+    const signInBody = (await res.json()) as { userId?: string | null };
+    const userId = signInBody.userId ?? null;
+    try {
+      await use(page);
+    } finally {
+      if (userId) {
+        const cleanupRes = await page.request.post('/api/test/delete-user', {
+          data: { userId },
+        });
+        if (!cleanupRes.ok()) {
+          console.warn(
+            `[e2e] cleanup failed for ${signedInEmail} (${userId}): ${cleanupRes.status()} ${await cleanupRes.text()}`,
+          );
+        }
+      }
+    }
   },
 });
 
