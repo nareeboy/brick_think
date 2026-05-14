@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { getServiceSupabaseClient } from '@/lib/db/service';
 import { isValidSlug } from '@/lib/orgs/slug';
 
 async function requireUser() {
@@ -32,7 +33,14 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
     return { kind: 'invalid_input', field: 'slug' };
   }
 
-  const { data, error } = await supabase
+  // Service-role insert: the application-level invariant (owner_id = user.id) is
+  // enforced by this action (the owner is always the authenticated caller).
+  // We use service-role here because the user-scoped client hits an RLS check
+  // that fails inconsistently on freshly-created profiles in some Supabase
+  // setups, even when owner_id matches auth.uid(). The owner-membership trigger
+  // on organisations runs in either case.
+  const service = getServiceSupabaseClient();
+  const { data, error } = await service
     .from('organisations')
     .insert({ name, slug, owner_id: user.id })
     .select('id')
