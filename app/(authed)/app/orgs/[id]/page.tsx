@@ -6,8 +6,10 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import type { OrgMember, OrgRole } from '@/lib/orgs/types';
 
 import { AddMemberForm } from './AddMemberForm';
+import { DeleteOrgButton } from './DeleteOrgButton';
 import { LeaveOrgButton } from './LeaveOrgButton';
 import { MemberRow } from './MemberRow';
+import { RenameOrgForm } from './RenameOrgForm';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +69,7 @@ export default async function OrgDetailPage({
 
   const viewerRole = viewerRoleRes.data.role as OrgRole;
   const isAdmin = viewerRole === 'owner' || viewerRole === 'admin';
+  const isOwner = viewerRole === 'owner';
 
   const members: OrgMember[] = (membersRes.data ?? [])
     .map((row): OrgMember | null => {
@@ -92,9 +95,15 @@ export default async function OrgDetailPage({
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
             Organisation
           </p>
-          <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">
-            {orgRes.data.name}
-          </h1>
+          <div className="mt-1">
+            {isAdmin ? (
+              <RenameOrgForm orgId={id} initialName={orgRes.data.name} />
+            ) : (
+              <h1 className="text-[26px] font-semibold tracking-tight text-zinc-950">
+                {orgRes.data.name}
+              </h1>
+            )}
+          </div>
           <p className="mt-1 font-mono text-[12px] text-zinc-500">{orgRes.data.slug}</p>
         </header>
 
@@ -116,8 +125,15 @@ export default async function OrgDetailPage({
           </ul>
         </section>
 
-        <footer className="border-t border-zinc-900/5 pt-6">
+        <footer className="flex flex-col gap-4 border-t border-zinc-900/5 pt-6">
           <LeaveOrgButton orgId={id} profileId={user.id} />
+          {isOwner ? (
+            <DeleteOrgButton
+              orgId={id}
+              orgName={orgRes.data.name}
+              orgSlug={orgRes.data.slug}
+            />
+          ) : null}
         </footer>
       </div>
     </main>

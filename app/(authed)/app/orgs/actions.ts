@@ -141,6 +141,82 @@ export async function removeOrgMemberAction(
   revalidatePath('/app/designs');
 }
 
+export type RenameOrgResult =
+  | { kind: 'ok' }
+  | { kind: 'invalid_input' }
+  | { kind: 'forbidden' }
+  | { kind: 'not_found' };
+
+export async function renameOrgAction(
+  orgId: string,
+  name: string,
+): Promise<RenameOrgResult> {
+  const { supabase } = await requireUser();
+  const trimmed = name.trim();
+  if (trimmed.length < 1 || trimmed.length > 80) {
+    return { kind: 'invalid_input' };
+  }
+
+  // RLS restricts UPDATE to admins/owners. A row only comes back from
+  // `.select()` if the policy passed AND the row existed — distinguish via a
+  // follow-up existence probe so the UI can show the right message.
+  const { data, error } = await supabase
+    .from('organisations')
+    .update({ name: trimmed })
+    .eq('id', orgId)
+    .select('id');
+  if (error) {
+    if (error.code === '42501') return { kind: 'forbidden' };
+    throw new Error(`Rename failed: ${error.message}`);
+  }
+  if (!data || data.length === 0) {
+    const { count } = await supabase
+      .from('organisations')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', orgId);
+    return (count ?? 0) === 0 ? { kind: 'not_found' } : { kind: 'forbidden' };
+  }
+
+  revalidatePath('/app/orgs');
+  revalidatePath(`/app/orgs/${orgId}`);
+  revalidatePath('/app/designs');
+  return { kind: 'ok' };
+}
+
+export type DeleteOrgResult =
+  | { kind: 'ok' }
+  | { kind: 'forbidden' }
+  | { kind: 'not_found' };
+
+export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
+  const { supabase } = await requireUser();
+
+  // RLS restricts DELETE to the owner. As with rename, .select() lets us tell
+  // forbidden (RLS dropped the row) from not_found (gone already).
+  // Cascade-deletes memberships, sessions, stages, models, per-org settings;
+  // sets designs.org_id and profiles.active_org_id to null via FK.
+  const { data, error } = await supabase
+    .from('organisations')
+    .delete()
+    .eq('id', orgId)
+    .select('id');
+  if (error) {
+    if (error.code === '42501') return { kind: 'forbidden' };
+    throw new Error(`Delete failed: ${error.message}`);
+  }
+  if (!data || data.length === 0) {
+    const { count } = await supabase
+      .from('organisations')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', orgId);
+    return (count ?? 0) === 0 ? { kind: 'not_found' } : { kind: 'forbidden' };
+  }
+
+  revalidatePath('/app/orgs');
+  revalidatePath('/app/designs');
+  return { kind: 'ok' };
+}
+
 export async function setActiveContextAction(
   orgId: string | null,
 ): Promise<void> {
