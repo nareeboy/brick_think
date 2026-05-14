@@ -24,11 +24,10 @@ export function ModelTitle() {
   }, [title, editing]);
 
   useEffect(() => {
-    const previous = document.title;
+    // No cleanup: when the builder unmounts, Next.js applies the destination
+    // route's metadata title. Restoring a captured "previous" value races with
+    // that update and leaves stale "<model> · Builder" titles on list pages.
     document.title = `${title} · Builder · BrickThink`;
-    return () => {
-      document.title = previous;
-    };
   }, [title]);
 
   function startEditing() {
