@@ -66,6 +66,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'email_not_allowed' }, { status: 403 });
   }
 
+  // Pre-clear model_versions authored by this user. The FK
+  // model_versions.created_by → profiles(id) is NO ACTION, and PG can
+  // check it before the parallel models.owner_profile_id CASCADE has
+  // deleted the same-user versions transitively — blocking the profile
+  // delete when a test exercises "save a version". Safe to delete here
+  // because gate 3 above already restricted us to the test domain.
+  const delVersions = await admin
+    .from('model_versions')
+    .delete()
+    .eq('created_by', userId);
+  if (delVersions.error) {
+    return NextResponse.json(
+      { error: 'pre_delete_versions_failed', detail: delVersions.error.message },
+      { status: 500 },
+    );
+  }
+
   const delRes = await admin.auth.admin.deleteUser(userId);
   if (delRes.error) {
     return NextResponse.json(
