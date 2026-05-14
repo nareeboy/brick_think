@@ -48,6 +48,7 @@ export function ShareView({ title, canvasState }: ShareViewProps) {
         <div className="pointer-events-none absolute bottom-3 left-5 z-40">
           <Link
             href="/"
+            target="_blank"
             rel="noopener noreferrer"
             className="pointer-events-auto inline-flex items-center gap-1 rounded-md bg-white/85 px-2 py-1 text-[11px] font-medium text-zinc-600 shadow-[0_4px_10px_-4px_rgba(0,0,0,0.2)] backdrop-blur hover:text-zinc-900"
           >

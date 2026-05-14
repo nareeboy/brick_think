@@ -9,6 +9,7 @@ export function ExpiredLinkPage() {
       </p>
       <Link
         href="/"
+        target="_blank"
         rel="noopener noreferrer"
         className="mt-4 text-[11px] font-medium text-zinc-500 hover:text-zinc-900"
       >
