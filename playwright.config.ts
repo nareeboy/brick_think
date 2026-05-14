@@ -35,6 +35,9 @@ export default defineConfig({
       // can mint a Supabase session without going through magic-link email.
       // See the route file for the rest of the defence-in-depth.
       E2E_AUTH_ENABLED: '1',
+      // Unlocks /api/test/seed-session so the seededSession fixture can
+      // create a session + stages per test. Same three-gate model.
+      E2E_SESSIONS_ENABLED: '1',
     },
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

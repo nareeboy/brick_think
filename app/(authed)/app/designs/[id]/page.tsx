@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
+import type { SessionContext, StageType } from '@/lib/sessions/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,7 @@ export default async function DesignBuilderPage({
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, title, canvas_state, updated_at, owner_profile_id, org_id')
+    .select('id, title, canvas_state, updated_at, owner_profile_id, org_id, session_id, stage_id')
     .eq('id', id)
     .is('deleted_at', null)
     .single();
@@ -57,6 +58,29 @@ export default async function DesignBuilderPage({
     thumbnail_url: null,
     canvas_state: parseCanvasState(data.canvas_state),
   };
+
+  let sessionContext: SessionContext | null = null;
+  if (data.session_id && data.stage_id) {
+    const [sessionRes, stageRes] = await Promise.all([
+      supabase
+        .from('sessions')
+        .select('id, title')
+        .eq('id', data.session_id)
+        .maybeSingle(),
+      supabase
+        .from('stages')
+        .select('id, stage_type')
+        .eq('id', data.stage_id)
+        .maybeSingle(),
+    ]);
+    if (sessionRes.data && stageRes.data) {
+      sessionContext = {
+        sessionId: sessionRes.data.id,
+        sessionTitle: sessionRes.data.title,
+        stageType: stageRes.data.stage_type as StageType,
+      };
+    }
+  }
 
   const readOnly = data.owner_profile_id !== user.id;
   const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
@@ -89,6 +113,7 @@ export default async function DesignBuilderPage({
       ownerLabel={ownerLabel}
       orgId={data.org_id ?? null}
       orgs={orgs}
+      sessionContext={sessionContext}
     />
   );
 }

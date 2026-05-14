@@ -16,6 +16,18 @@ import { test as base, expect, type Page } from '@playwright/test';
 interface Fixtures {
   signedInEmail: string;
   signedInPage: Page;
+  seededSession: {
+    sessionId: string;
+    orgId: string;
+    stageIds: Record<
+      | 'skill_building'
+      | 'individual_model'
+      | 'shared_model'
+      | 'system_model'
+      | 'guiding_principles',
+      string
+    >;
+  };
 }
 
 function makeTestEmail(): string {
@@ -54,6 +66,18 @@ export const test = base.extend<Fixtures>({
         }
       }
     }
+  },
+  seededSession: async ({ signedInPage, signedInEmail }, use) => {
+    const res = await signedInPage.request.post('/api/test/seed-session', {
+      data: { callerEmail: signedInEmail },
+    });
+    if (!res.ok()) {
+      throw new Error(
+        `Seed session failed (${res.status()}): ${await res.text()}`,
+      );
+    }
+    const body = (await res.json()) as Fixtures['seededSession'];
+    await use(body);
   },
 });
 

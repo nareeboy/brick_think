@@ -16,6 +16,8 @@ import { PiecesDrawer } from './PiecesDrawer';
 import { ShareToOrgMenu } from './ShareToOrgMenu';
 import type { ModelDetail } from '@/lib/models/types';
 import type { OrgSummary } from '@/lib/orgs/types';
+import type { SessionContext } from '@/lib/sessions/types';
+import { BuilderBreadcrumb } from './BuilderBreadcrumb';
 
 interface BuilderProps {
   initialModel?: ModelDetail;
@@ -23,6 +25,7 @@ interface BuilderProps {
   ownerLabel?: string | null;
   orgId?: string | null;
   orgs?: OrgSummary[];
+  sessionContext?: SessionContext | null;
 }
 
 export function Builder({
@@ -31,6 +34,7 @@ export function Builder({
   ownerLabel = null,
   orgId = null,
   orgs = [],
+  sessionContext = null,
 }: BuilderProps) {
   return (
     <BuilderProvider
@@ -54,6 +58,7 @@ export function Builder({
               initialModel={initialModel}
               orgId={orgId}
               orgs={orgs}
+              sessionContext={sessionContext}
             />
             <CanvasStage orgId={orgId} />
           </div>
@@ -70,12 +75,14 @@ function UnifiedSidebar({
   initialModel,
   orgId,
   orgs,
+  sessionContext,
 }: {
   readOnly: boolean;
   ownerLabel: string | null;
   initialModel?: ModelDetail;
   orgId: string | null;
   orgs: OrgSummary[];
+  sessionContext: SessionContext | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -104,6 +111,7 @@ function UnifiedSidebar({
           collapsed ? 'md:hidden' : ''
         }`}
       >
+        {sessionContext ? <BuilderBreadcrumb sessionContext={sessionContext} /> : null}
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
             <ModelTitle />
