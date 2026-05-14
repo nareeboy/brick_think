@@ -55,7 +55,7 @@ export function Builder({
               orgId={orgId}
               orgs={orgs}
             />
-            <CanvasStage />
+            <CanvasStage orgId={orgId} />
           </div>
         </div>
       </div>
@@ -125,14 +125,9 @@ function UnifiedSidebar({
               <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900/5 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600">
                 Read-only · {ownerLabel ?? 'shared'}
               </span>
-            ) : (
-              <>
-                {initialModel ? (
-                  <ShareToOrgMenu modelId={initialModel.id} orgs={orgs} currentOrgId={orgId} />
-                ) : null}
-                <ShareButton orgId={orgId} />
-              </>
-            )}
+            ) : initialModel ? (
+              <ShareToOrgMenu modelId={initialModel.id} orgs={orgs} currentOrgId={orgId} />
+            ) : null}
             <HistoryButton />
           </div>
         </div>
@@ -203,7 +198,7 @@ function SaveToast() {
   );
 }
 
-function CanvasStage() {
+function CanvasStage({ orgId }: { orgId: string | null }) {
   return (
     <DragPieceProvider>
       <section
@@ -229,6 +224,7 @@ function CanvasStage() {
 
         <BuilderCanvasLoader />
 
+        <ShareButton orgId={orgId} />
         <PiecesDrawer />
       </section>
     </DragPieceProvider>
@@ -288,9 +284,10 @@ function CloseIcon({ className = '' }: { className?: string }) {
 }
 
 function ShareButton({ orgId }: { orgId: string | null }) {
-  const { modelId } = useBuilderState();
+  const { modelId, readOnly } = useBuilderState();
   const [open, setOpen] = useState(false);
   if (!modelId) return null;
+  if (readOnly) return null;
   // Org-shared designs are not publicly shareable (spec Q7a). Hide the entry
   // point entirely; the server action also throws as defence in depth.
   if (orgId !== null) return null;
@@ -302,12 +299,33 @@ function ShareButton({ orgId }: { orgId: string | null }) {
         aria-label="Share design"
         title="Share design"
         data-testid="share-button"
-        className="inline-flex h-7 cursor-pointer items-center rounded-md px-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+        className="absolute right-[72px] top-5 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-zinc-900/10 bg-white/85 text-zinc-700 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur transition-colors hover:bg-white hover:text-zinc-900"
       >
-        Share
+        <ShareIcon className="h-5 w-5" />
       </button>
       <ShareModal modelId={modelId} open={open} onClose={() => setOpen(false)} />
     </>
+  );
+}
+
+function ShareIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.59 13.51 6.83 3.98" />
+      <path d="m15.41 6.51-6.82 3.98" />
+    </svg>
   );
 }
 
