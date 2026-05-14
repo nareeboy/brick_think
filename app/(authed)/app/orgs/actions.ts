@@ -84,7 +84,12 @@ export async function addOrgMemberAction(
   if (trimmed.length === 0) return { kind: 'invalid_input' };
 
   // citext column => case-insensitive match.
-  const { data: profile, error: profileError } = await supabase
+  // Use service-role for the lookup: the user-scoped client cannot SELECT
+  // profile rows of users they don't already share an org with, which makes
+  // the add-by-email flow impossible without a privileged read here. Only
+  // returns the matched profile id (no other PII) — application-level safe.
+  const service = getServiceSupabaseClient();
+  const { data: profile, error: profileError } = await service
     .from('profiles')
     .select('id')
     .eq('email', trimmed)
