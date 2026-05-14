@@ -5,6 +5,25 @@ export type StageType =
   | 'system_model'
   | 'guiding_principles';
 
+export type SessionMode = 'sync' | 'async' | 'hybrid';
+
+export type SessionStatus =
+  | 'draft'
+  | 'scheduled'
+  | 'live'
+  | 'completed'
+  | 'archived';
+
+export const SESSION_MODES: SessionMode[] = ['sync', 'async', 'hybrid'];
+
+export const SESSION_STATUSES: SessionStatus[] = [
+  'draft',
+  'scheduled',
+  'live',
+  'completed',
+  'archived',
+];
+
 export interface StageRow {
   id: string;
   session_id: string;

@@ -7,7 +7,13 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Json } from '@/lib/db/types.generated';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
-import type { StageType } from '@/lib/sessions/types';
+import {
+  SESSION_MODES,
+  SESSION_STATUSES,
+  type SessionMode,
+  type SessionStatus,
+  type StageType,
+} from '@/lib/sessions/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CANONICAL_STAGE_TYPES: StageType[] = [
@@ -225,6 +231,63 @@ export async function createModelInStage(formData: FormData): Promise<void> {
 
   revalidatePath(`/app/sessions/${sessionId}`);
   redirect(`/app/designs/${insertRes.data.id}`);
+}
+
+/**
+ * Update session metadata (status, mode, scheduled_for). Same RLS as rename:
+ * facilitator + org admin only.
+ *
+ * `scheduled_for` is allowed to be null (e.g. dropping a tentative schedule).
+ * We do not gate status transitions in app code — the schema accepts any
+ * enum value at any time, and the workflow rules will land if/when a real
+ * state-machine emerges. For now this is a metadata-edit form, not a
+ * lifecycle controller.
+ */
+export async function updateSessionMeta(input: {
+  sessionId: string;
+  status: SessionStatus;
+  mode: SessionMode;
+  scheduledFor: string | null;
+}): Promise<void> {
+  if (!UUID_RE.test(input.sessionId)) {
+    throw new Error('Invalid sessionId');
+  }
+  if (!SESSION_STATUSES.includes(input.status)) {
+    throw new Error(`Invalid status: ${input.status}`);
+  }
+  if (!SESSION_MODES.includes(input.mode)) {
+    throw new Error(`Invalid mode: ${input.mode}`);
+  }
+  let scheduledForIso: string | null = null;
+  if (input.scheduledFor !== null && input.scheduledFor !== '') {
+    const parsed = new Date(input.scheduledFor);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new Error('Invalid scheduledFor');
+    }
+    scheduledForIso = parsed.toISOString();
+  }
+
+  const { supabase } = await requireUser();
+  const updateRes = await supabase
+    .from('sessions')
+    .update({
+      status: input.status,
+      mode: input.mode,
+      scheduled_for: scheduledForIso,
+    })
+    .eq('id', input.sessionId)
+    .select('id');
+  if (updateRes.error) {
+    throw new Error(`Failed to update session: ${updateRes.error.message}`);
+  }
+  if (!updateRes.data || updateRes.data.length === 0) {
+    throw new Error(
+      'Session not found, or you do not have permission to edit it.',
+    );
+  }
+
+  revalidatePath(`/app/sessions/${input.sessionId}`);
+  revalidatePath('/app/sessions');
 }
 
 /**

@@ -6,8 +6,10 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import type { StageRow } from '@/lib/sessions/types';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
+import { SessionMetaForm } from './SessionMetaForm';
 import { SessionStageList, type ParticipantModel } from './SessionStageList';
 import { SessionTitle } from './SessionTitle';
+import type { SessionMode, SessionStatus } from '@/lib/sessions/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,11 +46,19 @@ export default async function SessionDetailPage({
 
   const sessionRes = await supabase
     .from('sessions')
-    .select('id, title, org_id, facilitator_id, status')
+    .select('id, title, org_id, facilitator_id, status, mode, scheduled_for')
     .eq('id', id)
     .maybeSingle();
   if (sessionRes.error || !sessionRes.data) notFound();
-  const session = sessionRes.data;
+  const session = sessionRes.data as {
+    id: string;
+    title: string;
+    org_id: string;
+    facilitator_id: string;
+    status: SessionStatus;
+    mode: SessionMode;
+    scheduled_for: string | null;
+  };
 
   const stagesRes = await supabase
     .from('stages')
@@ -148,6 +158,14 @@ export default async function SessionDetailPage({
             <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
           ) : null}
         </header>
+        {canManageSession ? (
+          <SessionMetaForm
+            sessionId={session.id}
+            initialStatus={session.status}
+            initialMode={session.mode}
+            initialScheduledFor={session.scheduled_for}
+          />
+        ) : null}
         <SessionStageList
           sessionId={session.id}
           stages={stages}
