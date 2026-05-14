@@ -26,8 +26,7 @@ export async function getCanvasForToken(token: string): Promise<GetCanvasResult>
 
   if (error || !data) return { status: 'not_found' };
 
-  // The PostgREST inner join returns `models` as a single object.
-  const model = (data as { models: { title: string; canvas_state: unknown; deleted_at: string | null } }).models;
+  const model = data.models;
   if (model.deleted_at !== null) return { status: 'not_found' };
 
   if (data.revoked_at !== null) return { status: 'revoked' };
