@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { StageRow } from '@/lib/sessions/types';
 
+import { DeleteSessionButton } from './DeleteSessionButton';
 import { SessionStageList, type ParticipantModel } from './SessionStageList';
 import { SessionTitle } from './SessionTitle';
 
@@ -132,7 +133,7 @@ export default async function SessionDetailPage({
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
-        <header className="flex items-center justify-between gap-4">
+        <header className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               Session · {session.status}
@@ -143,6 +144,9 @@ export default async function SessionDetailPage({
               canRename={canManageSession}
             />
           </div>
+          {canManageSession ? (
+            <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
+          ) : null}
         </header>
         <SessionStageList
           sessionId={session.id}

@@ -228,6 +228,35 @@ export async function createModelInStage(formData: FormData): Promise<void> {
 }
 
 /**
+ * Hard-delete a session. Cascades to stages → models → model_versions via
+ * the existing FK chain. RLS on `sessions` grants DELETE to facilitator +
+ * org admin under the combined "facilitator or admin can write" policy.
+ */
+export async function deleteSession(sessionId: string): Promise<void> {
+  if (!UUID_RE.test(sessionId)) {
+    throw new Error('Invalid sessionId');
+  }
+  const { supabase } = await requireUser();
+
+  const delRes = await supabase
+    .from('sessions')
+    .delete()
+    .eq('id', sessionId)
+    .select('id');
+  if (delRes.error) {
+    throw new Error(`Failed to delete session: ${delRes.error.message}`);
+  }
+  if (!delRes.data || delRes.data.length === 0) {
+    throw new Error(
+      'Session not found, or you do not have permission to delete it.',
+    );
+  }
+
+  revalidatePath('/app/sessions');
+  redirect('/app/sessions');
+}
+
+/**
  * Hard-delete a session-scoped model. Personal/org-shared models continue to
  * go through /app/designs/actions.ts soft-delete; this action refuses them.
  *
