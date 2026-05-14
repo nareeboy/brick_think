@@ -6,6 +6,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import type { StageRow } from '@/lib/sessions/types';
 
 import { SessionStageList } from './SessionStageList';
+import { SessionTitle } from './SessionTitle';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,20 +72,37 @@ export default async function SessionDetailPage({
     (m): m is typeof m & { stage_id: string } => m.stage_id !== null,
   );
 
+  // Rename permission mirrors the sessions UPDATE RLS: facilitator OR org
+  // admin. Org-admin check is via membership role; we resolve it here so the
+  // client component can render the title as plain text for non-authorised
+  // viewers (and skip the editing affordance entirely).
+  let canRename = session.facilitator_id === user.id;
+  if (!canRename) {
+    const { data: membership } = await supabase
+      .from('org_memberships')
+      .select('role')
+      .eq('org_id', session.org_id)
+      .eq('profile_id', user.id)
+      .maybeSingle();
+    canRename =
+      membership !== null &&
+      membership !== undefined &&
+      (membership.role === 'owner' || membership.role === 'admin');
+  }
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
         <header className="flex items-center justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               Session · {session.status}
             </p>
-            <h1
-              className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950"
-              data-testid="session-title"
-            >
-              {session.title}
-            </h1>
+            <SessionTitle
+              sessionId={session.id}
+              initialTitle={session.title}
+              canRename={canRename}
+            />
           </div>
         </header>
         <SessionStageList
