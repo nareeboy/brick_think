@@ -98,6 +98,16 @@ The returned `sessionId` plugs straight into `/app/sessions/<id>` in the browser
 
 Sessions and stages accumulate over time alongside the test auth users. Clean periodically via SQL: `delete from public.sessions where title like 'Test session%';` (cascades to stages, models, and any future child rows).
 
+### Vitest integration tests against local Supabase
+
+`pnpm test:integration` runs the suite under [tests/integration/](tests/integration/) against the local Supabase stack (`pnpm db:start`). Configured separately from the unit suite — different config ([vitest.integration.config.ts](vitest.integration.config.ts)) and env loaded from `.env.test` via `dotenv-cli`. The default `pnpm test` excludes `tests/integration/**` so unit runs stay stack-independent.
+
+Each test creates disposable users (`@brick-think.test`) + org + session via the [lib/testing/supabase-test-client.ts](lib/testing/supabase-test-client.ts) factory and cleans up in `afterAll` (sessions → orgs → model_versions → `admin.deleteUser`, mirroring the same NO-ACTION FK dance as `/api/test/delete-user`). No `pnpm db:reset` between tests; isolation comes from randomised emails and per-file cleanup.
+
+Node 21 / 22 lacks native `globalThis.WebSocket`, which supabase-js's RealtimeClient hits at `createClient()`. [tests/integration/setup.ts](tests/integration/setup.ts) polyfills it from the already-installed `ws` package.
+
+This harness is the answer to the [stream #2 deferred-tests punch list](docs/superpowers/followups/2026-05-14-session-scoped-designs-deferred-tests.md). When stream #3 (Yjs collab) lands new RLS surface, write the new invariants alongside the existing ones rather than spinning up parallel infrastructure.
+
 ## UI conventions
 
 ### Org context lives on the page, not the global header
