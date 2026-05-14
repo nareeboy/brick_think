@@ -144,7 +144,7 @@ function UnifiedSidebar({
                 {initialModel ? (
                   <ShareToOrgMenu modelId={initialModel.id} orgs={orgs} currentOrgId={orgId} />
                 ) : null}
-                <ShareButton />
+                <ShareButton orgId={orgId} />
               </>
             )}
             <HistoryButton />
@@ -304,10 +304,13 @@ function CloseIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function ShareButton() {
+function ShareButton({ orgId }: { orgId: string | null }) {
   const { modelId } = useBuilderState();
   const [open, setOpen] = useState(false);
   if (!modelId) return null;
+  // Org-shared designs are not publicly shareable (spec Q7a). Hide the entry
+  // point entirely; the server action also throws as defence in depth.
+  if (orgId !== null) return null;
   return (
     <>
       <button

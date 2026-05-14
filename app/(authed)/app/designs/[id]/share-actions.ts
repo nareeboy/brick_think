@@ -8,15 +8,6 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { isShareTtl, ttlToExpiresAt, type ShareTtl } from '@/lib/share/ttl';
 
-// Forward-compat gate: v1 only deals with personal designs.
-// When stream 1 (org-wide) adds models.org_id, uncomment the org check.
-// When stream 2 (sessions) adds models.session_id, uncomment the session check.
-// Session designs and org-shared designs are NOT shareable externally per Q7a/Q7b.
-// FORWARD_COMPAT_GATE_BEGIN
-// if (model.session_id !== null) throw new Error('Session designs are not shareable.');
-// if (model.org_id !== null) throw new Error('Org-shared designs are not shareable.');
-// FORWARD_COMPAT_GATE_END
-
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
   const {
@@ -49,7 +40,7 @@ export async function createShareLink(
   // gives a friendlier error and is where the forward-compat gate lives.
   const modelRes = await supabase
     .from('models')
-    .select('id, owner_profile_id')
+    .select('id, owner_profile_id, org_id')
     .eq('id', modelId)
     .single();
   if (modelRes.error || !modelRes.data) {
@@ -62,6 +53,17 @@ export async function createShareLink(
   if (modelRes.data.owner_profile_id !== user.id) {
     throw new Error('Model not found or not owned by you');
   }
+
+  // Org-shared and session-scoped designs are NOT shareable externally per
+  // Q7a/Q7b of the spec. Stream #1 (org-wide) has shipped, so the models.org_id
+  // check is active. Stream #2 (sessions) hasn't merged yet; the models.session_id
+  // check stays commented as a stub until that column exists on models.
+  // FORWARD_COMPAT_GATE_BEGIN
+  if (modelRes.data.org_id !== null) {
+    throw new Error('Org-shared designs are not shareable.');
+  }
+  // if (modelRes.data.session_id !== null) throw new Error('Session designs are not shareable.');
+  // FORWARD_COMPAT_GATE_END
 
   const token = generateToken();
   const expiresAt = ttlToExpiresAt(ttl);

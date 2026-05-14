@@ -8,13 +8,27 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { createShareLink, revokeShareLink } from './share-actions';
 
-function mockUser(userId: string | null) {
+function mockUser(
+  userId: string | null,
+  modelOverrides: { org_id?: string | null } = {},
+) {
   const inserted: unknown[] = [];
   const updated: { revoked_at?: string }[] = [];
   (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
     auth: { getUser: async () => ({ data: { user: userId ? { id: userId } : null } }) },
     from: (_table: string) => ({
-      select: () => ({ eq: () => ({ single: async () => ({ data: { id: 'm1', owner_profile_id: userId }, error: null }) }) }),
+      select: () => ({
+        eq: () => ({
+          single: async () => ({
+            data: {
+              id: 'm1',
+              owner_profile_id: userId,
+              org_id: modelOverrides.org_id ?? null,
+            },
+            error: null,
+          }),
+        }),
+      }),
       insert: (row: Record<string, unknown>) => ({
         select: () => ({
           single: async () => {
@@ -68,6 +82,11 @@ describe('createShareLink', () => {
     });
     await expect(createShareLink('m1', '7d')).rejects.toThrow(/Model not found/);
   });
+
+  it('throws when the model is org-shared (Q7a forward-compat gate)', async () => {
+    mockUser('u1', { org_id: 'org-1' });
+    await expect(createShareLink('m1', '7d')).rejects.toThrow(/Org-shared designs are not shareable/);
+  });
 });
 
 describe('revokeShareLink', () => {
@@ -82,14 +101,28 @@ describe('revokeShareLink', () => {
 });
 
 describe('forward-compat tripwire', () => {
-  it('share-actions.ts contains the documented org_id/session_id gate comment', () => {
-    const file = readFileSync(
-      path.join(process.cwd(), 'app/(authed)/app/designs/[id]/share-actions.ts'),
-      'utf8',
-    );
+  const file = readFileSync(
+    path.join(process.cwd(), 'app/(authed)/app/designs/[id]/share-actions.ts'),
+    'utf8',
+  );
+
+  it('keeps the FORWARD_COMPAT_GATE markers and documents both columns', () => {
     expect(file).toContain('FORWARD_COMPAT_GATE_BEGIN');
     expect(file).toContain('FORWARD_COMPAT_GATE_END');
     expect(file).toContain('models.org_id');
     expect(file).toContain('models.session_id');
+  });
+
+  it('keeps the org_id check active (uncommented)', () => {
+    // Active code line, not a comment. Stream #1 shipped, so the org gate
+    // must be enforced. If someone re-comments this line, the test fails.
+    expect(file).toMatch(/^\s+if \(modelRes\.data\.org_id !== null\) \{$/m);
+  });
+
+  it('keeps the session_id check commented as a stub', () => {
+    // Stream #2 (sessions) hasn't merged yet; the column doesn't exist on
+    // models. The stub must stay commented to compile. When stream #2 ships,
+    // uncomment it and update this test to match the active form.
+    expect(file).toMatch(/^\s+\/\/ if \(modelRes\.data\.session_id !== null\)/m);
   });
 });
