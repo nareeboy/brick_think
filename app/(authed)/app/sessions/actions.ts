@@ -23,16 +23,16 @@ async function requireUser() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in?next=%2Fapp%2Fsessions');
+  if (!user) redirect('/sign-in?next=%2Fapp%2Fmy-designs');
   return { supabase, user };
 }
 
 /**
- * Create a new session in the caller's active org. Auto-creates the five
+ * Create a new session in a specific organisation. Auto-creates the five
  * canonical stages and redirects to the detail page.
  *
  * Permissions:
- * - Caller must have an active org (`profiles.active_org_id IS NOT NULL`).
+ * - Caller must pass the target `orgId` in form data and be a member of it.
  * - RLS on `sessions` insert allows the caller because `facilitator_id = me`.
  */
 export async function createSession(formData: FormData): Promise<void> {
@@ -43,23 +43,27 @@ export async function createSession(formData: FormData): Promise<void> {
     throw new Error('Title is required');
   }
 
+  const rawOrgId = formData.get('orgId');
+  const orgId = typeof rawOrgId === 'string' ? rawOrgId.trim() : '';
+  if (!UUID_RE.test(orgId)) {
+    throw new Error('Invalid orgId');
+  }
+
   const { supabase, user } = await requireUser();
 
-  const profileRes = await supabase
-    .from('profiles')
-    .select('active_org_id')
-    .eq('id', user.id)
-    .single();
-  if (profileRes.error || !profileRes.data) {
-    throw new Error(
-      `Failed to load active org: ${profileRes.error?.message ?? 'unknown'}`,
-    );
+  // Defence-in-depth: confirm the caller is a member of the target org.
+  // RLS on `sessions` insert would already reject non-members, but checking
+  // here surfaces a clearer error.
+  const memberRes = await supabase
+    .from('org_memberships')
+    .select('profile_id', { count: 'exact', head: true })
+    .eq('org_id', orgId)
+    .eq('profile_id', user.id);
+  if (memberRes.error) {
+    throw new Error(`Membership check failed: ${memberRes.error.message}`);
   }
-  const orgId = profileRes.data.active_org_id;
-  if (!orgId) {
-    throw new Error(
-      'You need an active organisation to create a session. Create or switch into an org first.',
-    );
+  if ((memberRes.count ?? 0) === 0) {
+    throw new Error('You are not a member of that organisation');
   }
 
   const sessionRes = await supabase
@@ -86,7 +90,7 @@ export async function createSession(formData: FormData): Promise<void> {
     throw new Error(`Failed to create stages: ${stagesRes.error.message}`);
   }
 
-  revalidatePath('/app/sessions');
+  revalidatePath(`/app/orgs/${orgId}`);
   redirect(`/app/sessions/${sessionId}`);
 }
 
@@ -123,7 +127,7 @@ export async function renameSession(
     );
   }
 
-  revalidatePath('/app/sessions');
+  revalidatePath('/app/my-designs');
   revalidatePath(`/app/sessions/${sessionId}`);
 }
 
@@ -281,19 +285,38 @@ export async function updateSessionMeta(input: {
   }
 
   revalidatePath(`/app/sessions/${input.sessionId}`);
-  revalidatePath('/app/sessions');
+  revalidatePath('/app/my-designs');
 }
 
 /**
  * Hard-delete a session. Cascades to stages → models → model_versions via
  * the existing FK chain. RLS on `sessions` grants DELETE to facilitator +
  * org admin under the combined "facilitator or admin can write" policy.
+ *
+ * Pre-fetches `session.org_id` so we know where to redirect after the row
+ * is gone (RLS would also let us SELECT it, but the row is already deleted
+ * by then, so we capture it first).
  */
 export async function deleteSession(sessionId: string): Promise<void> {
   if (!UUID_RE.test(sessionId)) {
     throw new Error('Invalid sessionId');
   }
   const { supabase } = await requireUser();
+
+  const sessionRes = await supabase
+    .from('sessions')
+    .select('org_id')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (sessionRes.error) {
+    throw new Error(`Session lookup failed: ${sessionRes.error.message}`);
+  }
+  if (!sessionRes.data) {
+    throw new Error(
+      'Session not found, or you do not have permission to delete it.',
+    );
+  }
+  const orgId = sessionRes.data.org_id;
 
   const delRes = await supabase
     .from('sessions')
@@ -309,8 +332,9 @@ export async function deleteSession(sessionId: string): Promise<void> {
     );
   }
 
-  revalidatePath('/app/sessions');
-  redirect('/app/sessions');
+  revalidatePath(`/app/orgs/${orgId}`);
+  revalidatePath('/app/my-designs');
+  redirect(`/app/orgs/${orgId}`);
 }
 
 /**

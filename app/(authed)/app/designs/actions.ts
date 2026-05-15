@@ -5,7 +5,6 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Json } from '@/lib/db/types.generated';
-import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { parseCanvasState, serializeCanvasState } from '@/lib/models/canvasState';
 
 async function requireUser() {
@@ -13,35 +12,8 @@ async function requireUser() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect('/sign-in?next=%2Fapp%2Fdesigns');
+  if (!user) redirect('/sign-in?next=%2Fapp%2Fmy-designs');
   return { supabase, user };
-}
-
-export async function createModelAction(): Promise<void> {
-  const { supabase, user } = await requireUser();
-
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('active_org_id')
-    .eq('id', user.id)
-    .single();
-  if (profileError || !profile) {
-    throw new Error(`Failed to load active context: ${profileError?.message}`);
-  }
-
-  const { data, error } = await supabase
-    .from('models')
-    .insert({
-      owner_profile_id: user.id,
-      title: 'Untitled model',
-      canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
-      org_id: profile.active_org_id,
-    })
-    .select('id')
-    .single();
-  if (error || !data) throw new Error(`Failed to create model: ${error?.message}`);
-  revalidatePath('/app/designs');
-  redirect(`/app/designs/${data.id}`);
 }
 
 export async function deleteModelAction(modelId: string): Promise<void> {
@@ -55,7 +27,7 @@ export async function deleteModelAction(modelId: string): Promise<void> {
   if (!data || data.length === 0) {
     throw new Error('Model not found or not owned by you');
   }
-  revalidatePath('/app/designs');
+  revalidatePath('/app/my-designs');
   revalidatePath('/app/designs/trash');
 }
 
@@ -70,7 +42,7 @@ export async function restoreModelAction(modelId: string): Promise<void> {
   if (!data || data.length === 0) {
     throw new Error('Model not in trash or not owned by you');
   }
-  revalidatePath('/app/designs');
+  revalidatePath('/app/my-designs');
   revalidatePath('/app/designs/trash');
 }
 
@@ -204,6 +176,6 @@ export async function setModelOrgVisibilityAction(
     throw new Error('Design not found or not owned by you');
   }
 
-  revalidatePath('/app/designs');
+  revalidatePath('/app/my-designs');
   revalidatePath(`/app/designs/${modelId}`);
 }
