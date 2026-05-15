@@ -125,7 +125,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
                   type="submit"
                   data-testid="google-sign-in"
                   disabled={unconfigured}
-                  className="inline-flex w-full items-center justify-center gap-2.5 rounded-full border border-zinc-900/15 bg-white px-5 py-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border border-zinc-900/15 bg-white px-5 py-3 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-50 active:translate-y-[1px] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <GoogleGlyph />
                   Continue with Google
@@ -135,11 +135,17 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
             <p className="mt-10 text-[12px] leading-relaxed text-zinc-500">
               By signing in you agree to the{' '}
-              <Link href="/" className="underline-offset-2 hover:text-zinc-800 hover:underline">
+              <Link
+                href="/terms"
+                className="underline-offset-2 hover:text-zinc-800 hover:underline"
+              >
                 Terms
               </Link>{' '}
               and{' '}
-              <Link href="/" className="underline-offset-2 hover:text-zinc-800 hover:underline">
+              <Link
+                href="/privacy"
+                className="underline-offset-2 hover:text-zinc-800 hover:underline"
+              >
                 Privacy Policy
               </Link>
               . AI processing is disclosed at the point of use.
@@ -174,12 +180,6 @@ function TopBar() {
           <BrickGlyph />
           <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
         </Link>
-        <p className="hidden text-[13px] text-zinc-600 sm:block">
-          Joining a session?{' '}
-          <Link href="/join/demo" className="font-medium text-zinc-900 hover:underline">
-            Use a join code
-          </Link>
-        </p>
       </div>
     </header>
   );
@@ -246,9 +246,6 @@ function BrandPanel() {
       {/* decorative bricks */}
       <div className="pointer-events-none absolute -right-6 -top-6" aria-hidden="true">
         <Brick color="#c0613d" w={56} studs={2} />
-      </div>
-      <div className="pointer-events-none absolute -bottom-4 right-12" aria-hidden="true">
-        <Brick color="#1f1f1f" w={84} studs={3} />
       </div>
     </div>
   );
