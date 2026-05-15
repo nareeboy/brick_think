@@ -13,9 +13,7 @@ import { LayersPanel } from './LayersPanel';
 import { ModelTitle } from './ModelTitle';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
-import { ShareToOrgMenu } from './ShareToOrgMenu';
 import type { ModelDetail } from '@/lib/models/types';
-import type { OrgSummary } from '@/lib/orgs/types';
 import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
 
@@ -24,7 +22,6 @@ interface BuilderProps {
   readOnly?: boolean;
   ownerLabel?: string | null;
   orgId?: string | null;
-  orgs?: OrgSummary[];
   sessionContext?: SessionContext | null;
 }
 
@@ -33,7 +30,6 @@ export function Builder({
   readOnly = false,
   ownerLabel = null,
   orgId = null,
-  orgs = [],
   sessionContext = null,
 }: BuilderProps) {
   return (
@@ -55,9 +51,6 @@ export function Builder({
             <UnifiedSidebar
               readOnly={readOnly}
               ownerLabel={ownerLabel}
-              initialModel={initialModel}
-              orgId={orgId}
-              orgs={orgs}
               sessionContext={sessionContext}
             />
             <CanvasStage orgId={orgId} />
@@ -72,16 +65,10 @@ export function Builder({
 function UnifiedSidebar({
   readOnly,
   ownerLabel,
-  initialModel,
-  orgId,
-  orgs,
   sessionContext,
 }: {
   readOnly: boolean;
   ownerLabel: string | null;
-  initialModel?: ModelDetail;
-  orgId: string | null;
-  orgs: OrgSummary[];
   sessionContext: SessionContext | null;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -133,8 +120,6 @@ function UnifiedSidebar({
               <span className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900/5 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600">
                 Read-only · {ownerLabel ?? 'shared'}
               </span>
-            ) : initialModel ? (
-              <ShareToOrgMenu modelId={initialModel.id} orgs={orgs} currentOrgId={orgId} />
             ) : null}
             <HistoryButton />
           </div>

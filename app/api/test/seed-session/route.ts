@@ -85,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   //    a prior /api/test/sign-in call); otherwise 404.
   const profileRes = await admin
     .from('profiles')
-    .select('id, active_org_id')
+    .select('id')
     .eq('email', callerEmail)
     .maybeSingle();
   if (profileRes.error) {
@@ -102,10 +102,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 2. Ensure the caller has an active org. If not, create one + own
-  //    membership + flip active_org_id.
-  let orgId: string | null = profile.active_org_id;
-  if (!orgId) {
+  // 2. Ensure the caller is a member of at least one org. If they already
+  //    are, reuse any existing membership; otherwise create a test org (the
+  //    handle_new_organisation trigger inserts the owner membership row).
+  const membershipRes = await admin
+    .from('org_memberships')
+    .select('org_id')
+    .eq('profile_id', profile.id)
+    .limit(1)
+    .maybeSingle();
+  if (membershipRes.error) {
+    return NextResponse.json(
+      { error: 'membership_lookup_failed', detail: membershipRes.error.message },
+      { status: 500 },
+    );
+  }
+
+  let orgId: string;
+  if (membershipRes.data) {
+    orgId = membershipRes.data.org_id;
+  } else {
     const orgRes = await admin
       .from('organisations')
       .insert({
@@ -125,16 +141,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Note: the handle_new_organisation trigger on public.organisations
     // auto-inserts the owner membership row on org insert, so we do not
     // insert into org_memberships manually here (that would be a duplicate).
-    const profileUpdate = await admin
-      .from('profiles')
-      .update({ active_org_id: orgId })
-      .eq('id', profile.id);
-    if (profileUpdate.error) {
-      return NextResponse.json(
-        { error: 'profile_update_failed', detail: profileUpdate.error.message },
-        { status: 500 },
-      );
-    }
   }
 
   // 3. Create the session.

@@ -6,7 +6,6 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
-import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
 
 export const dynamic = 'force-dynamic';
@@ -85,34 +84,12 @@ export default async function DesignBuilderPage({
   const readOnly = data.owner_profile_id !== user.id;
   const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
 
-  const { data: membershipRows, error: membershipError } = await supabase
-    .from('org_memberships')
-    .select('role, organisations:org_id ( id, name, slug )')
-    .eq('profile_id', user.id);
-  if (membershipError) {
-    throw new Error(`Failed to load orgs: ${membershipError.message}`);
-  }
-  const orgs: OrgSummary[] = (membershipRows ?? [])
-    .map((row): OrgSummary | null => {
-      const org = (row as { organisations: { id: string; name: string; slug: string } | null }).organisations;
-      if (!org) return null;
-      return {
-        id: org.id,
-        name: org.name,
-        slug: org.slug,
-        role: (row as { role: OrgRole }).role,
-      };
-    })
-    .filter((o): o is OrgSummary => o !== null)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
   return (
     <Builder
       initialModel={initialModel}
       readOnly={readOnly}
       ownerLabel={ownerLabel}
       orgId={data.org_id ?? null}
-      orgs={orgs}
       sessionContext={sessionContext}
     />
   );

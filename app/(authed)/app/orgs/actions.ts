@@ -22,7 +22,7 @@ export type CreateOrgResult =
   | { kind: 'slug_taken' };
 
 export async function createOrgAction(formData: FormData): Promise<CreateOrgResult> {
-  const { supabase, user } = await requireUser();
+  const { user } = await requireUser();
   const name = String(formData.get('name') ?? '').trim();
   const slug = String(formData.get('slug') ?? '').trim();
 
@@ -51,20 +51,8 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
   }
   if (!data) throw new Error('Failed to create organisation: no id returned');
 
-  // Best-effort: switch the active context to the new org. If this fails,
-  // the org was still created — the user can switch via the header switcher.
-  const profileUpdate = await supabase
-    .from('profiles')
-    .update({ active_org_id: data.id })
-    .eq('id', user.id);
-  if (profileUpdate.error) {
-    console.error(
-      `Org ${data.id} created but switching active context failed: ${profileUpdate.error.message}`,
-    );
-  }
-
   revalidatePath('/app/orgs');
-  revalidatePath('/app/designs');
+  revalidatePath('/app/my-designs');
   return { kind: 'ok', orgId: data.id };
 }
 
@@ -138,7 +126,7 @@ export async function removeOrgMemberAction(
   }
   revalidatePath(`/app/orgs/${orgId}`);
   revalidatePath('/app/orgs');
-  revalidatePath('/app/designs');
+  revalidatePath('/app/my-designs');
 }
 
 export type RenameOrgResult =
@@ -179,7 +167,7 @@ export async function renameOrgAction(
 
   revalidatePath('/app/orgs');
   revalidatePath(`/app/orgs/${orgId}`);
-  revalidatePath('/app/designs');
+  revalidatePath('/app/my-designs');
   return { kind: 'ok' };
 }
 
@@ -194,7 +182,7 @@ export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
   // RLS restricts DELETE to the owner. As with rename, .select() lets us tell
   // forbidden (RLS dropped the row) from not_found (gone already).
   // Cascade-deletes memberships, sessions, stages, models, per-org settings;
-  // sets designs.org_id and profiles.active_org_id to null via FK.
+  // sets designs.org_id to null via FK.
   const { data, error } = await supabase
     .from('organisations')
     .delete()
@@ -213,34 +201,6 @@ export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
   }
 
   revalidatePath('/app/orgs');
-  revalidatePath('/app/designs');
+  revalidatePath('/app/my-designs');
   return { kind: 'ok' };
-}
-
-export async function setActiveContextAction(
-  orgId: string | null,
-): Promise<void> {
-  const { supabase, user } = await requireUser();
-
-  if (orgId !== null) {
-    // Defence-in-depth: confirm the user is actually a member.
-    const { count, error } = await supabase
-      .from('org_memberships')
-      .select('profile_id', { count: 'exact', head: true })
-      .eq('org_id', orgId)
-      .eq('profile_id', user.id);
-    if (error) throw new Error(`Membership check failed: ${error.message}`);
-    if ((count ?? 0) === 0) {
-      throw new Error('You are not a member of that organisation');
-    }
-  }
-
-  const { error } = await supabase
-    .from('profiles')
-    .update({ active_org_id: orgId })
-    .eq('id', user.id);
-  if (error) throw new Error(`Failed to set active context: ${error.message}`);
-
-  revalidatePath('/app/designs');
-  revalidatePath('/app/orgs');
 }

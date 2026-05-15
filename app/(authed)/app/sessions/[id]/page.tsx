@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import Link from 'next/link';
 
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -46,7 +47,7 @@ export default async function SessionDetailPage({
 
   const sessionRes = await supabase
     .from('sessions')
-    .select('id, title, org_id, facilitator_id, status, mode, scheduled_for')
+    .select('id, title, org_id, facilitator_id, status, mode, scheduled_for, organisations:org_id ( id, name )')
     .eq('id', id)
     .maybeSingle();
   if (sessionRes.error || !sessionRes.data) notFound();
@@ -58,6 +59,7 @@ export default async function SessionDetailPage({
     status: SessionStatus;
     mode: SessionMode;
     scheduled_for: string | null;
+    organisations: { id: string; name: string } | null;
   };
 
   const stagesRes = await supabase
@@ -146,6 +148,21 @@ export default async function SessionDetailPage({
         <header className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              <Link href="/app/orgs" className="underline-offset-2 hover:underline">
+                Organisations
+              </Link>
+              <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
+              {session.organisations ? (
+                <Link
+                  href={`/app/orgs/${session.organisations.id}`}
+                  className="underline-offset-2 hover:underline"
+                >
+                  {session.organisations.name}
+                </Link>
+              ) : (
+                <span>Unknown org</span>
+              )}
+              <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
               Session · {session.status}
             </p>
             <SessionTitle

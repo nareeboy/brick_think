@@ -319,7 +319,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          active_org_id: string | null
           avatar_url: string | null
           created_at: string
           email: string
@@ -328,7 +327,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          active_org_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email: string
@@ -337,7 +335,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          active_org_id?: string | null
           avatar_url?: string | null
           created_at?: string
           email?: string
@@ -345,15 +342,7 @@ export type Database = {
           id?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_active_org_id_fkey"
-            columns: ["active_org_id"]
-            isOneToOne: false
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       sessions: {
         Row: {
@@ -564,6 +553,7 @@ export type Database = {
     Functions: {
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
+      purge_dead_share_links: { Args: never; Returns: undefined }
       purge_expired_trashed_models: { Args: never; Returns: undefined }
     }
     Enums: {
