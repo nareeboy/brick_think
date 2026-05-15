@@ -21,6 +21,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      { source: '/app/designs', destination: '/app/my-designs', permanent: true },
+      { source: '/app/sessions', destination: '/app/orgs', permanent: true },
+      { source: '/app/sessions/new', destination: '/app/orgs', permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
