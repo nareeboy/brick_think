@@ -144,38 +144,3 @@ export async function restoreVersionAction(
 
   revalidatePath(`/app/designs/${modelId}`);
 }
-
-export async function setModelOrgVisibilityAction(
-  modelId: string,
-  orgId: string | null,
-): Promise<void> {
-  const { supabase, user } = await requireUser();
-
-  if (orgId !== null) {
-    const { count, error: memberError } = await supabase
-      .from('org_memberships')
-      .select('profile_id', { count: 'exact', head: true })
-      .eq('org_id', orgId)
-      .eq('profile_id', user.id);
-    if (memberError) {
-      throw new Error(`Membership check failed: ${memberError.message}`);
-    }
-    if ((count ?? 0) === 0) {
-      throw new Error('You are not a member of that organisation');
-    }
-  }
-
-  const { data, error } = await supabase
-    .from('models')
-    .update({ org_id: orgId })
-    .eq('id', modelId)
-    .is('deleted_at', null)
-    .select('id');
-  if (error) throw new Error(`Failed to update visibility: ${error.message}`);
-  if (!data || data.length === 0) {
-    throw new Error('Design not found or not owned by you');
-  }
-
-  revalidatePath('/app/my-designs');
-  revalidatePath(`/app/designs/${modelId}`);
-}
