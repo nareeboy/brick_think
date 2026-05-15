@@ -25,12 +25,13 @@ interface RawRow {
   thumbnail_path: string | null;
   thumbnail_updated_at: string | null;
   session_id: string | null;
-  sessions: {
-    id: string;
-    title: string;
-    org_id: string;
-    organisations: { id: string; name: string } | null;
-  } | null;
+}
+
+interface SessionLookupRow {
+  id: string;
+  title: string;
+  org_id: string;
+  organisations: { id: string; name: string } | null;
 }
 
 export default async function MyDesignsPage({
@@ -70,10 +71,15 @@ export default async function MyDesignsPage({
     .filter((o): o is OrgSummary => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // We avoid PostgREST embedding on models→sessions because models.session_id
+  // is only tied to sessions through the composite FK (stage_id, session_id) →
+  // stages, which PostgREST can't infer as a simple embeddable relationship.
+  // Stitch sessions + organisations in JS after a second query keyed by the
+  // distinct session_ids returned.
   let query = supabase
     .from('models')
     .select(
-      'id, title, updated_at, thumbnail_path, thumbnail_updated_at, session_id, sessions:session_id ( id, title, org_id, organisations:org_id ( id, name ) )',
+      'id, title, updated_at, thumbnail_path, thumbnail_updated_at, session_id',
     )
     .eq('owner_profile_id', user.id)
     .is('deleted_at', null)
@@ -97,6 +103,27 @@ export default async function MyDesignsPage({
   const { data, error } = await query;
   if (error) throw new Error(`Failed to load designs: ${error.message}`);
   const rows = (data ?? []) as unknown as RawRow[];
+
+  const sessionIdsToLookup = Array.from(
+    new Set(
+      rows
+        .map((r) => r.session_id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
+    ),
+  );
+  const sessionById = new Map<string, SessionLookupRow>();
+  if (sessionIdsToLookup.length > 0) {
+    const sRes = await supabase
+      .from('sessions')
+      .select('id, title, org_id, organisations:org_id ( id, name )')
+      .in('id', sessionIdsToLookup);
+    if (sRes.error) {
+      throw new Error(`Failed to load sessions: ${sRes.error.message}`);
+    }
+    for (const row of (sRes.data ?? []) as unknown as SessionLookupRow[]) {
+      sessionById.set(row.id, row);
+    }
+  }
 
   const paths = rows
     .map((r) => r.thumbnail_path)
@@ -123,7 +150,8 @@ export default async function MyDesignsPage({
   }
 
   const cards: AggregateDesignRow[] = rows.map((r): AggregateDesignRow => {
-    if (r.session_id && r.sessions && r.sessions.organisations) {
+    const session = r.session_id ? sessionById.get(r.session_id) : null;
+    if (r.session_id && session && session.organisations) {
       return {
         id: r.id,
         title: r.title,
@@ -131,10 +159,10 @@ export default async function MyDesignsPage({
         thumbnail_url: thumbnailUrl(r),
         badge: {
           kind: 'org-session',
-          orgId: r.sessions.organisations.id,
-          orgName: r.sessions.organisations.name,
-          sessionId: r.sessions.id,
-          sessionTitle: r.sessions.title,
+          orgId: session.organisations.id,
+          orgName: session.organisations.name,
+          sessionId: session.id,
+          sessionTitle: session.title,
         },
       };
     }
