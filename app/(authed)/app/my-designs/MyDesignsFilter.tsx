@@ -1,28 +1,26 @@
 'use client';
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
-import { setActiveContextAction } from '@/app/(authed)/app/orgs/actions';
+import type { MyDesignsFilterValue } from '@/lib/my-designs/types';
+import { serializeFilter } from '@/lib/my-designs/types';
 import type { OrgSummary } from '@/lib/orgs/types';
 
 interface Props {
   orgs: OrgSummary[];
-  activeOrgId: string | null;
+  value: MyDesignsFilterValue;
   buttonId?: string;
 }
 
-export function ContextSwitcher({ orgs, activeOrgId, buttonId }: Props) {
+export function MyDesignsFilter({ orgs, value, buttonId }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
-  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const firstOptionRef = useRef<HTMLButtonElement>(null);
   const listboxId = useId();
-
-  const activeOrg = orgs.find((o) => o.id === activeOrgId) ?? null;
-  const activeLabel = activeOrg ? activeOrg.name : 'Personal';
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -43,15 +41,25 @@ export function ContextSwitcher({ orgs, activeOrgId, buttonId }: Props) {
     };
   }, [open]);
 
-  function pick(orgId: string | null) {
-    if (orgId === activeOrgId) {
-      setOpen(false);
-      return;
+  const activeLabel = (() => {
+    switch (value.kind) {
+      case 'all': return 'All';
+      case 'personal': return 'Personal';
+      case 'org': {
+        const org = orgs.find((o) => o.id === value.orgId);
+        return org?.name ?? 'Organisation';
+      }
     }
-    start(async () => {
-      await setActiveContextAction(orgId);
+  })();
+
+  function pick(next: MyDesignsFilterValue) {
+    start(() => {
+      const params = new URLSearchParams(searchParams ?? undefined);
+      if (next.kind === 'all') params.delete('filter');
+      else params.set('filter', serializeFilter(next));
+      const qs = params.toString();
+      router.push(qs ? `/app/my-designs?${qs}` : '/app/my-designs');
       setOpen(false);
-      router.refresh();
     });
   }
 
@@ -65,6 +73,7 @@ export function ContextSwitcher({ orgs, activeOrgId, buttonId }: Props) {
         aria-expanded={open}
         aria-controls={open ? listboxId : undefined}
         disabled={pending}
+        data-testid="my-designs-filter-button"
         className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-900/10 bg-white px-3 text-[13px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-900/5 disabled:opacity-60"
       >
         <span>{activeLabel}</span>
@@ -74,48 +83,41 @@ export function ContextSwitcher({ orgs, activeOrgId, buttonId }: Props) {
         <div
           id={listboxId}
           role="listbox"
-          aria-label="Switch context"
+          aria-label="Filter designs"
           className="absolute left-0 top-12 z-30 w-64 overflow-hidden rounded-2xl border border-zinc-900/10 bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
         >
-          <ContextItem
-            label="Personal"
-            sub="Your private designs"
-            active={activeOrgId === null}
-            onSelect={() => pick(null)}
+          <FilterItem
+            label="All"
+            active={value.kind === 'all'}
+            onSelect={() => pick({ kind: 'all' })}
             buttonRef={firstOptionRef}
           />
+          <FilterItem
+            label="Personal"
+            active={value.kind === 'personal'}
+            onSelect={() => pick({ kind: 'personal' })}
+          />
           {orgs.map((o) => (
-            <ContextItem
+            <FilterItem
               key={o.id}
               label={o.name}
-              sub={`${o.slug} · ${o.role}`}
-              active={o.id === activeOrgId}
-              onSelect={() => pick(o.id)}
+              active={value.kind === 'org' && value.orgId === o.id}
+              onSelect={() => pick({ kind: 'org', orgId: o.id })}
             />
           ))}
-          <Link
-            href="/app/orgs/new"
-            onClick={() => setOpen(false)}
-            className="flex items-center justify-between border-t border-zinc-900/5 px-4 py-3 text-[13px] font-semibold text-[#c0613d] transition-colors hover:bg-[#FAF7F1]"
-          >
-            New organisation
-            <span aria-hidden="true">+</span>
-          </Link>
         </div>
       ) : null}
     </div>
   );
 }
 
-function ContextItem({
+function FilterItem({
   label,
-  sub,
   active,
   onSelect,
   buttonRef,
 }: {
   label: string;
-  sub: string;
   active: boolean;
   onSelect: () => void;
   buttonRef?: React.Ref<HTMLButtonElement>;
@@ -131,12 +133,7 @@ function ContextItem({
         active ? 'bg-[#FAF7F1]' : ''
       }`}
     >
-      <span className="flex flex-col">
-        <span className="text-[13px] font-semibold text-zinc-900">{label}</span>
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          {sub}
-        </span>
-      </span>
+      <span className="text-[13px] font-semibold text-zinc-900">{label}</span>
       {active ? <CheckIcon /> : null}
     </button>
   );

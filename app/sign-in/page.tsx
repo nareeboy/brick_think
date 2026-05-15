@@ -17,8 +17,8 @@ interface SignInPageProps {
 }
 
 function safeNext(next: string | undefined): string {
-  if (!next) return '/app/designs';
-  return next.startsWith('/') ? next : '/app/designs';
+  if (!next) return '/app/my-designs';
+  return next.startsWith('/') ? next : '/app/my-designs';
 }
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {

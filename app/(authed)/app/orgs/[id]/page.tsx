@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -10,6 +11,8 @@ import { DeleteOrgButton } from './DeleteOrgButton';
 import { LeaveOrgButton } from './LeaveOrgButton';
 import { MemberRow } from './MemberRow';
 import { RenameOrgForm } from './RenameOrgForm';
+import { NewSessionInline } from './sessions/NewSessionInline';
+import { SessionsList } from './sessions/SessionsList';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +47,7 @@ export default async function OrgDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect(`/sign-in?next=%2Fapp%2Forgs%2F${id}`);
 
-  const [orgRes, viewerRoleRes, membersRes] = await Promise.all([
+  const [orgRes, viewerRoleRes, membersRes, sessionsRes] = await Promise.all([
     supabase.from('organisations').select('id, name, slug').eq('id', id).single(),
     supabase
       .from('org_memberships')
@@ -56,6 +59,11 @@ export default async function OrgDetailPage({
       .from('org_memberships')
       .select('role, profiles:profile_id ( id, email, full_name, avatar_url )')
       .eq('org_id', id),
+    supabase
+      .from('sessions')
+      .select('id, title, status, updated_at')
+      .eq('org_id', id)
+      .order('updated_at', { ascending: false }),
   ]);
 
   if (orgRes.error || !orgRes.data) notFound();
@@ -65,6 +73,9 @@ export default async function OrgDetailPage({
   if (!viewerRoleRes.data) notFound();
   if (membersRes.error) {
     throw new Error(`Failed to load members: ${membersRes.error.message}`);
+  }
+  if (sessionsRes.error) {
+    throw new Error(`Failed to load sessions: ${sessionsRes.error.message}`);
   }
 
   const viewerRole = viewerRoleRes.data.role as OrgRole;
@@ -90,10 +101,14 @@ export default async function OrgDetailPage({
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <div className="mx-auto flex max-w-[720px] flex-col gap-6 px-5 py-10">
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10">
         <header>
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Organisation
+            <Link href="/app/orgs" className="underline-offset-2 hover:underline">
+              Organisations
+            </Link>
+            <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
+            {orgRes.data.name}
           </p>
           <div className="mt-1">
             {isAdmin ? (
@@ -107,12 +122,17 @@ export default async function OrgDetailPage({
           <p className="mt-1 font-mono text-[12px] text-zinc-500">{orgRes.data.slug}</p>
         </header>
 
-        {isAdmin ? <AddMemberForm orgId={id} /> : null}
-
         <section className="flex flex-col gap-3">
+          <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">Sessions</h2>
+          <NewSessionInline orgId={id} />
+          <SessionsList sessions={sessionsRes.data ?? []} />
+        </section>
+
+        <section className="flex flex-col gap-3 border-t border-zinc-900/5 pt-8">
           <h2 className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
             Members ({members.length})
           </h2>
+          {isAdmin ? <AddMemberForm orgId={id} /> : null}
           <ul className="flex flex-col gap-2">
             {members.map((m) => (
               <MemberRow
