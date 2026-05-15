@@ -15,7 +15,7 @@ export function GlobalHeader({ userName, userEmail }: Props) {
       <HeaderInner>
         <div className="flex items-center gap-4">
           <Link
-            href="/app/designs"
+            href="/app/my-designs"
             aria-label="BrickThink — go to my designs"
             className="inline-flex items-center gap-2 rounded-md px-1 py-1 transition-colors hover:bg-zinc-900/5"
           >

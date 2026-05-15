@@ -50,7 +50,7 @@ export default async function TrashPage() {
             </h1>
           </div>
           <Link
-            href="/app/designs"
+            href="/app/my-designs"
             className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5"
           >
             Back to designs
