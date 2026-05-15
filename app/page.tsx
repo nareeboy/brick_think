@@ -141,7 +141,7 @@ function NavBar() {
             Sign in
           </Link>
           <Link
-            href="/app"
+            href="/app/designs"
             className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
           >
             Open the app
@@ -807,7 +807,7 @@ function CtaBand() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/app"
+                href="/app/designs"
                 className="inline-flex items-center gap-2 rounded-full border border-zinc-900/15 bg-white px-5 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
               >
                 Open the app
@@ -875,7 +875,7 @@ function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/app" className="hover:text-zinc-950">
+              <Link href="/app/designs" className="hover:text-zinc-950">
                 Open the app
               </Link>
             </li>
