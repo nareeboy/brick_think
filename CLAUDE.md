@@ -30,22 +30,22 @@ If a migration's SQL has already been applied to the remote by hand (Dashboard S
 
 ### Supabase Storage conventions
 
-The project uses Supabase Storage for the `model-thumbnails` bucket (canvas previews on `/app/designs`). Future buckets (user avatars, attachments, org-shared thumbnails) should follow the same pattern unless there's a specific reason not to:
+The project uses Supabase Storage for the `model-thumbnails` bucket (canvas previews on `/app/my-designs`). Future buckets (user avatars, attachments, org-shared thumbnails) should follow the same pattern unless there's a specific reason not to:
 
 - **Private buckets, signed URLs.** `public = false` on the bucket; resolve URLs server-side with `supabase.storage.from('<bucket>').createSignedUrls(paths, 60 * 60)`. Use the plural `createSignedUrls()` (batched, one round-trip) on list pages, not the singular per row.
 - **Owner-folder paths.** Path convention `${auth.uid()}/<resource-id>.<ext>` so the Storage RLS policy `(storage.foldername(name))[1] = auth.uid()::text` enforces ownership at the bucket level — symmetric with the row's `owner_profile_id = auth.uid()` RLS.
 - **Verify ownership before uploading.** The Storage RLS only checks the path's user-folder; it doesn't know whether `<resource-id>` actually belongs to the user. Always SELECT the parent row through the user-scoped client first — otherwise a client can write orphan bytes at `${user.id}/<someone-elses-resource>.png`.
 - **Cache buster on signed URLs.** Append `&v=${updated_at}` (or another monotonic field) to the signed URL. Supabase signed URLs are deterministic for a given `(path, expiresIn)` within the TTL — without a buster, browsers cache stale images after an overwrite.
-- **Plain `<img>` over `next/image`.** Avoids whitelisting the Supabase storage hostname in `next.config.mjs` and skips the optimisation pipeline cost on Railway. Suppress the `@next/next/no-img-element` warning with an inline `// eslint-disable-next-line` plus a rationale (see [app/(authed)/app/designs/DesignList.tsx](app/(authed)/app/designs/DesignList.tsx)).
+- **Plain `<img>` over `next/image`.** Avoids whitelisting the Supabase storage hostname in `next.config.mjs` and skips the optimisation pipeline cost on Railway. Suppress the `@next/next/no-img-element` warning with an inline `// eslint-disable-next-line` plus a rationale (see [app/(authed)/app/my-designs/DesignList.tsx](app/(authed)/app/my-designs/DesignList.tsx)).
 - **Hard-delete cleanup is the caller's job.** Deleting the row does NOT cascade to Storage. Server actions that hard-delete rows must explicitly `storage.from('<bucket>').remove([paths])` first. Cascade-via-FK doesn't exist for `storage.objects`.
 
 ### Auth providers
 
-The sign-in page ([app/sign-in/page.tsx](app/sign-in/page.tsx)) supports magic link and Google OAuth. Post-sign-in destination is `/app/designs` — defaulted in three places ([app/sign-in/actions.ts](app/sign-in/actions.ts), [app/sign-in/page.tsx](app/sign-in/page.tsx), [app/auth/callback/route.ts](app/auth/callback/route.ts)); change all three together.
+The sign-in page ([app/sign-in/page.tsx](app/sign-in/page.tsx)) supports magic link and Google OAuth. Post-sign-in destination is `/app/my-designs` — defaulted in three places ([app/sign-in/actions.ts](app/sign-in/actions.ts), [app/sign-in/page.tsx](app/sign-in/page.tsx), [app/auth/callback/route.ts](app/auth/callback/route.ts)); change all three together.
 
-- **Google OAuth (primary tested path).** Configured in Supabase Dashboard → Authentication → Providers → Google. The OAuth client lives in Google Cloud project `brickthink-auth`; redirect URI in Google **must** match `https://wreypwrvfpzjyijpyhkb.supabase.co/auth/v1/callback` exactly. App is still in Google's "Testing" mode — sign-in works only for the test users listed under OAuth consent screen until the app is published (needs verified domain + privacy policy first).
-- **Magic link.** Uses Supabase's built-in email service, which rate-limits at ~4 sends/hour per address. Custom SMTP via Resend is the planned upgrade — env vars `RESEND_API_KEY` / `RESEND_FROM_ADDRESS` exist in [.env.example](.env.example) but are unused; Supabase auth SMTP is configured in the Dashboard, not via app env. Blocked on owning a domain to verify in Resend.
-- **Redirect URLs allowlist.** Supabase falls back to Site URL and drops the `?next=` query param if `/auth/callback` isn't whitelisted under URL Configuration. As a defensive net, [app/page.tsx](app/page.tsx) forwards any stray `?code=` on `/` to `/auth/callback?...&next=/app/designs`. Don't remove the forwarder without confirming the allowlist covers wildcard query strings (`http://localhost:3000/**` or equivalent).
+- **Google OAuth (primary tested path).** Configured in Supabase Dashboard → Authentication → Providers → Google. The OAuth client lives in Google Cloud project `brickthink-auth`; redirect URI in Google **must** match `https://wreypwrvfpzjyijpyhkb.supabase.co/auth/v1/callback` exactly. Published 2026-05-15 — out of Testing mode, any Google account can sign in. Branding (privacy / terms links) lives on the OAuth consent screen.
+- **Magic link.** Transports through Resend SMTP via Supabase Auth's custom-SMTP bridge. From: `hello@brickthink.io`; sending domain `brickthink.io` is verified in Resend with SPF / DKIM / DMARC records on Namecheap. Reply-To surfaces in the email footer (the Supabase SMTP bridge doesn't pass a Reply-To header through, so it's an inline `mailto:` instead). The `RESEND_API_KEY` / `RESEND_FROM_ADDRESS` entries in [.env.example](.env.example) are documentation reminders only — Next.js doesn't read them; the source of truth for the SMTP password is the Supabase Dashboard. Resend free tier allows 100 sends / day with no per-recipient throttle (the prior ~4/hour built-in-email limit is gone). Local dev still uses Inbucket (`http://127.0.0.1:54324`) — deliberately not pointed at Resend to avoid burning free-tier sends and to keep `pnpm db:reset` cycles fast.
+- **Redirect URLs allowlist.** Supabase falls back to Site URL and drops the `?next=` query param if `/auth/callback` isn't whitelisted under URL Configuration. As a defensive net, [app/page.tsx](app/page.tsx) forwards any stray `?code=` on `/` to `/auth/callback?...&next=/app/my-designs`. Don't remove the forwarder without confirming the allowlist covers wildcard query strings (`http://localhost:3000/**` or equivalent).
 
 ## Tooling expectations before commit
 
@@ -94,7 +94,7 @@ Fix, easiest first:
 
 `seededSession` (in [e2e/fixtures.ts](e2e/fixtures.ts)) creates a fresh session and its five stages per test via the dev-only [/api/test/seed-session](app/api/test/seed-session/route.ts) route. The route has three independent gates, all required: `E2E_SESSIONS_ENABLED=1` (set in [playwright.config.ts](playwright.config.ts) `webServer.env`), a `localhost`/`127.0.0.1` host check, and the same `@brick-think.test` email allowlist on `callerEmail`. **Never set `E2E_SESSIONS_ENABLED` on Railway.** Same defence-in-depth pattern as `/api/test/sign-in`; read the comment at the top of the route file before adding, removing, or weakening any gate.
 
-The fixture requires the caller to have signed in once first via `/api/test/sign-in` (the seed route looks up the profile row by email). It bootstraps an org + owner membership for a brand-new test user if `profiles.active_org_id` is null. The created session is owned by the caller as facilitator. The owner membership is inserted automatically by the `handle_new_organisation` DB trigger; the route only inserts the org row and updates `profiles.active_org_id`.
+The fixture requires the caller to have signed in once first via `/api/test/sign-in` (the seed route looks up the profile row by email). It bootstraps an org + owner membership for a brand-new test user if they have no `org_memberships` row; otherwise it reuses their first existing org. The created session is owned by the caller as facilitator. The owner membership is inserted automatically by the `handle_new_organisation` DB trigger; the route only inserts the org row. The response includes both `sessionId` and `orgId` so Playwright fixtures can drive the new wizard / send-to-session flows without re-querying.
 
 Manual dev curl after `E2E_AUTH_ENABLED=1 E2E_SESSIONS_ENABLED=1 pnpm dev`:
 
@@ -124,15 +124,22 @@ This harness is the answer to the [stream #2 deferred-tests punch list](docs/sup
 
 ## UI conventions
 
-### Org context lives on the page, not the global header
+### Navigation hierarchy: Organisations → Sessions → Designs
 
-The `ContextSwitcher` is rendered **inside each org-scoped list page**, not in the [GlobalHeader](components/app/GlobalHeader.tsx). The pattern (see [app/(authed)/app/designs/page.tsx](<app/(authed)/app/designs/page.tsx>) and [app/(authed)/app/sessions/page.tsx](<app/(authed)/app/sessions/page.tsx>) as the canonical references):
+The app's IA is a single hierarchy with one cross-cutting index. Context comes from the URL on each page — there is no global "active org" state on the profile, no header switcher. The header has exactly two links: `Organisations` and `My Designs`.
 
-1. Fetch `org_memberships` + `profiles.active_org_id` in the page's server component.
-2. Render the active context name (`activeOrgName ?? 'Personal'`) as the eyebrow above the page title — *not* the literal string "BrickThink".
-3. Beneath the title row, render `<label>Organisation:</label>` + `<ContextSwitcher orgs activeOrgId buttonId="organisation-switcher" />` so users know which menu controls what they're looking at.
+- **`/app/my-designs`** ([app/(authed)/app/my-designs/page.tsx](<app/(authed)/app/my-designs/page.tsx>)) is the aggregate index of every design the signed-in user has authored (`owner_profile_id = me`), regardless of where it lives. Each card carries a badge: `Personal` (model has no session/org) or `{Org} · {Session}` (session-scoped). The page-level Filter dropdown narrows by Personal or by a specific org via `?filter=personal|org-<uuid>`; the URL is the source of truth (see [lib/my-designs/types.ts](lib/my-designs/types.ts) `parseFilter` / `serializeFilter`).
+- **`/app/orgs`** lists the orgs you're a member of; clicking one navigates to **`/app/orgs/[id]`** which shows that org's sessions list (primary content), the inline new-session form, the member roster, and admin actions. Sessions list is the default surface — no separate `/app/orgs/[id]/sessions` route.
+- **`/app/sessions/[id]`** is the session detail page. Its eyebrow renders a breadcrumb `Organisations / {Org} / Session · {status}` linking back through the hierarchy.
+- Sessions are **always org-scoped** (`sessions.org_id NOT NULL`). Designs in the org case are **always session-scoped**: a model has either `(org_id IS NULL AND session_id IS NULL)` for Personal, or `(org_id IS NULL AND session_id IS NOT NULL)` for session-scoped — the `models_context_exclusive` CHECK forbids both being set. The legacy "org-standalone" state (`org_id` set, `session_id` null) was migrated away in [supabase/migrations/20260515000000_nav_restructure.sql](supabase/migrations/20260515000000_nav_restructure.sql).
 
-When you add a new org-scoped list page, follow the same shape rather than reintroducing a header-level switcher. The page-level placement makes "whose data is this?" visible without opening the menu, and keeps each list page self-contained.
+### New-design entry points
+
+- **From `/app/my-designs`:** the `New design` button opens a two-step wizard ([NewDesignDialog.tsx](<app/(authed)/app/my-designs/NewDesignDialog.tsx>)) — pick destination (Personal + each org), then pick session (skipped for Personal, includes inline "+ New session"). The wizard calls `createDesignAction({orgId, sessionId})` in [my-designs/actions.ts](<app/(authed)/app/my-designs/actions.ts>).
+- **From inside `/app/sessions/[id]`:** each stage has its own "New model" affordance that calls `createModelInStage` directly — no wizard, design lands in that stage.
+- **Send to a session:** personal designs only. The card on `/app/my-designs` shows a paper-plane button next to the trash; opens [SendToSessionDialog.tsx](<app/(authed)/app/my-designs/SendToSessionDialog.tsx>) which picks org → session and calls `duplicateToSessionAction`. One-way copy: source stays where it was.
+
+When you add a new authenticated list page, derive its context from the URL or page-level props (a server component reads memberships + filters from `searchParams`). Do not reintroduce a global switcher or any `profiles.active_org_id`-style mutable context column — it was removed for a reason (URL-driven context is shareable, bookmarkable, and survives reloads without a round-trip).
 
 ## Process
 

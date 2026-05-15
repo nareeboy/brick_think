@@ -90,7 +90,7 @@ interface HomePageProps {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const { code, error_description } = await searchParams;
   if (code) {
-    const params = new URLSearchParams({ code, next: '/app/designs' });
+    const params = new URLSearchParams({ code, next: '/app/my-designs' });
     redirect(`/auth/callback?${params.toString()}`);
   }
   if (error_description) {
@@ -141,7 +141,7 @@ function NavBar() {
             Sign in
           </Link>
           <Link
-            href="/app/designs"
+            href="/app/my-designs"
             className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
           >
             Open the app
@@ -807,7 +807,7 @@ function CtaBand() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/app/designs"
+                href="/app/my-designs"
                 className="inline-flex items-center gap-2 rounded-full border border-zinc-900/15 bg-white px-5 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
               >
                 Open the app
@@ -875,7 +875,7 @@ function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/app/designs" className="hover:text-zinc-950">
+              <Link href="/app/my-designs" className="hover:text-zinc-950">
                 Open the app
               </Link>
             </li>
