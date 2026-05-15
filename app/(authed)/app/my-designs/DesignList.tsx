@@ -6,12 +6,16 @@ import { useRef, useState, useTransition } from 'react';
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import { deleteModelAction } from '@/app/(authed)/app/designs/actions';
 import type { AggregateDesignRow } from '@/lib/my-designs/types';
+import type { OrgSummary } from '@/lib/orgs/types';
+
+import { SendToSessionDialog } from './SendToSessionDialog';
 
 interface Props {
   designs: AggregateDesignRow[];
+  orgs: OrgSummary[];
 }
 
-export function DesignList({ designs }: Props) {
+export function DesignList({ designs, orgs }: Props) {
   if (designs.length === 0) {
     return (
       <p
@@ -29,14 +33,15 @@ export function DesignList({ designs }: Props) {
       className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
     >
       {designs.map((d) => (
-        <DesignCard key={d.id} design={d} />
+        <DesignCard key={d.id} design={d} orgs={orgs} />
       ))}
     </ul>
   );
 }
 
-function DesignCard({ design }: { design: AggregateDesignRow }) {
+function DesignCard({ design, orgs }: { design: AggregateDesignRow; orgs: OrgSummary[] }) {
   const [confirming, setConfirming] = useState(false);
+  const [sending, setSending] = useState(false);
   const [pending, start] = useTransition();
   const trashButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -56,6 +61,9 @@ function DesignCard({ design }: { design: AggregateDesignRow }) {
   // Only personal designs can be trashed (RLS on soft-delete refuses
   // session-scoped rows by design — see 20260514120000_session_designs.sql).
   const canTrash = design.badge.kind === 'personal';
+  // Sending a personal design into a session only makes sense if the user
+  // belongs to at least one organisation with sessions to send to.
+  const canSend = design.badge.kind === 'personal' && orgs.length > 0;
 
   return (
     <li
@@ -90,6 +98,17 @@ function DesignCard({ design }: { design: AggregateDesignRow }) {
         </p>
         <Badge badge={design.badge} />
       </Link>
+      {canSend ? (
+        <button
+          type="button"
+          onClick={() => setSending(true)}
+          aria-label={`Send ${design.title} to a session`}
+          data-testid={`send-${design.id}`}
+          className="absolute right-10 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 opacity-0 transition-all hover:bg-zinc-900/5 hover:text-zinc-700 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+        >
+          <SendIcon className="h-4 w-4" />
+        </button>
+      ) : null}
       {canTrash ? (
         <button
           ref={trashButtonRef}
@@ -100,6 +119,14 @@ function DesignCard({ design }: { design: AggregateDesignRow }) {
         >
           <TrashIcon className="h-4 w-4" />
         </button>
+      ) : null}
+
+      {sending ? (
+        <SendToSessionDialog
+          sourceModelId={design.id}
+          orgs={orgs}
+          onClose={() => setSending(false)}
+        />
       ) : null}
 
       {confirming ? (
@@ -168,6 +195,24 @@ function DotGridPlaceholder() {
         backgroundSize: '22px 22px',
       }}
     />
+  );
+}
+
+function SendIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m22 2-11 11" />
+      <path d="M22 2 15 22l-4-9-9-4z" />
+    </svg>
   );
 }
 
