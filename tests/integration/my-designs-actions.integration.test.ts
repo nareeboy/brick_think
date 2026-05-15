@@ -15,6 +15,7 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
 import {
+  addOrgMember,
   cleanupTestUser,
   createTestOrg,
   createTestSession,
@@ -56,7 +57,10 @@ vi.mock('@/lib/db/server', () => ({
 }));
 
 // Import AFTER the mocks so the action picks them up.
-import { createDesignAction } from '@/app/(authed)/app/my-designs/actions';
+import {
+  createDesignAction,
+  duplicateToSessionAction,
+} from '@/app/(authed)/app/my-designs/actions';
 
 interface Fixture {
   owner: TestUser;
@@ -150,5 +154,128 @@ describe('createDesignAction', () => {
         sessionId: fx.session.id,
       }),
     ).rejects.toThrow(/member/i);
+  });
+});
+
+describe('duplicateToSessionAction', () => {
+  test('copies a personal design into a target session and leaves the source unchanged', async () => {
+    const admin = getAdminClient();
+
+    // Create a personal design (no session, no org) for fx.owner.
+    currentClient = await signInAs(fx.owner);
+    const sourceId = await createDesignAction({ orgId: null, sessionId: null });
+
+    // Tag the canvas state with a marker so we can prove the copy carried it over.
+    await admin
+      .from('models')
+      .update({
+        title: 'duplicate-source',
+        canvas_state: { marker: 'duplicate-source-canvas' },
+      })
+      .eq('id', sourceId);
+
+    try {
+      currentClient = await signInAs(fx.owner);
+      const newId = await duplicateToSessionAction({
+        sourceModelId: sourceId,
+        orgId: fx.org.id,
+        sessionId: fx.session.id,
+      });
+      expect(newId).toMatch(/^[0-9a-f-]{36}$/);
+      expect(newId).not.toBe(sourceId);
+
+      const newRow = await admin
+        .from('models')
+        .select('id, owner_profile_id, org_id, session_id, stage_id, title, canvas_state')
+        .eq('id', newId)
+        .single();
+      expect(newRow.error).toBeNull();
+      expect(newRow.data?.owner_profile_id).toBe(fx.owner.id);
+      expect(newRow.data?.org_id).toBeNull();
+      expect(newRow.data?.session_id).toBe(fx.session.id);
+      expect(newRow.data?.stage_id).toBe(fx.session.stageIds.skill_building);
+      expect(newRow.data?.title).toBe('duplicate-source');
+      expect(newRow.data?.canvas_state).toEqual({ marker: 'duplicate-source-canvas' });
+
+      // Source row is unchanged.
+      const srcRow = await admin
+        .from('models')
+        .select('id, owner_profile_id, org_id, session_id, stage_id, title')
+        .eq('id', sourceId)
+        .single();
+      expect(srcRow.error).toBeNull();
+      expect(srcRow.data?.owner_profile_id).toBe(fx.owner.id);
+      expect(srcRow.data?.org_id).toBeNull();
+      expect(srcRow.data?.session_id).toBeNull();
+      expect(srcRow.data?.stage_id).toBeNull();
+      expect(srcRow.data?.title).toBe('duplicate-source');
+
+      await admin.from('models').delete().eq('id', newId);
+    } finally {
+      await admin.from('models').delete().eq('id', sourceId);
+    }
+  });
+
+  test('refuses to copy into an org the caller is not a member of', async () => {
+    const admin = getAdminClient();
+
+    // Outsider owns a separate org + session that the sender (fx.owner) is
+    // NOT a member of. Reuse fx.outsiderOrg and create a fresh session there.
+    const strangerSession = await createTestSession({
+      orgId: fx.outsiderOrg.id,
+      facilitatorId: fx.outsider.id,
+      title: 'duplicate-stranger-session',
+    });
+
+    // The sender — fx.owner — creates a personal design.
+    currentClient = await signInAs(fx.owner);
+    const sourceId = await createDesignAction({ orgId: null, sessionId: null });
+
+    try {
+      currentClient = await signInAs(fx.owner);
+      await expect(
+        duplicateToSessionAction({
+          sourceModelId: sourceId,
+          orgId: fx.outsiderOrg.id,
+          sessionId: strangerSession.id,
+        }),
+      ).rejects.toThrow(/member/i);
+    } finally {
+      await admin.from('models').delete().eq('id', sourceId);
+      await admin.from('sessions').delete().eq('id', strangerSession.id);
+    }
+  });
+
+  test('refuses to copy a design the caller does not own (RLS-scoped source SELECT)', async () => {
+    const admin = getAdminClient();
+
+    // Add a second user as a member of fx.org so both have access to the
+    // same session — but only fx.owner owns the source design.
+    const otherMember = await createTestUser();
+    try {
+      await addOrgMember({
+        orgId: fx.org.id,
+        profileId: otherMember.id,
+        role: 'member',
+      });
+
+      currentClient = await signInAs(fx.owner);
+      const sourceId = await createDesignAction({ orgId: null, sessionId: null });
+
+      try {
+        currentClient = await signInAs(otherMember);
+        await expect(
+          duplicateToSessionAction({
+            sourceModelId: sourceId,
+            orgId: fx.org.id,
+            sessionId: fx.session.id,
+          }),
+        ).rejects.toThrow(/owner|not found/i);
+      } finally {
+        await admin.from('models').delete().eq('id', sourceId);
+      }
+    } finally {
+      await cleanupTestUser(otherMember.id);
+    }
   });
 });

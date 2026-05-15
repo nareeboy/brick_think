@@ -179,7 +179,7 @@ export default async function MyDesignsPage({
             />
           </div>
         </header>
-        <DesignList designs={cards} />
+        <DesignList designs={cards} orgs={orgs} />
       </div>
     </main>
   );
