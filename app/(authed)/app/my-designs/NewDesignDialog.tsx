@@ -78,15 +78,23 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
     const orgId = destination.org.id;
     start(async () => {
       try {
-        const fd = new FormData();
-        fd.set('title', newSessionTitle.trim());
-        fd.set('orgId', orgId);
-        await createSession(fd);
-        // createSession redirects to /app/sessions/<id>, which terminates the
-        // server action with a NEXT_REDIRECT. Next.js client-side action call
-        // does NOT throw — but it does NOT return either. To navigate the
-        // builder of the new design, we re-fetch sessions, pick the newest,
-        // then create the design.
+        try {
+          const fd = new FormData();
+          fd.set('title', newSessionTitle.trim());
+          fd.set('orgId', orgId);
+          await createSession(fd);
+          // If we got here without throwing, something is wrong — createSession always redirects.
+          throw new Error('Expected createSession to redirect');
+        } catch (e) {
+          // NEXT_REDIRECT throw = success. Re-throw anything else.
+          const digest = (e as { digest?: string })?.digest;
+          if (!digest?.startsWith('NEXT_REDIRECT')) {
+            throw e;
+          }
+          // Fall through to "session created, now find it and create the design"
+        }
+
+        // Re-fetch sessions to find the newly created one
         const fresh = await listOrgSessionsAction(orgId);
         const newest = fresh[0];
         if (!newest) throw new Error('Failed to find the new session');
