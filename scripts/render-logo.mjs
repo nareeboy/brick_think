@@ -7,11 +7,39 @@ import { chromium } from '@playwright/test';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-const sizes = [
-  { name: 'brickthink-icon-512.png', px: 512 },
-  { name: 'brickthink-icon-1024.png', px: 1024 },
-  { name: 'brickthink-icon-192.png', px: 192 },
-  { name: 'brickthink-icon-64.png', px: 64 },
+// Each entry is rasterised once and written to all listed paths. App-router
+// favicon conventions (app/icon.png, app/apple-icon.png) are written from
+// the same pixel-buffer as the public/brand/* assets so they stay in lock
+// step on a re-run.
+const outputs = [
+  {
+    px: 1024,
+    paths: ['public/brand/brickthink-icon-1024.png'],
+  },
+  {
+    px: 512,
+    paths: ['public/brand/brickthink-icon-512.png'],
+  },
+  {
+    // 192 is the canonical favicon size for modern browsers and Android
+    // Chrome (PWA add-to-home-screen). Also written to app/icon.png where
+    // Next.js App Router picks it up automatically and injects
+    // <link rel="icon" type="image/png" sizes="192x192" href="/icon">.
+    px: 192,
+    paths: ['public/brand/brickthink-icon-192.png', 'app/icon.png'],
+  },
+  {
+    // 180 is the iOS home-screen size. Next.js picks app/apple-icon.png
+    // up automatically and injects <link rel="apple-touch-icon" …>.
+    // iOS clips to a rounded rectangle and composites onto a white
+    // background — transparent BG is fine.
+    px: 180,
+    paths: ['public/brand/brickthink-icon-180.png', 'app/apple-icon.png'],
+  },
+  {
+    px: 64,
+    paths: ['public/brand/brickthink-icon-64.png'],
+  },
 ];
 
 // The original CSS is 28x28; scale to N px with 80% inner fill so the icon
@@ -66,7 +94,7 @@ function html(px) {
 
 const browser = await chromium.launch();
 try {
-  for (const { name, px } of sizes) {
+  for (const { px, paths } of outputs) {
     const ctx = await browser.newContext({
       viewport: { width: px, height: px },
       deviceScaleFactor: 1,
@@ -74,11 +102,13 @@ try {
     const page = await ctx.newPage();
     await page.setContent(html(px));
     const buf = await page.screenshot({ omitBackground: true, type: 'png' });
-    const out = `public/brand/${name}`;
-    await mkdir(dirname(out), { recursive: true });
-    await writeFile(out, buf);
+    for (const out of paths) {
+      await mkdir(dirname(out), { recursive: true });
+      await writeFile(out, buf);
+      // eslint-disable-next-line no-console -- intentional status output for a manually-run build script
+      console.log(`wrote ${out} (${buf.length} bytes)`);
+    }
     await ctx.close();
-    console.log(`wrote ${out} (${buf.length} bytes)`);
   }
 } finally {
   await browser.close();
