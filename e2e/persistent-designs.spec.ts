@@ -39,12 +39,13 @@ async function dragPieceOntoCanvas(
 
 test.describe('persistent designs', () => {
   test('a brick survives a page refresh', async ({ signedInPage: page }) => {
-    await page.goto('/app/designs');
+    await page.goto('/app/my-designs');
     await expect(
       page.getByRole('heading', { name: /my designs/i, level: 1 }),
     ).toBeVisible();
 
-    await page.getByRole('button', { name: /^new design$/i }).click();
+    await page.getByTestId('new-design-button').click();
+    await page.getByTestId('destination-personal').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -66,8 +67,9 @@ test.describe('persistent designs', () => {
   });
 
   test('save and restore a version', async ({ signedInPage: page }) => {
-    await page.goto('/app/designs');
-    await page.getByRole('button', { name: /^new design$/i }).click();
+    await page.goto('/app/my-designs');
+    await page.getByTestId('new-design-button').click();
+    await page.getByTestId('destination-personal').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -136,8 +138,9 @@ test.describe('persistent designs', () => {
   test('a thumbnail appears on the card after first edit + reload', async ({
     signedInPage: page,
   }) => {
-    await page.goto('/app/designs');
-    await page.getByRole('button', { name: /^new design$/i }).click();
+    await page.goto('/app/my-designs');
+    await page.getByTestId('new-design-button').click();
+    await page.getByTestId('destination-personal').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     const designId = page.url().split('/').pop();
     if (!designId) throw new Error('could not extract design id from url');
@@ -156,7 +159,7 @@ test.describe('persistent designs', () => {
     // transition. Give it a moment to complete before navigating away.
     await page.waitForTimeout(2000);
 
-    await page.goto('/app/designs');
+    await page.goto('/app/my-designs');
     // Locate the card by the <a> element's own href — filter({ has }) only
     // searches descendants, so it cannot match the <a>'s own href attribute.
     const card = page.locator(`a[href$="${designId}"]`);
