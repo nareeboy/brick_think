@@ -6,8 +6,8 @@ import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
 function safeNext(value: FormDataEntryValue | null): string {
-  if (typeof value !== 'string') return '/app/designs';
-  return value.startsWith('/') ? value : '/app/designs';
+  if (typeof value !== 'string') return '/app/my-designs';
+  return value.startsWith('/') ? value : '/app/my-designs';
 }
 
 async function originFromHeaders(): Promise<string> {
