@@ -70,7 +70,7 @@ test.describe('session-scoped designs', () => {
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
   });
 
-  test('session-scoped model is hidden from /app/designs', async ({
+  test('session-scoped model is hidden from the Personal filter on My Designs', async ({
     signedInPage: page,
     seededSession,
   }) => {
@@ -86,13 +86,14 @@ test.describe('session-scoped designs', () => {
       sessionModelUrl.match(/\/app\/designs\/([0-9a-f-]+)/)?.[1] ?? '';
     expect(sessionModelId).not.toBe('');
 
-    // Visit the personal/org-shared list — the session model must not appear.
-    await page.goto('/app/designs');
+    // Visit My Designs under the Personal filter — session-scoped models
+    // should be filtered out from the personal view.
+    await page.goto('/app/my-designs?filter=personal');
     await expect(
-      page.getByRole('heading', { level: 1 }),
+      page.getByRole('heading', { level: 1, name: /my designs/i }),
     ).toBeVisible();
     // Cards link to /app/designs/<id>; a card link containing the session
-    // model's id would mean it leaked into the list.
+    // model's id would mean it leaked into the Personal filter view.
     const leak = page.locator(`a[href="/app/designs/${sessionModelId}"]`);
     await expect(leak).toHaveCount(0);
   });

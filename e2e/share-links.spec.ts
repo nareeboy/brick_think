@@ -21,8 +21,9 @@ test.describe('public sharing links', () => {
     signedInPage: page,
     browser,
   }) => {
-    await page.goto('/app/designs');
-    await page.getByRole('button', { name: /^new design$/i }).click();
+    await page.goto('/app/my-designs');
+    await page.getByTestId('new-design-button').click();
+    await page.getByTestId('destination-personal').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await page.getByRole('button', { name: /open pieces/i }).click();
     await placeOneBrick(page);
@@ -77,8 +78,9 @@ test.describe('public sharing links', () => {
     signedInPage: page,
     browser,
   }) => {
-    await page.goto('/app/designs');
-    await page.getByRole('button', { name: /^new design$/i }).click();
+    await page.goto('/app/my-designs');
+    await page.getByTestId('new-design-button').click();
+    await page.getByTestId('destination-personal').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await page.getByRole('button', { name: /open pieces/i }).click();
     await placeOneBrick(page);
@@ -97,7 +99,7 @@ test.describe('public sharing links', () => {
     await expect(dialog.getByTestId('share-link-row').first()).toBeVisible({ timeout: 20_000 });
     const url = await dialog.getByTestId('share-link-row').first().locator('code').innerText();
 
-    await page.goto('/app/designs');
+    await page.goto('/app/my-designs');
     // The delete button is the TrashIcon button on each DesignCard row.
     // Its accessible name is `Delete ${model.title}` — newly created designs
     // default to "Untitled model". We use a loose /^delete /i regex so the
@@ -109,7 +111,7 @@ test.describe('public sharing links', () => {
     const deleteResponse = page.waitForResponse(
       (res) =>
         res.request().method() === 'POST' &&
-        res.url().includes('/app/designs'),
+        res.url().includes('/app/my-designs'),
     );
     await page.getByRole('button', { name: /^delete$/i }).click();
     await deleteResponse;
