@@ -9,19 +9,71 @@ export const metadata: Metadata = {
 
 const LAST_UPDATED = '15 May 2026';
 
+const SECTIONS = [
+  'General terms',
+  'License',
+  'Meanings',
+  'Restrictions',
+  'Return and refund policy',
+  'Your suggestions',
+  'Your consent',
+  'Links to other websites',
+  'Cookies',
+  'Changes to our Terms & Conditions',
+  'Modifications to our website',
+  'Updates to our website',
+  'Third-party services',
+  'Term and termination',
+  'Copyright infringement notice',
+  'Indemnification',
+  'No warranties',
+  'Limitation of liability',
+  'Severability',
+  'Waiver',
+  'Amendments to this Agreement',
+  'Entire Agreement',
+  'Updates to our Terms',
+  'Intellectual property',
+  'Agreement to arbitrate',
+  'Notice of dispute',
+  'Binding arbitration',
+  'Submissions and privacy',
+  'Promotions',
+  'Typographical errors',
+  'Miscellaneous',
+  'Disclaimer',
+  'Contact us',
+] as const;
+
+function slug(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 export default function TermsPage() {
   return (
     <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <LegalTopBar />
-      <main id="main" className="mx-auto max-w-2xl px-6 py-12 md:py-20">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Legal · Last updated {LAST_UPDATED}
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold leading-[1.05] tracking-tight text-zinc-950 md:text-5xl">
-          Terms &amp; Conditions
-        </h1>
+      <main
+        id="main"
+        className="mx-auto max-w-6xl px-6 py-12 md:py-20 lg:grid lg:grid-cols-12 lg:gap-12"
+      >
+        <aside className="hidden lg:col-span-3 lg:block">
+          <TableOfContents ariaLabel="Terms & Conditions sections" />
+        </aside>
+        <div className="lg:col-span-9">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Legal · Last updated {LAST_UPDATED}
+          </p>
+          <h1 className="mt-3 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[60px]">
+            Terms &amp; Conditions
+          </h1>
 
-        <article className="mt-10 space-y-10 text-[15px] leading-relaxed text-zinc-700">
+          <MobileTOC />
+
+          <article className="mt-10 max-w-prose space-y-10 text-[15px] leading-relaxed text-zinc-700">
           <Section heading="General terms">
             <P>
               By accessing and placing an order with Brick Think, you confirm that you are in
@@ -625,9 +677,10 @@ export default function TermsPage() {
               </a>
             </P>
           </Section>
-        </article>
+          </article>
 
-        <LegalFooterNav />
+          <LegalFooterNav />
+        </div>
       </main>
     </div>
   );
@@ -635,10 +688,71 @@ export default function TermsPage() {
 
 function Section({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
-    <section className="space-y-4">
-      <h2 className="text-2xl font-semibold tracking-tight text-zinc-950">{heading}</h2>
+    <section id={slug(heading)} className="scroll-mt-24 space-y-4">
+      <h2 className="font-display text-[28px] font-medium leading-[1.1] tracking-[-0.01em] text-zinc-950 md:text-[32px]">
+        {heading}
+      </h2>
       {children}
     </section>
+  );
+}
+
+function TableOfContents({ ariaLabel }: { ariaLabel: string }) {
+  return (
+    <nav
+      aria-label={ariaLabel}
+      className="sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto py-2 pr-2"
+    >
+      <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+        On this page
+      </p>
+      <ol className="space-y-1.5">
+        {SECTIONS.map((s, i) => (
+          <li
+            key={s}
+            className="flex items-baseline gap-2 text-[13px] leading-snug text-zinc-600"
+          >
+            <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-400">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <a href={`#${slug(s)}`} className="transition-colors hover:text-zinc-950">
+              {s}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+function MobileTOC() {
+  return (
+    <details className="group mt-8 rounded-2xl border border-zinc-900/10 bg-white/60 px-5 py-4 lg:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600">
+        <span>On this page</span>
+        <span
+          aria-hidden="true"
+          className="text-[12px] text-zinc-400 transition-transform group-open:rotate-180"
+        >
+          &#9662;
+        </span>
+      </summary>
+      <ol className="mt-4 space-y-2">
+        {SECTIONS.map((s, i) => (
+          <li
+            key={s}
+            className="flex items-baseline gap-2 text-[13px] leading-snug text-zinc-600"
+          >
+            <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-400">
+              {String(i + 1).padStart(2, '0')}
+            </span>
+            <a href={`#${slug(s)}`} className="hover:text-zinc-950">
+              {s}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </details>
   );
 }
 
@@ -657,7 +771,7 @@ function Em({ children }: { children: React.ReactNode }) {
 function LegalTopBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-zinc-900/5 bg-[#FAF7F1]/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-2xl items-center justify-between px-6">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 text-zinc-900">
           <BrickGlyph />
           <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
