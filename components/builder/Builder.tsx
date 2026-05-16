@@ -11,6 +11,7 @@ import { BuilderCanvasLoader } from './canvasLoader';
 import { CANVAS_DROP_TARGET, DragPieceProvider } from './dragPiece';
 import { LayersPanel } from './LayersPanel';
 import { ModelTitle } from './ModelTitle';
+import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
 import type { ModelDetail } from '@/lib/models/types';
@@ -24,6 +25,7 @@ interface BuilderProps {
   orgId?: string | null;
   sessionContext?: SessionContext | null;
   liveMode?: boolean;
+  self?: { userId: string; displayName: string } | null;
 }
 
 export function Builder({
@@ -33,11 +35,13 @@ export function Builder({
   orgId = null,
   sessionContext = null,
   liveMode = false,
+  self = null,
 }: BuilderProps) {
   return (
     <BuilderProvider
       readOnly={readOnly}
       liveMode={liveMode}
+      self={self}
       initial={
         initialModel
           ? {
@@ -195,6 +199,7 @@ function SaveToast() {
 }
 
 function CanvasStage({ orgId }: { orgId: string | null }) {
+  const { awareness, selfClientId, view } = useBuilderState();
   return (
     <DragPieceProvider>
       <section
@@ -219,6 +224,13 @@ function CanvasStage({ orgId }: { orgId: string | null }) {
         />
 
         <BuilderCanvasLoader />
+
+        <PresenceCursors
+          awareness={awareness}
+          selfClientId={selfClientId}
+          pan={view.pan}
+          zoom={view.zoom}
+        />
 
         <ShareButton orgId={orgId} />
         <PiecesDrawer />

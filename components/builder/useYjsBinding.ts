@@ -20,18 +20,25 @@ export interface YjsBindingSnapshot {
   bricks: BrickInstance[];
 }
 
+export interface PresenceSelf {
+  userId: string;
+  displayName: string;
+}
+
 export interface UseYjsBindingArgs {
   modelId: string;
   initialCanvasState: { groups: LayerGroup[]; bricks: BrickInstance[] };
   initialTitle: string;
   token: string | null;
   wsBaseUrl: string;
+  self?: PresenceSelf | null;
 }
 
 export interface UseYjsBindingResult {
   doc: Y.Doc | null;
   snapshot: YjsBindingSnapshot;
   connectionStatus: YjsConnectionStatus;
+  provider: WebsocketProvider | null;
 }
 
 // Owns a Y.Doc for the given modelId, syncs it with a WebsocketProvider when
@@ -44,6 +51,7 @@ export function useYjsBinding({
   initialTitle,
   token,
   wsBaseUrl,
+  self = null,
 }: UseYjsBindingArgs): UseYjsBindingResult {
   const [snapshot, setSnapshot] = useState<YjsBindingSnapshot>(() => ({
     title: initialTitle,
@@ -54,6 +62,7 @@ export function useYjsBinding({
     useState<YjsConnectionStatus>('connecting');
   const docRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
+  const [, forceRender] = useState(0);
 
   // Init Y.Doc once per modelId.
   useEffect(() => {
@@ -87,7 +96,17 @@ export function useYjsBinding({
       connect: true,
     });
     providerRef.current = provider;
+    // The ref above doesn't trigger a re-render — force one so consumers
+    // (e.g. presence-cursor publishing) see the provider on the next pass.
+    forceRender((n) => n + 1);
     setConnectionStatus('connecting');
+    if (self) {
+      provider.awareness.setLocalStateField('user', {
+        userId: self.userId,
+        displayName: self.displayName,
+        cursor: null,
+      });
+    }
     const onStatus = (event: { status: string }): void => {
       if (event.status === 'connected') setConnectionStatus('connected');
       else if (event.status === 'disconnected')
@@ -99,12 +118,14 @@ export function useYjsBinding({
       provider.off('status', onStatus);
       provider.destroy();
       providerRef.current = null;
+      forceRender((n) => n + 1);
     };
-  }, [token, modelId, wsBaseUrl]);
+  }, [token, modelId, wsBaseUrl, self]);
 
   return {
     doc: docRef.current,
     snapshot,
     connectionStatus,
+    provider: providerRef.current,
   };
 }
