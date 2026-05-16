@@ -31,7 +31,10 @@ const wsUtils = requireFromHere('y-websocket/bin/utils') as {
   docs: Map<string, Y.Doc>;
 };
 
-const PORT = Number(process.env.YJS_PORT ?? 1234);
+// Railway injects PORT for the service and routes its healthcheck to that
+// port. Honour it as a fallback, but let local dev + E2E override via
+// YJS_PORT so they can pin the worker to 1234 alongside Next.js on 3000.
+const PORT = Number(process.env.YJS_PORT ?? process.env.PORT ?? 1234);
 const HOST = process.env.YJS_HOST ?? '0.0.0.0';
 const DB_URL = process.env.WORKER_DATABASE_URL ?? process.env.DATABASE_URL;
 const SECRET = process.env.YJS_JWT_SECRET;
@@ -126,6 +129,7 @@ httpServer.on('upgrade', (request, socket, head) => {
         reason,
         modelId,
         url: request.url,
+        err: err instanceof UpgradeRejected ? undefined : String(err),
       });
       socket.write(`HTTP/1.1 ${status} ${reason}\r\n\r\n`);
       socket.destroy();
