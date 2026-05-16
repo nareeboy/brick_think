@@ -46,6 +46,7 @@ export function SortDropdown({ value, buttonId }: Props) {
       const params = new URLSearchParams(searchParams ?? undefined);
       if (next === 'newest') params.delete('sort');
       else params.set('sort', serializeSort(next));
+      params.delete('page');
       const qs = params.toString();
       router.push(qs ? `/app/my-designs?${qs}` : '/app/my-designs');
       setOpen(false);
