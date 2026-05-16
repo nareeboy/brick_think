@@ -35,6 +35,10 @@ WebSocket auth: [/api/yjs/token](app/api/yjs/token/route.ts) mints a 60s HS256 J
 - All other stages (`individual_model`, `system_model`, `guiding_principles`, `skill_building`) remain one row per (session, stage, owner) with idempotent create scoped to the caller.
 - **Live mode flips `readOnly` to `false` for every session-org member.** Page is [app/(authed)/app/designs/[id]/page.tsx](<app/(authed)/app/designs/[id]/page.tsx>). Outside live mode (personal designs, non-shared session stages), the existing non-owner = read-only rule still applies.
 
+### Per-client undo (live mode only)
+
+`Cmd+Z` / `Ctrl+Z` and `Cmd+Shift+Z` / `Ctrl+Shift+Z` / `Ctrl+Y` drive per-client undo on shared_model designs. The single window-level keyboard listener and the `Y.UndoManager` live in [useYjsUndoManager](components/builder/useYjsUndoManager.ts); `BuilderProvider` only mounts it when `liveMode && !readOnly && liveDoc !== null`, so the autosave path and read-only share views never attach a listener. The stack is bound to the canvas `Y.Map` with `trackedOrigins: Set([YJS_LOCAL_ORIGIN])`, so seeds (`YJS_SEED_ORIGIN`) and remote peer ops never enter it — each browser context only undoes its own work. The text-edit guard (`INPUT`/`TEXTAREA`/`contentEditable`) preserves browser-native text undo while the title input has focus.
+
 ### Production deploy (Railway)
 
 Two services share the repo:
