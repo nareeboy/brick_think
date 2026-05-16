@@ -71,3 +71,25 @@ export function isValidTag(tag: string): boolean {
 export function normaliseTag(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, '-');
 }
+
+const MAX_TAG_FILTER = 8;
+
+export function parseTagList(raw: string | null): string[] {
+  if (!raw) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const piece of raw.split(',')) {
+    const t = piece.trim();
+    if (t.length === 0) continue;
+    if (!isValidTag(t)) continue;
+    if (seen.has(t)) continue;
+    seen.add(t);
+    out.push(t);
+    if (out.length >= MAX_TAG_FILTER) break;
+  }
+  return out;
+}
+
+export function serializeTagList(value: string[]): string {
+  return value.join(',');
+}

@@ -5,8 +5,10 @@ import {
   normaliseTag,
   parseFilter,
   parseSort,
+  parseTagList,
   serializeFilter,
   serializeSort,
+  serializeTagList,
   sortLabel,
 } from './types';
 
@@ -85,5 +87,40 @@ describe('tag helpers', () => {
     expect(normaliseTag('  Lego Bricks  ')).toBe('lego-bricks');
     expect(normaliseTag('FOO')).toBe('foo');
     expect(normaliseTag(' multi    space ')).toBe('multi-space');
+  });
+});
+
+describe('parseTagList', () => {
+  it('returns empty for null or blank', () => {
+    expect(parseTagList(null)).toEqual([]);
+    expect(parseTagList('')).toEqual([]);
+    expect(parseTagList(',,,')).toEqual([]);
+  });
+
+  it('splits comma-separated and trims each', () => {
+    expect(parseTagList('a, b, c')).toEqual(['a', 'b', 'c']);
+  });
+
+  it('drops invalid shapes silently', () => {
+    expect(parseTagList('good,UPPER,has space,-bad,also-good')).toEqual([
+      'good',
+      'also-good',
+    ]);
+  });
+
+  it('dedupes while preserving order', () => {
+    expect(parseTagList('a,b,a,c,b')).toEqual(['a', 'b', 'c']);
+  });
+
+  it('caps the active list at 8 to avoid pathological URL inputs', () => {
+    const big = Array.from({ length: 20 }, (_, i) => `t${i}`).join(',');
+    expect(parseTagList(big)).toHaveLength(8);
+  });
+
+  it('round-trips through serializeTagList', () => {
+    const cases = [['a'], ['a', 'b'], ['foo', 'bar-baz', 'p1']];
+    for (const value of cases) {
+      expect(parseTagList(serializeTagList(value))).toEqual(value);
+    }
   });
 });
