@@ -2,13 +2,9 @@
 
 import { useState } from 'react';
 
-import { AddMemberDialog } from './AddMemberDialog';
+import { NewSessionDialog } from './NewSessionDialog';
 
-interface Props {
-  orgId: string;
-}
-
-export function AddMemberForm({ orgId }: Props) {
+export function CreateSessionButton({ orgId }: { orgId: string }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,13 +12,13 @@ export function AddMemberForm({ orgId }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        data-testid="open-add-member-dialog"
-        className="inline-flex h-9 w-fit cursor-pointer items-center justify-center gap-1.5 rounded-md bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+        data-testid="open-new-session-dialog"
+        className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-md bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
       >
         <PlusIcon className="h-3.5 w-3.5" />
-        Add member
+        Create session
       </button>
-      {open ? <AddMemberDialog orgId={orgId} onClose={() => setOpen(false)} /> : null}
+      {open ? <NewSessionDialog orgId={orgId} onClose={() => setOpen(false)} /> : null}
     </>
   );
 }
