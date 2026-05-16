@@ -163,23 +163,11 @@ function Badge({ badge }: { badge: AggregateDesignRow['badge'] }) {
     );
   }
   return (
-    <p
-      data-testid="design-badge"
-      className="mt-2 truncate text-[12px] text-zinc-600"
-    >
-      <Link
-        href={`/app/orgs/${badge.orgId}`}
-        className="underline-offset-2 hover:underline"
-      >
+    <p data-testid="design-badge" className="mt-2 flex max-w-full items-center gap-1.5">
+      <span className="inline-block max-w-full shrink-0 truncate rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
         {badge.orgName}
-      </Link>
-      <span aria-hidden="true" className="mx-1.5 text-zinc-400">·</span>
-      <Link
-        href={`/app/sessions/${badge.sessionId}`}
-        className="underline-offset-2 hover:underline"
-      >
-        {badge.sessionTitle}
-      </Link>
+      </span>
+      <span className="truncate text-[12px] text-zinc-600">{badge.sessionTitle}</span>
     </p>
   );
 }
