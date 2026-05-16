@@ -139,6 +139,18 @@ export async function performAccountDelete(
     }
   }
 
+  // Remove the avatar object if one exists. Idempotent — missing-object is a
+  // silent no-op from storage.remove. Mirrors the thumbnail sweep above.
+  const avatarCleanup = await supabase.storage
+    .from('avatars')
+    .remove([`${userId}/avatar.png`]);
+  if (avatarCleanup.error) {
+    console.warn('avatar cleanup failed during account delete', {
+      userId,
+      error: avatarCleanup.error,
+    });
+  }
+
   for (const orgId of plan.soloEmptyOrgIds) {
     const del = await supabase.from('organisations').delete().eq('id', orgId);
     if (del.error) {
