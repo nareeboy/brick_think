@@ -11,7 +11,7 @@ if (existsSync(localEnv)) {
   loadEnv({ path: localEnv, override: false });
 }
 
-import * as Y from 'yjs';
+import type * as Y from 'yjs';
 import { WebSocketServer, type WebSocket } from 'ws';
 
 import { createPersistence } from './persistence';
