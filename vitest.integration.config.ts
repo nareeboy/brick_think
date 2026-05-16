@@ -13,7 +13,15 @@ const root = dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   esbuild: { jsx: 'automatic' },
   resolve: {
-    alias: { '@': resolve(root) },
+    alias: {
+      '@': resolve(root),
+      // `server-only` is a Next.js compile-time guard that has no runtime
+      // effect — it throws during the Next.js build if a server-only module is
+      // accidentally imported by a client bundle. In a plain Node/Vitest
+      // environment the package doesn't exist, so alias it to an empty stub so
+      // modules that include `import 'server-only'` load without error.
+      'server-only': resolve(root, 'tests/integration/__stubs__/server-only.ts'),
+    },
   },
   test: {
     environment: 'node',

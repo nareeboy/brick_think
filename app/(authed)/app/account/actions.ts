@@ -9,6 +9,7 @@ import {
   type BlockingOrg,
 } from '@/lib/account/delete';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { isPng } from '@/lib/images/validatePng';
 
 const MAX_NAME_LENGTH = 80;
 
@@ -74,6 +75,9 @@ export async function updateAvatarAction(
   if (raw.size === 0 || raw.size > MAX_AVATAR_BYTES) {
     return { kind: 'error', reason: 'invalid_image' };
   }
+  if (!(await isPng(raw))) {
+    return { kind: 'error', reason: 'invalid_image' };
+  }
 
   const path = `${user.id}/avatar.png`;
   const upload = await supabase.storage.from('avatars').upload(path, raw, {
@@ -114,9 +118,15 @@ export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
   if (!user) redirect('/sign-in?next=%2Fapp%2Faccount');
 
   const path = `${user.id}/avatar.png`;
-  // Idempotent: missing-object is a silent no-op from storage.remove. We
-  // ignore its error rather than failing the whole action.
-  await supabase.storage.from('avatars').remove([path]);
+  // Idempotent on "not found" — log other errors so they surface in Railway
+  // logs without failing the user-facing flow. The DB null still wins.
+  const removeResult = await supabase.storage.from('avatars').remove([path]);
+  if (
+    removeResult.error &&
+    !/not found/i.test(removeResult.error.message)
+  ) {
+    console.error('avatar storage removal failed (continuing):', removeResult.error.message);
+  }
 
   const res = await supabase
     .from('profiles')

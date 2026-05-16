@@ -13,9 +13,22 @@ insert into storage.buckets (id, name, public)
 values ('avatars', 'avatars', true)
 on conflict (id) do nothing;
 
+drop policy if exists "Avatars: owner can read"   on storage.objects;
 drop policy if exists "Avatars: owner can insert" on storage.objects;
 drop policy if exists "Avatars: owner can update" on storage.objects;
 drop policy if exists "Avatars: owner can delete" on storage.objects;
+
+-- SELECT policy is required for authenticated clients so that storage.upload
+-- with upsert:true can resolve the existing object row before deciding whether
+-- to INSERT or UPDATE. The bucket's public flag only bypasses RLS for
+-- unauthenticated HTTP GET on the public URL — it does not satisfy the
+-- authenticated storage-objects RLS check that upsert triggers internally.
+create policy "Avatars: owner can read"
+  on storage.objects for select to authenticated
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
 
 create policy "Avatars: owner can insert"
   on storage.objects for insert to authenticated
@@ -41,6 +54,3 @@ create policy "Avatars: owner can delete"
     bucket_id = 'avatars'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
-
--- No SELECT policy needed — bucket.public = true means SELECT on the object
--- via the public URL bypasses RLS.
