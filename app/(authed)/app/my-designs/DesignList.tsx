@@ -14,9 +14,10 @@ import { TagEditor } from './TagEditor';
 interface Props {
   designs: AggregateDesignRow[];
   orgs: OrgSummary[];
+  allTags: string[];
 }
 
-export function DesignList({ designs, orgs }: Props) {
+export function DesignList({ designs, orgs, allTags }: Props) {
   if (designs.length === 0) {
     return (
       <p
@@ -34,13 +35,21 @@ export function DesignList({ designs, orgs }: Props) {
       className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
     >
       {designs.map((d) => (
-        <DesignCard key={d.id} design={d} orgs={orgs} />
+        <DesignCard key={d.id} design={d} orgs={orgs} allTags={allTags} />
       ))}
     </ul>
   );
 }
 
-function DesignCard({ design, orgs }: { design: AggregateDesignRow; orgs: OrgSummary[] }) {
+function DesignCard({
+  design,
+  orgs,
+  allTags,
+}: {
+  design: AggregateDesignRow;
+  orgs: OrgSummary[];
+  allTags: string[];
+}) {
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
   const [tagging, setTagging] = useState(false);
@@ -158,6 +167,7 @@ function DesignCard({ design, orgs }: { design: AggregateDesignRow; orgs: OrgSum
         <TagEditor
           modelId={design.id}
           initialTags={visibleTags}
+          allTags={allTags}
           onClose={() => {
             setTagging(false);
             queueMicrotask(() => tagButtonRef.current?.focus());

@@ -11,11 +11,14 @@ const MAX_TAGS = 12;
 interface Props {
   modelId: string;
   initialTags: string[];
+  allTags: string[];
   onClose: () => void;
   onSaved?: (next: string[]) => void;
 }
 
-export function TagEditor({ modelId, initialTags, onClose, onSaved }: Props) {
+const MAX_SUGGESTIONS = 10;
+
+export function TagEditor({ modelId, initialTags, allTags, onClose, onSaved }: Props) {
   const [tags, setTags] = useState<string[]>(initialTags);
   const [draft, setDraft] = useState('');
   const [pending, start] = useTransition();
@@ -64,6 +67,24 @@ export function TagEditor({ modelId, initialTags, onClose, onSaved }: Props) {
   function removeTag(tag: string) {
     setTags(tags.filter((t) => t !== tag));
   }
+
+  function addExisting(tag: string) {
+    if (tags.includes(tag)) return;
+    if (tags.length >= MAX_TAGS) {
+      setError(`Up to ${MAX_TAGS} tags per design.`);
+      return;
+    }
+    setError(null);
+    setTags([...tags, tag]);
+    // Keep the typeahead substring if there was one — the user is still
+    // composing, and dropping their input here would feel unmotivated.
+  }
+
+  const draftNorm = normaliseTag(draft);
+  const suggestions = allTags
+    .filter((t) => !tags.includes(t))
+    .filter((t) => (draftNorm.length === 0 ? true : t.includes(draftNorm)))
+    .slice(0, MAX_SUGGESTIONS);
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' || e.key === ',') {
@@ -138,6 +159,29 @@ export function TagEditor({ modelId, initialTags, onClose, onSaved }: Props) {
         data-testid={`tag-editor-input-${modelId}`}
         className="mt-3 h-9 w-full rounded-lg border border-zinc-900/10 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-400 focus:border-[#c0613d] focus:outline-none"
       />
+      {suggestions.length > 0 ? (
+        <div className="mt-2">
+          <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">
+            Suggestions
+          </p>
+          <div
+            data-testid={`tag-editor-suggestions-${modelId}`}
+            className="mt-1 flex flex-wrap gap-1"
+          >
+            {suggestions.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => addExisting(tag)}
+                data-testid={`tag-editor-suggestion-${tag}`}
+                className="inline-flex cursor-pointer items-center rounded-full border border-zinc-900/10 bg-white px-2 py-0.5 font-mono text-[11px] text-zinc-700 transition-colors hover:bg-zinc-900/5"
+              >
+                #{tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {error ? (
         <p role="alert" className="mt-2 text-[12px] text-red-600">
           {error}
