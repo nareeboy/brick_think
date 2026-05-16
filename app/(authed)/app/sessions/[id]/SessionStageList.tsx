@@ -46,7 +46,7 @@ export function SessionStageList({
 
   return (
     <ol className="flex flex-col gap-3" data-testid="session-stage-list">
-      {stages.map((stage) => {
+      {stages.map((stage, index) => {
         const owned = modelByStageId.get(stage.id);
         const participants = participantsByStage[stage.id] ?? [];
         return (
@@ -54,6 +54,7 @@ export function SessionStageList({
             key={stage.id}
             className="flex flex-col gap-3 rounded-2xl border border-zinc-900/10 bg-white p-4"
             data-testid={`stage-card-${stage.stage_type as StageType}`}
+            {...(index === 0 ? { 'data-tour-id': 'first-stage-card' } : {})}
           >
             <div className="flex items-center justify-between gap-4">
               <div className="flex min-w-0 flex-col gap-1">
@@ -66,6 +67,7 @@ export function SessionStageList({
                   title={stage.title}
                   description={stage.description}
                   canEdit={canManageSession}
+                  isTourTarget={index === 0}
                 />
                 {owned ? (
                   <p className="mt-1 truncate text-[13px] text-zinc-600">{owned.title}</p>
