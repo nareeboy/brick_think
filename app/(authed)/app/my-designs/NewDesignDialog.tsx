@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useState, useTransition } from 'react';
 
+import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import type { OrgSummary } from '@/lib/orgs/types';
 
 import { createDesignAction } from './actions';
@@ -25,16 +26,7 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
 
   useEffect(() => {
     if (destination?.kind !== 'org') return;
@@ -107,25 +99,8 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
   }
 
   return (
-    // The outer div doubles as a click-outside-to-close backdrop. ARIA role
-    // "dialog" makes it non-interactive to a11y linters, but the click is
-    // guarded by `e.target === e.currentTarget` (i.e. clicks on inner content
-    // bubble through without firing). Escape-to-close covers keyboard users.
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
-    <div
-      data-testid="new-design-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        ref={dialogRef}
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
-      >
+    <ModalBackdrop dataTestid="new-design-dialog" titleId={titleId} onClose={onClose}>
+      <div className="rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
         <h2 id={titleId} className="text-[18px] font-semibold tracking-tight text-zinc-950">
           {destination ? 'Pick a session' : 'New design'}
         </h2>
@@ -255,6 +230,6 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </ModalBackdrop>
   );
 }

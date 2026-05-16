@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { createSession } from '@/app/(authed)/app/sessions/actions';
+import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
 interface Props {
   orgId: string;
@@ -15,14 +16,6 @@ export function NewSessionDialog({ orgId, onClose }: Props) {
   const [pending, start] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -51,21 +44,11 @@ export function NewSessionDialog({ orgId, onClose }: Props) {
   }
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
-    <div
-      data-testid="new-session-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
+    <ModalBackdrop dataTestid="new-session-dialog" titleId={titleId} onClose={onClose}>
       <form
         onSubmit={submit}
         data-testid="new-session-form"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
+        className="rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
       >
         <h2 id={titleId} className="text-[18px] font-semibold tracking-tight text-zinc-950">
           New session
@@ -114,6 +97,6 @@ export function NewSessionDialog({ orgId, onClose }: Props) {
           </button>
         </div>
       </form>
-    </div>
+    </ModalBackdrop>
   );
 }

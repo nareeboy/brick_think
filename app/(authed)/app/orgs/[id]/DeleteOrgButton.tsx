@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { deleteOrgAction, type DeleteOrgResult } from '@/app/(authed)/app/orgs/actions';
+import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
 interface Props {
   orgId: string;
@@ -23,11 +24,6 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
   useEffect(() => {
     if (!confirming) return;
     inputRef.current?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') reset();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
   }, [confirming]);
 
   function reset() {
@@ -75,19 +71,10 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
       </button>
 
       {confirming ? (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={titleId}
-          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) reset();
-          }}
-        >
+        <ModalBackdrop titleId={titleId} onClose={reset}>
           <form
             onSubmit={submit}
-            className="flex w-full max-w-md flex-col gap-3 rounded-2xl border border-red-200 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
+            className="flex flex-col gap-3 rounded-2xl border border-red-200 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
           >
             <div className="flex flex-col gap-1">
               <h2 id={titleId} className="text-[18px] font-semibold tracking-tight text-red-900">
@@ -137,7 +124,7 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
               </button>
             </div>
           </form>
-        </div>
+        </ModalBackdrop>
       ) : null}
     </>
   );
