@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { AccountForm } from './AccountForm';
 import { BillingCard } from './BillingCard';
 import { DangerZone } from './DangerZone';
+import { ReplayWalkthroughCard } from './ReplayWalkthroughCard';
 
 export const metadata: Metadata = { title: 'Account' };
 export const dynamic = 'force-dynamic';
@@ -59,6 +60,8 @@ export default async function AccountPage() {
         <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
           <AccountForm initialFullName={fullName} email={email} />
         </section>
+
+        <ReplayWalkthroughCard />
 
         <BillingCard userId={user.id} />
 
