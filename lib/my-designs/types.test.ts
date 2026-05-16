@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  MAX_PAGE_NUMBER,
   isValidTag,
   normaliseTag,
   parseFilter,
+  parsePageNumber,
   parseSort,
   parseTagList,
   serializeFilter,
@@ -122,5 +124,28 @@ describe('parseTagList', () => {
     for (const value of cases) {
       expect(parseTagList(serializeTagList(value))).toEqual(value);
     }
+  });
+});
+
+describe('parsePageNumber', () => {
+  it('defaults to page 1 for blank or invalid input', () => {
+    expect(parsePageNumber(null)).toBe(1);
+    expect(parsePageNumber('')).toBe(1);
+    expect(parsePageNumber('not-a-number')).toBe(1);
+    expect(parsePageNumber('0')).toBe(1);
+    expect(parsePageNumber('-5')).toBe(1);
+    expect(parsePageNumber('1.5')).toBe(1); // parseInt → 1, but we want predictability — parseInt actually returns 1 here
+  });
+
+  it('passes through positive integers', () => {
+    expect(parsePageNumber('1')).toBe(1);
+    expect(parsePageNumber('2')).toBe(2);
+    expect(parsePageNumber('99')).toBe(99);
+  });
+
+  it('caps to MAX_PAGE_NUMBER to bound URL pathology', () => {
+    expect(parsePageNumber(String(MAX_PAGE_NUMBER))).toBe(MAX_PAGE_NUMBER);
+    expect(parsePageNumber(String(MAX_PAGE_NUMBER + 1))).toBe(MAX_PAGE_NUMBER);
+    expect(parsePageNumber('999999999')).toBe(MAX_PAGE_NUMBER);
   });
 });

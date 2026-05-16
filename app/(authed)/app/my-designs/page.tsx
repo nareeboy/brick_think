@@ -4,7 +4,14 @@ import { redirect } from 'next/navigation';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { AggregateDesignRow, MyDesignsFilterValue, MyDesignsSort } from '@/lib/my-designs/types';
-import { parseFilter, parseSort, parseTagList } from '@/lib/my-designs/types';
+import {
+  parseFilter,
+  parsePageNumber,
+  parseSort,
+  parseTagList,
+  serializeFilter,
+  serializeTagList,
+} from '@/lib/my-designs/types';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 import { DesignList } from './DesignList';
@@ -67,8 +74,7 @@ export default async function MyDesignsPage({
   const qRaw = firstParam(sp.q) ?? '';
   const q = qRaw.trim().slice(0, 100);
   const activeTags = parseTagList(firstParam(sp.tag));
-  const pageParsed = parseInt(firstParam(sp.page) ?? '1', 10);
-  const page = Number.isFinite(pageParsed) && pageParsed >= 1 ? Math.min(pageParsed, 10_000) : 1;
+  const page = parsePageNumber(firstParam(sp.page));
 
   const membershipsRes = await supabase
     .from('org_memberships')
@@ -177,7 +183,22 @@ export default async function MyDesignsPage({
   query = query.range(offset, offset + PAGE_SIZE - 1);
 
   const { data, error, count } = await query;
-  if (error) throw new Error(`Failed to load designs: ${error.message}`);
+  if (error) {
+    // PGRST103 = "Requested range not satisfiable". Fires when the offset is
+    // past the end of the result set — e.g. a user bookmarks ?page=99, then
+    // deletes designs so only 2 pages remain. Bounce them to page 1 rather
+    // than serving a 500. Any other error is genuine; rethrow.
+    if (error.code === 'PGRST103' && page > 1) {
+      const params = new URLSearchParams();
+      if (filter.kind !== 'all') params.set('filter', serializeFilter(filter));
+      if (sort !== 'newest') params.set('sort', sort);
+      if (q.length > 0) params.set('q', q);
+      if (activeTags.length > 0) params.set('tag', serializeTagList(activeTags));
+      const qs = params.toString();
+      redirect(qs ? `/app/my-designs?${qs}` : '/app/my-designs');
+    }
+    throw new Error(`Failed to load designs: ${error.message}`);
+  }
   const rows = (data ?? []) as unknown as RawRow[];
   const totalCount = count ?? rows.length;
 
