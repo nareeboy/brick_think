@@ -48,6 +48,90 @@ export async function updateProfileAction(rawName: string): Promise<UpdateProfil
   return { kind: 'ok', fullName: next };
 }
 
+const ALLOWED_AVATAR_MIME = 'image/png' as const;
+const MAX_AVATAR_BYTES = 100 * 1024; // 100 KB ceiling for the cropped PNG.
+
+export type UpdateAvatarResult =
+  | { kind: 'ok'; url: string }
+  | { kind: 'error'; reason: string };
+
+export async function updateAvatarAction(
+  formData: FormData,
+): Promise<UpdateAvatarResult> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/sign-in?next=%2Fapp%2Faccount');
+
+  const raw = formData.get('avatar');
+  if (!(raw instanceof Blob)) {
+    return { kind: 'error', reason: 'invalid_image' };
+  }
+  if (raw.type !== ALLOWED_AVATAR_MIME) {
+    return { kind: 'error', reason: 'invalid_image' };
+  }
+  if (raw.size === 0 || raw.size > MAX_AVATAR_BYTES) {
+    return { kind: 'error', reason: 'invalid_image' };
+  }
+
+  const path = `${user.id}/avatar.png`;
+  const upload = await supabase.storage.from('avatars').upload(path, raw, {
+    upsert: true,
+    contentType: ALLOWED_AVATAR_MIME,
+    cacheControl: '0',
+  });
+  if (upload.error) {
+    return { kind: 'error', reason: `upload_failed:${upload.error.message}` };
+  }
+
+  const publicUrlRes = supabase.storage.from('avatars').getPublicUrl(path);
+  const url = `${publicUrlRes.data.publicUrl}?v=${Date.now()}`;
+
+  const res = await supabase
+    .from('profiles')
+    .update({ avatar_url: url })
+    .eq('id', user.id);
+  if (res.error) {
+    return { kind: 'error', reason: `profile_update_failed:${res.error.message}` };
+  }
+
+  revalidatePath('/app/account');
+  revalidatePath('/app/my-designs');
+  revalidatePath('/app/orgs');
+  return { kind: 'ok', url };
+}
+
+export type RemoveAvatarResult =
+  | { kind: 'ok' }
+  | { kind: 'error'; reason: string };
+
+export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/sign-in?next=%2Fapp%2Faccount');
+
+  const path = `${user.id}/avatar.png`;
+  // Idempotent: missing-object is a silent no-op from storage.remove. We
+  // ignore its error rather than failing the whole action.
+  await supabase.storage.from('avatars').remove([path]);
+
+  const res = await supabase
+    .from('profiles')
+    .update({ avatar_url: null })
+    .eq('id', user.id);
+  if (res.error) {
+    return { kind: 'error', reason: `profile_update_failed:${res.error.message}` };
+  }
+
+  revalidatePath('/app/account');
+  revalidatePath('/app/my-designs');
+  revalidatePath('/app/orgs');
+  return { kind: 'ok' };
+}
+
 export type DeleteAccountResult =
   | { kind: 'ok' }
   | { kind: 'invalid_input'; reason: string }
