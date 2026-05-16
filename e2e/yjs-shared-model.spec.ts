@@ -1,7 +1,9 @@
+import type { Page } from '@playwright/test';
+
 import { expect, test } from './fixtures';
 
 async function dropFirstBrickAt(
-  page: import('@playwright/test').Page,
+  page: Page,
   offsetX: number,
   offsetY: number,
 ): Promise<void> {
