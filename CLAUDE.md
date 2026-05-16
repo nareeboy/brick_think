@@ -59,6 +59,16 @@ Operational gotchas baked in by the worker code:
 
 Set `YJS_JWT_SECRET` and `NEXT_PUBLIC_YJS_COLLAB_ENABLED=1` in `.env.local`, then run `pnpm worker:dev` alongside `pnpm dev`. Open a `shared_model` design in two tabs to see live propagation. The worker reads `.env.local` itself via dotenv on boot with `override: false`, so any spawn-injected env wins (used by the integration test fixture to force local Postgres regardless of `.env.local`'s remote URL).
 
+**`WORKER_DATABASE_URL` — local vs remote toggle.** The default `.env.local` carries a *remote* `WORKER_DATABASE_URL` (the project's session pooler) so production-shaped scripts work out of the box. But the local Yjs flow — `pnpm dev` (or `pnpm dev:e2e`) creating a session + model in local Supabase, two browsers opening that model — needs the worker pointed at **local** Postgres, otherwise `can_read_model` runs against the remote DB which doesn't have the local model id and rejects every WS upgrade with `upgrade_rejected status=403 reason="not a member"`. Convention in `.env.local`:
+
+```
+# Remote pooler — uncomment ONLY when deliberately testing against prod data
+# WORKER_DATABASE_URL=postgresql://postgres.<projectref>:<password>@<pooler-host>:5432/postgres
+WORKER_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres
+```
+
+dotenv resolves duplicate keys with last-wins within a single file, so keeping the local URL below a commented-out remote line makes "local is primary, flip to remote by toggling the comment markers" a one-line edit. Restart `pnpm worker:dev` after toggling — the worker reads `.env.local` only on boot.
+
 ### E2E
 
 [playwright.config.ts](playwright.config.ts) `webServer` boots both `pnpm start:e2e` and the worker; specs at [e2e/yjs-shared-model.spec.ts](e2e/yjs-shared-model.spec.ts). The flag is baked into the e2e build via `.env.test`.
