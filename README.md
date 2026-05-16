@@ -195,12 +195,20 @@ The seed response contains a `sessionId` → open `http://localhost:3000/app/ses
 
 ## Worker (Yjs collab backend)
 
-Currently scaffolded but not yet wired to any UI feature. Will become the real-time collaboration backend for session-scoped designs (stream #3 of the persistent-designs roadmap).
+Drives real-time collaboration on `shared_model` session designs: brick/group propagation, presence cursors with avatars + names, and per-client `Cmd+Z` / `Cmd+Shift+Z` undo. Other stages and personal designs still use the autosave path; the worker is only consulted in live mode. Auth via 60s HS256 JWT from `/api/yjs/token`, verified worker-side before WS upgrade.
+
+Required env (web and worker share `YJS_JWT_SECRET`):
+- `NEXT_PUBLIC_YJS_COLLAB_ENABLED=1` — bakes the binding into the client bundle at build time.
+- `NEXT_PUBLIC_YJS_WS_URL` — `ws://localhost:1234/yjs` in dev, `wss://<host>/yjs` in prod.
+- `YJS_JWT_SECRET` — `openssl rand -hex 32`, identical on web and worker.
+- `WORKER_DATABASE_URL` — local Postgres in dev (`postgresql://postgres:postgres@127.0.0.1:54322/postgres`), Supabase Session Pooler URI (port 5432) in prod. See [CLAUDE.md](CLAUDE.md) for the local-vs-remote toggle convention.
 
 ```bash
 pnpm worker:dev        # tsx watch worker/src/yjs-server.ts
 pnpm worker:start      # tsx worker/src/yjs-server.ts (production)
 ```
+
+See [CLAUDE.md](CLAUDE.md) for stage + permission semantics, the Railway deploy split, and the per-client undo design.
 
 ## Stripe (billing)
 
