@@ -29,7 +29,35 @@ Phase 1 of stream 3 introduces a Yjs binding for session-scoped models on the `s
 
 WebSocket auth: [/api/yjs/token](app/api/yjs/token/route.ts) mints a 60s HS256 JWT carrying `{ profileId, modelId }`. The worker verifies the signature, asserts the `modelId` claim matches the upgrade URL, and runs `public.can_read_model()` (service-role only) before accepting the upgrade. Shared `YJS_JWT_SECRET` env var between web and worker — generate with `openssl rand -hex 32` per environment; never reuse.
 
-Local dev: set `YJS_JWT_SECRET` and `NEXT_PUBLIC_YJS_COLLAB_ENABLED=1` in `.env.local`, then run `pnpm worker:dev` alongside `pnpm dev`. Open a `shared_model` design in two tabs to see live propagation. E2E: [playwright.config.ts](playwright.config.ts) `webServer` boots both `pnpm start:e2e` and the worker; specs at [e2e/yjs-shared-model.spec.ts](e2e/yjs-shared-model.spec.ts).
+### Stage + permission semantics
+
+- **`shared_model` is one row per (session, stage)**, owned by the session facilitator by convention. Any session-org member who clicks "Start your model" on that stage redirects to the same model id. The elevated insert lives in [`createModelInStage`](<app/(authed)/app/sessions/actions.ts>) via `getServiceSupabaseClient()` because the RLS INSERT policy insists `owner = auth.uid()`; the pre-SELECT of the session through the RLS-scoped client is the authorization gate.
+- All other stages (`individual_model`, `system_model`, `guiding_principles`, `skill_building`) remain one row per (session, stage, owner) with idempotent create scoped to the caller.
+- **Live mode flips `readOnly` to `false` for every session-org member.** Page is [app/(authed)/app/designs/[id]/page.tsx](<app/(authed)/app/designs/[id]/page.tsx>). Outside live mode (personal designs, non-shared session stages), the existing non-owner = read-only rule still applies.
+
+### Production deploy (Railway)
+
+Two services share the repo:
+
+- **Web service** — root [railway.toml](railway.toml), `pnpm start`. Hosts the Next.js app at `www.brickthink.io`. Needs `YJS_JWT_SECRET` (shared) and `NEXT_PUBLIC_YJS_WS_URL=wss://<worker-host>/yjs` baked at build time. `NEXT_PUBLIC_YJS_COLLAB_ENABLED=1` activates the feature for users.
+- **Worker service** — [worker/railway.toml](worker/railway.toml), `pnpm worker:start`. Long-running WebSocket server. Needs `YJS_JWT_SECRET` (same value as web) and `WORKER_DATABASE_URL` (Supabase **Session Pooler** URI, port 5432). Configure Railway service Settings → Config-as-Code Path → `worker/railway.toml`.
+
+Operational gotchas baked in by the worker code:
+
+- **Don't set `YJS_PORT` on Railway.** The worker resolves port as `YJS_PORT ?? PORT ?? 1234`; Railway injects `PORT` for its healthcheck. Setting `YJS_PORT` shadows it and the healthcheck fails.
+- **`WORKER_DATABASE_URL` must use the Session Pooler** (`aws-…pooler.supabase.com:5432`), not Direct (IPv6-only on Pro plans, blocked from Railway containers) and not Transaction Pooler (port 6543; releases connection per query and breaks the `pg.Pool` semantics the worker assumes).
+- **`NEXT_PUBLIC_*` vars are baked at build time.** Changing them on the web service requires a fresh `next build`, which Railway runs on every deploy — but a no-code env-var-only change may *not* trigger one depending on the Nixpacks cache. Force a redeploy from Deployments tab when toggling the flag.
+- **Same `YJS_JWT_SECRET` on both services.** Web signs with it, worker verifies with it; any mismatch → 401 `invalid token` on every WS upgrade.
+- Worker's persistence path runs `BEGIN; UPSERT yjs_documents; UPDATE models; COMMIT` per debounce. If you see `(ECIRCUITBREAKER) too many authentication failures` from the pooler, the cooldown is per-IP and clears once retries stop — close hammering browser tabs and redeploy the worker to break out cleanly.
+- Worker logs structured JSON; `upgrade_rejected` entries include `err` for non-auth failures (Postgres errors, etc.). Tail the worker's Deployments → live log when triaging.
+
+### Local dev
+
+Set `YJS_JWT_SECRET` and `NEXT_PUBLIC_YJS_COLLAB_ENABLED=1` in `.env.local`, then run `pnpm worker:dev` alongside `pnpm dev`. Open a `shared_model` design in two tabs to see live propagation. The worker reads `.env.local` itself via dotenv on boot with `override: false`, so any spawn-injected env wins (used by the integration test fixture to force local Postgres regardless of `.env.local`'s remote URL).
+
+### E2E
+
+[playwright.config.ts](playwright.config.ts) `webServer` boots both `pnpm start:e2e` and the worker; specs at [e2e/yjs-shared-model.spec.ts](e2e/yjs-shared-model.spec.ts). The flag is baked into the e2e build via `.env.test`.
 
 ## Tooling expectations before commit
 
