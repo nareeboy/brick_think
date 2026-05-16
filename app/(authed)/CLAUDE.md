@@ -4,7 +4,7 @@ Scope: pages under `app/(authed)/`. The nav IA, modal shape, badge pills, and ho
 
 ## Navigation hierarchy: Organisations → Sessions → Designs
 
-The app's IA is a single hierarchy with one cross-cutting index. Context comes from the URL on each page — there is no global "active org" state on the profile, no header switcher. The header has exactly two links: `Organisations` and `My Designs`.
+The app's IA is a single hierarchy with one cross-cutting index. Context comes from the URL on each page — there is no global "active org" state on the profile, no header switcher. The header has exactly two top-level nav links — `Organisations` and `My Designs` — plus two icon-only header actions on the right: a cog linking to [`/app/account`](app/account/page.tsx) and the Sign-out form. The cog deliberately replaces what used to be a text user-name pill; per-account settings shouldn't take real estate in the primary nav.
 
 - **`/app/my-designs`** ([app/my-designs/page.tsx](app/my-designs/page.tsx)) is the aggregate index of every design the signed-in user has authored (`owner_profile_id = me`), regardless of where it lives. Each card carries a badge: `Personal` (model has no session/org) or `{Org} · {Session}` (session-scoped). The page-level Filter dropdown narrows by Personal or by a specific org via `?filter=personal|org-<uuid>`; the URL is the source of truth (see [../../lib/my-designs/types.ts](../../lib/my-designs/types.ts) `parseFilter` / `serializeFilter`).
 - **`/app/orgs`** lists the orgs you're a member of; clicking one navigates to **`/app/orgs/[id]`** which shows that org's sessions list (primary content), member roster, and admin actions. Sessions list is the default surface — no separate `/app/orgs/[id]/sessions` route. The header carries the action group on the right: leave (icon), delete (icon, owner-only), and `Create session` (primary). Creating a session and adding a member both happen in modal dialogs ([app/orgs/[id]/sessions/NewSessionDialog.tsx](<app/orgs/[id]/sessions/NewSessionDialog.tsx>), [app/orgs/[id]/AddMemberDialog.tsx](<app/orgs/[id]/AddMemberDialog.tsx>)) — no inline forms on the page.
@@ -21,15 +21,18 @@ When you add a new authenticated list page, derive its context from the URL or p
 
 ## Modal dialog shape
 
-When a destructive action or a multi-field create flow needs confirmation/input, use a centered modal — not an inline expand-in-place form. The shape is repeated across [app/my-designs/NewDesignDialog.tsx](app/my-designs/NewDesignDialog.tsx), [app/my-designs/SendToSessionDialog.tsx](app/my-designs/SendToSessionDialog.tsx), [app/orgs/[id]/sessions/NewSessionDialog.tsx](<app/orgs/[id]/sessions/NewSessionDialog.tsx>), [app/orgs/[id]/AddMemberDialog.tsx](<app/orgs/[id]/AddMemberDialog.tsx>), [app/orgs/[id]/DeleteOrgButton.tsx](<app/orgs/[id]/DeleteOrgButton.tsx>), and [app/orgs/[id]/LeaveOrgButton.tsx](<app/orgs/[id]/LeaveOrgButton.tsx>):
+When a destructive action or a multi-field create flow needs confirmation/input, use a centered modal — not an inline expand-in-place form. **Wrap your panel in [`<ModalBackdrop>`](../../components/app/ModalBackdrop.tsx)** instead of hand-rolling the backdrop / Escape effect each time. The primitive is consumed by [app/my-designs/NewDesignDialog.tsx](app/my-designs/NewDesignDialog.tsx), [app/my-designs/SendToSessionDialog.tsx](app/my-designs/SendToSessionDialog.tsx), [app/my-designs/ManageTagsDialog.tsx](app/my-designs/ManageTagsDialog.tsx), [app/orgs/[id]/sessions/NewSessionDialog.tsx](<app/orgs/[id]/sessions/NewSessionDialog.tsx>), [app/orgs/[id]/AddMemberDialog.tsx](<app/orgs/[id]/AddMemberDialog.tsx>), [app/orgs/[id]/DeleteOrgButton.tsx](<app/orgs/[id]/DeleteOrgButton.tsx>), and [app/orgs/[id]/LeaveOrgButton.tsx](<app/orgs/[id]/LeaveOrgButton.tsx>).
 
-- Backdrop: `fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4`, `role="dialog"`, `aria-modal="true"`, `aria-labelledby={titleId}`.
-- Dismissal: click-outside (`onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}`) **and** `Escape` (window keydown listener wired in a `useEffect`). Both are required — neither alone covers keyboard + pointer users.
-- Inner panel: `w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]`.
-- Focus the first input/affordance on open via a `useRef` + `inputRef.current?.focus()` effect. Don't use `autoFocus` on inputs that mount on page load.
+What `ModalBackdrop` handles:
+- The fixed-position overlay + interactive `<button>` backdrop (no `jsx-a11y` suppressions needed — an earlier hand-rolled version used a `<div onClick>` that tripped `click-events-have-key-events` and `no-noninteractive-element-interactions`; the button avoids both).
+- `Escape` to close via a window-level keydown listener.
+- `role="dialog"`, `aria-modal="true"`, and wiring `aria-labelledby` (pass `titleId` from a `useId()` on your heading) or `aria-label` (pass `ariaLabel` when there's no visible heading).
+
+What the consumer still owns:
+- The inner panel shape — `rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]` is the convention. Width defaults to `w-full max-w-md` via the primitive's `panelClassName` prop; override if you need wider.
+- Focusing the first input/affordance on open via a `useRef` + `inputRef.current?.focus()` effect. Don't use `autoFocus` on inputs that mount on page load.
 - Server-action errors render inline inside the modal, not as a toast. NEXT_REDIRECT throws from a server action are success — rethrow them so Next can perform the redirect.
-
-The backdrop is a non-interactive `<div>` with a click handler, which trips `jsx-a11y/click-events-have-key-events` and `jsx-a11y/no-noninteractive-element-interactions`. Suppress with an inline `eslint-disable-next-line` directly above the offending `<div>` — not above `return (` (the directive doesn't carry across the newline and lint will still error).
+- Any per-dialog Tab trapping (only [DeleteConfirmDialog](../../components/app/DeleteConfirmDialog.tsx) needs it today — used for the trash flow; simple form/wizard dialogs do not).
 
 ## Icon-trigger header actions
 
