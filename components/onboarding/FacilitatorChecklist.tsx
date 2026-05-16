@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { useOnboardingState } from './useOnboardingState';
 import { WelcomeModal } from './WelcomeModal';
@@ -20,15 +20,39 @@ interface Props {
 }
 
 export function FacilitatorChecklist({ progress }: Props) {
-  const { role, checklistDismissed, hydrated, dismissChecklist } = useOnboardingState();
+  const {
+    role,
+    checklistComplete,
+    checklistDismissed,
+    hydrated,
+    markChecklistComplete,
+    dismissChecklist,
+  } = useOnboardingState();
   const allDone =
     progress.hasOrg && progress.hasSessionInAnyOrg && progress.hasOwnedSessionDesign;
 
+  // Capture the checklistComplete value at hydration time (i.e. what was in
+  // localStorage when the page loaded). We use a ref so re-renders caused by
+  // markChecklistComplete() writing the flag don't re-enter this logic and
+  // trigger an immediate auto-dismiss on the same page visit.
+  const completeAtHydration = useRef<boolean | null>(null);
   useEffect(() => {
-    if (hydrated && role === 'facilitator' && !checklistDismissed && allDone) {
-      dismissChecklist();
+    if (!hydrated) return;
+    if (completeAtHydration.current === null) {
+      completeAtHydration.current = checklistComplete;
     }
-  }, [allDone, checklistDismissed, dismissChecklist, hydrated, role]);
+  }, [hydrated, checklistComplete]);
+
+  useEffect(() => {
+    if (!hydrated || role !== 'facilitator' || checklistDismissed || !allDone) return;
+    if (completeAtHydration.current) {
+      // User already saw the complete card on a previous visit — auto-dismiss.
+      dismissChecklist();
+    } else {
+      // First time reaching all-done: mark it so the next visit auto-dismisses.
+      markChecklistComplete();
+    }
+  }, [allDone, checklistDismissed, dismissChecklist, hydrated, markChecklistComplete, role]);
 
   if (!hydrated || role !== 'facilitator' || checklistDismissed) return null;
 

@@ -87,7 +87,7 @@ export function SessionStageList({
                   </Link>
                 </div>
               ) : (
-                <StartModelButton sessionId={sessionId} stageId={stage.id} />
+                <StartModelButton sessionId={sessionId} stageId={stage.id} stageType={stage.stage_type as StageType} />
               )}
             </div>
 
