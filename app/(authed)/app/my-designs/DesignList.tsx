@@ -9,6 +9,7 @@ import type { AggregateDesignRow } from '@/lib/my-designs/types';
 import type { OrgSummary } from '@/lib/orgs/types';
 
 import { SendToSessionDialog } from './SendToSessionDialog';
+import { TagEditor } from './TagEditor';
 
 interface Props {
   designs: AggregateDesignRow[];
@@ -42,8 +43,12 @@ export function DesignList({ designs, orgs }: Props) {
 function DesignCard({ design, orgs }: { design: AggregateDesignRow; orgs: OrgSummary[] }) {
   const [confirming, setConfirming] = useState(false);
   const [sending, setSending] = useState(false);
+  const [tagging, setTagging] = useState(false);
+  const [tagsOverride, setTagsOverride] = useState<string[] | null>(null);
   const [pending, start] = useTransition();
   const trashButtonRef = useRef<HTMLButtonElement>(null);
+  const tagButtonRef = useRef<HTMLButtonElement>(null);
+  const visibleTags = tagsOverride ?? design.tags;
 
   const updated = new Date(design.updated_at);
   const updatedLabel = updated.toLocaleString('en-GB', {
@@ -64,6 +69,9 @@ function DesignCard({ design, orgs }: { design: AggregateDesignRow; orgs: OrgSum
   // Sending a personal design into a session only makes sense if the user
   // belongs to at least one organisation with sessions to send to.
   const canSend = design.badge.kind === 'personal' && orgs.length > 0;
+  // Tag editor follows the same posture as soft-delete: only the owner can
+  // mutate tags, and ownership of a session-scoped row still belongs to the
+  // creator, so allow tagging there too.
 
   return (
     <li
@@ -97,14 +105,39 @@ function DesignCard({ design, orgs }: { design: AggregateDesignRow; orgs: OrgSum
           Updated {updatedLabel}
         </p>
         <Badge badge={design.badge} />
+        {visibleTags.length > 0 ? (
+          <div
+            data-testid={`card-tags-${design.id}`}
+            className="mt-2 flex flex-wrap gap-1"
+          >
+            {visibleTags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center rounded-full bg-zinc-900/5 px-2 py-0.5 font-mono text-[10px] text-zinc-600"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </Link>
+      <button
+        ref={tagButtonRef}
+        type="button"
+        onClick={() => setTagging(true)}
+        aria-label={`Edit tags for ${design.title}`}
+        data-testid={`tag-${design.id}`}
+        className={`absolute ${canTrash ? (canSend ? 'right-[5.5rem]' : 'right-14') : 'right-6'} top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100`}
+      >
+        <TagIcon className="h-4 w-4" />
+      </button>
       {canSend ? (
         <button
           type="button"
           onClick={() => setSending(true)}
           aria-label={`Send ${design.title} to a session`}
           data-testid={`send-${design.id}`}
-          className="absolute right-10 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 opacity-0 transition-all hover:bg-zinc-900/5 hover:text-zinc-700 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+          className="absolute right-14 top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <SendIcon className="h-4 w-4" />
         </button>
@@ -115,10 +148,22 @@ function DesignCard({ design, orgs }: { design: AggregateDesignRow; orgs: OrgSum
           type="button"
           onClick={() => setConfirming(true)}
           aria-label={`Delete ${design.title}`}
-          className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 opacity-0 transition-all hover:bg-zinc-900/5 hover:text-zinc-700 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+          className="absolute right-6 top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
         >
           <TrashIcon className="h-4 w-4" />
         </button>
+      ) : null}
+
+      {tagging ? (
+        <TagEditor
+          modelId={design.id}
+          initialTags={visibleTags}
+          onClose={() => {
+            setTagging(false);
+            queueMicrotask(() => tagButtonRef.current?.focus());
+          }}
+          onSaved={(next) => setTagsOverride(next)}
+        />
       ) : null}
 
       {sending ? (
@@ -200,6 +245,24 @@ function SendIcon({ className = '' }: { className?: string }) {
     >
       <path d="m22 2-11 11" />
       <path d="M22 2 15 22l-4-9-9-4z" />
+    </svg>
+  );
+}
+
+function TagIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
+      <circle cx="7.5" cy="7.5" r="1.2" />
     </svg>
   );
 }

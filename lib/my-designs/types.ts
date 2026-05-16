@@ -10,6 +10,7 @@ export interface AggregateDesignRow {
   updated_at: string;
   thumbnail_url: string | null;
   badge: AggregateBadge;
+  tags: string[];
 }
 
 export type MyDesignsFilterValue =
@@ -37,4 +38,36 @@ export function serializeFilter(value: MyDesignsFilterValue): string {
     case 'personal': return 'personal';
     case 'org': return `org-${value.orgId}`;
   }
+}
+
+export type MyDesignsSort = 'newest' | 'oldest' | 'title-asc' | 'title-desc';
+
+export const DEFAULT_SORT: MyDesignsSort = 'newest';
+
+export function parseSort(raw: string | null): MyDesignsSort {
+  if (raw === 'oldest' || raw === 'title-asc' || raw === 'title-desc') return raw;
+  return 'newest';
+}
+
+export function serializeSort(value: MyDesignsSort): string {
+  return value;
+}
+
+export function sortLabel(value: MyDesignsSort): string {
+  switch (value) {
+    case 'newest': return 'Newest';
+    case 'oldest': return 'Oldest';
+    case 'title-asc': return 'Title A–Z';
+    case 'title-desc': return 'Title Z–A';
+  }
+}
+
+const TAG_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
+
+export function isValidTag(tag: string): boolean {
+  return TAG_RE.test(tag);
+}
+
+export function normaliseTag(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, '-');
 }

@@ -79,6 +79,32 @@ export type Database = {
           },
         ]
       }
+      model_tags: {
+        Row: {
+          created_at: string
+          model_id: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          model_id: string
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          model_id?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_tags_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       model_versions: {
         Row: {
           canvas_state: Json
