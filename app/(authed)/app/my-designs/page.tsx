@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
+import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { AggregateDesignRow, MyDesignsFilterValue, MyDesignsSort } from '@/lib/my-designs/types';
@@ -97,6 +99,44 @@ export default async function MyDesignsPage({
     })
     .filter((o): o is OrgSummary => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  const orgIds = orgs.map((o) => o.id);
+  const firstOrgId = orgs[0]?.id ?? null;
+
+  let hasSessionInAnyOrg = false;
+  let firstSessionId: string | null = null;
+  if (orgIds.length > 0) {
+    const onboardingSessionRes = await supabase
+      .from('sessions')
+      .select('id')
+      .in('org_id', orgIds)
+      .order('created_at', { ascending: true })
+      .limit(1);
+    if (onboardingSessionRes.error) {
+      throw new Error(
+        `Onboarding session check failed: ${onboardingSessionRes.error.message}`,
+      );
+    }
+    const first = onboardingSessionRes.data?.[0];
+    if (first) {
+      hasSessionInAnyOrg = true;
+      firstSessionId = first.id;
+    }
+  }
+
+  const onboardingDesignRes = await supabase
+    .from('models')
+    .select('id', { head: true, count: 'exact' })
+    .eq('owner_profile_id', user.id)
+    .not('session_id', 'is', null)
+    .is('deleted_at', null)
+    .limit(1);
+  if (onboardingDesignRes.error) {
+    throw new Error(
+      `Onboarding design check failed: ${onboardingDesignRes.error.message}`,
+    );
+  }
+  const hasOwnedSessionDesign = (onboardingDesignRes.count ?? 0) > 0;
 
   // If tag filters are active, first resolve which of the user's owned
   // models carry every requested tag (AND semantics) — keeps the subsequent
@@ -334,6 +374,16 @@ export default async function MyDesignsPage({
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
+        <WelcomeModal />
+        <FacilitatorChecklist
+          progress={{
+            hasOrg: orgs.length > 0,
+            hasSessionInAnyOrg,
+            hasOwnedSessionDesign,
+            firstOrgId,
+            firstSessionId,
+          }}
+        />
         <header className="flex flex-col gap-5">
           <div className="flex items-start justify-between gap-4">
             <div>
