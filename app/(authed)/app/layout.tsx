@@ -19,7 +19,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email')
+    .select('full_name, email, avatar_url')
     .eq('id', user.id)
     .single();
 
@@ -41,10 +41,11 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
     fullName.toLowerCase() === emailLocalPart;
   const userName =
     (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
+  const userAvatarUrl = profileRes.data?.avatar_url ?? null;
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
-      <GlobalHeader userName={userName} userEmail={email} />
+      <GlobalHeader userName={userName} userEmail={email} userAvatarUrl={userAvatarUrl} />
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>
     </div>
   );
