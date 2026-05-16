@@ -17,6 +17,7 @@ interface Props {
   title: string | null;
   description: string | null;
   canEdit: boolean;
+  isTourTarget?: boolean;
 }
 
 // Per-session overrides for a stage's title + description. Both fields are
@@ -30,6 +31,7 @@ export function StageMetaEditor({
   title,
   description,
   canEdit,
+  isTourTarget = false,
 }: Props) {
   const defaultTitle = stageLabel(stageType);
   const defaultDescription = stageDescription(stageType);
@@ -186,6 +188,7 @@ export function StageMetaEditor({
       title="Edit stage title and description"
       aria-label={`Edit ${visibleTitle}`}
       data-testid={`stage-meta-${stageId}`}
+      {...(isTourTarget ? { 'data-tour-id': 'stage-meta-pencil' } : {})}
       className="group -mx-1.5 flex flex-col items-start gap-1 rounded-md px-1.5 py-0.5 text-left hover:bg-zinc-900/5 disabled:cursor-default disabled:opacity-70"
     >
       <span className="flex items-center gap-1.5">
