@@ -136,15 +136,9 @@ function NavBar() {
         <div className="flex items-center gap-2">
           <Link
             href="/sign-in"
-            className="hidden text-sm text-zinc-600 hover:text-zinc-900 sm:inline"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/app/my-designs"
             className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
           >
-            Open the app
+            Sign in
             <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
