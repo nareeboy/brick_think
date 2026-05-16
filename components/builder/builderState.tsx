@@ -212,7 +212,36 @@ export function BuilderProvider({
   self?: PresenceSelf | null;
   children: ReactNode;
 }) {
+  // The live-mode seed mirrors `makeInitialData()` semantics: a freshly
+  // opened model has at least one group so the first dropped brick lands
+  // somewhere. The same seed feeds both the local `data` state's
+  // activeGroupId and the Y.Doc seed, so the local and live group ids match.
+  const liveSeedRef = useRef<{
+    groups: LayerGroup[];
+    bricks: BrickInstance[];
+  } | null>(null);
+  if (liveSeedRef.current === null) {
+    const incoming = initial?.canvasState ?? { groups: [], bricks: [] };
+    if (incoming.groups.length === 0) {
+      liveSeedRef.current = {
+        groups: [createInitialGroup()],
+        bricks: [],
+      };
+    } else {
+      liveSeedRef.current = incoming;
+    }
+  }
+
   const [data, setData] = useState<BuilderData>(() => {
+    if (liveMode) {
+      const firstGroupId = liveSeedRef.current!.groups[0]!.id;
+      return {
+        groups: liveSeedRef.current!.groups,
+        bricks: liveSeedRef.current!.bricks,
+        activeGroupId: firstGroupId,
+        selectedId: null,
+      };
+    }
     if (initial && initial.canvasState.groups.length > 0) {
       const firstGroupId = initial.canvasState.groups[0]!.id;
       return {
@@ -234,7 +263,7 @@ export function BuilderProvider({
   const tokenResult = useYjsToken(liveMode && modelId ? modelId : null);
   const yjs = useYjsBinding({
     modelId: liveMode && modelId ? modelId : '',
-    initialCanvasState: initial?.canvasState ?? { groups: [], bricks: [] },
+    initialCanvasState: liveSeedRef.current,
     initialTitle: initial?.title ?? 'Untitled model',
     token: liveMode ? tokenResult.token : null,
     wsBaseUrl,
