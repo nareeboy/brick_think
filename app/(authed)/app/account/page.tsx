@@ -24,7 +24,7 @@ export default async function AccountPage() {
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, created_at')
+    .select('full_name, email, created_at, avatar_url')
     .eq('id', user.id)
     .single();
   if (profileRes.error) {
@@ -33,6 +33,7 @@ export default async function AccountPage() {
 
   const email = profileRes.data.email;
   const fullName = profileRes.data.full_name?.trim() || null;
+  const initialAvatarUrl = profileRes.data.avatar_url ?? null;
   const createdAt = new Date(profileRes.data.created_at);
   const createdLabel = createdAt.toLocaleDateString('en-GB', {
     month: 'long',
@@ -58,7 +59,7 @@ export default async function AccountPage() {
         </header>
 
         <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
-          <AccountForm initialFullName={fullName} email={email} />
+          <AccountForm initialFullName={fullName} email={email} initialAvatarUrl={initialAvatarUrl} />
         </section>
 
         <ReplayWalkthroughCard />
