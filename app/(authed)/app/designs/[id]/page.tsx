@@ -82,12 +82,16 @@ export default async function DesignBuilderPage({
     }
   }
 
-  const readOnly = data.owner_profile_id !== user.id;
-  const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
   const liveMode = canPlaceLive({
     sessionContext,
     flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
   });
+  // In live mode every session-org member is a co-editor of the same Y.Doc;
+  // ownership only determines the canonical `models.canvas_state` row, not
+  // edit permission. Outside live mode, non-owners stay read-only (the
+  // existing personal / org-shared / session-spectator behaviour).
+  const readOnly = !liveMode && data.owner_profile_id !== user.id;
+  const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
   const self = liveMode ? await loadSelfPresence(supabase, user.id) : null;
 
   return (
