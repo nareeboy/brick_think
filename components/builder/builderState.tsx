@@ -33,6 +33,7 @@ import {
   type YjsConnectionStatus,
 } from './useYjsBinding';
 import { useYjsToken } from './useYjsToken';
+import { useYjsUndoManager } from './useYjsUndoManager';
 
 import type { Awareness } from 'y-protocols/awareness';
 
@@ -158,6 +159,10 @@ export interface BuilderState {
   selfClientId: number | null;
   publishCursor: (worldX: number, worldY: number) => void;
   clearCursor: () => void;
+  undo: () => void;
+  redo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 const Ctx = createContext<BuilderState | null>(null);
@@ -295,6 +300,9 @@ export function BuilderProvider({
   }, [awareness, self]);
   const liveSnapshot = liveMode ? yjs.snapshot : null;
   const liveDoc = liveMode ? yjs.doc : null;
+  const undoManager = useYjsUndoManager(
+    liveMode && !readOnly ? liveDoc : null,
+  );
   const effectiveGroups = liveSnapshot?.groups ?? data.groups;
   const effectiveBricks = liveSnapshot?.bricks ?? data.bricks;
   const effectiveTitle = liveSnapshot?.title ?? title;
@@ -755,6 +763,10 @@ export function BuilderProvider({
       selfClientId: liveMode ? selfClientId : null,
       publishCursor,
       clearCursor,
+      undo: undoManager.undo,
+      redo: undoManager.redo,
+      canUndo: undoManager.canUndo,
+      canRedo: undoManager.canRedo,
     }),
     // `guard` closes over `readOnly`, which IS listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -795,6 +807,10 @@ export function BuilderProvider({
       selfClientId,
       publishCursor,
       clearCursor,
+      undoManager.undo,
+      undoManager.redo,
+      undoManager.canUndo,
+      undoManager.canRedo,
     ],
   );
 
