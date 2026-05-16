@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -182,6 +183,12 @@ export default async function MyDesignsPage({
   const offset = (page - 1) * PAGE_SIZE;
   query = query.range(offset, offset + PAGE_SIZE - 1);
 
+  const trashCountPromise = supabase
+    .from('models')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_profile_id', user.id)
+    .not('deleted_at', 'is', null);
+
   const { data, error, count } = await query;
   if (error) {
     // PGRST103 = "Requested range not satisfiable". Fires when the offset is
@@ -201,6 +208,12 @@ export default async function MyDesignsPage({
   }
   const rows = (data ?? []) as unknown as RawRow[];
   const totalCount = count ?? rows.length;
+
+  const trashRes = await trashCountPromise;
+  if (trashRes.error) {
+    throw new Error(`Failed to load trash count: ${trashRes.error.message}`);
+  }
+  const trashCount = trashRes.count ?? 0;
 
   const sessionIdsToLookup = Array.from(
     new Set(
@@ -334,7 +347,17 @@ export default async function MyDesignsPage({
                 My Designs
               </h1>
             </div>
-            <NewDesignDialogButton orgs={orgs} />
+            <div className="flex items-center gap-2">
+              {trashCount > 0 ? (
+                <Link
+                  href="/app/designs/trash"
+                  className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5"
+                >
+                  Trash ({trashCount})
+                </Link>
+              ) : null}
+              <NewDesignDialogButton orgs={orgs} />
+            </div>
           </div>
           <SearchInput initialValue={q} inputId="my-designs-search-input" />
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
