@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 
 import { removeOrgMemberAction } from '@/app/(authed)/app/orgs/actions';
+import { Avatar } from '@/components/app/Avatar';
 import type { OrgMember } from '@/lib/orgs/types';
 
 interface Props {
@@ -18,7 +19,7 @@ export function MemberRow({ orgId, member, canRemove }: Props) {
   return (
     <li className="group relative flex flex-col gap-4 rounded-2xl border border-zinc-900/10 bg-white p-5 transition-colors hover:bg-[#FAF7F1]">
       <div className="flex items-center gap-3">
-        <Avatar url={member.avatar_url} name={displayName} />
+        <Avatar url={member.avatar_url} name={displayName} size="lg" />
         <span className="inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
           {member.role}
         </span>
@@ -50,19 +51,6 @@ export function MemberRow({ orgId, member, canRemove }: Props) {
         </button>
       ) : null}
     </li>
-  );
-}
-
-function Avatar({ url, name }: { url: string | null; name: string }) {
-  if (url) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={url} alt={name} className="h-11 w-11 rounded-full object-cover" />;
-  }
-  const initial = name.charAt(0).toUpperCase();
-  return (
-    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#c0613d]/15 text-[15px] font-semibold text-[#c0613d]">
-      {initial}
-    </span>
   );
 }
 
