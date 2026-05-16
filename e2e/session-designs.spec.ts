@@ -17,7 +17,7 @@ test.describe('session-scoped designs', () => {
     // Click "Start your model" on the individual_model stage.
     await page
       .getByTestId('stage-card-individual_model')
-      .getByTestId('start-model-button')
+      .getByTestId('start-model-individual_model')
       .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-breadcrumb')).toBeVisible();
@@ -78,7 +78,7 @@ test.describe('session-scoped designs', () => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
     await page
       .getByTestId('stage-card-individual_model')
-      .getByTestId('start-model-button')
+      .getByTestId('start-model-individual_model')
       .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     const sessionModelUrl = page.url();
@@ -107,7 +107,7 @@ test.describe('session-scoped designs', () => {
     // First click: creates model.
     await page
       .getByTestId('stage-card-individual_model')
-      .getByTestId('start-model-button')
+      .getByTestId('start-model-individual_model')
       .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     const firstUrl = page.url();

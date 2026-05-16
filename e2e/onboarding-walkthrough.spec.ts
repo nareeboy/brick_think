@@ -3,6 +3,44 @@ import { expect } from '@playwright/test';
 import { test } from './fixtures';
 
 test.describe('onboarding walkthrough', () => {
+  test.beforeEach(async ({ signedInPage }) => {
+    // The signedInPage fixture suppresses the walkthrough by default. This
+    // script runs after the fixture's suppression script (registration order)
+    // to restore a fresh-user state for onboarding tests.
+    //
+    // Strategy:
+    //   - On the FIRST navigation (sessionStorage key absent): clear all four
+    //     flags so the modal, checklist, and tour fire naturally.
+    //   - On every subsequent navigation (including reloads): clear only
+    //     bt_checklist_dismissed, because the fixture always injects it but
+    //     the user never deliberately sets it in these tests. The other flags
+    //     (bt_welcome_seen, bt_session_tour_seen) are set by real user
+    //     interactions and must survive reloads.
+    await signedInPage.addInitScript(() => {
+      const firstVisit = !window.sessionStorage.getItem('__bt_e2e_ob_init');
+      if (firstVisit) {
+        // First navigation: clear all four flags for a true fresh-user state.
+        window.sessionStorage.setItem('__bt_e2e_ob_init', '1');
+        window.localStorage.removeItem('bt_welcome_seen');
+        window.localStorage.removeItem('bt_checklist_dismissed');
+        window.localStorage.removeItem('bt_checklist_complete');
+        window.localStorage.removeItem('bt_session_tour_seen');
+      } else {
+        // Subsequent navigations (including reloads): only remove
+        // bt_checklist_dismissed, which is injected by the fixture on every
+        // load and would suppress the checklist. The other flags are set by
+        // real user interactions and must survive reloads:
+        //   - bt_welcome_seen: set when user dismisses modal → must stay so
+        //     modal does not re-fire on reload.
+        //   - bt_checklist_complete: set when checklist reaches all-done →
+        //     must stay so the auto-dismiss fires on the next visit.
+        //   - bt_session_tour_seen: set when user skips tour → must stay so
+        //     tour does not re-fire on reload.
+        window.localStorage.removeItem('bt_checklist_dismissed');
+      }
+    });
+  });
+
   test('facilitator sees welcome modal then checklist', async ({ signedInPage }) => {
     await signedInPage.goto('/app/my-designs');
 
