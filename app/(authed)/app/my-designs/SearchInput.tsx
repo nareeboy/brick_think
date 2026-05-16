@@ -31,6 +31,7 @@ export function SearchInput({ initialValue, inputId }: Props) {
     const params = new URLSearchParams(searchParams ?? undefined);
     if (next.length === 0) params.delete('q');
     else params.set('q', next);
+    params.delete('page');
     const qs = params.toString();
     start(() => {
       router.push(qs ? `/app/my-designs?${qs}` : '/app/my-designs');

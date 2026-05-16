@@ -57,6 +57,7 @@ export function MyDesignsFilter({ orgs, value, buttonId }: Props) {
       const params = new URLSearchParams(searchParams ?? undefined);
       if (next.kind === 'all') params.delete('filter');
       else params.set('filter', serializeFilter(next));
+      params.delete('page');
       const qs = params.toString();
       router.push(qs ? `/app/my-designs?${qs}` : '/app/my-designs');
       setOpen(false);

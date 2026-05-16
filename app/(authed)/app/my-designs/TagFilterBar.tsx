@@ -24,6 +24,7 @@ export function TagFilterBar({ tags, active }: Props) {
       const params = new URLSearchParams(searchParams ?? undefined);
       if (next.length === 0) params.delete('tag');
       else params.set('tag', serializeTagList(next));
+      params.delete('page');
       const qs = params.toString();
       router.push(qs ? `/app/my-designs?${qs}` : '/app/my-designs');
     });

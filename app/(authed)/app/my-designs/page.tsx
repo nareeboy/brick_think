@@ -10,9 +10,12 @@ import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 import { DesignList } from './DesignList';
 import { MyDesignsFilter } from './MyDesignsFilter';
 import { NewDesignDialogButton } from './NewDesignDialogButton';
+import { PaginationControls } from './PaginationControls';
 import { SearchInput } from './SearchInput';
 import { SortDropdown } from './SortDropdown';
 import { TagFilterBar } from './TagFilterBar';
+
+const PAGE_SIZE = 24;
 
 export const metadata: Metadata = { title: 'My Designs' };
 export const dynamic = 'force-dynamic';
@@ -22,6 +25,7 @@ interface SearchParams {
   sort?: string | string[];
   q?: string | string[];
   tag?: string | string[];
+  page?: string | string[];
 }
 
 interface RawRow {
@@ -63,6 +67,8 @@ export default async function MyDesignsPage({
   const qRaw = firstParam(sp.q) ?? '';
   const q = qRaw.trim().slice(0, 100);
   const activeTags = parseTagList(firstParam(sp.tag));
+  const pageParsed = parseInt(firstParam(sp.page) ?? '1', 10);
+  const page = Number.isFinite(pageParsed) && pageParsed >= 1 ? Math.min(pageParsed, 10_000) : 1;
 
   const membershipsRes = await supabase
     .from('org_memberships')
@@ -116,6 +122,7 @@ export default async function MyDesignsPage({
     .from('models')
     .select(
       'id, title, updated_at, thumbnail_path, thumbnail_updated_at, session_id',
+      { count: 'exact' },
     )
     .eq('owner_profile_id', user.id)
     .is('deleted_at', null);
@@ -166,9 +173,13 @@ export default async function MyDesignsPage({
     }
   }
 
-  const { data, error } = await query;
+  const offset = (page - 1) * PAGE_SIZE;
+  query = query.range(offset, offset + PAGE_SIZE - 1);
+
+  const { data, error, count } = await query;
   if (error) throw new Error(`Failed to load designs: ${error.message}`);
   const rows = (data ?? []) as unknown as RawRow[];
+  const totalCount = count ?? rows.length;
 
   const sessionIdsToLookup = Array.from(
     new Set(
@@ -332,6 +343,13 @@ export default async function MyDesignsPage({
           {allTags.length > 0 ? <TagFilterBar tags={allTags} active={activeTags} /> : null}
         </header>
         <DesignList designs={cards} orgs={orgs} allTags={allTags} />
+        {totalCount > PAGE_SIZE ? (
+          <PaginationControls
+            page={page}
+            pageSize={PAGE_SIZE}
+            totalCount={totalCount}
+          />
+        ) : null}
       </div>
     </main>
   );
