@@ -2,8 +2,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { BrickCanvasMockup } from '@/components/marketing/brick-canvas-mockup';
-
 const STAGES = [
   {
     n: '01',
@@ -149,25 +147,52 @@ function NavBar() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden border-b border-zinc-900/5">
-      <GrainOverlay />
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 pb-20 pt-14 md:grid-cols-12 md:gap-10 md:pb-28 md:pt-20 lg:gap-14">
-        <div className="md:col-span-7">
-          <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/60 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600 backdrop-blur">
+    <section className="relative isolate overflow-hidden bg-[#140d07]">
+      {/* video background */}
+      <video
+        className="absolute inset-0 -z-20 h-full w-full object-cover"
+        src="/lego-video.mp4"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      />
+      {/* base dark overlay — solid at top, fades to transparent at the bottom so it dissolves with the video */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-[#140d07]/70 via-[#140d07]/45 via-55% to-transparent"
+      />
+      {/* asymmetric left-side darkening for headline legibility — also fades out at the bottom */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(20,13,7,0.55),rgba(20,13,7,0.25)_45%,transparent_75%)] [mask-image:linear-gradient(to_bottom,black_55%,transparent_95%)]"
+      />
+      {/* terracotta wash, top-left, to tie hero to brand palette */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_18%_8%,rgba(192,97,61,0.20),transparent_55%)]"
+      />
+      {/* bottom fade — long, three-stop blend straight into the cream methodology section */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-64 bg-gradient-to-b from-transparent via-[#FAF7F1]/55 to-[#FAF7F1]"
+      />
+      <div className="relative mx-auto grid min-h-[115dvh] max-w-7xl grid-cols-1 px-6 pb-48 pt-20 md:grid-cols-12 md:items-center md:gap-10 md:pb-56 md:pt-28">
+        <div className="md:col-span-8 lg:col-span-7">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-200 backdrop-blur">
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
             Virtual Serious Play, remote-native
           </div>
 
-          <h1 className="mt-6 text-[44px] font-semibold leading-[1.02] tracking-tighter text-zinc-950 sm:text-[58px] md:text-[72px]">
-            Five stages.
+          <h1 className="mt-6 font-display text-[44px] font-medium leading-[0.98] tracking-[-0.02em] text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)] sm:text-[58px] md:text-[78px]">
+            Build <span className="text-[#c0613d]">one model</span>
             <br />
-            Two hours.
-            <br />
-            <span className="text-[#c0613d]">One model</span> your team
-            <br className="hidden md:block" /> actually believes in.
+            your team believes in.
           </h1>
 
-          <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-600">
+          <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-200/95 drop-shadow-[0_1px_12px_rgba(0,0,0,0.45)]">
             BrickThink runs the canonical five-stage Serious Play methodology online. Participants
             build 2D tile models, narrate the meaning out loud, and progress from individual story
             to shared system to written principles — without a box of bricks in sight.
@@ -176,42 +201,33 @@ function Hero() {
           <div className="mt-9 flex flex-wrap items-center gap-3">
             <Link
               href="/sign-in"
-              className="group inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.4)] transition-all hover:bg-zinc-800 active:translate-y-[1px]"
+              className="group inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-zinc-950 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.6)] transition-all hover:bg-zinc-100 active:translate-y-[1px]"
             >
               Run a session free
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#methodology"
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-900/15 bg-white/40 px-5 py-3 text-sm font-medium text-zinc-800 transition-colors hover:bg-white/80"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/[0.06] px-5 py-3 text-sm font-medium text-zinc-100 backdrop-blur transition-colors hover:bg-white/[0.12]"
             >
               How a session runs
             </a>
           </div>
 
-          <dl className="mt-12 grid max-w-xl grid-cols-3 gap-x-6 border-t border-zinc-900/10 pt-6">
+          <dl className="mt-12 grid max-w-xl grid-cols-3 gap-x-6 border-t border-white/15 pt-6">
             {[
               ['52', 'tile types in the canon'],
               ['WCAG 2.2 AA', 'from day one'],
               ['Sync · Async · Hybrid', 'session modes'],
             ].map(([val, label]) => (
               <div key={label}>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-400">
                   {label}
                 </dt>
-                <dd className="mt-1 text-[15px] font-medium text-zinc-900">{val}</dd>
+                <dd className="mt-1 text-[15px] font-medium text-zinc-50">{val}</dd>
               </div>
             ))}
           </dl>
-        </div>
-
-        <div className="md:col-span-5">
-          <div className="relative md:translate-y-2">
-            <FloatingBadge className="-left-3 -top-3 z-10">Live cursors</FloatingBadge>
-            <FloatingBadge className="-right-2 top-1/2 z-10">CRDT shared canvas</FloatingBadge>
-            <BrickCanvasMockup />
-            <FloatingBadge className="-left-2 -bottom-3 z-10">Narration captured</FloatingBadge>
-          </div>
         </div>
       </div>
     </section>
@@ -233,7 +249,7 @@ function MethodologySection() {
             </p>
             <h2
               id="methodology-heading"
-              className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 md:text-4xl"
+              className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
               Methodology fidelity, end to end.
             </h2>
@@ -284,7 +300,7 @@ function FeatureBento() {
             </p>
             <h2
               id="features-heading"
-              className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-zinc-950 md:text-4xl"
+              className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
               A whole facilitator toolkit, not a whiteboard with extra steps.
             </h2>
@@ -629,7 +645,7 @@ function PersonasSection() {
             </p>
             <h2
               id="personas-heading"
-              className="mt-3 text-3xl font-semibold tracking-tight text-zinc-950 md:text-4xl"
+              className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
               Three audiences. One non-negotiable: methodology fidelity.
             </h2>
@@ -677,7 +693,7 @@ function FidelitySection() {
           </p>
         </div>
         <div className="md:col-span-8">
-          <p className="text-[22px] font-medium leading-snug tracking-tight md:text-[26px]">
+          <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[30px]">
             BrickThink is a remote-native adaptation of the Serious Play methodology — published
             under{' '}
             <span className="font-mono text-[18px] text-[#d8a85d] md:text-[22px]">
@@ -704,7 +720,7 @@ function PricingSection() {
             </p>
             <h2
               id="pricing-heading"
-              className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-zinc-950 md:text-4xl"
+              className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
               Per facilitator seat. Participants are free.
             </h2>
@@ -785,7 +801,7 @@ function CtaBand() {
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
               Phase 0 in build · early access open
             </p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight tracking-tight text-zinc-950 md:text-[44px]">
+            <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[52px]">
               Run your first session free.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
@@ -911,38 +927,8 @@ function Footer() {
 
 /* ---------------- primitives ---------------- */
 
-function FloatingBadge({
-  children,
-  className = '',
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <span
-      className={`absolute hidden items-center gap-1.5 rounded-full border border-zinc-900/10 bg-white/95 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-700 shadow-[0_8px_20px_-12px_rgba(60,30,15,0.35)] backdrop-blur md:inline-flex ${className}`}
-    >
-      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
-      {children}
-    </span>
-  );
-}
-
 function Dot({ className = '' }: { className?: string }) {
   return <span className={`inline-block rounded-full ${className}`} />;
-}
-
-function GrainOverlay() {
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-0 opacity-[0.5] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)]"
-      style={{
-        backgroundImage:
-          'radial-gradient(circle at 20% 0%, rgba(192,97,61,0.08), transparent 40%), radial-gradient(circle at 90% 30%, rgba(59,111,138,0.06), transparent 35%)',
-      }}
-    />
-  );
 }
 
 function BrickGlyph() {
