@@ -46,7 +46,9 @@ export interface SessionDetail {
   id: string;
   title: string;
   org_id: string;
-  facilitator_id: string;
+  // Nullable because deleting the facilitator's account sets this to null
+  // (see migration 20260516120000) so prior session history survives.
+  facilitator_id: string | null;
 }
 
 // The breadcrumb prop shape passed from the design [id] page into the builder.
