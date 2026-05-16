@@ -1,8 +1,12 @@
+'use client';
+
 // Shared presentational avatar primitive. Renders either an <img> at the
 // passed URL or an initials chip fallback using the first character of `name`.
 // Caller is responsible for resolving the URL string (including any cache
 // buster querystring) and for picking the right `name` fallback chain
 // (e.g. profile.full_name ?? profile.email).
+
+import { useState } from 'react';
 
 export type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -34,14 +38,16 @@ function initialFor(name: string): string {
 export function Avatar({ url, name, size = 'md', className = '' }: AvatarProps) {
   const spec = SIZE_MAP[size];
   const base = `${spec.box} shrink-0 rounded-full`;
+  const [failed, setFailed] = useState(false);
 
-  if (url) {
+  if (url && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={url}
         alt={name}
         loading="lazy"
+        onError={() => setFailed(true)}
         className={`${base} object-cover ${className}`.trim()}
       />
     );

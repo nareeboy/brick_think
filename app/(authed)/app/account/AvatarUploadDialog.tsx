@@ -21,12 +21,15 @@ interface Props {
 export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: Props) {
   const titleId = useId();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const dropZoneRef = useRef<HTMLButtonElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [dragging, setDragging] = useState(false);
 
   // Revoke the object URL on unmount / reset to avoid leaks.
   useEffect(() => {
@@ -47,15 +50,23 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
     }
   }, [open, imageSrc]);
 
+  // Focus management on open: drop-zone gets focus when no file is picked yet;
+  // the close button gets focus after a file is loaded (so Tab order starts at
+  // the top of the cropper view rather than landing on Save).
+  useEffect(() => {
+    if (!open) return;
+    if (imageSrc === null) {
+      dropZoneRef.current?.focus();
+    } else {
+      closeButtonRef.current?.focus();
+    }
+  }, [open, imageSrc]);
+
   const onCropComplete = useCallback((_: Area, areaPixels: Area) => {
     setCroppedAreaPixels(areaPixels);
   }, []);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setError(null);
-    const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-picking the same file later
-    if (!file) return;
+  function handlePickedFile(file: File) {
     if (!ACCEPTED_MIME.includes(file.type)) {
       setError('Please choose a PNG, JPG, or WEBP image.');
       return;
@@ -69,6 +80,14 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setCroppedAreaPixels(null);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setError(null);
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file later
+    if (!file) return;
+    handlePickedFile(file);
   }
 
   function handleChooseDifferent() {
@@ -119,6 +138,7 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
             Update profile photo
           </h2>
           <button
+            ref={closeButtonRef}
             type="button"
             aria-label="Close"
             disabled={pending}
@@ -141,9 +161,27 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
         {imageSrc === null ? (
           <button
             type="button"
+            ref={dropZoneRef}
             onClick={handleChooseDifferent}
-            className="mt-6 flex h-56 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 bg-[#FBF7F1] px-6 text-center transition-colors hover:border-[#c0613d]/40 hover:bg-[#c0613d]/5"
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!dragging) setDragging(true);
+            }}
+            onDragEnter={(e) => e.preventDefault()}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              setError(null);
+              const file = e.dataTransfer.files?.[0];
+              if (file) handlePickedFile(file);
+            }}
             data-testid="avatar-drop-zone"
+            className={`mt-6 flex h-56 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-[#FBF7F1] px-6 text-center transition-colors ${
+              dragging
+                ? 'border-[#c0613d] bg-[#c0613d]/10'
+                : 'border-zinc-300 hover:border-[#c0613d]/40 hover:bg-[#c0613d]/5'
+            }`}
           >
             <span className="text-[14px] text-zinc-700">
               Drag a photo here, or <span className="font-semibold text-[#c0613d]">choose a file</span>
