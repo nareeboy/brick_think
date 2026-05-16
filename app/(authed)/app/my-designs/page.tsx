@@ -313,7 +313,7 @@ export default async function MyDesignsPage({
           </div>
           {allTags.length > 0 ? <TagFilterBar tags={allTags} active={tag} /> : null}
         </header>
-        <DesignList designs={cards} orgs={orgs} />
+        <DesignList designs={cards} orgs={orgs} allTags={allTags} />
       </div>
     </main>
   );
