@@ -29,9 +29,12 @@ import {
 import { useAutosave, type SaveStatus } from './useAutosave';
 import {
   useYjsBinding,
+  type PresenceSelf,
   type YjsConnectionStatus,
 } from './useYjsBinding';
 import { useYjsToken } from './useYjsToken';
+
+import type { Awareness } from 'y-protocols/awareness';
 
 export interface BrickInstance {
   id: string;
@@ -151,6 +154,10 @@ export interface BuilderState {
   captureAndUploadThumbnail: () => Promise<void>;
   liveMode: boolean;
   connectionStatus: YjsConnectionStatus | null;
+  awareness: Awareness | null;
+  selfClientId: number | null;
+  publishCursor: (worldX: number, worldY: number) => void;
+  clearCursor: () => void;
 }
 
 const Ctx = createContext<BuilderState | null>(null);
@@ -196,11 +203,13 @@ export function BuilderProvider({
   initial,
   readOnly = false,
   liveMode = false,
+  self = null,
   children,
 }: {
   initial?: InitialBuilderState;
   readOnly?: boolean;
   liveMode?: boolean;
+  self?: PresenceSelf | null;
   children: ReactNode;
 }) {
   const [data, setData] = useState<BuilderData>(() => {
@@ -229,7 +238,30 @@ export function BuilderProvider({
     initialTitle: initial?.title ?? 'Untitled model',
     token: liveMode ? tokenResult.token : null,
     wsBaseUrl,
+    self: liveMode ? self : null,
   });
+  const awareness = yjs.provider?.awareness ?? null;
+  const selfClientId = awareness?.clientID ?? null;
+
+  const publishCursor = useCallback(
+    (worldX: number, worldY: number) => {
+      if (!awareness || !self) return;
+      awareness.setLocalStateField('user', {
+        userId: self.userId,
+        displayName: self.displayName,
+        cursor: { x: worldX, y: worldY },
+      });
+    },
+    [awareness, self],
+  );
+  const clearCursor = useCallback(() => {
+    if (!awareness || !self) return;
+    awareness.setLocalStateField('user', {
+      userId: self.userId,
+      displayName: self.displayName,
+      cursor: null,
+    });
+  }, [awareness, self]);
   const liveSnapshot = liveMode ? yjs.snapshot : null;
   const liveDoc = liveMode ? yjs.doc : null;
   const effectiveGroups = liveSnapshot?.groups ?? data.groups;
@@ -688,6 +720,10 @@ export function BuilderProvider({
       captureAndUploadThumbnail,
       liveMode,
       connectionStatus: liveMode ? yjs.connectionStatus : null,
+      awareness: liveMode ? awareness : null,
+      selfClientId: liveMode ? selfClientId : null,
+      publishCursor,
+      clearCursor,
     }),
     // `guard` closes over `readOnly`, which IS listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -724,6 +760,10 @@ export function BuilderProvider({
       captureAndUploadThumbnail,
       liveMode,
       yjs.connectionStatus,
+      awareness,
+      selfClientId,
+      publishCursor,
+      clearCursor,
     ],
   );
 

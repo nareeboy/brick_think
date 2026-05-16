@@ -88,6 +88,7 @@ export default async function DesignBuilderPage({
     sessionContext,
     flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
   });
+  const self = liveMode ? await loadSelfPresence(supabase, user.id) : null;
 
   return (
     <Builder
@@ -97,6 +98,7 @@ export default async function DesignBuilderPage({
       orgId={data.org_id ?? null}
       sessionContext={sessionContext}
       liveMode={liveMode}
+      self={self}
     />
   );
 }
@@ -113,4 +115,17 @@ async function loadOwnerLabel(
     .eq('id', ownerProfileId)
     .single();
   return data?.full_name ?? data?.email ?? null;
+}
+
+async function loadSelfPresence(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  userId: string,
+): Promise<{ userId: string; displayName: string }> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('email, full_name')
+    .eq('id', userId)
+    .maybeSingle();
+  const displayName = data?.full_name ?? data?.email ?? 'Anonymous';
+  return { userId, displayName };
 }
