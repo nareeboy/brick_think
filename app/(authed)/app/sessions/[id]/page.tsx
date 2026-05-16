@@ -65,7 +65,7 @@ export default async function SessionDetailPage({
 
   const stagesRes = await supabase
     .from('stages')
-    .select('id, session_id, stage_type, position')
+    .select('id, session_id, stage_type, position, title, description')
     .eq('session_id', id)
     .order('position', { ascending: true });
   if (stagesRes.error) {
@@ -181,6 +181,7 @@ export default async function SessionDetailPage({
           stages={stages}
           ownedModels={ownedModels}
           participantsByStage={participantsByStage}
+          canManageSession={canManageSession}
         />
       </div>
     </main>

@@ -40,6 +40,9 @@ export interface StageRow {
   session_id: string;
   stage_type: StageType;
   position: number;
+  // Null = use the canonical label / description for the stage_type.
+  title: string | null;
+  description: string | null;
 }
 
 export interface SessionDetail {
