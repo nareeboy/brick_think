@@ -19,6 +19,25 @@ async function requireUser() {
   return { supabase, user };
 }
 
+// Guard for actions that mutate a single model: confirms the caller owns it
+// before any destructive write. RLS would also reject, but a typed error in
+// front of the delete/insert is friendlier for the UI and avoids the half-
+// applied state if the write-side check were the only line of defence.
+type SupabaseFromRequireUser = Awaited<ReturnType<typeof requireUser>>['supabase'];
+async function assertOwnsModel(
+  supabase: SupabaseFromRequireUser,
+  modelId: string,
+  userId: string,
+): Promise<void> {
+  const res = await supabase
+    .from('models')
+    .select('id', { count: 'exact', head: true })
+    .eq('id', modelId)
+    .eq('owner_profile_id', userId);
+  if (res.error) throw new Error(`Ownership lookup failed: ${res.error.message}`);
+  if ((res.count ?? 0) === 0) throw new Error('Design not found or not owned by you');
+}
+
 export interface CreateDesignInput {
   orgId: string | null;
   sessionId: string | null;
@@ -215,16 +234,7 @@ export async function setModelTagsAction(modelId: string, rawTags: string[]): Pr
   ).slice(0, MAX_TAGS_PER_MODEL);
 
   const { supabase, user } = await requireUser();
-
-  // Ownership check up front — RLS would also block, but we want a clear error
-  // before issuing the destructive delete.
-  const owns = await supabase
-    .from('models')
-    .select('id', { count: 'exact', head: true })
-    .eq('id', modelId)
-    .eq('owner_profile_id', user.id);
-  if (owns.error) throw new Error(`Tag lookup failed: ${owns.error.message}`);
-  if ((owns.count ?? 0) === 0) throw new Error('Design not found or not owned by you');
+  await assertOwnsModel(supabase, modelId, user.id);
 
   // Wholesale replace: simplest correct semantics for an MVP editor.
   const del = await supabase.from('model_tags').delete().eq('model_id', modelId);
