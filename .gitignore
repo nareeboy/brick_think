@@ -47,5 +47,8 @@ supabase/.branches/
 # Local-only documentation per project guideline
 docs/
 
+# Brainstorming visual-companion working dir (local only)
+.superpowers/
+
 # Generated brick assets land here at build time, but the source pipeline output is committed
 # (so deploys do not need to run the pipeline). Override per file in .gitkeep where required.
