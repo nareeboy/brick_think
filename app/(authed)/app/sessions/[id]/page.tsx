@@ -7,7 +7,6 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import type { StageRow } from '@/lib/sessions/types';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
-import { SessionMetaForm } from './SessionMetaForm';
 import { SessionStageList, type ParticipantModel } from './SessionStageList';
 import { SessionTitle } from './SessionTitle';
 import type { SessionMode, SessionStatus } from '@/lib/sessions/types';
@@ -175,14 +174,6 @@ export default async function SessionDetailPage({
             <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
           ) : null}
         </header>
-        {canManageSession ? (
-          <SessionMetaForm
-            sessionId={session.id}
-            initialStatus={session.status}
-            initialMode={session.mode}
-            initialScheduledFor={session.scheduled_for}
-          />
-        ) : null}
         <SessionStageList
           sessionId={session.id}
           stages={stages}
