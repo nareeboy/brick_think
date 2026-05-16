@@ -19,26 +19,44 @@ export default defineConfig({
     actionTimeout: 10_000,
     navigationTimeout: 30_000,
   },
-  webServer: {
-    // start:e2e loads .env.test, which points NEXT_PUBLIC_SUPABASE_URL at the
-    // local stack (http://127.0.0.1:54321) instead of the remote project.
-    // Run `pnpm build:e2e` (also dotenv-wrapped) before `pnpm test:e2e` so the
-    // client bundle is baked against local Supabase too — see CLAUDE.md.
-    command: 'pnpm start:e2e',
-    url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    stdout: 'pipe',
-    stderr: 'pipe',
-    env: {
-      // Unlocks /api/test/sign-in so the signed-in fixture in e2e/fixtures.ts
-      // can mint a Supabase session without going through magic-link email.
-      // See the route file for the rest of the defence-in-depth.
-      E2E_AUTH_ENABLED: '1',
-      // Unlocks /api/test/seed-session so the seededSession fixture can
-      // create a session + stages per test. Same three-gate model.
-      E2E_SESSIONS_ENABLED: '1',
+  webServer: [
+    {
+      // start:e2e loads .env.test, which points NEXT_PUBLIC_SUPABASE_URL at the
+      // local stack (http://127.0.0.1:54321) instead of the remote project.
+      // Run `pnpm build:e2e` (also dotenv-wrapped) before `pnpm test:e2e` so the
+      // client bundle is baked against local Supabase too — see CLAUDE.md.
+      command: 'pnpm start:e2e',
+      url: BASE_URL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: {
+        E2E_AUTH_ENABLED: '1',
+        E2E_SESSIONS_ENABLED: '1',
+        NEXT_PUBLIC_YJS_COLLAB_ENABLED: '1',
+        NEXT_PUBLIC_YJS_WS_URL: 'ws://localhost:1234/yjs',
+        YJS_JWT_SECRET: 'a'.repeat(64),
+      },
     },
-  },
+    {
+      // Yjs worker — same JWT secret as the web server above, points at the
+      // local Supabase Postgres for snapshot persistence.
+      command: 'pnpm exec tsx worker/src/yjs-server.ts',
+      url: 'http://localhost:1234/healthz',
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+      stdout: 'pipe',
+      stderr: 'pipe',
+      env: {
+        YJS_PORT: '1234',
+        YJS_JWT_SECRET: 'a'.repeat(64),
+        WORKER_DATABASE_URL:
+          'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
+        YJS_PERSIST_DEBOUNCE_MS: '500',
+        YJS_PERSIST_CEILING_MS: '5000',
+      },
+    },
+  ],
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });

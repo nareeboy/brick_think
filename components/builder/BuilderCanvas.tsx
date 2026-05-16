@@ -134,8 +134,12 @@ export function BuilderCanvas() {
     setPan,
     zoomBy,
     registerThumbnailCapture,
+    liveMode,
+    publishCursor,
+    clearCursor,
   } = useBuilderState();
   const { pan, zoom } = view;
+  const lastCursorPublishRef = useRef(0);
   const [interacting, setInteracting] = useState(false);
   const transformerRef = useRef<Konva.Transformer | null>(null);
   const nodeRegistry = useRef(new Map<string, Konva.Image>());
@@ -222,6 +226,17 @@ export function BuilderCanvas() {
   }
 
   function handleContainerPointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    // Publish presence cursor on every move (throttled to ~30 Hz) when live.
+    if (liveMode && containerRef.current) {
+      const now = performance.now();
+      if (now - lastCursorPublishRef.current >= 33) {
+        lastCursorPublishRef.current = now;
+        const rect = containerRef.current.getBoundingClientRect();
+        const worldX = (e.clientX - rect.left - pan.x) / zoom;
+        const worldY = (e.clientY - rect.top - pan.y) / zoom;
+        publishCursor(worldX, worldY);
+      }
+    }
     const start = panStartRef.current;
     if (!start) return;
     const dx = e.clientX - start.x;
@@ -233,6 +248,10 @@ export function BuilderCanvas() {
     start.x = e.clientX;
     start.y = e.clientY;
     setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+  }
+
+  function handleContainerPointerLeave() {
+    if (liveMode) clearCursor();
   }
 
   function endPan(e: ReactPointerEvent<HTMLDivElement>) {
@@ -357,6 +376,7 @@ export function BuilderCanvas() {
       onPointerMove={handleContainerPointerMove}
       onPointerUp={endPan}
       onPointerCancel={endPan}
+      onPointerLeave={handleContainerPointerLeave}
     >
       <ul aria-hidden="true" className="sr-only" data-testid="placed-brick-list">
         {visibleBricks.map((b) => (

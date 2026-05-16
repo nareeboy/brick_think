@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
+import { canPlaceLive } from '@/lib/yjs/canPlaceLive';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,6 +84,11 @@ export default async function DesignBuilderPage({
 
   const readOnly = data.owner_profile_id !== user.id;
   const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
+  const liveMode = canPlaceLive({
+    sessionContext,
+    flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
+  });
+  const self = liveMode ? await loadSelfPresence(supabase, user.id) : null;
 
   return (
     <Builder
@@ -91,6 +97,8 @@ export default async function DesignBuilderPage({
       ownerLabel={ownerLabel}
       orgId={data.org_id ?? null}
       sessionContext={sessionContext}
+      liveMode={liveMode}
+      self={self}
     />
   );
 }
@@ -107,4 +115,17 @@ async function loadOwnerLabel(
     .eq('id', ownerProfileId)
     .single();
   return data?.full_name ?? data?.email ?? null;
+}
+
+async function loadSelfPresence(
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
+  userId: string,
+): Promise<{ userId: string; displayName: string }> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('email, full_name')
+    .eq('id', userId)
+    .maybeSingle();
+  const displayName = data?.full_name ?? data?.email ?? 'Anonymous';
+  return { userId, displayName };
 }
