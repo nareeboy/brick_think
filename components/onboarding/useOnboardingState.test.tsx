@@ -19,9 +19,10 @@ describe('useOnboardingState', () => {
     expect(result.current.role).toBe('participant');
   });
 
-  it('welcomeSeen, checklistDismissed, and sessionTourSeen default to false', () => {
+  it('welcomeSeen, checklistComplete, checklistDismissed, and sessionTourSeen default to false', () => {
     const { result } = renderHook(() => useOnboardingState());
     expect(result.current.welcomeSeen).toBe(false);
+    expect(result.current.checklistComplete).toBe(false);
     expect(result.current.checklistDismissed).toBe(false);
     expect(result.current.sessionTourSeen).toBe(false);
   });
@@ -31,6 +32,13 @@ describe('useOnboardingState', () => {
     act(() => result.current.markWelcomeSeen());
     expect(localStorage.getItem('bt_welcome_seen')).toBe('1');
     expect(result.current.welcomeSeen).toBe(true);
+  });
+
+  it('markChecklistComplete writes the flag and updates state', () => {
+    const { result } = renderHook(() => useOnboardingState());
+    act(() => result.current.markChecklistComplete());
+    expect(localStorage.getItem('bt_checklist_complete')).toBe('1');
+    expect(result.current.checklistComplete).toBe(true);
   });
 
   it('dismissChecklist writes the flag and updates state', () => {
@@ -73,15 +81,18 @@ describe('useOnboardingState', () => {
   it('replayAll clears every flag (preserves role)', () => {
     localStorage.setItem('bt_onboarding_role', 'participant');
     localStorage.setItem('bt_welcome_seen', '1');
+    localStorage.setItem('bt_checklist_complete', '1');
     localStorage.setItem('bt_checklist_dismissed', '1');
     localStorage.setItem('bt_session_tour_seen', '1');
     const { result } = renderHook(() => useOnboardingState());
     act(() => result.current.replayAll());
     expect(localStorage.getItem('bt_welcome_seen')).toBeNull();
+    expect(localStorage.getItem('bt_checklist_complete')).toBeNull();
     expect(localStorage.getItem('bt_checklist_dismissed')).toBeNull();
     expect(localStorage.getItem('bt_session_tour_seen')).toBeNull();
     expect(localStorage.getItem('bt_onboarding_role')).toBe('participant');
     expect(result.current.welcomeSeen).toBe(false);
+    expect(result.current.checklistComplete).toBe(false);
     expect(result.current.role).toBe('participant');
   });
 });

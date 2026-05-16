@@ -7,6 +7,7 @@ export type OnboardingRole = 'facilitator' | 'participant';
 const KEYS = {
   role: 'bt_onboarding_role',
   welcomeSeen: 'bt_welcome_seen',
+  checklistComplete: 'bt_checklist_complete',
   checklistDismissed: 'bt_checklist_dismissed',
   sessionTourSeen: 'bt_session_tour_seen',
 } as const;
@@ -27,10 +28,13 @@ function readFlag(key: string): boolean {
 export interface OnboardingState {
   role: OnboardingRole;
   welcomeSeen: boolean;
+  /** True once the user has seen the complete card at least once. */
+  checklistComplete: boolean;
   checklistDismissed: boolean;
   sessionTourSeen: boolean;
   hydrated: boolean;
   markWelcomeSeen: () => void;
+  markChecklistComplete: () => void;
   dismissChecklist: () => void;
   markSessionTourSeen: () => void;
   replayAll: () => void;
@@ -43,6 +47,7 @@ export interface OnboardingState {
 export function useOnboardingState(): OnboardingState {
   const [role, setRole] = useState<OnboardingRole>('facilitator');
   const [welcomeSeen, setWelcomeSeen] = useState(false);
+  const [checklistComplete, setChecklistComplete] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [sessionTourSeen, setSessionTourSeen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -51,6 +56,7 @@ export function useOnboardingState(): OnboardingState {
     const sync = () => {
       setRole(readRole());
       setWelcomeSeen(readFlag(KEYS.welcomeSeen));
+      setChecklistComplete(readFlag(KEYS.checklistComplete));
       setChecklistDismissed(readFlag(KEYS.checklistDismissed));
       setSessionTourSeen(readFlag(KEYS.sessionTourSeen));
     };
@@ -68,6 +74,11 @@ export function useOnboardingState(): OnboardingState {
     setWelcomeSeen(true);
   }, []);
 
+  const markChecklistComplete = useCallback(() => {
+    window.localStorage.setItem(KEYS.checklistComplete, '1');
+    setChecklistComplete(true);
+  }, []);
+
   const dismissChecklist = useCallback(() => {
     window.localStorage.setItem(KEYS.checklistDismissed, '1');
     setChecklistDismissed(true);
@@ -80,9 +91,11 @@ export function useOnboardingState(): OnboardingState {
 
   const replayAll = useCallback(() => {
     window.localStorage.removeItem(KEYS.welcomeSeen);
+    window.localStorage.removeItem(KEYS.checklistComplete);
     window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
     setWelcomeSeen(false);
+    setChecklistComplete(false);
     setChecklistDismissed(false);
     setSessionTourSeen(false);
   }, []);
@@ -90,10 +103,12 @@ export function useOnboardingState(): OnboardingState {
   return {
     role,
     welcomeSeen,
+    checklistComplete,
     checklistDismissed,
     sessionTourSeen,
     hydrated,
     markWelcomeSeen,
+    markChecklistComplete,
     dismissChecklist,
     markSessionTourSeen,
     replayAll,
