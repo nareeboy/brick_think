@@ -124,12 +124,13 @@ async function loadOwnerLabel(
 async function loadSelfPresence(
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>,
   userId: string,
-): Promise<{ userId: string; displayName: string }> {
+): Promise<{ userId: string; displayName: string; avatarUrl: string | null }> {
   const { data } = await supabase
     .from('profiles')
-    .select('email, full_name')
+    .select('email, full_name, avatar_url')
     .eq('id', userId)
     .maybeSingle();
   const displayName = data?.full_name ?? data?.email ?? 'Anonymous';
-  return { userId, displayName };
+  const avatarUrl = data?.avatar_url ?? null;
+  return { userId, displayName, avatarUrl };
 }

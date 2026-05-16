@@ -25,7 +25,7 @@ interface BuilderProps {
   orgId?: string | null;
   sessionContext?: SessionContext | null;
   liveMode?: boolean;
-  self?: { userId: string; displayName: string } | null;
+  self?: { userId: string; displayName: string; avatarUrl: string | null } | null;
 }
 
 export function Builder({
