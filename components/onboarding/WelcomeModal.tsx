@@ -14,8 +14,8 @@ export function WelcomeModal() {
   const ctaRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    ctaRef.current?.focus();
-  }, []);
+    if (hydrated && role === 'facilitator' && !welcomeSeen) ctaRef.current?.focus();
+  }, [hydrated, welcomeSeen, role]);
 
   if (!hydrated || role !== 'facilitator' || welcomeSeen) return null;
 
