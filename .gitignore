@@ -33,6 +33,7 @@ Thumbs.db
 
 # Claude Code local workspaces (per-task git worktrees)
 .claude/worktrees/
+.worktrees/
 
 # Testing
 test-results/
