@@ -90,10 +90,30 @@ export default async function OrgsPage() {
                 className="rounded-2xl border border-zinc-900/10 bg-white p-4 transition-colors hover:bg-[#FAF7F1]"
               >
                 <Link href={`/app/orgs/${o.id}`} aria-label={`Open ${o.name}`} className="block">
-                  <p className="truncate text-[15px] font-semibold text-zinc-950">{o.name}</p>
-                  <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                    {o.slug} · {o.role}
-                  </p>
+                  <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl border border-zinc-900/5 bg-[#FBF7F1]">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> per CLAUDE.md to avoid host whitelist */}
+                    <img
+                      src={`https://picsum.photos/seed/${o.id}/640/480`}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-2 left-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-[14px] font-semibold text-[#c0613d] shadow-[0_8px_20px_-12px_rgba(0,0,0,0.45)] backdrop-blur"
+                    >
+                      {o.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex max-w-full items-center gap-1.5">
+                    <span className="inline-block max-w-full truncate rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
+                      {o.name}
+                    </span>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                      {o.role}
+                    </span>
+                  </div>
                   <p className="mt-2 text-[12px] text-zinc-600">
                     {o.member_count} member{o.member_count === 1 ? '' : 's'}
                   </p>
