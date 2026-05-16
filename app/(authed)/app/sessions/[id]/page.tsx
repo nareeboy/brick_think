@@ -54,7 +54,9 @@ export default async function SessionDetailPage({
     id: string;
     title: string;
     org_id: string;
-    facilitator_id: string;
+    // Nullable once the facilitator's account is deleted (migration
+    // 20260516120000 sets the FK to ON DELETE SET NULL).
+    facilitator_id: string | null;
     status: SessionStatus;
     mode: SessionMode;
     scheduled_for: string | null;

@@ -109,7 +109,7 @@ export type Database = {
         Row: {
           canvas_state: Json
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           label: string | null
           model_id: string
@@ -117,7 +117,7 @@ export type Database = {
         Insert: {
           canvas_state: Json
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           label?: string | null
           model_id: string
@@ -125,7 +125,7 @@ export type Database = {
         Update: {
           canvas_state?: Json
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           label?: string | null
           model_id?: string
@@ -374,7 +374,7 @@ export type Database = {
         Row: {
           created_at: string
           current_stage: Database["public"]["Enums"]["stage_type"] | null
-          facilitator_id: string
+          facilitator_id: string | null
           id: string
           mode: Database["public"]["Enums"]["session_mode"]
           org_id: string
@@ -386,7 +386,7 @@ export type Database = {
         Insert: {
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
-          facilitator_id: string
+          facilitator_id?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id: string
@@ -398,7 +398,7 @@ export type Database = {
         Update: {
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
-          facilitator_id?: string
+          facilitator_id?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id?: string
