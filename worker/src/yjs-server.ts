@@ -10,11 +10,17 @@ const localEnv = join(process.cwd(), '.env.local');
 if (existsSync(localEnv)) {
   loadEnv({ path: localEnv, override: false });
 }
-import * as Y from 'yjs';
+
+import type * as Y from 'yjs';
 import { WebSocketServer, type WebSocket } from 'ws';
 
-// y-websocket bin/utils is CommonJS; load it with createRequire so the
-// "type: module" Node project can still pull in its server helpers.
+import { createPersistence } from './persistence';
+import {
+  UpgradeRejected,
+  parseModelIdFromUrl,
+  verifyUpgradeRequest,
+} from './auth';
+
 const requireFromHere = createRequire(import.meta.url);
 const wsUtils = requireFromHere('y-websocket/bin/utils') as {
   setupWSConnection: (
@@ -28,136 +34,117 @@ const wsUtils = requireFromHere('y-websocket/bin/utils') as {
 const PORT = Number(process.env.YJS_PORT ?? 1234);
 const HOST = process.env.YJS_HOST ?? '0.0.0.0';
 const DB_URL = process.env.WORKER_DATABASE_URL ?? process.env.DATABASE_URL;
+const SECRET = process.env.YJS_JWT_SECRET;
 const PERSIST_DEBOUNCE_MS = Number(process.env.YJS_PERSIST_DEBOUNCE_MS ?? 5000);
-
-interface RoomPersistence {
-  loadDoc(name: string, doc: Y.Doc): Promise<void>;
-  scheduleSave(name: string, doc: Y.Doc): void;
-  flush(): Promise<void>;
-}
+const PERSIST_CEILING_MS = Number(process.env.YJS_PERSIST_CEILING_MS ?? 60_000);
 
 function logEvent(msg: string, extra?: Record<string, unknown>): void {
-  const payload = { ts: new Date().toISOString(), service: 'yjs-server', msg, ...extra };
+  const payload = {
+    ts: new Date().toISOString(),
+    service: 'yjs-server',
+    msg,
+    ...extra,
+  };
   console.warn(JSON.stringify(payload));
 }
 
-function createPersistence(): RoomPersistence | null {
-  if (!DB_URL) {
-    logEvent('persistence_disabled', { reason: 'WORKER_DATABASE_URL not set' });
-    return null;
-  }
-
-  const pool = new Pool({ connectionString: DB_URL, max: 4 });
-  const pendingTimers = new Map<string, NodeJS.Timeout>();
-  const pendingDocs = new Map<string, Y.Doc>();
-
-  async function persist(name: string, doc: Y.Doc): Promise<void> {
-    const state = Buffer.from(Y.encodeStateAsUpdate(doc));
-    await pool.query(
-      `insert into public.yjs_documents (name, state, updated_at)
-       values ($1, $2, now())
-       on conflict (name) do update
-       set state = excluded.state,
-           updated_at = excluded.updated_at`,
-      [name, state],
-    );
-    logEvent('persist_ok', { name, bytes: state.length });
-  }
-
-  return {
-    async loadDoc(name, doc) {
-      const result = await pool.query<{ state: Buffer }>(
-        'select state from public.yjs_documents where name = $1',
-        [name],
-      );
-      const row = result.rows[0];
-      if (!row) {
-        logEvent('load_empty', { name });
-        return;
-      }
-      Y.applyUpdate(doc, new Uint8Array(row.state));
-      logEvent('load_ok', { name, bytes: row.state.length });
-    },
-    scheduleSave(name, doc) {
-      pendingDocs.set(name, doc);
-      const existing = pendingTimers.get(name);
-      if (existing) clearTimeout(existing);
-      const timer = setTimeout(() => {
-        pendingTimers.delete(name);
-        const target = pendingDocs.get(name);
-        if (!target) return;
-        pendingDocs.delete(name);
-        void persist(name, target).catch((err: unknown) =>
-          logEvent('persist_error', { name, err: String(err) }),
-        );
-      }, PERSIST_DEBOUNCE_MS);
-      pendingTimers.set(name, timer);
-    },
-    async flush() {
-      for (const [name, timer] of pendingTimers) {
-        clearTimeout(timer);
-        const doc = pendingDocs.get(name);
-        if (doc) await persist(name, doc).catch(() => undefined);
-      }
-      pendingTimers.clear();
-      pendingDocs.clear();
-      await pool.end();
-    },
-  };
+if (!SECRET) {
+  logEvent('fatal', { reason: 'YJS_JWT_SECRET not set' });
+  process.exit(1);
+}
+if (!DB_URL) {
+  logEvent('fatal', { reason: 'WORKER_DATABASE_URL not set' });
+  process.exit(1);
 }
 
-const persistence = createPersistence();
-const trackedDocs = new Set<string>();
+const pool = new Pool({ connectionString: DB_URL, max: 4 });
+const persistence = createPersistence({
+  pool,
+  debounceMs: PERSIST_DEBOUNCE_MS,
+  ceilingMs: PERSIST_CEILING_MS,
+  log: logEvent,
+});
 
-function attachPersistenceForDoc(name: string): void {
-  if (!persistence || trackedDocs.has(name)) return;
-  const doc = wsUtils.docs.get(name);
+const tracked = new Set<string>();
+
+function attachPersistenceForDoc(modelId: string): void {
+  if (tracked.has(modelId)) return;
+  const doc = wsUtils.docs.get(modelId);
   if (!doc) return;
-  trackedDocs.add(name);
+  tracked.add(modelId);
   void persistence
-    .loadDoc(name, doc)
-    .catch((err: unknown) => logEvent('load_error', { name, err: String(err) }));
+    .loadDoc(modelId, doc)
+    .catch((err: unknown) =>
+      logEvent('load_error', { modelId, err: String(err) }),
+    );
   doc.on('update', () => {
-    persistence.scheduleSave(name, doc);
+    persistence.scheduleSave(modelId, doc);
   });
 }
 
-const httpServer = createServer((_req, res) => {
-  res.writeHead(200, { 'content-type': 'application/json' });
-  res.end(
-    JSON.stringify({
-      service: 'yjs-server',
-      status: 'ok',
-      port: PORT,
-      persistence: DB_URL ? 'postgres' : 'memory-only',
-      rooms: Array.from(wsUtils.docs.keys()),
-    }),
-  );
+const httpServer = createServer((req, res) => {
+  if (req.url === '/healthz' || req.url === '/') {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(
+      JSON.stringify({
+        service: 'yjs-server',
+        status: 'ok',
+        port: PORT,
+        persistence: DB_URL ? 'postgres' : 'memory-only',
+        rooms: Array.from(wsUtils.docs.keys()),
+        memoryMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
+      }),
+    );
+    return;
+  }
+  res.writeHead(404);
+  res.end();
 });
 
 const wss = new WebSocketServer({ noServer: true });
 
 httpServer.on('upgrade', (request, socket, head) => {
-  if (!request.url || !request.url.startsWith('/yjs/')) {
-    socket.destroy();
-    return;
-  }
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit('connection', ws, request);
-  });
+  void (async () => {
+    const modelId = parseModelIdFromUrl(request.url);
+    if (!modelId) {
+      socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    try {
+      await verifyUpgradeRequest(request, {
+        secret: SECRET,
+        pool,
+        expectedModelId: modelId,
+      });
+    } catch (err) {
+      const status = err instanceof UpgradeRejected ? err.status : 500;
+      const reason =
+        err instanceof UpgradeRejected ? err.reason : 'internal error';
+      logEvent('upgrade_rejected', {
+        status,
+        reason,
+        modelId,
+        url: request.url,
+      });
+      socket.write(`HTTP/1.1 ${status} ${reason}\r\n\r\n`);
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request, modelId);
+    });
+  })();
 });
 
-wss.on('connection', (conn: WebSocket, request: IncomingMessage) => {
-  const url = request.url ?? '/yjs/anonymous';
-  const path = url.replace(/^\/yjs\//, '').split('?')[0] ?? 'anonymous';
-  const docName = decodeURIComponent(path) || 'anonymous';
-
-  logEvent('client_connected', { docName });
-  wsUtils.setupWSConnection(conn, request, { docName, gc: true });
-  // setupWSConnection materialises the Y.Doc synchronously, so it is safe
-  // to attach persistence on the next tick.
-  setImmediate(() => attachPersistenceForDoc(docName));
-});
+wss.on(
+  'connection',
+  (conn: WebSocket, request: IncomingMessage, modelId: string) => {
+    logEvent('client_connected', { modelId });
+    wsUtils.setupWSConnection(conn, request, { docName: modelId, gc: true });
+    setImmediate(() => attachPersistenceForDoc(modelId));
+  },
+);
 
 httpServer.listen(PORT, HOST, () => {
   logEvent('listening', { host: HOST, port: PORT });
@@ -167,7 +154,7 @@ async function shutdown(signal: string): Promise<void> {
   logEvent('shutdown_start', { signal });
   wss.close();
   httpServer.close();
-  if (persistence) await persistence.flush();
+  await persistence.shutdown();
   logEvent('shutdown_ok');
   process.exit(0);
 }
