@@ -50,7 +50,10 @@ export async function updateProfileAction(rawName: string): Promise<UpdateProfil
 }
 
 const ALLOWED_AVATAR_MIME = 'image/png' as const;
-const MAX_AVATAR_BYTES = 100 * 1024; // 100 KB ceiling for the cropped PNG.
+// 512 KB ceiling. A 256x256 PNG of a typical photo is 80-200 KB; a
+// pathological random-noise 256x256 RGBA PNG tops out around 260 KB. 512 KB
+// has headroom without unbounding the upload surface.
+const MAX_AVATAR_BYTES = 512 * 1024;
 
 export type UpdateAvatarResult =
   | { kind: 'ok'; url: string }
@@ -67,15 +70,19 @@ export async function updateAvatarAction(
 
   const raw = formData.get('avatar');
   if (!(raw instanceof Blob)) {
+    console.warn('avatar rejected: not a Blob', { type: typeof raw });
     return { kind: 'error', reason: 'invalid_image' };
   }
   if (raw.type !== ALLOWED_AVATAR_MIME) {
+    console.warn('avatar rejected: wrong MIME', { mime: raw.type, size: raw.size });
     return { kind: 'error', reason: 'invalid_image' };
   }
   if (raw.size === 0 || raw.size > MAX_AVATAR_BYTES) {
+    console.warn('avatar rejected: size out of range', { size: raw.size, max: MAX_AVATAR_BYTES });
     return { kind: 'error', reason: 'invalid_image' };
   }
   if (!(await isPng(raw))) {
+    console.warn('avatar rejected: PNG magic-byte check failed', { mime: raw.type, size: raw.size });
     return { kind: 'error', reason: 'invalid_image' };
   }
 

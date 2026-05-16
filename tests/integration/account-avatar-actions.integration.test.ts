@@ -129,9 +129,9 @@ describe('updateAvatarAction', () => {
     expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
   });
 
-  test('rejects a blob over the 100 KB cap with invalid_image', async () => {
+  test('rejects a blob over the 512 KB cap with invalid_image', async () => {
     currentClient = await signInAs(fx.owner);
-    const oversize = fakeBlob('image/png', 100 * 1024 + 1);
+    const oversize = fakeBlob('image/png', 512 * 1024 + 1);
     const result = await updateAvatarAction(formDataWith(oversize));
     expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
   });
