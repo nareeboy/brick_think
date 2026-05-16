@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
-import { stageDescription, stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageRow, StageType } from '@/lib/sessions/types';
 
 import { DeleteSessionModelButton } from './DeleteSessionModelButton';
+import { StageMetaEditor } from './StageMetaEditor';
 import { StartModelButton } from './StartModelButton';
 
 interface OwnedModelRow {
@@ -28,6 +28,9 @@ interface SessionStageListProps {
   // Empty object when the viewer is a regular participant — they only ever
   // see their own row. Keyed by stage_id when the viewer is facilitator/admin.
   participantsByStage: Record<string, ParticipantModel[]>;
+  // Mirrors the session-detail page's manage check; gates the inline title /
+  // description editor. Read-only viewers see the resolved labels only.
+  canManageSession: boolean;
 }
 
 export function SessionStageList({
@@ -35,6 +38,7 @@ export function SessionStageList({
   stages,
   ownedModels,
   participantsByStage,
+  canManageSession,
 }: SessionStageListProps) {
   const modelByStageId = new Map<string, OwnedModelRow>(
     ownedModels.map((m) => [m.stage_id, m]),
@@ -56,12 +60,13 @@ export function SessionStageList({
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
                   Stage {stage.position + 1}
                 </p>
-                <h2 className="text-[16px] font-semibold tracking-tight text-zinc-950">
-                  {stageLabel(stage.stage_type as StageType)}
-                </h2>
-                <p className="text-[12px] leading-snug text-zinc-500">
-                  {stageDescription(stage.stage_type as StageType)}
-                </p>
+                <StageMetaEditor
+                  stageId={stage.id}
+                  stageType={stage.stage_type as StageType}
+                  title={stage.title}
+                  description={stage.description}
+                  canEdit={canManageSession}
+                />
                 {owned ? (
                   <p className="mt-1 truncate text-[13px] text-zinc-600">{owned.title}</p>
                 ) : (

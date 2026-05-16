@@ -427,6 +427,7 @@ export type Database = {
       stages: {
         Row: {
           created_at: string
+          description: string | null
           duration_seconds: number | null
           ended_at: string | null
           id: string
@@ -434,9 +435,11 @@ export type Database = {
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
           started_at: string | null
+          title: string | null
         }
         Insert: {
           created_at?: string
+          description?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
           id?: string
@@ -444,9 +447,11 @@ export type Database = {
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
           started_at?: string | null
+          title?: string | null
         }
         Update: {
           created_at?: string
+          description?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
           id?: string
@@ -454,6 +459,7 @@ export type Database = {
           session_id?: string
           stage_type?: Database["public"]["Enums"]["stage_type"]
           started_at?: string | null
+          title?: string | null
         }
         Relationships: [
           {
@@ -577,8 +583,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_read_model: {
+        Args: { p_model_id: string; p_profile_id: string }
+        Returns: boolean
+      }
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
+      is_org_member_for: {
+        Args: { p_org_id: string; p_profile_id: string }
+        Returns: boolean
+      }
       purge_dead_share_links: { Args: never; Returns: undefined }
       purge_expired_trashed_models: { Args: never; Returns: undefined }
     }

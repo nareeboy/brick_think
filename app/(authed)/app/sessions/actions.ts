@@ -260,6 +260,49 @@ export async function createModelInStage(formData: FormData): Promise<void> {
 }
 
 /**
+ * Update per-session stage overrides (title and/or description). Either can
+ * be set to null to fall back to the canonical default for the stage_type.
+ *
+ * RLS on `stages` UPDATE already restricts writes to facilitator + org admin,
+ * so a non-authorised caller receives zero rows back; we surface that as an
+ * explicit error rather than a silent no-op.
+ */
+export async function updateStageMeta(input: {
+  stageId: string;
+  title: string | null;
+  description: string | null;
+}): Promise<void> {
+  if (!UUID_RE.test(input.stageId)) {
+    throw new Error('Invalid stageId');
+  }
+  const title =
+    input.title === null ? null : input.title.trim().slice(0, 200) || null;
+  const description =
+    input.description === null
+      ? null
+      : input.description.trim().slice(0, 500) || null;
+
+  const { supabase } = await requireUser();
+
+  const updateRes = await supabase
+    .from('stages')
+    .update({ title, description })
+    .eq('id', input.stageId)
+    .select('id, session_id')
+    .maybeSingle();
+  if (updateRes.error) {
+    throw new Error(`Failed to update stage: ${updateRes.error.message}`);
+  }
+  if (!updateRes.data) {
+    throw new Error(
+      'Stage not found, or you do not have permission to edit it.',
+    );
+  }
+
+  revalidatePath(`/app/sessions/${updateRes.data.session_id}`);
+}
+
+/**
  * Update session metadata (status, mode, scheduled_for). Same RLS as rename:
  * facilitator + org admin only.
  *
