@@ -3,24 +3,36 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTransition } from 'react';
 
+import { serializeTagList } from '@/lib/my-designs/types';
+
 interface Props {
   tags: string[];
-  active: string | null;
+  active: string[];
 }
 
 export function TagFilterBar({ tags, active }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, start] = useTransition();
+  const activeSet = new Set(active);
 
-  function pick(next: string | null) {
+  function push(next: string[]) {
     start(() => {
       const params = new URLSearchParams(searchParams ?? undefined);
-      if (next === null) params.delete('tag');
-      else params.set('tag', next);
+      if (next.length === 0) params.delete('tag');
+      else params.set('tag', serializeTagList(next));
       const qs = params.toString();
       router.push(qs ? `/app/my-designs?${qs}` : '/app/my-designs');
     });
+  }
+
+  function toggle(tag: string) {
+    const next = activeSet.has(tag) ? active.filter((t) => t !== tag) : [...active, tag];
+    push(next);
+  }
+
+  function clear() {
+    push([]);
   }
 
   return (
@@ -31,10 +43,10 @@ export function TagFilterBar({ tags, active }: Props) {
       <span className="text-[13px] font-medium text-zinc-600">Tags:</span>
       <button
         type="button"
-        onClick={() => pick(null)}
-        aria-pressed={active === null}
+        onClick={clear}
+        aria-pressed={active.length === 0}
         className={`inline-flex h-7 cursor-pointer items-center rounded-full border px-3 text-[12px] font-medium transition-colors ${
-          active === null
+          active.length === 0
             ? 'border-[#c0613d] bg-[#c0613d] text-white'
             : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
         }`}
@@ -42,12 +54,12 @@ export function TagFilterBar({ tags, active }: Props) {
         All
       </button>
       {tags.map((tag) => {
-        const on = active === tag;
+        const on = activeSet.has(tag);
         return (
           <button
             key={tag}
             type="button"
-            onClick={() => pick(on ? null : tag)}
+            onClick={() => toggle(tag)}
             aria-pressed={on}
             data-testid={`tag-chip-${tag}`}
             className={`inline-flex h-7 cursor-pointer items-center rounded-full border px-3 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors ${
@@ -60,6 +72,14 @@ export function TagFilterBar({ tags, active }: Props) {
           </button>
         );
       })}
+      {active.length > 1 ? (
+        <span
+          aria-live="polite"
+          className="ml-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500"
+        >
+          AND ({active.length})
+        </span>
+      ) : null}
     </div>
   );
 }

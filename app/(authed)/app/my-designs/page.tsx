@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { AggregateDesignRow, MyDesignsFilterValue, MyDesignsSort } from '@/lib/my-designs/types';
-import { parseFilter, parseSort } from '@/lib/my-designs/types';
+import { parseFilter, parseSort, parseTagList } from '@/lib/my-designs/types';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 import { DesignList } from './DesignList';
@@ -45,8 +45,6 @@ function firstParam(value: string | string[] | undefined): string | null {
   return value ?? null;
 }
 
-const TAG_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
-
 export default async function MyDesignsPage({
   searchParams,
 }: {
@@ -64,8 +62,7 @@ export default async function MyDesignsPage({
   const sort: MyDesignsSort = parseSort(firstParam(sp.sort));
   const qRaw = firstParam(sp.q) ?? '';
   const q = qRaw.trim().slice(0, 100);
-  const tagRaw = firstParam(sp.tag);
-  const tag = tagRaw && TAG_RE.test(tagRaw) ? tagRaw : null;
+  const activeTags = parseTagList(firstParam(sp.tag));
 
   const membershipsRes = await supabase
     .from('org_memberships')
@@ -88,18 +85,26 @@ export default async function MyDesignsPage({
     .filter((o): o is OrgSummary => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // If a tag filter is active, first resolve which of the user's owned
-  // models carry that tag — keeps the subsequent models query as a simple
-  // in() instead of joining through model_tags from PostgREST.
+  // If tag filters are active, first resolve which of the user's owned
+  // models carry every requested tag (AND semantics) — keeps the subsequent
+  // models query as a simple in() instead of building a multi-join with
+  // GROUP BY through PostgREST.
   let tagFilteredIds: string[] | null = null;
-  if (tag) {
+  if (activeTags.length > 0) {
     const tagRes = await supabase
       .from('model_tags')
-      .select('model_id, models!inner(owner_profile_id)')
-      .eq('tag', tag)
+      .select('model_id, tag, models!inner(owner_profile_id)')
+      .in('tag', activeTags)
       .eq('models.owner_profile_id', user.id);
     if (tagRes.error) throw new Error(`Tag filter failed: ${tagRes.error.message}`);
-    tagFilteredIds = (tagRes.data ?? []).map((r) => (r as { model_id: string }).model_id);
+    const counts = new Map<string, number>();
+    for (const row of tagRes.data ?? []) {
+      const r = row as { model_id: string };
+      counts.set(r.model_id, (counts.get(r.model_id) ?? 0) + 1);
+    }
+    tagFilteredIds = Array.from(counts.entries())
+      .filter(([, c]) => c === activeTags.length)
+      .map(([id]) => id);
   }
 
   // We avoid PostgREST embedding on models→sessions because models.session_id
@@ -311,7 +316,7 @@ export default async function MyDesignsPage({
               <SortDropdown buttonId="my-designs-sort" value={sort} />
             </div>
           </div>
-          {allTags.length > 0 ? <TagFilterBar tags={allTags} active={tag} /> : null}
+          {allTags.length > 0 ? <TagFilterBar tags={allTags} active={activeTags} /> : null}
         </header>
         <DesignList designs={cards} orgs={orgs} allTags={allTags} />
       </div>
