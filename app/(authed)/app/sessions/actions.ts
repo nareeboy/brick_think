@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
@@ -132,8 +133,20 @@ export async function renameSession(
 }
 
 /**
- * Idempotent: if the caller already has an active model for (sessionId,
- * stageId), redirect to it; otherwise create and redirect to the new id.
+ * Idempotent: if an appropriate active model exists for (sessionId, stageId),
+ * redirect to it; otherwise create and redirect to the new id.
+ *
+ * Stage-type semantics:
+ * - `shared_model`: ONE model per (session, stage), shared by all
+ *   participants. Owned by the session facilitator by convention so the
+ *   existing (session, stage, owner) unique index acts as a (session, stage)
+ *   constraint for this stage. Insert runs through the service-role client
+ *   because the RLS INSERT policy insists owner = auth.uid(); any participant
+ *   in the org may trigger the create, and the elevation is safe because the
+ *   pre-SELECT of the session through the RLS-scoped client is the
+ *   authorization gate.
+ * - All other stages: one model per (session, stage, caller), idempotent on
+ *   the caller as owner. Insert is the caller's own row via RLS.
  *
  * Security: the pre-SELECT of the parent session through the RLS-scoped
  * client is the authorization gate. Callers who aren't in session.org_id
@@ -149,22 +162,23 @@ export async function createModelInStage(formData: FormData): Promise<void> {
   const { supabase, user } = await requireUser();
 
   // 1. Authorization gate: caller must be able to read the session.
+  //    Capture facilitator_id for the shared_model elevated insert.
   const sessionRes = await supabase
     .from('sessions')
-    .select('id')
+    .select('id, facilitator_id')
     .eq('id', sessionId)
     .maybeSingle();
   if (sessionRes.error) {
     throw new Error(`Session lookup failed: ${sessionRes.error.message}`);
   }
   if (!sessionRes.data) {
-    // RLS hid it OR it doesn't exist — same outcome to avoid info leak.
     throw new Error('Session not found');
   }
+  const facilitatorId = sessionRes.data.facilitator_id as string;
 
   // 2. Stage lookup — needed for the default title, AND validates the stage
   //    belongs to the session (composite FK would also reject the INSERT, but
-  //    this surfaces a clearer error and gives us stage_type for the title).
+  //    this surfaces a clearer error and gives us stage_type for the branch).
   const stageRes = await supabase
     .from('stages')
     .select('id, stage_type, session_id')
@@ -176,15 +190,19 @@ export async function createModelInStage(formData: FormData): Promise<void> {
   }
   const stageType = stageRes.data.stage_type as StageType;
 
-  // 3. Idempotency check — existing active model for this triple?
-  const existingRes = await supabase
+  // 3. Idempotency check. For shared_model, the row is owned by the
+  //    facilitator and shared by all participants — query without owner.
+  //    For other stages, scope the lookup to the caller's own row.
+  let existingQuery = supabase
     .from('models')
     .select('id')
     .eq('session_id', sessionId)
     .eq('stage_id', stageId)
-    .eq('owner_profile_id', user.id)
-    .is('deleted_at', null)
-    .maybeSingle();
+    .is('deleted_at', null);
+  if (stageType !== 'shared_model') {
+    existingQuery = existingQuery.eq('owner_profile_id', user.id);
+  }
+  const existingRes = await existingQuery.maybeSingle();
   if (existingRes.error) {
     throw new Error(`Existing-model lookup failed: ${existingRes.error.message}`);
   }
@@ -193,12 +211,19 @@ export async function createModelInStage(formData: FormData): Promise<void> {
     redirect(`/app/designs/${existingRes.data.id}`);
   }
 
-  // 4. Insert. On 23505 unique violation (concurrent double-submit race),
-  //    fall back to a re-SELECT and redirect to the winner.
-  const insertRes = await supabase
+  // 4. Insert. For shared_model the insert is elevated to service-role so
+  //    any session-org member can trigger it while the row is owned by the
+  //    facilitator. For other stages the caller's own RLS-scoped client
+  //    does an insert as themselves.
+  const ownerForInsert =
+    stageType === 'shared_model' ? facilitatorId : user.id;
+  const insertClient =
+    stageType === 'shared_model' ? getServiceSupabaseClient() : supabase;
+
+  const insertRes = await insertClient
     .from('models')
     .insert({
-      owner_profile_id: user.id,
+      owner_profile_id: ownerForInsert,
       title: defaultModelTitle(stageType),
       canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
       session_id: sessionId,
@@ -208,14 +233,17 @@ export async function createModelInStage(formData: FormData): Promise<void> {
     .single();
   if (insertRes.error) {
     if (insertRes.error.code === '23505') {
-      const winnerRes = await supabase
+      // Race-recovery: re-select with the same scoping rule used above.
+      let winnerQuery = supabase
         .from('models')
         .select('id')
         .eq('session_id', sessionId)
         .eq('stage_id', stageId)
-        .eq('owner_profile_id', user.id)
-        .is('deleted_at', null)
-        .single();
+        .is('deleted_at', null);
+      if (stageType !== 'shared_model') {
+        winnerQuery = winnerQuery.eq('owner_profile_id', user.id);
+      }
+      const winnerRes = await winnerQuery.single();
       if (winnerRes.error || !winnerRes.data) {
         throw new Error(
           `Insert race-recovery failed: ${winnerRes.error?.message ?? 'no winner'}`,
