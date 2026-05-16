@@ -57,7 +57,7 @@ export function useOnboardingState(): OnboardingState {
     sync();
     setHydrated(true);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === null || STORAGE_KEYS.includes(e.key as (typeof STORAGE_KEYS)[number])) sync();
+      if (e.key === null || (STORAGE_KEYS as readonly string[]).includes(e.key)) sync();
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
