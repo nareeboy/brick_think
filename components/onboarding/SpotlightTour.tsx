@@ -81,7 +81,13 @@ export function SpotlightTour({ canManageSession }: Props) {
         // Silent skip — try the next step on the next frame.
         rafId = requestAnimationFrame(() => {
           setRect(null);
-          setStepIndex((i) => i + 1);
+          setStepIndex((i) => {
+            const next = i + 1;
+            if (next >= visibleSteps.length) {
+              finish();
+            }
+            return next;
+          });
         });
         return;
       }
@@ -99,7 +105,7 @@ export function SpotlightTour({ canManageSession }: Props) {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('scroll', onResize, true);
     };
-  }, [active, stepIndex, visibleSteps]);
+  }, [active, stepIndex, visibleSteps, finish]);
 
   useEffect(() => {
     if (active) ctaRef.current?.focus();
