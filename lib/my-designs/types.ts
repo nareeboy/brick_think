@@ -93,3 +93,12 @@ export function parseTagList(raw: string | null): string[] {
 export function serializeTagList(value: string[]): string {
   return value.join(',');
 }
+
+export const MAX_PAGE_NUMBER = 10_000;
+
+export function parsePageNumber(raw: string | null): number {
+  if (raw === null) return 1;
+  const parsed = parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return 1;
+  return Math.min(parsed, MAX_PAGE_NUMBER);
+}
