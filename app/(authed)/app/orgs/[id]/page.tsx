@@ -11,7 +11,7 @@ import { DeleteOrgButton } from './DeleteOrgButton';
 import { LeaveOrgButton } from './LeaveOrgButton';
 import { MemberRow } from './MemberRow';
 import { RenameOrgForm } from './RenameOrgForm';
-import { NewSessionInline } from './sessions/NewSessionInline';
+import { CreateSessionButton } from './sessions/CreateSessionButton';
 import { SessionsList } from './sessions/SessionsList';
 
 export const dynamic = 'force-dynamic';
@@ -102,38 +102,52 @@ export default async function OrgDetailPage({
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10">
-        <header>
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            <Link href="/app/orgs" className="underline-offset-2 hover:underline">
-              Organisations
-            </Link>
-            <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
-            {orgRes.data.name}
-          </p>
-          <div className="mt-1">
-            {isAdmin ? (
-              <RenameOrgForm orgId={id} initialName={orgRes.data.name} />
-            ) : (
-              <h1 className="text-[26px] font-semibold tracking-tight text-zinc-950">
-                {orgRes.data.name}
-              </h1>
-            )}
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              <Link href="/app/orgs" className="underline-offset-2 hover:underline">
+                Organisations
+              </Link>
+              <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
+              {orgRes.data.name}
+            </p>
+            <div className="mt-1">
+              {isAdmin ? (
+                <RenameOrgForm orgId={id} initialName={orgRes.data.name} />
+              ) : (
+                <h1 className="text-[26px] font-semibold tracking-tight text-zinc-950">
+                  {orgRes.data.name}
+                </h1>
+              )}
+            </div>
+            <p className="mt-1 font-mono text-[12px] text-zinc-500">{orgRes.data.slug}</p>
           </div>
-          <p className="mt-1 font-mono text-[12px] text-zinc-500">{orgRes.data.slug}</p>
+          <div className="flex shrink-0 items-center gap-2">
+            <LeaveOrgButton orgId={id} profileId={user.id} />
+            {isOwner ? (
+              <DeleteOrgButton
+                orgId={id}
+                orgName={orgRes.data.name}
+                orgSlug={orgRes.data.slug}
+              />
+            ) : null}
+            <CreateSessionButton orgId={id} />
+          </div>
         </header>
 
         <section className="flex flex-col gap-3">
           <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">Sessions</h2>
-          <NewSessionInline orgId={id} />
           <SessionsList sessions={sessionsRes.data ?? []} />
         </section>
 
         <section className="flex flex-col gap-3 border-t border-zinc-900/5 pt-8">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Members ({members.length})
-          </h2>
-          {isAdmin ? <AddMemberForm orgId={id} /> : null}
-          <ul className="flex flex-col gap-2">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              Members ({members.length})
+            </h2>
+            {isAdmin ? <AddMemberForm orgId={id} /> : null}
+          </div>
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {members.map((m) => (
               <MemberRow
                 key={m.profile_id}
@@ -144,17 +158,6 @@ export default async function OrgDetailPage({
             ))}
           </ul>
         </section>
-
-        <footer className="flex flex-col gap-4 border-t border-zinc-900/5 pt-6">
-          <LeaveOrgButton orgId={id} profileId={user.id} />
-          {isOwner ? (
-            <DeleteOrgButton
-              orgId={id}
-              orgName={orgRes.data.name}
-              orgSlug={orgRes.data.slug}
-            />
-          ) : null}
-        </footer>
       </div>
     </main>
   );
