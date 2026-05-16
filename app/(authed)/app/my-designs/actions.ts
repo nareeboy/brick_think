@@ -164,6 +164,48 @@ export async function duplicateToSessionAction(input: DuplicateInput): Promise<s
 
 const MAX_TAGS_PER_MODEL = 12;
 
+export async function renameTagAction(from: string, to: string): Promise<string> {
+  const fromNorm = normaliseTag(String(from ?? ''));
+  const toNorm = normaliseTag(String(to ?? ''));
+  if (!isValidTag(fromNorm)) throw new Error('Invalid source tag');
+  if (!isValidTag(toNorm)) throw new Error('Invalid target tag');
+  if (fromNorm === toNorm) return toNorm;
+
+  const { supabase, user } = await requireUser();
+
+  // Owned model_ids that currently carry the source tag. We need them up front
+  // because the rename is two writes (insert target, delete source) and we want
+  // them to land as a coherent pair — RLS keeps it scoped to the caller, but
+  // staging the IDs in JS lets us recover gracefully if the second write fails.
+  const owned = await supabase
+    .from('model_tags')
+    .select('model_id, models!inner(owner_profile_id)')
+    .eq('tag', fromNorm)
+    .eq('models.owner_profile_id', user.id);
+  if (owned.error) throw new Error(`Rename lookup failed: ${owned.error.message}`);
+  const modelIds = (owned.data ?? []).map((r) => (r as { model_id: string }).model_id);
+  if (modelIds.length === 0) return toNorm;
+
+  // Insert target tag on every affected model, ignoring rows where the target
+  // already exists (the model already had both `from` and `to`). Then delete
+  // the source tag in a second pass. ON CONFLICT DO NOTHING via upsert.
+  const upsertRows = modelIds.map((id) => ({ model_id: id, tag: toNorm }));
+  const ins = await supabase
+    .from('model_tags')
+    .upsert(upsertRows, { onConflict: 'model_id,tag', ignoreDuplicates: true });
+  if (ins.error) throw new Error(`Rename insert failed: ${ins.error.message}`);
+
+  const del = await supabase
+    .from('model_tags')
+    .delete()
+    .eq('tag', fromNorm)
+    .in('model_id', modelIds);
+  if (del.error) throw new Error(`Rename delete failed: ${del.error.message}`);
+
+  revalidatePath('/app/my-designs');
+  return toNorm;
+}
+
 export async function setModelTagsAction(modelId: string, rawTags: string[]): Promise<string[]> {
   if (!UUID_RE.test(modelId)) throw new Error('Invalid modelId');
   if (!Array.isArray(rawTags)) throw new Error('Invalid tags');
