@@ -228,14 +228,27 @@ export default async function MyDesignsPage({
     }
   }
 
-  const allTagsRes = await supabase
-    .from('model_tags')
-    .select('tag, models!inner(owner_profile_id)')
-    .eq('models.owner_profile_id', user.id);
-  if (allTagsRes.error) throw new Error(`Tag universe failed: ${allTagsRes.error.message}`);
-  const allTags = Array.from(
-    new Set((allTagsRes.data ?? []).map((r) => (r as { tag: string }).tag)),
-  ).sort();
+  // Short-circuit the `allTags` query: when no filter is active and the
+  // first page returned zero rows, the user has no designs at all, which
+  // means they have no tags either — skipping saves a round-trip on the
+  // empty-state path. Any active filter (sort doesn't count) could mask
+  // tagged models, so we only trust the empty-rows signal when the page is
+  // truly unfiltered.
+  const noFiltersActive =
+    filter.kind === 'all' && q.length === 0 && activeTags.length === 0;
+  let allTags: string[];
+  if (rows.length === 0 && noFiltersActive) {
+    allTags = [];
+  } else {
+    const allTagsRes = await supabase
+      .from('model_tags')
+      .select('tag, models!inner(owner_profile_id)')
+      .eq('models.owner_profile_id', user.id);
+    if (allTagsRes.error) throw new Error(`Tag universe failed: ${allTagsRes.error.message}`);
+    allTags = Array.from(
+      new Set((allTagsRes.data ?? []).map((r) => (r as { tag: string }).tag)),
+    ).sort();
+  }
 
   function thumbnailUrl(r: RawRow): string | null {
     if (!r.thumbnail_path || !urlByPath.has(r.thumbnail_path)) return null;
