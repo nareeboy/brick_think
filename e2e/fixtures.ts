@@ -42,6 +42,16 @@ export const test = base.extend<Fixtures>({
     await use(makeTestEmail());
   },
   signedInPage: async ({ page, signedInEmail }, use) => {
+    // Suppress the first-login walkthrough by default — every other spec
+    // assumes a "returning user" UI without the welcome modal / spotlight
+    // tour overlaying it. Onboarding-specific specs clear these in their
+    // own beforeEach (which registers a second addInitScript that runs
+    // after this one and selectively removes the flags).
+    await page.addInitScript(() => {
+      window.localStorage.setItem('bt_welcome_seen', '1');
+      window.localStorage.setItem('bt_checklist_dismissed', '1');
+      window.localStorage.setItem('bt_session_tour_seen', '1');
+    });
     const res = await page.request.post('/api/test/sign-in', {
       data: { email: signedInEmail },
     });
