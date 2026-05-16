@@ -23,6 +23,7 @@ export default defineConfig({
       'node_modules/**',
       '.next/**',
       '.claude/**',
+      '.worktrees/**',
       'dist/**',
       'coverage/**',
       'e2e/**',
