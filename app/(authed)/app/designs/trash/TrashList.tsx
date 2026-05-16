@@ -135,7 +135,7 @@ function TrashCard({
           disabled={pendingRestore || pendingPurge}
           className="inline-flex h-9 flex-1 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5 disabled:opacity-60"
         >
-          Purge
+          Delete
         </button>
       </div>
 
@@ -152,7 +152,7 @@ function TrashCard({
             className="absolute inset-0 cursor-default bg-zinc-900/40 backdrop-blur-sm"
           />
           <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
-            <h2 className="text-[16px] font-semibold text-zinc-950">Purge this design?</h2>
+            <h2 className="text-[16px] font-semibold text-zinc-950">Delete this design?</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
               Permanently delete &ldquo;{item.title}&rdquo;? Versions and history will be lost. This cannot be undone.
             </p>
@@ -176,7 +176,7 @@ function TrashCard({
                 disabled={pendingPurge}
                 className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
               >
-                {pendingPurge ? 'Purging…' : 'Purge'}
+                {pendingPurge ? 'Deleting…' : 'Delete'}
               </button>
             </div>
           </div>
