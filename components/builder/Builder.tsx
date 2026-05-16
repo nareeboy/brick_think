@@ -23,6 +23,7 @@ interface BuilderProps {
   ownerLabel?: string | null;
   orgId?: string | null;
   sessionContext?: SessionContext | null;
+  liveMode?: boolean;
 }
 
 export function Builder({
@@ -31,10 +32,12 @@ export function Builder({
   ownerLabel = null,
   orgId = null,
   sessionContext = null,
+  liveMode = false,
 }: BuilderProps) {
   return (
     <BuilderProvider
       readOnly={readOnly}
+      liveMode={liveMode}
       initial={
         initialModel
           ? {

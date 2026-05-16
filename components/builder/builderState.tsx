@@ -11,7 +11,27 @@ import {
   type ReactNode,
 } from 'react';
 
+import {
+  addBrickToDoc,
+  addGroupToDoc,
+  deleteBrickFromDoc,
+  deleteGroupFromDoc,
+  moveBrickInDoc,
+  moveGroupInDoc,
+  renameGroupInDoc,
+  setBrickVisibleInDoc,
+  setGroupCollapsedInDoc,
+  setGroupVisibleInDoc,
+  setTitleInDoc,
+  updateBrickInDoc,
+} from '@/lib/yjs/canvas-codec';
+
 import { useAutosave, type SaveStatus } from './useAutosave';
+import {
+  useYjsBinding,
+  type YjsConnectionStatus,
+} from './useYjsBinding';
+import { useYjsToken } from './useYjsToken';
 
 export interface BrickInstance {
   id: string;
@@ -129,6 +149,8 @@ export interface BuilderState {
   retrySave: () => void;
   registerThumbnailCapture: (fn: (() => Promise<Blob | null>) | null) => void;
   captureAndUploadThumbnail: () => Promise<void>;
+  liveMode: boolean;
+  connectionStatus: YjsConnectionStatus | null;
 }
 
 const Ctx = createContext<BuilderState | null>(null);
@@ -173,10 +195,12 @@ function findGroupInsertionStart(
 export function BuilderProvider({
   initial,
   readOnly = false,
+  liveMode = false,
   children,
 }: {
   initial?: InitialBuilderState;
   readOnly?: boolean;
+  liveMode?: boolean;
   children: ReactNode;
 }) {
   const [data, setData] = useState<BuilderData>(() => {
@@ -191,8 +215,52 @@ export function BuilderProvider({
     }
     return makeInitialData();
   });
-  const [title, setTitle] = useState<string>(initial?.title ?? 'Untitled model');
+  const [title, setTitleLocal] = useState<string>(
+    initial?.title ?? 'Untitled model',
+  );
   const modelId = initial?.modelId ?? null;
+
+  const wsBaseUrl =
+    process.env.NEXT_PUBLIC_YJS_WS_URL ?? 'ws://localhost:1234/yjs';
+  const tokenResult = useYjsToken(liveMode && modelId ? modelId : null);
+  const yjs = useYjsBinding({
+    modelId: liveMode && modelId ? modelId : '',
+    initialCanvasState: initial?.canvasState ?? { groups: [], bricks: [] },
+    initialTitle: initial?.title ?? 'Untitled model',
+    token: liveMode ? tokenResult.token : null,
+    wsBaseUrl,
+  });
+  const liveSnapshot = liveMode ? yjs.snapshot : null;
+  const liveDoc = liveMode ? yjs.doc : null;
+  const effectiveGroups = liveSnapshot?.groups ?? data.groups;
+  const effectiveBricks = liveSnapshot?.bricks ?? data.bricks;
+  const effectiveTitle = liveSnapshot?.title ?? title;
+
+  // Keep activeGroupId valid against the effective groups list (in live mode
+  // groups can mutate from peer updates, so the locally-stored activeGroupId
+  // may go stale).
+  useEffect(() => {
+    if (!liveMode) return;
+    setData((d) => {
+      const stillExists = effectiveGroups.some(
+        (g) => g.id === d.activeGroupId,
+      );
+      if (stillExists) return d;
+      const fallback = effectiveGroups[0]?.id ?? d.activeGroupId;
+      return d.activeGroupId === fallback ? d : { ...d, activeGroupId: fallback };
+    });
+  }, [liveMode, effectiveGroups]);
+
+  const setTitle = useCallback(
+    (next: string) => {
+      if (liveMode && liveDoc) {
+        setTitleInDoc(liveDoc, next);
+        return;
+      }
+      setTitleLocal(next);
+    },
+    [liveMode, liveDoc],
+  );
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -230,7 +298,9 @@ export function BuilderProvider({
   const autosave = useAutosave({
     modelId,
     payload: autosavePayload,
-    disabled: readOnly,
+    // In live mode, the Yjs worker is the sole writer for both
+    // yjs_documents.state and models.canvas_state — autosave must not fight it.
+    disabled: readOnly || liveMode,
   });
 
   const captureAndUploadThumbnail = useCallback(async (): Promise<void> => {
@@ -265,14 +335,13 @@ export function BuilderProvider({
   useEffect(() => {
     const prev = prevAutosaveStatusRef.current;
     prevAutosaveStatusRef.current = autosave.status;
+    if (liveMode) return;
     if (hasCapturedThisSession.current) return;
     if (prev !== 'saving' || autosave.status !== 'saved') return;
-    // Defer until BuilderCanvas has mounted and registered its capture fn.
-    // Otherwise we'd permanently burn the session flag with no retry.
     if (!captureFnRef.current) return;
     hasCapturedThisSession.current = true;
     void captureAndUploadThumbnail();
-  }, [autosave.status, captureAndUploadThumbnail]);
+  }, [autosave.status, captureAndUploadThumbnail, liveMode]);
 
   const zoomBy = useCallback(
     (factor: number, anchor: { x: number; y: number }) => {
@@ -307,16 +376,32 @@ export function BuilderProvider({
     setData((d) => (d.selectedId === id ? d : { ...d, selectedId: id }));
   }, []);
 
-  const setActiveGroup = useCallback((id: string) => {
-    setData((d) =>
-      d.activeGroupId === id || !d.groups.some((g) => g.id === id)
-        ? d
-        : { ...d, activeGroupId: id },
-    );
-  }, []);
+  const setActiveGroup = useCallback(
+    (id: string) => {
+      setData((d) => {
+        const groupsList = liveSnapshot ? liveSnapshot.groups : d.groups;
+        if (d.activeGroupId === id || !groupsList.some((g) => g.id === id)) {
+          return d;
+        }
+        return { ...d, activeGroupId: id };
+      });
+    },
+    [liveSnapshot],
+  );
 
   const addGroup = useCallback((): string => {
     const id = makeId('g');
+    if (liveMode && liveDoc) {
+      const newGroup: LayerGroup = {
+        id,
+        name: nextUntitledName(effectiveGroups),
+        collapsed: false,
+        visible: true,
+      };
+      addGroupToDoc(liveDoc, newGroup);
+      setData((d) => ({ ...d, activeGroupId: id }));
+      return id;
+    }
     setData((d) => {
       const newGroup: LayerGroup = {
         id,
@@ -331,120 +416,207 @@ export function BuilderProvider({
       };
     });
     return id;
-  }, []);
+  }, [liveMode, liveDoc, effectiveGroups]);
 
-  const renameGroup = useCallback((id: string, name: string) => {
-    const trimmed = name.trim() || 'Untitled';
-    setData((d) => ({
-      ...d,
-      groups: d.groups.map((g) => (g.id === id ? { ...g, name: trimmed } : g)),
-    }));
-  }, []);
-
-  const deleteGroup = useCallback((id: string) => {
-    setData((d) => {
-      let newGroups = d.groups.filter((g) => g.id !== id);
-      if (newGroups.length === 0) newGroups = [createInitialGroup()];
-      const newBricks = d.bricks.filter((b) => b.groupId !== id);
-      const selectedStillExists =
-        d.selectedId !== null && newBricks.some((b) => b.id === d.selectedId);
-      const fallbackActive = newGroups[0]?.id ?? d.activeGroupId;
-      return {
-        groups: newGroups,
-        bricks: newBricks,
-        activeGroupId:
-          d.activeGroupId === id ? fallbackActive : d.activeGroupId,
-        selectedId: selectedStillExists ? d.selectedId : null,
-      };
-    });
-  }, []);
-
-  const toggleGroupVisible = useCallback((id: string) => {
-    setData((d) => ({
-      ...d,
-      groups: d.groups.map((g) =>
-        g.id === id ? { ...g, visible: !g.visible } : g,
-      ),
-    }));
-  }, []);
-
-  const toggleGroupCollapsed = useCallback((id: string) => {
-    setData((d) => ({
-      ...d,
-      groups: d.groups.map((g) =>
-        g.id === id ? { ...g, collapsed: !g.collapsed } : g,
-      ),
-    }));
-  }, []);
-
-  const moveGroup = useCallback((id: string, toIndex: number) => {
-    setData((d) => {
-      const idx = d.groups.findIndex((g) => g.id === id);
-      if (idx < 0) return d;
-      const newGroups = [...d.groups];
-      const moved = newGroups.splice(idx, 1)[0];
-      if (!moved) return d;
-      const clamped = Math.max(0, Math.min(newGroups.length, toIndex));
-      if (clamped === idx) return d;
-      newGroups.splice(clamped, 0, moved);
-
-      // Re-sort bricks so the invariant "bricks grouped by groupId in groups
-      // order, preserving prior in-group order" holds.
-      const order = new Map<string, number>();
-      newGroups.forEach((g, i) => order.set(g.id, i));
-      const indexed = d.bricks.map((b, i) => ({
-        b,
-        gi: order.get(b.groupId) ?? 0,
-        i,
+  const renameGroup = useCallback(
+    (id: string, name: string) => {
+      const trimmed = name.trim() || 'Untitled';
+      if (liveMode && liveDoc) {
+        renameGroupInDoc(liveDoc, id, trimmed);
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        groups: d.groups.map((g) => (g.id === id ? { ...g, name: trimmed } : g)),
       }));
-      indexed.sort((a, c) => (a.gi !== c.gi ? a.gi - c.gi : a.i - c.i));
-      const newBricks = indexed.map((x) => x.b);
-      return { ...d, groups: newGroups, bricks: newBricks };
-    });
-  }, []);
+    },
+    [liveMode, liveDoc],
+  );
 
-  const addBrick = useCallback((brick: BrickInstance) => {
-    setData((d) => {
-      if (!d.groups.some((g) => g.id === brick.groupId)) return d;
-      const insertIdx = findGroupInsertionStart(d.bricks, d.groups, brick.groupId);
-      const newBricks = [
-        ...d.bricks.slice(0, insertIdx),
-        brick,
-        ...d.bricks.slice(insertIdx),
-      ];
-      return { ...d, bricks: newBricks };
-    });
-  }, []);
+  const deleteGroup = useCallback(
+    (id: string) => {
+      if (liveMode && liveDoc) {
+        deleteGroupFromDoc(liveDoc, id);
+        // Update selection/active locally; codec already removed associated bricks.
+        setData((d) => {
+          const stillSelected =
+            d.selectedId !== null &&
+            effectiveBricks.some(
+              (b) => b.id === d.selectedId && b.groupId !== id,
+            );
+          return {
+            ...d,
+            selectedId: stillSelected ? d.selectedId : null,
+            activeGroupId:
+              d.activeGroupId === id
+                ? (effectiveGroups.find((g) => g.id !== id)?.id ?? d.activeGroupId)
+                : d.activeGroupId,
+          };
+        });
+        return;
+      }
+      setData((d) => {
+        let newGroups = d.groups.filter((g) => g.id !== id);
+        if (newGroups.length === 0) newGroups = [createInitialGroup()];
+        const newBricks = d.bricks.filter((b) => b.groupId !== id);
+        const selectedStillExists =
+          d.selectedId !== null && newBricks.some((b) => b.id === d.selectedId);
+        const fallbackActive = newGroups[0]?.id ?? d.activeGroupId;
+        return {
+          groups: newGroups,
+          bricks: newBricks,
+          activeGroupId:
+            d.activeGroupId === id ? fallbackActive : d.activeGroupId,
+          selectedId: selectedStillExists ? d.selectedId : null,
+        };
+      });
+    },
+    [liveMode, liveDoc, effectiveBricks, effectiveGroups],
+  );
+
+  const toggleGroupVisible = useCallback(
+    (id: string) => {
+      if (liveMode && liveDoc) {
+        const current = effectiveGroups.find((g) => g.id === id);
+        if (!current) return;
+        setGroupVisibleInDoc(liveDoc, id, !current.visible);
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        groups: d.groups.map((g) =>
+          g.id === id ? { ...g, visible: !g.visible } : g,
+        ),
+      }));
+    },
+    [liveMode, liveDoc, effectiveGroups],
+  );
+
+  const toggleGroupCollapsed = useCallback(
+    (id: string) => {
+      if (liveMode && liveDoc) {
+        const current = effectiveGroups.find((g) => g.id === id);
+        if (!current) return;
+        setGroupCollapsedInDoc(liveDoc, id, !current.collapsed);
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        groups: d.groups.map((g) =>
+          g.id === id ? { ...g, collapsed: !g.collapsed } : g,
+        ),
+      }));
+    },
+    [liveMode, liveDoc, effectiveGroups],
+  );
+
+  const moveGroup = useCallback(
+    (id: string, toIndex: number) => {
+      if (liveMode && liveDoc) {
+        moveGroupInDoc(liveDoc, id, toIndex);
+        return;
+      }
+      setData((d) => {
+        const idx = d.groups.findIndex((g) => g.id === id);
+        if (idx < 0) return d;
+        const newGroups = [...d.groups];
+        const moved = newGroups.splice(idx, 1)[0];
+        if (!moved) return d;
+        const clamped = Math.max(0, Math.min(newGroups.length, toIndex));
+        if (clamped === idx) return d;
+        newGroups.splice(clamped, 0, moved);
+
+        const order = new Map<string, number>();
+        newGroups.forEach((g, i) => order.set(g.id, i));
+        const indexed = d.bricks.map((b, i) => ({
+          b,
+          gi: order.get(b.groupId) ?? 0,
+          i,
+        }));
+        indexed.sort((a, c) => (a.gi !== c.gi ? a.gi - c.gi : a.i - c.i));
+        const newBricks = indexed.map((x) => x.b);
+        return { ...d, groups: newGroups, bricks: newBricks };
+      });
+    },
+    [liveMode, liveDoc],
+  );
+
+  const addBrick = useCallback(
+    (brick: BrickInstance) => {
+      if (liveMode && liveDoc) {
+        if (!effectiveGroups.some((g) => g.id === brick.groupId)) return;
+        addBrickToDoc(liveDoc, brick);
+        return;
+      }
+      setData((d) => {
+        if (!d.groups.some((g) => g.id === brick.groupId)) return d;
+        const insertIdx = findGroupInsertionStart(d.bricks, d.groups, brick.groupId);
+        const newBricks = [
+          ...d.bricks.slice(0, insertIdx),
+          brick,
+          ...d.bricks.slice(insertIdx),
+        ];
+        return { ...d, bricks: newBricks };
+      });
+    },
+    [liveMode, liveDoc, effectiveGroups],
+  );
 
   const updateBrick = useCallback(
     (id: string, partial: Partial<Omit<BrickInstance, 'id' | 'groupId'>>) => {
+      if (liveMode && liveDoc) {
+        updateBrickInDoc(liveDoc, id, partial);
+        return;
+      }
       setData((d) => ({
         ...d,
         bricks: d.bricks.map((b) => (b.id === id ? { ...b, ...partial } : b)),
       }));
     },
-    [],
+    [liveMode, liveDoc],
   );
 
-  const deleteBrick = useCallback((id: string) => {
-    setData((d) => ({
-      ...d,
-      bricks: d.bricks.filter((b) => b.id !== id),
-      selectedId: d.selectedId === id ? null : d.selectedId,
-    }));
-  }, []);
+  const deleteBrick = useCallback(
+    (id: string) => {
+      if (liveMode && liveDoc) {
+        deleteBrickFromDoc(liveDoc, id);
+        setData((d) => (d.selectedId === id ? { ...d, selectedId: null } : d));
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        bricks: d.bricks.filter((b) => b.id !== id),
+        selectedId: d.selectedId === id ? null : d.selectedId,
+      }));
+    },
+    [liveMode, liveDoc],
+  );
 
-  const toggleBrickVisible = useCallback((id: string) => {
-    setData((d) => ({
-      ...d,
-      bricks: d.bricks.map((b) =>
-        b.id === id ? { ...b, visible: !b.visible } : b,
-      ),
-    }));
-  }, []);
+  const toggleBrickVisible = useCallback(
+    (id: string) => {
+      if (liveMode && liveDoc) {
+        const current = effectiveBricks.find((b) => b.id === id);
+        if (!current) return;
+        setBrickVisibleInDoc(liveDoc, id, !current.visible);
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        bricks: d.bricks.map((b) =>
+          b.id === id ? { ...b, visible: !b.visible } : b,
+        ),
+      }));
+    },
+    [liveMode, liveDoc, effectiveBricks],
+  );
 
   const moveBrick = useCallback(
     (brickId: string, toGroupId: string, beforeBrickId: string | null) => {
+      if (liveMode && liveDoc) {
+        if (!effectiveGroups.some((g) => g.id === toGroupId)) return;
+        moveBrickInDoc(liveDoc, brickId, toGroupId, beforeBrickId);
+        return;
+      }
       setData((d) => {
         const fromIdx = d.bricks.findIndex((b) => b.id === brickId);
         if (fromIdx < 0) return d;
@@ -475,7 +647,7 @@ export function BuilderProvider({
         return { ...d, bricks: newBricks };
       });
     },
-    [],
+    [liveMode, liveDoc, effectiveGroups],
   );
 
   const view = useMemo<View>(() => ({ pan, zoom }), [pan, zoom]);
@@ -484,10 +656,10 @@ export function BuilderProvider({
     () => ({
       modelId,
       readOnly,
-      title,
+      title: effectiveTitle,
       setTitle: guard(setTitle, undefined),
-      groups: data.groups,
-      bricks: data.bricks,
+      groups: effectiveGroups,
+      bricks: effectiveBricks,
       activeGroupId: data.activeGroupId,
       selectedId: data.selectedId,
       view,
@@ -514,15 +686,20 @@ export function BuilderProvider({
       retrySave: autosave.retry,
       registerThumbnailCapture,
       captureAndUploadThumbnail,
+      liveMode,
+      connectionStatus: liveMode ? yjs.connectionStatus : null,
     }),
-    // `guard` is an inline helper that closes over `readOnly`, which IS listed.
+    // `guard` closes over `readOnly`, which IS listed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      data,
+      data.activeGroupId,
+      data.selectedId,
+      effectiveGroups,
+      effectiveBricks,
+      effectiveTitle,
       view,
       modelId,
       readOnly,
-      title,
       setTitle,
       zoomBy,
       selectBrick,
@@ -545,6 +722,8 @@ export function BuilderProvider({
       autosave.retry,
       registerThumbnailCapture,
       captureAndUploadThumbnail,
+      liveMode,
+      yjs.connectionStatus,
     ],
   );
 

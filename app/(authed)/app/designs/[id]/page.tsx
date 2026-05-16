@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
+import { canPlaceLive } from '@/lib/yjs/canPlaceLive';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,6 +84,10 @@ export default async function DesignBuilderPage({
 
   const readOnly = data.owner_profile_id !== user.id;
   const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
+  const liveMode = canPlaceLive({
+    sessionContext,
+    flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
+  });
 
   return (
     <Builder
@@ -91,6 +96,7 @@ export default async function DesignBuilderPage({
       ownerLabel={ownerLabel}
       orgId={data.org_id ?? null}
       sessionContext={sessionContext}
+      liveMode={liveMode}
     />
   );
 }
