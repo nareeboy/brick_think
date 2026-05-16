@@ -6,6 +6,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { AccountForm } from './AccountForm';
 import { BillingCard } from './BillingCard';
+import { DangerZone } from './DangerZone';
 
 export const metadata: Metadata = { title: 'Account' };
 export const dynamic = 'force-dynamic';
@@ -60,6 +61,8 @@ export default async function AccountPage() {
         </section>
 
         <BillingCard userId={user.id} />
+
+        <DangerZone email={email} />
       </div>
     </main>
   );
