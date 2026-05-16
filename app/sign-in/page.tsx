@@ -53,9 +53,9 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             </p>
             <h1
               id="signin-heading"
-              className="mt-3 text-4xl font-semibold leading-[1.05] tracking-tight text-zinc-950 md:text-5xl"
+              className="mt-3 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[56px]"
             >
-              Sign in
+              Sign in.
             </h1>
             <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-zinc-600">
               Send yourself a one-time link, or continue with Google. Participants do not need an
@@ -191,15 +191,10 @@ function BrandPanel() {
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
         Virtual Serious Play, remote-native
       </p>
-      <h2 className="mt-3 text-3xl font-semibold leading-[1.05] tracking-tight text-zinc-950 md:text-4xl">
-        Five stages.
+      <h2 className="mt-3 font-display text-[34px] font-medium leading-[0.98] tracking-[-0.02em] text-zinc-950 md:text-[44px]">
+        Build <span className="text-[#c0613d]">one model</span>
         <br />
-        Two hours.
-        <br />
-        <span className="text-[#c0613d]">One model</span>{' '}
-        <span className="text-zinc-700">your team</span>
-        <br />
-        <span className="text-zinc-700">actually believes in.</span>
+        <span className="text-zinc-700">your team believes in.</span>
       </h2>
 
       <ul className="mt-7 space-y-2">
