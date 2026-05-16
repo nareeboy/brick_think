@@ -17,6 +17,8 @@ interface Props {
   allTags: string[];
 }
 
+const MAX_VISIBLE_CARD_TAGS = 4;
+
 export function DesignList({ designs, orgs, allTags }: Props) {
   if (designs.length === 0) {
     return (
@@ -119,7 +121,7 @@ function DesignCard({
             data-testid={`card-tags-${design.id}`}
             className="mt-2 flex flex-wrap gap-1"
           >
-            {visibleTags.map((tag) => (
+            {visibleTags.slice(0, MAX_VISIBLE_CARD_TAGS).map((tag) => (
               <span
                 key={tag}
                 className="inline-flex items-center rounded-full bg-zinc-900/5 px-2 py-0.5 font-mono text-[10px] text-zinc-600"
@@ -127,6 +129,15 @@ function DesignCard({
                 #{tag}
               </span>
             ))}
+            {visibleTags.length > MAX_VISIBLE_CARD_TAGS ? (
+              <span
+                data-testid={`card-tags-overflow-${design.id}`}
+                title={visibleTags.slice(MAX_VISIBLE_CARD_TAGS).map((t) => `#${t}`).join(' ')}
+                className="inline-flex items-center rounded-full bg-zinc-900/5 px-2 py-0.5 font-mono text-[10px] text-zinc-600"
+              >
+                +{visibleTags.length - MAX_VISIBLE_CARD_TAGS}
+              </span>
+            ) : null}
           </div>
         ) : null}
       </Link>
