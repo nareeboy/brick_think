@@ -12,15 +12,20 @@ export async function startWorker(opts: {
   secret: string;
 }): Promise<void> {
   if (proc) throw new Error('worker already running');
-  const dbUrl =
-    process.env.WORKER_DATABASE_URL ??
-    'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+  // Integration tests always run against the local Supabase stack — the
+  // worker must NOT pick up a remote WORKER_DATABASE_URL from .env.local
+  // (which the worker would otherwise load via its own dotenv call).
+  const dbUrl = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+  const env = { ...process.env };
+  // Strip the remote URL out of inherited env so the worker's loadEnv()
+  // call against .env.local can't override our explicit local value.
+  delete env.WORKER_DATABASE_URL;
   proc = spawn(
     'pnpm',
     ['exec', 'tsx', 'worker/src/yjs-server.ts'],
     {
       env: {
-        ...process.env,
+        ...env,
         YJS_PORT: String(opts.port),
         YJS_JWT_SECRET: opts.secret,
         WORKER_DATABASE_URL: dbUrl,
