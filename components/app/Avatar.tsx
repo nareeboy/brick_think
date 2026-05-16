@@ -24,7 +24,7 @@ interface SizeSpec {
 
 const SIZE_MAP: Record<AvatarSize, SizeSpec> = {
   sm: { box: 'h-8 w-8', text: 'text-xs' },
-  md: { box: 'h-10 w-10', text: 'text-sm' },
+  md: { box: 'h-16 w-16', text: 'text-xl' },
   lg: { box: 'h-11 w-11', text: 'text-[15px]' },
   xl: { box: 'h-20 w-20', text: 'text-2xl' },
 };
