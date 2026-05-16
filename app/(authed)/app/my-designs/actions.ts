@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Json } from '@/lib/db/types.generated';
+import { isValidTag, normaliseTag } from '@/lib/my-designs/types';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -159,4 +160,40 @@ export async function duplicateToSessionAction(input: DuplicateInput): Promise<s
   revalidatePath('/app/my-designs');
   revalidatePath(`/app/sessions/${sessionId}`);
   return insertRes.data.id;
+}
+
+const MAX_TAGS_PER_MODEL = 12;
+
+export async function setModelTagsAction(modelId: string, rawTags: string[]): Promise<string[]> {
+  if (!UUID_RE.test(modelId)) throw new Error('Invalid modelId');
+  if (!Array.isArray(rawTags)) throw new Error('Invalid tags');
+
+  const cleaned = Array.from(
+    new Set(rawTags.map((t) => normaliseTag(String(t ?? ''))).filter((t) => isValidTag(t))),
+  ).slice(0, MAX_TAGS_PER_MODEL);
+
+  const { supabase, user } = await requireUser();
+
+  // Ownership check up front — RLS would also block, but we want a clear error
+  // before issuing the destructive delete.
+  const owns = await supabase
+    .from('models')
+    .select('id', { count: 'exact', head: true })
+    .eq('id', modelId)
+    .eq('owner_profile_id', user.id);
+  if (owns.error) throw new Error(`Tag lookup failed: ${owns.error.message}`);
+  if ((owns.count ?? 0) === 0) throw new Error('Design not found or not owned by you');
+
+  // Wholesale replace: simplest correct semantics for an MVP editor.
+  const del = await supabase.from('model_tags').delete().eq('model_id', modelId);
+  if (del.error) throw new Error(`Failed to clear tags: ${del.error.message}`);
+
+  if (cleaned.length > 0) {
+    const rows = cleaned.map((tag) => ({ model_id: modelId, tag }));
+    const ins = await supabase.from('model_tags').insert(rows);
+    if (ins.error) throw new Error(`Failed to write tags: ${ins.error.message}`);
+  }
+
+  revalidatePath('/app/my-designs');
+  return cleaned;
 }
