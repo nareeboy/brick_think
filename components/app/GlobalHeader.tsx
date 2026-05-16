@@ -28,13 +28,14 @@ export function GlobalHeader({ userName, userEmail }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span
-            className="hidden max-w-[280px] truncate text-[13px] font-medium text-zinc-700 md:inline"
+          <Link
+            href="/app/account"
+            className="hidden max-w-[280px] truncate rounded-md px-2 py-1 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 md:inline-block"
             title={userEmail ?? userName}
             data-testid="current-user-name"
           >
             {userName}
-          </span>
+          </Link>
           <form action="/auth/sign-out" method="post">
             <button
               type="submit"
