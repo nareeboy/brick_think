@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { Avatar } from '@/components/app/Avatar';
 import { BrickGlyph } from '@/components/app/BrickGlyph';
 import { HeaderInner } from '@/components/app/HeaderInner';
 import { HeaderNav } from '@/components/app/HeaderNav';
@@ -7,9 +8,10 @@ import { HeaderNav } from '@/components/app/HeaderNav';
 interface Props {
   userName: string;
   userEmail: string | null;
+  userAvatarUrl: string | null;
 }
 
-export function GlobalHeader({ userName, userEmail }: Props) {
+export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
   return (
     <header className="shrink-0 border-b border-zinc-900/5 bg-white">
       <HeaderInner>
@@ -28,6 +30,15 @@ export function GlobalHeader({ userName, userEmail }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2"
+            data-testid="header-user-block"
+          >
+            <Avatar url={userAvatarUrl} name={userName} size="sm" />
+            <span className="hidden max-w-[140px] truncate text-[13px] text-zinc-800 sm:inline">
+              {userName}
+            </span>
+          </div>
           <Link
             href="/app/account"
             aria-label="Account settings"
