@@ -38,6 +38,7 @@ export function SpotlightTour({ canManageSession }: Props) {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const titleId = useId();
   const bodyId = useId();
+  const maskId = useId();
   const ctaRef = useRef<HTMLButtonElement>(null);
 
   // Steps the current viewer can actually see. The pencil only renders for
@@ -78,7 +79,10 @@ export function SpotlightTour({ canManageSession }: Props) {
       const el = document.querySelector(step.selector);
       if (!el) {
         // Silent skip — try the next step on the next frame.
-        rafId = requestAnimationFrame(() => setStepIndex((i) => i + 1));
+        rafId = requestAnimationFrame(() => {
+          setRect(null);
+          setStepIndex((i) => i + 1);
+        });
         return;
       }
       setRect(el.getBoundingClientRect());
@@ -145,7 +149,7 @@ export function SpotlightTour({ canManageSession }: Props) {
         height="100%"
       >
         <defs>
-          <mask id="spotlight-mask">
+          <mask id={maskId}>
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
             <rect x={x} y={y} width={w} height={h} rx="12" fill="black" />
           </mask>
@@ -156,7 +160,7 @@ export function SpotlightTour({ canManageSession }: Props) {
           width="100%"
           height="100%"
           fill="rgba(15, 23, 42, 0.55)"
-          mask="url(#spotlight-mask)"
+          mask={`url(#${maskId})`}
         />
       </svg>
       <div
@@ -187,7 +191,14 @@ export function SpotlightTour({ canManageSession }: Props) {
           <button
             ref={ctaRef}
             type="button"
-            onClick={() => (isLast ? finish() : setStepIndex((i) => i + 1))}
+            onClick={() => {
+              if (isLast) {
+                finish();
+                return;
+              }
+              setRect(null);
+              setStepIndex((i) => i + 1);
+            }}
             data-testid="onboarding-spotlight-next"
             className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
           >
