@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { stageLabel } from '@/lib/sessions/stage-labels';
+import { stageDescription, stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageRow, StageType } from '@/lib/sessions/types';
 
 import { DeleteSessionModelButton } from './DeleteSessionModelButton';
@@ -59,10 +59,13 @@ export function SessionStageList({
                 <h2 className="text-[16px] font-semibold tracking-tight text-zinc-950">
                   {stageLabel(stage.stage_type as StageType)}
                 </h2>
+                <p className="text-[12px] leading-snug text-zinc-500">
+                  {stageDescription(stage.stage_type as StageType)}
+                </p>
                 {owned ? (
-                  <p className="truncate text-[13px] text-zinc-600">{owned.title}</p>
+                  <p className="mt-1 truncate text-[13px] text-zinc-600">{owned.title}</p>
                 ) : (
-                  <p className="text-[13px] text-zinc-500">No model yet</p>
+                  <p className="mt-1 text-[13px] text-zinc-500">No model yet</p>
                 )}
               </div>
               {owned ? (

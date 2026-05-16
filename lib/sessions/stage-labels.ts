@@ -8,8 +8,20 @@ export const STAGE_LABELS: Record<StageType, string> = {
   guiding_principles: 'Guiding principles',
 };
 
+export const STAGE_DESCRIPTIONS: Record<StageType, string> = {
+  skill_building: 'Warm-up builds to get fluent with the bricks before the real work.',
+  individual_model: 'Everyone answers the challenge with their own model — no consensus yet.',
+  shared_model: 'Merge the individual models into one the whole group agrees on.',
+  system_model: 'Place the shared models in relation to each other to see the system.',
+  guiding_principles: 'Capture the simple rules that hold the system together.',
+};
+
 export function stageLabel(stageType: StageType): string {
   return STAGE_LABELS[stageType];
+}
+
+export function stageDescription(stageType: StageType): string {
+  return STAGE_DESCRIPTIONS[stageType];
 }
 
 // Default title for a fresh model in a given stage. Hand-curated rather than
