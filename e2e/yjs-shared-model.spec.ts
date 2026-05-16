@@ -81,4 +81,43 @@ test.describe('yjs shared_model collaboration', () => {
       page.locator('[data-testid^="presence-cursor-"]'),
     ).toHaveCount(0);
   });
+
+  test('flag on: peer renders avatar + name chip on shared_model', async ({
+    signedInPage: page,
+    seededSession,
+  }) => {
+    // Tab A starts the shared_model.
+    await page.goto(`/app/sessions/${seededSession.sessionId}`);
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-button')
+      .click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+    const modelUrl = page.url();
+
+    // Tab B in a second page (same cookie jar → same user).
+    const pageB = await page.context().newPage();
+    await pageB.goto(modelUrl);
+    await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
+
+    // Move the cursor in Tab A so Tab A publishes a cursor coord.
+    const canvasA = page.getByTestId('builder-canvas');
+    const boxA = await canvasA.boundingBox();
+    if (!boxA) throw new Error('canvas A box missing');
+    await page.mouse.move(boxA.x + 150, boxA.y + 150);
+
+    // Tab B should see exactly one peer cursor (Tab A) with avatar + chip.
+    const peerCursors = pageB.locator('[data-testid^="presence-cursor-"]');
+    await expect(peerCursors).toHaveCount(1, { timeout: 5000 });
+    const cursor = peerCursors.first();
+    const nameChip = cursor.locator('[data-testid^="presence-name-"]');
+    await expect(nameChip).toBeVisible();
+    const nameText = await nameChip.textContent();
+    expect(nameText?.trim().length).toBeGreaterThan(0);
+    // E2E test profiles have no avatar_url, so the initial-letter fallback
+    // renders (covers the `displayName.charAt(0).toUpperCase()` branch).
+    const initial = cursor.locator('[data-testid^="presence-initial-"]');
+    await expect(initial).toBeVisible();
+  });
 });
