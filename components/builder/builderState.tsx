@@ -278,6 +278,7 @@ export function BuilderProvider({
       awareness.setLocalStateField('user', {
         userId: self.userId,
         displayName: self.displayName,
+        avatarUrl: self.avatarUrl,
         cursor: { x: worldX, y: worldY },
       });
     },
@@ -288,6 +289,7 @@ export function BuilderProvider({
     awareness.setLocalStateField('user', {
       userId: self.userId,
       displayName: self.displayName,
+      avatarUrl: self.avatarUrl,
       cursor: null,
     });
   }, [awareness, self]);

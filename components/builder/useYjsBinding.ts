@@ -23,6 +23,7 @@ export interface YjsBindingSnapshot {
 export interface PresenceSelf {
   userId: string;
   displayName: string;
+  avatarUrl: string | null;
 }
 
 export interface UseYjsBindingArgs {
@@ -104,6 +105,7 @@ export function useYjsBinding({
       provider.awareness.setLocalStateField('user', {
         userId: self.userId,
         displayName: self.displayName,
+        avatarUrl: self.avatarUrl,
         cursor: null,
       });
     }
