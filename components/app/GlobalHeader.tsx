@@ -30,11 +30,12 @@ export function GlobalHeader({ userName, userEmail }: Props) {
         <div className="flex items-center gap-2">
           <Link
             href="/app/account"
-            className="hidden max-w-[280px] truncate rounded-md px-2 py-1 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 md:inline-block"
+            aria-label="Account settings"
             title={userEmail ?? userName}
-            data-testid="current-user-name"
+            data-testid="account-link"
+            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white text-zinc-700 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
           >
-            {userName}
+            <CogIcon />
           </Link>
           <form action="/auth/sign-out" method="post">
             <button
@@ -49,6 +50,26 @@ export function GlobalHeader({ userName, userEmail }: Props) {
         </div>
       </HeaderInner>
     </header>
+  );
+}
+
+function CogIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="3" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
