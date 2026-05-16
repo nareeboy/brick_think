@@ -3,6 +3,7 @@
 import { useEffect, useId, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import type { OrgSummary } from '@/lib/orgs/types';
 
 import { duplicateToSessionAction } from './actions';
@@ -21,14 +22,6 @@ export function SendToSessionDialog({ sourceModelId, orgs, onClose }: Props) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const titleId = useId();
-
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
 
   useEffect(() => {
     if (!orgId) return;
@@ -55,22 +48,8 @@ export function SendToSessionDialog({ sourceModelId, orgs, onClose }: Props) {
   }
 
   return (
-    // The outer div doubles as a click-outside-to-close backdrop. ARIA role
-    // "dialog" makes it non-interactive to a11y linters, but the click is
-    // guarded by `e.target === e.currentTarget` (i.e. clicks on inner content
-    // bubble through without firing). Escape-to-close covers keyboard users.
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      data-testid="send-to-session-dialog"
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
+    <ModalBackdrop dataTestid="send-to-session-dialog" titleId={titleId} onClose={onClose}>
+      <div className="rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
         <h2 id={titleId} className="text-[18px] font-semibold tracking-tight text-zinc-950">
           Send to a session
         </h2>
@@ -145,6 +124,6 @@ export function SendToSessionDialog({ sourceModelId, orgs, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </ModalBackdrop>
   );
 }
