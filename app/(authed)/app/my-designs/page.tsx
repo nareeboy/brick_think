@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { Avatar } from '@/components/app/Avatar';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -78,6 +79,21 @@ export default async function MyDesignsPage({
   const q = qRaw.trim().slice(0, 100);
   const activeTags = parseTagList(firstParam(sp.tag));
   const page = parsePageNumber(firstParam(sp.page));
+
+  const profileRes = await supabase
+    .from('profiles')
+    .select('full_name, email, avatar_url')
+    .eq('id', user.id)
+    .single();
+  if (profileRes.error) {
+    throw new Error(`Failed to load profile: ${profileRes.error.message}`);
+  }
+  const profileName =
+    profileRes.data?.full_name?.trim() ||
+    profileRes.data?.email ||
+    user.email ||
+    'You';
+  const profileAvatarUrl = profileRes.data?.avatar_url ?? null;
 
   const membershipsRes = await supabase
     .from('org_memberships')
@@ -386,16 +402,19 @@ export default async function MyDesignsPage({
         />
         <header className="flex flex-col gap-5">
           <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                BrickThink
-              </p>
-              <h1
-                data-testid="my-designs-heading"
-                className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950"
-              >
-                My Designs
-              </h1>
+            <div className="flex items-center gap-3">
+              <Avatar url={profileAvatarUrl} name={profileName} size="md" />
+              <div>
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                  BrickThink
+                </p>
+                <h1
+                  data-testid="my-designs-heading"
+                  className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950"
+                >
+                  My Designs
+                </h1>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {trashCount > 0 ? (
