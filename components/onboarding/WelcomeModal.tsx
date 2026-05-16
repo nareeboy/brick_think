@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
@@ -11,6 +11,11 @@ const CHECKLIST_ANCHOR_ID = 'onboarding-checklist';
 export function WelcomeModal() {
   const { role, welcomeSeen, hydrated, markWelcomeSeen } = useOnboardingState();
   const titleId = useId();
+  const ctaRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    ctaRef.current?.focus();
+  }, []);
 
   if (!hydrated || role !== 'facilitator' || welcomeSeen) return null;
 
@@ -25,7 +30,7 @@ export function WelcomeModal() {
 
   return (
     <ModalBackdrop dataTestid="onboarding-welcome-modal" titleId={titleId} onClose={markWelcomeSeen}>
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
+      <div className="rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Welcome to BrickThink
         </p>
@@ -62,6 +67,7 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={dismissAndScroll}
+            ref={ctaRef}
             data-testid="onboarding-welcome-cta"
             className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
           >
