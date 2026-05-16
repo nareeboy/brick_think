@@ -19,7 +19,7 @@ describe('useOnboardingState', () => {
     expect(result.current.role).toBe('participant');
   });
 
-  it('welcomeSeen and checklistDismissed default to false', () => {
+  it('welcomeSeen, checklistDismissed, and sessionTourSeen default to false', () => {
     const { result } = renderHook(() => useOnboardingState());
     expect(result.current.welcomeSeen).toBe(false);
     expect(result.current.checklistDismissed).toBe(false);
@@ -31,6 +31,43 @@ describe('useOnboardingState', () => {
     act(() => result.current.markWelcomeSeen());
     expect(localStorage.getItem('bt_welcome_seen')).toBe('1');
     expect(result.current.welcomeSeen).toBe(true);
+  });
+
+  it('dismissChecklist writes the flag and updates state', () => {
+    const { result } = renderHook(() => useOnboardingState());
+    act(() => result.current.dismissChecklist());
+    expect(localStorage.getItem('bt_checklist_dismissed')).toBe('1');
+    expect(result.current.checklistDismissed).toBe(true);
+  });
+
+  it('markSessionTourSeen writes the flag and updates state', () => {
+    const { result } = renderHook(() => useOnboardingState());
+    act(() => result.current.markSessionTourSeen());
+    expect(localStorage.getItem('bt_session_tour_seen')).toBe('1');
+    expect(result.current.sessionTourSeen).toBe(true);
+  });
+
+  it('syncs state when another tab writes a flag via StorageEvent', () => {
+    const { result } = renderHook(() => useOnboardingState());
+    expect(result.current.welcomeSeen).toBe(false);
+    act(() => {
+      localStorage.setItem('bt_welcome_seen', '1');
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: 'bt_welcome_seen', newValue: '1' }),
+      );
+    });
+    expect(result.current.welcomeSeen).toBe(true);
+  });
+
+  it('syncs state when storage is cleared from another tab (key: null)', () => {
+    localStorage.setItem('bt_welcome_seen', '1');
+    const { result } = renderHook(() => useOnboardingState());
+    expect(result.current.welcomeSeen).toBe(true);
+    act(() => {
+      localStorage.clear();
+      window.dispatchEvent(new StorageEvent('storage', { key: null }));
+    });
+    expect(result.current.welcomeSeen).toBe(false);
   });
 
   it('replayAll clears every flag (preserves role)', () => {
