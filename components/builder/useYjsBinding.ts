@@ -107,6 +107,7 @@ export function useYjsBinding({
         displayName: self.displayName,
         avatarUrl: self.avatarUrl,
         cursor: null,
+        selectedBrickId: null,
       });
     }
     const onStatus = (event: { status: string }): void => {
