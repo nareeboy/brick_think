@@ -4,6 +4,45 @@ import type { ReactNode } from 'react';
 
 import { BuilderProvider, useBuilderState } from './builderState';
 
+vi.mock('./useYjsToken', () => ({
+  useYjsToken: () => ({ token: 'fake-token', refresh: vi.fn() }),
+}));
+
+vi.mock('y-websocket', () => {
+  class FakeAwareness {
+    clientID = 42;
+    private state: Record<string, unknown> = {};
+    private listeners = new Set<() => void>();
+    states = new Map<number, { user: Record<string, unknown> }>();
+    setLocalStateField(field: string, value: unknown) {
+      this.state[field] = value;
+      this.states.set(this.clientID, { user: { ...(this.state[field] as object) } });
+      this.listeners.forEach((cb) => cb());
+    }
+    getStates() {
+      return this.states;
+    }
+    on(_evt: string, cb: () => void) {
+      this.listeners.add(cb);
+    }
+    off(_evt: string, cb: () => void) {
+      this.listeners.delete(cb);
+    }
+  }
+  class FakeProvider {
+    awareness = new FakeAwareness();
+    private statusListeners = new Set<(e: { status: string }) => void>();
+    on(_evt: string, cb: (e: { status: string }) => void) {
+      this.statusListeners.add(cb);
+    }
+    off(_evt: string, cb: (e: { status: string }) => void) {
+      this.statusListeners.delete(cb);
+    }
+    destroy() {}
+  }
+  return { WebsocketProvider: FakeProvider };
+});
+
 function wrap(initial?: Parameters<typeof BuilderProvider>[0]['initial']) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return <BuilderProvider initial={initial}>{children}</BuilderProvider>;
@@ -239,5 +278,53 @@ describe('BuilderProvider readOnly', () => {
       result.current.setTitle('Hijack');
     });
     expect(result.current.title).toBe('Locked');
+  });
+});
+
+describe('BuilderProvider awareness publishing', () => {
+  it('publishes selectedBrickId after selectBrick, preserving any prior cursor', () => {
+    const initial = {
+      modelId: 'm1',
+      title: 'X',
+      stageType: 'shared_model' as const,
+      orgId: 'org-1',
+      canvasState: {
+        groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
+        bricks: [
+          {
+            id: 'b1', groupId: 'g1', code: 'A', image: '',
+            width: 50, height: 50, x: 0, y: 0, rotation: 0, visible: true,
+          },
+        ],
+      },
+    };
+    const liveMode = true;
+    const self = { userId: 'u1', displayName: 'U', avatarUrl: null };
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <BuilderProvider initial={initial} liveMode={liveMode} self={self}>
+          {children}
+        </BuilderProvider>
+      ),
+    });
+
+    act(() => {
+      result.current.publishCursor(10, 20);
+    });
+    act(() => {
+      result.current.selectBrick('b1');
+    });
+
+    const states = (
+      result.current.awareness as unknown as {
+        getStates: () => Map<
+          number,
+          { user: { cursor: unknown; selectedBrickId: string | null } }
+        >;
+      }
+    ).getStates();
+    const self42 = states.get(42)!;
+    expect(self42.user.cursor).toEqual({ x: 10, y: 20 });
+    expect(self42.user.selectedBrickId).toBe('b1');
   });
 });

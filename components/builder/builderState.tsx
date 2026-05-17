@@ -277,27 +277,40 @@ export function BuilderProvider({
   const awareness = yjs.provider?.awareness ?? null;
   const selfClientId = awareness?.clientID ?? null;
 
-  const publishCursor = useCallback(
-    (worldX: number, worldY: number) => {
-      if (!awareness || !self) return;
-      awareness.setLocalStateField('user', {
-        userId: self.userId,
-        displayName: self.displayName,
-        avatarUrl: self.avatarUrl,
-        cursor: { x: worldX, y: worldY },
-      });
-    },
-    [awareness, self],
-  );
-  const clearCursor = useCallback(() => {
+  const awarenessStateRef = useRef<{
+    cursor: { x: number; y: number } | null;
+    selectedBrickId: string | null;
+  }>({ cursor: null, selectedBrickId: null });
+
+  const publishAwareness = useCallback(() => {
     if (!awareness || !self) return;
     awareness.setLocalStateField('user', {
       userId: self.userId,
       displayName: self.displayName,
       avatarUrl: self.avatarUrl,
-      cursor: null,
+      cursor: awarenessStateRef.current.cursor,
+      selectedBrickId: awarenessStateRef.current.selectedBrickId,
     });
   }, [awareness, self]);
+
+  const publishCursor = useCallback(
+    (worldX: number, worldY: number) => {
+      awarenessStateRef.current.cursor = { x: worldX, y: worldY };
+      publishAwareness();
+    },
+    [publishAwareness],
+  );
+
+  const clearCursor = useCallback(() => {
+    awarenessStateRef.current.cursor = null;
+    publishAwareness();
+  }, [publishAwareness]);
+
+  useEffect(() => {
+    awarenessStateRef.current.selectedBrickId = data.selectedId;
+    publishAwareness();
+  }, [data.selectedId, publishAwareness]);
+
   const liveSnapshot = liveMode ? yjs.snapshot : null;
   const liveDoc = liveMode ? yjs.doc : null;
   const undoManager = useYjsUndoManager(
