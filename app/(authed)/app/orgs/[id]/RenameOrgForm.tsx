@@ -77,7 +77,8 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
         <span className="truncate text-[26px] font-semibold tracking-tight text-zinc-950">
           {initialName}
         </span>
-        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100">
+        {/* WCAG 1.4.3 — was text-zinc-400 (2.56:1 when revealed), bumped to text-zinc-500 for 4.83:1 on white */}
+        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100">
           Edit
         </span>
       </button>

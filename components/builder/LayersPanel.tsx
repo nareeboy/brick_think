@@ -374,7 +374,8 @@ function GroupBlock({
       {!group.collapsed ? (
         <div className="mt-0.5 space-y-0.5 pl-4">
           {bricks.length === 0 ? (
-            <p className="px-2 py-1 text-[11px] text-zinc-400">Drop a piece on the canvas.</p>
+            /* WCAG 1.4.3 — was text-zinc-400 (2.56:1), bumped to text-zinc-500 for 4.83:1 on white */
+            <p className="px-2 py-1 text-[11px] text-zinc-500">Drop a piece on the canvas.</p>
           ) : (
             bricks.map((b) => (
               <BrickRow
