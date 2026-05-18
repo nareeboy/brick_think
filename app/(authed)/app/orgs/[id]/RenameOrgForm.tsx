@@ -96,6 +96,7 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
           maxLength={80}
           disabled={pending}
           aria-label="Organisation name"
+          autoComplete="off"
           className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-900/10 bg-white px-3 text-[20px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d] disabled:opacity-60"
         />
         <button

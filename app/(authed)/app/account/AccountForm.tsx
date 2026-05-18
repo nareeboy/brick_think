@@ -125,6 +125,7 @@ export function AccountForm({ initialFullName, email, initialAvatarUrl }: Props)
             disabled
             aria-label="Email"
             data-testid="account-email"
+            autoComplete="email"
             className="h-10 cursor-not-allowed rounded-xl border border-zinc-900/10 bg-[#FBF7F1] px-3 text-[14px] text-zinc-700"
           />
           <span className="text-[12px] text-zinc-500">
@@ -147,6 +148,7 @@ export function AccountForm({ initialFullName, email, initialAvatarUrl }: Props)
             maxLength={80}
             aria-label="Display name"
             data-testid="account-name-input"
+            autoComplete="name"
             className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#c0613d]"
           />
           <span className="text-[12px] text-zinc-500">
