@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Awareness } from 'y-protocols/awareness';
 
+import { usePrefersReducedMotion } from '@/lib/a11y/usePrefersReducedMotion';
 import { colorForUser } from '@/lib/yjs/presence-colors';
 
 const IDLE_THRESHOLD_MS = 10_000;
@@ -36,6 +37,7 @@ export function PresenceCursors({
   pan: { x: number; y: number };
   zoom: number;
 }) {
+  const reduceMotion = usePrefersReducedMotion();
   const [peers, setPeers] = useState<PresencePeer[]>([]);
   const lastMoveAtRef = useRef<Map<number, number>>(new Map());
   const lastCursorRef = useRef<Map<number, string>>(new Map());
@@ -107,7 +109,7 @@ export function PresenceCursors({
               left,
               top,
               opacity: idle ? 0.3 : 1,
-              transition: 'opacity 200ms ease',
+              transition: reduceMotion ? 'none' : 'opacity 200ms ease',
             }}
           >
             <PeerAvatar
