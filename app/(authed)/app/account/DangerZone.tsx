@@ -112,10 +112,7 @@ export function DangerZone({ email }: Props) {
                       >
                         {row.name}
                       </a>{' '}
-                      —{' '}
-                      {row.reason === 'has_members'
-                        ? 'transfer ownership or remove other members'
-                        : 'cancel the active subscription'}
+                      — transfer ownership or remove other members
                     </li>
                   ))}
                 </ul>

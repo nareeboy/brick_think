@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "BrickThink. Virtual Serious Play platform.",
+  "description": "A virtual way to allow your teams to remotely conduct Serious Play.",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=20.10.0",
     "pnpm": ">=10"
@@ -25,8 +26,6 @@
     "test:watch": "vitest",
     "test:integration": "dotenv -e .env.test -- vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
-    "stripe:seed": "tsx scripts/stripe/seed-products.ts",
-    "stripe:listen": "stripe listen --forward-to http://localhost:3000/api/stripe/webhook",
     "worker:dev": "tsx watch worker/src/yjs-server.ts",
     "worker:start": "tsx worker/src/yjs-server.ts",
     "db:start": "supabase start",
@@ -35,7 +34,7 @@
     "db:status": "supabase status",
     "db:diff": "supabase db diff --use-migra",
     "db:types": "supabase gen types typescript --local > lib/db/types.generated.ts",
-    "db:link": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase link --project-ref wreypwrvfpzjyijpyhkb",
+    "db:link": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase link --project-ref $(grep -E '^SUPABASE_PROJECT_REF=' .env.local | cut -d= -f2-)",
     "db:migrations": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase migration list --linked",
     "db:push": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase db push --linked"
   },
@@ -52,7 +51,6 @@
     "react-easy-crop": "^5.4.1",
     "react-dom": "^19.0.0",
     "react-konva": "^19.0.0",
-    "stripe": "^22.1.1",
     "ws": "^8.20.0",
     "y-protocols": "^1.0.7",
     "y-websocket": "^1.5.4",

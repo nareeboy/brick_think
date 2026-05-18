@@ -6,7 +6,7 @@ export interface BlockingOrg {
   id: string;
   name: string;
   slug: string;
-  reason: 'has_members' | 'active_subscription';
+  reason: 'has_members';
 }
 
 export interface PreDeleteCheck {
@@ -14,8 +14,6 @@ export interface PreDeleteCheck {
   soloEmptyOrgIds: string[];
   thumbnailPaths: string[];
 }
-
-const ACTIVE_SUB_STATUSES = ['active', 'trialing', 'past_due'] as const;
 
 interface OwnedOrgRow {
   id: string;
@@ -26,12 +24,10 @@ interface OwnedOrgRow {
 /**
  * Inventory everything we'll need to do before deleting the auth user.
  *
- * - `blockingOrgs` — orgs the user owns that still have other members or an
- *   active Stripe subscription. UI surfaces these as "transfer first" /
- *   "cancel first" before allowing the destructive action.
- * - `soloEmptyOrgIds` — orgs the user owns alone with no active subscription,
- *   safe to hard-delete as a pre-step (cascade clears memberships, sessions,
- *   designs, share-links).
+ * - `blockingOrgs` — orgs the user owns that still have other members. UI
+ *   surfaces these as "transfer first" before allowing the destructive action.
+ * - `soloEmptyOrgIds` — orgs the user owns alone, safe to hard-delete as a
+ *   pre-step (cascade clears memberships, sessions, designs, share-links).
  * - `thumbnailPaths` — `${userId}/...` keys to remove from storage manually,
  *   since storage.objects has no cascade.
  */
@@ -64,28 +60,10 @@ export async function preDeleteAccount(userId: string): Promise<PreDeleteCheck> 
       otherMembersByOrg.set(row.org_id, (otherMembersByOrg.get(row.org_id) ?? 0) + 1);
     }
 
-    const subsRes = await supabase
-      .from('stripe_subscriptions')
-      .select('org_id, status')
-      .in('org_id', orgIds);
-    if (subsRes.error) {
-      throw new Error(`Failed to read subscriptions: ${subsRes.error.message}`);
-    }
-    const activeSubOrgs = new Set<string>();
-    for (const row of (subsRes.data ?? []) as { org_id: string; status: string }[]) {
-      if ((ACTIVE_SUB_STATUSES as readonly string[]).includes(row.status)) {
-        activeSubOrgs.add(row.org_id);
-      }
-    }
-
     for (const org of ownedOrgs) {
       const otherMembers = otherMembersByOrg.get(org.id) ?? 0;
       if (otherMembers > 0) {
         blockingOrgs.push({ ...org, reason: 'has_members' });
-        continue;
-      }
-      if (activeSubOrgs.has(org.id)) {
-        blockingOrgs.push({ ...org, reason: 'active_subscription' });
         continue;
       }
       soloEmptyOrgIds.push(org.id);
