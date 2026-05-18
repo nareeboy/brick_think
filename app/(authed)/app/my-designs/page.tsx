@@ -23,6 +23,7 @@ import {
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 import { DesignList } from './DesignList';
+import { ImportDesignButton } from './ImportDesignButton';
 import { MyDesignsFilter } from './MyDesignsFilter';
 import { NewDesignDialogButton } from './NewDesignDialogButton';
 import { PaginationControls } from './PaginationControls';
@@ -421,6 +422,7 @@ export default async function MyDesignsPage({
                   Trash ({trashCount})
                 </Link>
               ) : null}
+              <ImportDesignButton />
               <NewDesignDialogButton orgs={orgs} />
             </div>
           </div>
