@@ -172,8 +172,6 @@ describe('public.can_read_model', () => {
   });
 
   test('unknown model id returns false', async () => {
-    expect(
-      await callCanRead(fx.owner.id, '00000000-0000-0000-0000-000000000000'),
-    ).toBe(false);
+    expect(await callCanRead(fx.owner.id, '00000000-0000-0000-0000-000000000000')).toBe(false);
   });
 });

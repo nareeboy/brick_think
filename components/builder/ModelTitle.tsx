@@ -48,9 +48,7 @@ export function ModelTitle() {
 
   return (
     <div>
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-        Model
-      </p>
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Model</p>
       {readOnly ? (
         <p className="-mx-1.5 mt-1 px-1.5 py-0.5 text-[22px] font-semibold tracking-tight text-zinc-950 truncate">
           {title}

@@ -20,10 +20,7 @@ import {
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
 import { mintYjsToken } from '@/lib/yjs/jwt';
-import {
-  addBrickToDoc,
-  projectDocToCanvas,
-} from '@/lib/yjs/canvas-codec';
+import { addBrickToDoc, projectDocToCanvas } from '@/lib/yjs/canvas-codec';
 
 import { startWorker, stopWorker } from './_helpers/worker';
 
@@ -100,10 +97,7 @@ async function seedSessionModel(
 // flap between 'connecting' and 'disconnected' across rejected reconnect
 // attempts, so we observe `wsconnected` directly — it stays false when the
 // upgrade keeps getting rejected.
-async function expectRejected(
-  provider: WebsocketProvider,
-  windowMs = 2000,
-): Promise<void> {
+async function expectRejected(provider: WebsocketProvider, windowMs = 2000): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < windowMs) {
     if (provider.wsconnected) {
@@ -127,10 +121,7 @@ function waitForSynced(provider: WebsocketProvider, timeoutMs = 5000): Promise<v
   });
 }
 
-async function waitFor(
-  predicate: () => boolean,
-  timeoutMs: number,
-): Promise<void> {
+async function waitFor(predicate: () => boolean, timeoutMs: number): Promise<void> {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     if (predicate()) return;

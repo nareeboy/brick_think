@@ -29,7 +29,11 @@ export function WelcomeModal() {
   }
 
   return (
-    <ModalBackdrop dataTestid="onboarding-welcome-modal" titleId={titleId} onClose={markWelcomeSeen}>
+    <ModalBackdrop
+      dataTestid="onboarding-welcome-modal"
+      titleId={titleId}
+      onClose={markWelcomeSeen}
+    >
       <div className="rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Welcome to BrickThink
@@ -45,13 +49,15 @@ export function WelcomeModal() {
           <li>
             <p className="font-semibold text-zinc-950">2. Sessions</p>
             <p className="text-zinc-600">
-              A working meeting inside an org. Each session has stages — different exercises you move through together.
+              A working meeting inside an org. Each session has stages — different exercises you
+              move through together.
             </p>
           </li>
           <li>
             <p className="font-semibold text-zinc-950">3. Designs</p>
             <p className="text-zinc-600">
-              The actual canvases. Personal designs live on your own; session designs live inside a stage.
+              The actual canvases. Personal designs live on your own; session designs live inside a
+              stage.
             </p>
           </li>
         </ol>

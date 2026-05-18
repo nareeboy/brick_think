@@ -43,8 +43,10 @@ export function MyDesignsFilter({ orgs, value, buttonId }: Props) {
 
   const activeLabel = (() => {
     switch (value.kind) {
-      case 'all': return 'All';
-      case 'personal': return 'Personal';
+      case 'all':
+        return 'All';
+      case 'personal':
+        return 'Personal';
       case 'org': {
         const org = orgs.find((o) => o.id === value.orgId);
         return org?.name ?? 'Organisation';

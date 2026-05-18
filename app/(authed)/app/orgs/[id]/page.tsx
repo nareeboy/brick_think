@@ -24,19 +24,11 @@ export async function generateMetadata({
   const { id } = await params;
   if (!isSupabaseConfigured()) return { title: 'Organisation' };
   const supabase = await createServerSupabaseClient();
-  const { data } = await supabase
-    .from('organisations')
-    .select('name')
-    .eq('id', id)
-    .single();
+  const { data } = await supabase.from('organisations').select('name').eq('id', id).single();
   return { title: data?.name ?? 'Organisation' };
 }
 
-export default async function OrgDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function OrgDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!isSupabaseConfigured()) {
     redirect(`/sign-in?reason=unconfigured&next=%2Fapp%2Forgs%2F${id}`);
@@ -84,9 +76,16 @@ export default async function OrgDetailPage({
 
   const members: OrgMember[] = (membersRes.data ?? [])
     .map((row): OrgMember | null => {
-      const profile = (row as {
-        profiles: { id: string; email: string; full_name: string | null; avatar_url: string | null } | null;
-      }).profiles;
+      const profile = (
+        row as {
+          profiles: {
+            id: string;
+            email: string;
+            full_name: string | null;
+            avatar_url: string | null;
+          } | null;
+        }
+      ).profiles;
       if (!profile) return null;
       return {
         profile_id: profile.id,
@@ -108,7 +107,9 @@ export default async function OrgDetailPage({
               <Link href="/app/orgs" className="underline-offset-2 hover:underline">
                 Organisations
               </Link>
-              <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
+              <span aria-hidden="true" className="mx-1.5 text-zinc-400">
+                /
+              </span>
               {orgRes.data.name}
             </p>
             <div className="mt-1">
@@ -125,11 +126,7 @@ export default async function OrgDetailPage({
           <div className="flex shrink-0 items-center gap-2">
             <LeaveOrgButton orgId={id} profileId={user.id} />
             {isOwner ? (
-              <DeleteOrgButton
-                orgId={id}
-                orgName={orgRes.data.name}
-                orgSlug={orgRes.data.slug}
-              />
+              <DeleteOrgButton orgId={id} orgName={orgRes.data.name} orgSlug={orgRes.data.slug} />
             ) : null}
             <CreateSessionButton orgId={id} />
           </div>

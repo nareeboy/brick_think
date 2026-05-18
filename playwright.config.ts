@@ -51,8 +51,7 @@ export default defineConfig({
       env: {
         YJS_PORT: '1234',
         YJS_JWT_SECRET: 'a'.repeat(64),
-        WORKER_DATABASE_URL:
-          'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
+        WORKER_DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
         YJS_PERSIST_DEBOUNCE_MS: '500',
         YJS_PERSIST_CEILING_MS: '5000',
       },

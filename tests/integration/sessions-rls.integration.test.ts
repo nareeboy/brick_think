@@ -103,7 +103,7 @@ async function seedSessionModel(opts: {
 }
 
 describe('RLS — SELECT on session-scoped models', () => {
-  test('org member can SELECT another member\'s session-scoped model', async () => {
+  test("org member can SELECT another member's session-scoped model", async () => {
     // Facilitator's own model in the individual_model stage.
     const modelId = await seedSessionModel({
       sessionId: fx.session.id,
@@ -132,11 +132,7 @@ describe('RLS — SELECT on session-scoped models', () => {
     });
 
     const outsiderClient = await signInAs(fx.outsider);
-    const res = await outsiderClient
-      .from('models')
-      .select('id')
-      .eq('id', modelId)
-      .maybeSingle();
+    const res = await outsiderClient.from('models').select('id').eq('id', modelId).maybeSingle();
     // RLS returns no row — not an error. `maybeSingle()` resolves to data=null.
     expect(res.error).toBeNull();
     expect(res.data).toBeNull();
@@ -170,7 +166,7 @@ describe('RLS — UPDATE on session-scoped models', () => {
     expect(verify.data?.title).toBe('before-update');
   });
 
-  test('facilitator can UPDATE another participant\'s session-scoped model', async () => {
+  test("facilitator can UPDATE another participant's session-scoped model", async () => {
     // Participant owns a row; facilitator should be able to rename it.
     const modelId = await seedSessionModel({
       sessionId: fx.session.id,
@@ -192,7 +188,7 @@ describe('RLS — UPDATE on session-scoped models', () => {
 });
 
 describe('RLS — DELETE on session-scoped models', () => {
-  test('facilitator can DELETE a participant\'s session model', async () => {
+  test("facilitator can DELETE a participant's session model", async () => {
     const modelId = await seedSessionModel({
       sessionId: fx.session.id,
       stageId: fx.session.stageIds.skill_building,
@@ -201,16 +197,12 @@ describe('RLS — DELETE on session-scoped models', () => {
     });
 
     const facilitatorClient = await signInAs(fx.facilitator);
-    const delRes = await facilitatorClient
-      .from('models')
-      .delete()
-      .eq('id', modelId)
-      .select('id');
+    const delRes = await facilitatorClient.from('models').delete().eq('id', modelId).select('id');
     expect(delRes.error).toBeNull();
     expect(delRes.data ?? []).toHaveLength(1);
   });
 
-  test('org admin can DELETE a participant\'s session model', async () => {
+  test("org admin can DELETE a participant's session model", async () => {
     const modelId = await seedSessionModel({
       sessionId: fx.session.id,
       stageId: fx.session.stageIds.individual_model,
@@ -219,11 +211,7 @@ describe('RLS — DELETE on session-scoped models', () => {
     });
 
     const adminClient = await signInAs(fx.admin);
-    const delRes = await adminClient
-      .from('models')
-      .delete()
-      .eq('id', modelId)
-      .select('id');
+    const delRes = await adminClient.from('models').delete().eq('id', modelId).select('id');
     expect(delRes.error).toBeNull();
     expect(delRes.data ?? []).toHaveLength(1);
   });
@@ -254,11 +242,7 @@ describe('RLS — soft delete is refused on session-scoped models', () => {
     expect(updateRes.error?.code).toBe('42501');
 
     const admin = getAdminClient();
-    const verify = await admin
-      .from('models')
-      .select('deleted_at')
-      .eq('id', modelId)
-      .single();
+    const verify = await admin.from('models').select('deleted_at').eq('id', modelId).single();
     expect(verify.data?.deleted_at).toBeNull();
   });
 });
@@ -330,19 +314,11 @@ describe('schema invariants', () => {
     });
 
     const admin = getAdminClient();
-    const delRes = await admin
-      .from('sessions')
-      .delete()
-      .eq('id', transientSession.id)
-      .select('id');
+    const delRes = await admin.from('sessions').delete().eq('id', transientSession.id).select('id');
     expect(delRes.error).toBeNull();
     expect(delRes.data ?? []).toHaveLength(1);
 
-    const modelLookup = await admin
-      .from('models')
-      .select('id')
-      .eq('id', modelId)
-      .maybeSingle();
+    const modelLookup = await admin.from('models').select('id').eq('id', modelId).maybeSingle();
     expect(modelLookup.error).toBeNull();
     expect(modelLookup.data).toBeNull();
 

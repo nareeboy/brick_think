@@ -38,8 +38,7 @@ async function requireUser() {
  */
 export async function createSession(formData: FormData): Promise<void> {
   const rawTitle = formData.get('title');
-  const title =
-    typeof rawTitle === 'string' ? rawTitle.trim().slice(0, 200) : '';
+  const title = typeof rawTitle === 'string' ? rawTitle.trim().slice(0, 200) : '';
   if (title.length === 0) {
     throw new Error('Title is required');
   }
@@ -100,10 +99,7 @@ export async function createSession(formData: FormData): Promise<void> {
  * write access; non-authorised callers see the row disappear (no rows
  * updated) and we surface that as a clear error.
  */
-export async function renameSession(
-  sessionId: string,
-  title: string,
-): Promise<void> {
+export async function renameSession(sessionId: string, title: string): Promise<void> {
   if (!UUID_RE.test(sessionId)) {
     throw new Error('Invalid sessionId');
   }
@@ -123,9 +119,7 @@ export async function renameSession(
     throw new Error(`Failed to rename session: ${updateRes.error.message}`);
   }
   if (!updateRes.data || updateRes.data.length === 0) {
-    throw new Error(
-      'Session not found, or you do not have permission to rename it.',
-    );
+    throw new Error('Session not found, or you do not have permission to rename it.');
   }
 
   revalidatePath('/app/my-designs');
@@ -215,10 +209,8 @@ export async function createModelInStage(formData: FormData): Promise<void> {
   //    any session-org member can trigger it while the row is owned by the
   //    facilitator. For other stages the caller's own RLS-scoped client
   //    does an insert as themselves.
-  const ownerForInsert =
-    stageType === 'shared_model' ? facilitatorId : user.id;
-  const insertClient =
-    stageType === 'shared_model' ? getServiceSupabaseClient() : supabase;
+  const ownerForInsert = stageType === 'shared_model' ? facilitatorId : user.id;
+  const insertClient = stageType === 'shared_model' ? getServiceSupabaseClient() : supabase;
 
   const insertRes = await insertClient
     .from('models')
@@ -245,9 +237,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
       }
       const winnerRes = await winnerQuery.single();
       if (winnerRes.error || !winnerRes.data) {
-        throw new Error(
-          `Insert race-recovery failed: ${winnerRes.error?.message ?? 'no winner'}`,
-        );
+        throw new Error(`Insert race-recovery failed: ${winnerRes.error?.message ?? 'no winner'}`);
       }
       revalidatePath(`/app/sessions/${sessionId}`);
       redirect(`/app/designs/${winnerRes.data.id}`);
@@ -275,12 +265,9 @@ export async function updateStageMeta(input: {
   if (!UUID_RE.test(input.stageId)) {
     throw new Error('Invalid stageId');
   }
-  const title =
-    input.title === null ? null : input.title.trim().slice(0, 200) || null;
+  const title = input.title === null ? null : input.title.trim().slice(0, 200) || null;
   const description =
-    input.description === null
-      ? null
-      : input.description.trim().slice(0, 500) || null;
+    input.description === null ? null : input.description.trim().slice(0, 500) || null;
 
   const { supabase } = await requireUser();
 
@@ -294,9 +281,7 @@ export async function updateStageMeta(input: {
     throw new Error(`Failed to update stage: ${updateRes.error.message}`);
   }
   if (!updateRes.data) {
-    throw new Error(
-      'Stage not found, or you do not have permission to edit it.',
-    );
+    throw new Error('Stage not found, or you do not have permission to edit it.');
   }
 
   revalidatePath(`/app/sessions/${updateRes.data.session_id}`);
@@ -350,9 +335,7 @@ export async function updateSessionMeta(input: {
     throw new Error(`Failed to update session: ${updateRes.error.message}`);
   }
   if (!updateRes.data || updateRes.data.length === 0) {
-    throw new Error(
-      'Session not found, or you do not have permission to edit it.',
-    );
+    throw new Error('Session not found, or you do not have permission to edit it.');
   }
 
   revalidatePath(`/app/sessions/${input.sessionId}`);
@@ -383,24 +366,16 @@ export async function deleteSession(sessionId: string): Promise<void> {
     throw new Error(`Session lookup failed: ${sessionRes.error.message}`);
   }
   if (!sessionRes.data) {
-    throw new Error(
-      'Session not found, or you do not have permission to delete it.',
-    );
+    throw new Error('Session not found, or you do not have permission to delete it.');
   }
   const orgId = sessionRes.data.org_id;
 
-  const delRes = await supabase
-    .from('sessions')
-    .delete()
-    .eq('id', sessionId)
-    .select('id');
+  const delRes = await supabase.from('sessions').delete().eq('id', sessionId).select('id');
   if (delRes.error) {
     throw new Error(`Failed to delete session: ${delRes.error.message}`);
   }
   if (!delRes.data || delRes.data.length === 0) {
-    throw new Error(
-      'Session not found, or you do not have permission to delete it.',
-    );
+    throw new Error('Session not found, or you do not have permission to delete it.');
   }
 
   revalidatePath(`/app/orgs/${orgId}`);
@@ -442,11 +417,7 @@ export async function deleteSessionModel(modelId: string): Promise<void> {
   const sessionId = modelRes.data.session_id;
 
   // 2. Hard delete.
-  const delRes = await supabase
-    .from('models')
-    .delete()
-    .eq('id', modelId)
-    .select('id');
+  const delRes = await supabase.from('models').delete().eq('id', modelId).select('id');
   if (delRes.error) {
     throw new Error(`Failed to delete model: ${delRes.error.message}`);
   }

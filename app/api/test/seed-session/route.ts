@@ -167,10 +167,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     stage_type,
     position,
   }));
-  const stagesRes = await admin
-    .from('stages')
-    .insert(stageRows)
-    .select('id, stage_type');
+  const stagesRes = await admin.from('stages').insert(stageRows).select('id, stage_type');
   if (stagesRes.error || !stagesRes.data) {
     return NextResponse.json(
       { error: 'stages_create_failed', detail: stagesRes.error?.message ?? 'unknown' },

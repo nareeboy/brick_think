@@ -43,9 +43,7 @@ describe('PeopleHereStrip', () => {
   it('renders an <img> when avatarUrl is set', () => {
     render(
       <PeopleHereStrip
-        peers={[
-          peer({ clientId: 7, userId: 'u-photo', avatarUrl: 'https://example.com/p.png' }),
-        ]}
+        peers={[peer({ clientId: 7, userId: 'u-photo', avatarUrl: 'https://example.com/p.png' })]}
       />,
     );
     const avatar = screen.getByTestId('people-here-avatar-7');
@@ -56,9 +54,7 @@ describe('PeopleHereStrip', () => {
 
   it('falls back to the first letter when avatarUrl is null', () => {
     render(
-      <PeopleHereStrip
-        peers={[peer({ clientId: 9, userId: 'u-letter', displayName: 'Anika' })]}
-      />,
+      <PeopleHereStrip peers={[peer({ clientId: 9, userId: 'u-letter', displayName: 'Anika' })]} />,
     );
     expect(screen.getByTestId('people-here-initial-9').textContent).toBe('A');
   });
@@ -69,9 +65,9 @@ describe('PeopleHereStrip', () => {
         peers={[peer({ clientId: 11, userId: 'u-tip', displayName: 'Maya Robertson' })]}
       />,
     );
-    expect(
-      screen.getByTestId('people-here-avatar-11').getAttribute('title'),
-    ).toBe('Maya Robertson');
+    expect(screen.getByTestId('people-here-avatar-11').getAttribute('title')).toBe(
+      'Maya Robertson',
+    );
   });
 
   it('collapses peers beyond the 5-visible cap into a +N pill', () => {

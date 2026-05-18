@@ -184,7 +184,8 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
             }`}
           >
             <span className="text-[14px] text-zinc-700">
-              Drag a photo here, or <span className="font-semibold text-[#c0613d]">choose a file</span>
+              Drag a photo here, or{' '}
+              <span className="font-semibold text-[#c0613d]">choose a file</span>
             </span>
             <span className="text-[12px] text-zinc-500">PNG, JPG, WEBP · up to 5 MB</span>
           </button>
@@ -210,7 +211,10 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
               />
             </div>
             <div className="flex items-center gap-3">
-              <label htmlFor="avatar-zoom" className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              <label
+                htmlFor="avatar-zoom"
+                className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500"
+              >
                 Zoom
               </label>
               <input
@@ -272,9 +276,11 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
 }
 
 function reasonToMessage(reason: string): string {
-  if (reason === 'invalid_image') return 'That image could not be used. Please try a different one.';
+  if (reason === 'invalid_image')
+    return 'That image could not be used. Please try a different one.';
   if (reason.startsWith('upload_failed:')) return 'Upload failed. Please try again.';
-  if (reason.startsWith('profile_update_failed:')) return 'Could not save your photo. Please try again.';
+  if (reason.startsWith('profile_update_failed:'))
+    return 'Could not save your photo. Please try again.';
   return 'Something went wrong. Please try again.';
 }
 
@@ -285,17 +291,7 @@ async function rasterise(imageSrc: string, area: Area): Promise<Blob> {
   canvas.height = OUTPUT_PX;
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas 2D context unavailable.');
-  ctx.drawImage(
-    image,
-    area.x,
-    area.y,
-    area.width,
-    area.height,
-    0,
-    0,
-    OUTPUT_PX,
-    OUTPUT_PX,
-  );
+  ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, OUTPUT_PX, OUTPUT_PX);
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
@@ -316,7 +312,16 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 function CloseIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>

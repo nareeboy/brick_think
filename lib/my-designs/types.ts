@@ -2,7 +2,13 @@
 
 export type AggregateBadge =
   | { kind: 'personal' }
-  | { kind: 'org-session'; orgId: string; orgName: string; sessionId: string; sessionTitle: string };
+  | {
+      kind: 'org-session';
+      orgId: string;
+      orgName: string;
+      sessionId: string;
+      sessionTitle: string;
+    };
 
 export interface AggregateDesignRow {
   id: string;
@@ -34,9 +40,12 @@ export function parseFilter(raw: string | null): MyDesignsFilterValue {
 
 export function serializeFilter(value: MyDesignsFilterValue): string {
   switch (value.kind) {
-    case 'all': return 'all';
-    case 'personal': return 'personal';
-    case 'org': return `org-${value.orgId}`;
+    case 'all':
+      return 'all';
+    case 'personal':
+      return 'personal';
+    case 'org':
+      return `org-${value.orgId}`;
   }
 }
 
@@ -55,10 +64,14 @@ export function serializeSort(value: MyDesignsSort): string {
 
 export function sortLabel(value: MyDesignsSort): string {
   switch (value) {
-    case 'newest': return 'Newest';
-    case 'oldest': return 'Oldest';
-    case 'title-asc': return 'Title A–Z';
-    case 'title-desc': return 'Title Z–A';
+    case 'newest':
+      return 'Newest';
+    case 'oldest':
+      return 'Oldest';
+    case 'title-asc':
+      return 'Title A–Z';
+    case 'title-desc':
+      return 'Title Z–A';
   }
 }
 

@@ -64,8 +64,16 @@ describe('BuilderProvider initial state', () => {
         groups: [{ id: 'g1', name: 'Roof', collapsed: false, visible: true }],
         bricks: [
           {
-            id: 'b1', groupId: 'g1', code: 'A', image: '',
-            width: 50, height: 50, x: 10, y: 20, rotation: 0, visible: true,
+            id: 'b1',
+            groupId: 'g1',
+            code: 'A',
+            image: '',
+            width: 50,
+            height: 50,
+            x: 10,
+            y: 20,
+            rotation: 0,
+            visible: true,
           },
         ],
       },
@@ -261,7 +269,9 @@ describe('BuilderProvider readOnly', () => {
       },
     };
     const Wrapper = ({ children }: { children: ReactNode }) => (
-      <BuilderProvider initial={initial} readOnly>{children}</BuilderProvider>
+      <BuilderProvider initial={initial} readOnly>
+        {children}
+      </BuilderProvider>
     );
     const { result } = renderHook(() => useBuilderState(), { wrapper: Wrapper });
 
@@ -269,8 +279,16 @@ describe('BuilderProvider readOnly', () => {
     const beforeBricks = result.current.bricks.length;
     act(() => {
       result.current.addBrick({
-        id: 'b1', groupId: 'g1', code: 'A', image: '',
-        width: 50, height: 50, x: 0, y: 0, rotation: 0, visible: true,
+        id: 'b1',
+        groupId: 'g1',
+        code: 'A',
+        image: '',
+        width: 50,
+        height: 50,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        visible: true,
       });
     });
     expect(result.current.bricks).toHaveLength(beforeBricks);
@@ -292,8 +310,16 @@ describe('BuilderProvider awareness publishing', () => {
         groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
         bricks: [
           {
-            id: 'b1', groupId: 'g1', code: 'A', image: '',
-            width: 50, height: 50, x: 0, y: 0, rotation: 0, visible: true,
+            id: 'b1',
+            groupId: 'g1',
+            code: 'A',
+            image: '',
+            width: 50,
+            height: 50,
+            x: 0,
+            y: 0,
+            rotation: 0,
+            visible: true,
           },
         ],
       },
@@ -317,10 +343,7 @@ describe('BuilderProvider awareness publishing', () => {
 
     const states = (
       result.current.awareness as unknown as {
-        getStates: () => Map<
-          number,
-          { user: { cursor: unknown; selectedBrickId: string | null } }
-        >;
+        getStates: () => Map<number, { user: { cursor: unknown; selectedBrickId: string | null } }>;
       }
     ).getStates();
     const self42 = states.get(42)!;

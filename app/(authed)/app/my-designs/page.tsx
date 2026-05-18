@@ -7,7 +7,11 @@ import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorCheckli
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import type { AggregateDesignRow, MyDesignsFilterValue, MyDesignsSort } from '@/lib/my-designs/types';
+import type {
+  AggregateDesignRow,
+  MyDesignsFilterValue,
+  MyDesignsSort,
+} from '@/lib/my-designs/types';
 import {
   parseFilter,
   parsePageNumber,
@@ -69,7 +73,9 @@ export default async function MyDesignsPage({
     redirect('/sign-in?reason=unconfigured&next=%2Fapp%2Fmy-designs');
   }
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in?next=%2Fapp%2Fmy-designs');
 
   const sp = await searchParams;
@@ -89,10 +95,7 @@ export default async function MyDesignsPage({
     throw new Error(`Failed to load profile: ${profileRes.error.message}`);
   }
   const profileName =
-    profileRes.data?.full_name?.trim() ||
-    profileRes.data?.email ||
-    user.email ||
-    'You';
+    profileRes.data?.full_name?.trim() || profileRes.data?.email || user.email || 'You';
   const profileAvatarUrl = profileRes.data?.avatar_url ?? null;
 
   const membershipsRes = await supabase
@@ -104,7 +107,8 @@ export default async function MyDesignsPage({
   }
   const orgs: OrgSummary[] = (membershipsRes.data ?? [])
     .map((row): OrgSummary | null => {
-      const org = (row as { organisations: { id: string; name: string; slug: string } | null }).organisations;
+      const org = (row as { organisations: { id: string; name: string; slug: string } | null })
+        .organisations;
       if (!org) return null;
       return {
         id: org.id,
@@ -129,9 +133,7 @@ export default async function MyDesignsPage({
       .order('created_at', { ascending: true })
       .limit(1);
     if (onboardingSessionRes.error) {
-      throw new Error(
-        `Onboarding session check failed: ${onboardingSessionRes.error.message}`,
-      );
+      throw new Error(`Onboarding session check failed: ${onboardingSessionRes.error.message}`);
     }
     const first = onboardingSessionRes.data?.[0];
     if (first) {
@@ -148,9 +150,7 @@ export default async function MyDesignsPage({
     .is('deleted_at', null)
     .limit(1);
   if (onboardingDesignRes.error) {
-    throw new Error(
-      `Onboarding design check failed: ${onboardingDesignRes.error.message}`,
-    );
+    throw new Error(`Onboarding design check failed: ${onboardingDesignRes.error.message}`);
   }
   const hasOwnedSessionDesign = (onboardingDesignRes.count ?? 0) > 0;
 
@@ -183,10 +183,9 @@ export default async function MyDesignsPage({
   // distinct session_ids returned.
   let query = supabase
     .from('models')
-    .select(
-      'id, title, updated_at, thumbnail_path, thumbnail_updated_at, session_id',
-      { count: 'exact' },
-    )
+    .select('id, title, updated_at, thumbnail_path, thumbnail_updated_at, session_id', {
+      count: 'exact',
+    })
     .eq('owner_profile_id', user.id)
     .is('deleted_at', null);
 
@@ -297,9 +296,7 @@ export default async function MyDesignsPage({
     .filter((p): p is string => typeof p === 'string' && p.length > 0);
   const urlByPath = new Map<string, string>();
   if (paths.length > 0) {
-    const signed = await supabase.storage
-      .from('model-thumbnails')
-      .createSignedUrls(paths, 60 * 60);
+    const signed = await supabase.storage.from('model-thumbnails').createSignedUrls(paths, 60 * 60);
     if (signed.error) {
       console.error('thumbnail signing failed', signed.error);
     } else {
@@ -335,8 +332,7 @@ export default async function MyDesignsPage({
   // empty-state path. Any active filter (sort doesn't count) could mask
   // tagged models, so we only trust the empty-rows signal when the page is
   // truly unfiltered.
-  const noFiltersActive =
-    filter.kind === 'all' && q.length === 0 && activeTags.length === 0;
+  const noFiltersActive = filter.kind === 'all' && q.length === 0 && activeTags.length === 0;
   let allTags: string[];
   if (rows.length === 0 && noFiltersActive) {
     allTags = [];
@@ -431,23 +427,13 @@ export default async function MyDesignsPage({
           <SearchInput initialValue={q} inputId="my-designs-search-input" />
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">
-              <label
-                htmlFor="my-designs-filter"
-                className="text-[13px] font-medium text-zinc-600"
-              >
+              <label htmlFor="my-designs-filter" className="text-[13px] font-medium text-zinc-600">
                 Filter:
               </label>
-              <MyDesignsFilter
-                buttonId="my-designs-filter"
-                orgs={orgs}
-                value={filter}
-              />
+              <MyDesignsFilter buttonId="my-designs-filter" orgs={orgs} value={filter} />
             </div>
             <div className="flex items-center gap-3">
-              <label
-                htmlFor="my-designs-sort"
-                className="text-[13px] font-medium text-zinc-600"
-              >
+              <label htmlFor="my-designs-sort" className="text-[13px] font-medium text-zinc-600">
                 Sort:
               </label>
               <SortDropdown buttonId="my-designs-sort" value={sort} />
@@ -457,11 +443,7 @@ export default async function MyDesignsPage({
         </header>
         <DesignList designs={cards} orgs={orgs} allTags={allTags} />
         {totalCount > PAGE_SIZE ? (
-          <PaginationControls
-            page={page}
-            pageSize={PAGE_SIZE}
-            totalCount={totalCount}
-          />
+          <PaginationControls page={page} pageSize={PAGE_SIZE} totalCount={totalCount} />
         ) : null}
       </div>
     </main>

@@ -23,19 +23,11 @@ export async function generateMetadata({
   const { id } = await params;
   if (!isSupabaseConfigured()) return { title: 'Session' };
   const supabase = await createServerSupabaseClient();
-  const { data } = await supabase
-    .from('sessions')
-    .select('title')
-    .eq('id', id)
-    .maybeSingle();
+  const { data } = await supabase.from('sessions').select('title').eq('id', id).maybeSingle();
   return { title: data?.title ? `${data.title} · Session` : 'Session' };
 }
 
-export default async function SessionDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!isSupabaseConfigured()) {
     redirect(`/sign-in?reason=unconfigured&next=%2Fapp%2Fsessions%2F${id}`);
@@ -48,7 +40,9 @@ export default async function SessionDetailPage({
 
   const sessionRes = await supabase
     .from('sessions')
-    .select('id, title, org_id, facilitator_id, status, mode, scheduled_for, organisations:org_id ( id, name )')
+    .select(
+      'id, title, org_id, facilitator_id, status, mode, scheduled_for, organisations:org_id ( id, name )',
+    )
     .eq('id', id)
     .maybeSingle();
   if (sessionRes.error || !sessionRes.data) notFound();
@@ -148,16 +142,15 @@ export default async function SessionDetailPage({
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
-        <header
-          data-tour-id="session-header"
-          className="flex items-start justify-between gap-4"
-        >
+        <header data-tour-id="session-header" className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               <Link href="/app/orgs" className="underline-offset-2 hover:underline">
                 Organisations
               </Link>
-              <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
+              <span aria-hidden="true" className="mx-1.5 text-zinc-400">
+                /
+              </span>
               {session.organisations ? (
                 <Link
                   href={`/app/orgs/${session.organisations.id}`}
@@ -168,7 +161,9 @@ export default async function SessionDetailPage({
               ) : (
                 <span>Unknown org</span>
               )}
-              <span aria-hidden="true" className="mx-1.5 text-zinc-400">/</span>
+              <span aria-hidden="true" className="mx-1.5 text-zinc-400">
+                /
+              </span>
               Session · {session.status}
             </p>
             <SessionTitle

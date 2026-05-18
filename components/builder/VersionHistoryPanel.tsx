@@ -99,7 +99,11 @@ export function VersionHistoryPanel({ modelId, open, onClose }: Props) {
       </div>
 
       {confirming ? (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+        >
           <button
             type="button"
             aria-label="Close"
@@ -109,7 +113,8 @@ export function VersionHistoryPanel({ modelId, open, onClose }: Props) {
           <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
             <h3 className="text-[16px] font-semibold text-zinc-950">Restore this version?</h3>
             <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              Your current state will be saved as &ldquo;Before restore&rdquo;, then this snapshot will become the live canvas.
+              Your current state will be saved as &ldquo;Before restore&rdquo;, then this snapshot
+              will become the live canvas.
             </p>
             <div className="mt-6 flex items-center justify-end gap-2">
               <button

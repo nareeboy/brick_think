@@ -50,10 +50,7 @@ test.describe('onboarding walkthrough', () => {
     await expect(modal).toHaveCount(0);
 
     await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
-    await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute(
-      'data-done',
-      '0',
-    );
+    await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute('data-done', '0');
 
     // Welcome modal does not re-fire on reload.
     await signedInPage.reload();
@@ -61,17 +58,17 @@ test.describe('onboarding walkthrough', () => {
     await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
   });
 
-  test('checklist auto-collapses once all steps are done', async ({ signedInPage, seededSession }) => {
+  test('checklist auto-collapses once all steps are done', async ({
+    signedInPage,
+    seededSession,
+  }) => {
     // seededSession creates org + session for the user but no models yet.
     // To tick step 3, navigate into the session and start a model.
     await signedInPage.goto(`/app/sessions/${seededSession.sessionId}`);
     // Dismiss the spotlight tour first so it doesn't intercept clicks.
     await signedInPage.getByTestId('onboarding-spotlight-skip').click();
     // Click the first "Start your model" button.
-    await signedInPage
-      .locator('[data-testid^="start-model-"]')
-      .first()
-      .click();
+    await signedInPage.locator('[data-testid^="start-model-"]').first().click();
     // Wait for the design page to open, then go back to my-designs.
     await expect(signedInPage).toHaveURL(/\/app\/designs\//);
     await signedInPage.goto('/app/my-designs');
@@ -84,7 +81,10 @@ test.describe('onboarding walkthrough', () => {
     await expect(signedInPage.getByTestId('onboarding-checklist')).toHaveCount(0);
   });
 
-  test('spotlight tour fires on first session page visit', async ({ signedInPage, seededSession }) => {
+  test('spotlight tour fires on first session page visit', async ({
+    signedInPage,
+    seededSession,
+  }) => {
     await signedInPage.goto(`/app/sessions/${seededSession.sessionId}`);
     const spotlight = signedInPage.getByTestId('onboarding-spotlight');
     await expect(spotlight).toBeVisible();

@@ -28,8 +28,7 @@ export function FacilitatorChecklist({ progress }: Props) {
     markChecklistComplete,
     dismissChecklist,
   } = useOnboardingState();
-  const allDone =
-    progress.hasOrg && progress.hasSessionInAnyOrg && progress.hasOwnedSessionDesign;
+  const allDone = progress.hasOrg && progress.hasSessionInAnyOrg && progress.hasOwnedSessionDesign;
 
   // Capture the checklistComplete value at hydration time (i.e. what was in
   // localStorage when the page loaded). We use a ref so re-renders caused by
@@ -99,9 +98,7 @@ export function FacilitatorChecklist({ progress }: Props) {
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
       </button>
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-        Get started
-      </p>
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Get started</p>
       <h2 className="mt-1 text-[16px] font-semibold tracking-tight text-zinc-950">
         Three steps to your first session
       </h2>
@@ -123,13 +120,9 @@ export function FacilitatorChecklist({ progress }: Props) {
         <ChecklistRow
           done={progress.hasOwnedSessionDesign}
           label="Open a stage and start your first model"
-          href={
-            progress.firstSessionId ? `/app/sessions/${progress.firstSessionId}` : '/app/orgs'
-          }
+          href={progress.firstSessionId ? `/app/sessions/${progress.firstSessionId}` : '/app/orgs'}
           testid="onboarding-step-model"
-          isNext={
-            progress.hasOrg && progress.hasSessionInAnyOrg && !progress.hasOwnedSessionDesign
-          }
+          isNext={progress.hasOrg && progress.hasSessionInAnyOrg && !progress.hasOwnedSessionDesign}
         />
       </ol>
     </section>

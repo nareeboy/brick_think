@@ -50,7 +50,7 @@ Operational gotchas baked in by the worker code:
 
 - **Don't set `YJS_PORT` on Railway.** The worker resolves port as `YJS_PORT ?? PORT ?? 1234`; Railway injects `PORT` for its healthcheck. Setting `YJS_PORT` shadows it and the healthcheck fails.
 - **`WORKER_DATABASE_URL` must use the Session Pooler** (`aws-…pooler.supabase.com:5432`), not Direct (IPv6-only on Pro plans, blocked from Railway containers) and not Transaction Pooler (port 6543; releases connection per query and breaks the `pg.Pool` semantics the worker assumes).
-- **`NEXT_PUBLIC_*` vars are baked at build time.** Changing them on the web service requires a fresh `next build`, which Railway runs on every deploy — but a no-code env-var-only change may *not* trigger one depending on the Nixpacks cache. Force a redeploy from Deployments tab when toggling the flag.
+- **`NEXT_PUBLIC_*` vars are baked at build time.** Changing them on the web service requires a fresh `next build`, which Railway runs on every deploy — but a no-code env-var-only change may _not_ trigger one depending on the Nixpacks cache. Force a redeploy from Deployments tab when toggling the flag.
 - **Same `YJS_JWT_SECRET` on both services.** Web signs with it, worker verifies with it; any mismatch → 401 `invalid token` on every WS upgrade.
 - Worker's persistence path runs `BEGIN; UPSERT yjs_documents; UPDATE models; COMMIT` per debounce. If you see `(ECIRCUITBREAKER) too many authentication failures` from the pooler, the cooldown is per-IP and clears once retries stop — close hammering browser tabs and redeploy the worker to break out cleanly.
 - Worker logs structured JSON; `upgrade_rejected` entries include `err` for non-auth failures (Postgres errors, etc.). Tail the worker's Deployments → live log when triaging.
@@ -59,7 +59,7 @@ Operational gotchas baked in by the worker code:
 
 Set `YJS_JWT_SECRET` and `NEXT_PUBLIC_YJS_COLLAB_ENABLED=1` in `.env.local`, then run `pnpm worker:dev` alongside `pnpm dev`. Open a `shared_model` design in two tabs to see live propagation. The worker reads `.env.local` itself via dotenv on boot with `override: false`, so any spawn-injected env wins (used by the integration test fixture to force local Postgres regardless of `.env.local`'s remote URL).
 
-**`WORKER_DATABASE_URL` — local vs remote toggle.** The default `.env.local` carries a *remote* `WORKER_DATABASE_URL` (the project's session pooler) so production-shaped scripts work out of the box. But the local Yjs flow — `pnpm dev` (or `pnpm dev:e2e`) creating a session + model in local Supabase, two browsers opening that model — needs the worker pointed at **local** Postgres, otherwise `can_read_model` runs against the remote DB which doesn't have the local model id and rejects every WS upgrade with `upgrade_rejected status=403 reason="not a member"`. Convention in `.env.local`:
+**`WORKER_DATABASE_URL` — local vs remote toggle.** The default `.env.local` carries a _remote_ `WORKER_DATABASE_URL` (the project's session pooler) so production-shaped scripts work out of the box. But the local Yjs flow — `pnpm dev` (or `pnpm dev:e2e`) creating a session + model in local Supabase, two browsers opening that model — needs the worker pointed at **local** Postgres, otherwise `can_read_model` runs against the remote DB which doesn't have the local model id and rejects every WS upgrade with `upgrade_rejected status=403 reason="not a member"`. Convention in `.env.local`:
 
 ```
 # Remote pooler — uncomment ONLY when deliberately testing against prod data

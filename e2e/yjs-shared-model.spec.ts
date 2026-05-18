@@ -2,11 +2,7 @@ import type { Page } from '@playwright/test';
 
 import { expect, test } from './fixtures';
 
-async function dropFirstBrickAt(
-  page: Page,
-  offsetX: number,
-  offsetY: number,
-): Promise<void> {
+async function dropFirstBrickAt(page: Page, offsetX: number, offsetY: number): Promise<void> {
   await page.getByRole('button', { name: /open pieces/i }).click();
   const piece = page.getByTestId('piece-card').nth(0);
   const canvas = page.getByTestId('builder-canvas');
@@ -15,10 +11,7 @@ async function dropFirstBrickAt(
   const pieceBox = await piece.boundingBox();
   const canvasBox = await canvas.boundingBox();
   if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-  await page.mouse.move(
-    pieceBox.x + pieceBox.width / 2,
-    pieceBox.y + pieceBox.height / 2,
-  );
+  await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
   await page.mouse.down();
   await page.mouse.move(canvasBox.x + offsetX, canvasBox.y + offsetY, {
     steps: 12,
@@ -56,10 +49,7 @@ test.describe('yjs shared_model collaboration', () => {
     const pieceBox = await pieceA.boundingBox();
     const canvasBox = await canvasA.boundingBox();
     if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-    await page.mouse.move(
-      pieceBox.x + pieceBox.width / 2,
-      pieceBox.y + pieceBox.height / 2,
-    );
+    await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
     await page.mouse.down();
     await page.mouse.move(canvasBox.x + 200, canvasBox.y + 200, { steps: 12 });
     await page.mouse.up();
@@ -90,22 +80,15 @@ test.describe('yjs shared_model collaboration', () => {
     const pieceBox = await piece.boundingBox();
     const canvasBox = await canvas.boundingBox();
     if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-    await page.mouse.move(
-      pieceBox.x + pieceBox.width / 2,
-      pieceBox.y + pieceBox.height / 2,
-    );
+    await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
     await page.mouse.down();
     await page.mouse.move(canvasBox.x + 200, canvasBox.y + 200, { steps: 12 });
     await page.mouse.up();
-    await expect(page.getByTestId('save-status')).toHaveAttribute(
-      'data-status',
-      'saved',
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+      timeout: 15_000,
+    });
     // The presence overlay must not be active on a non-shared stage.
-    await expect(
-      page.locator('[data-testid^="presence-cursor-"]'),
-    ).toHaveCount(0);
+    await expect(page.locator('[data-testid^="presence-cursor-"]')).toHaveCount(0);
   });
 
   test('flag on: peer renders avatar + name chip on shared_model', async ({
@@ -152,10 +135,7 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-shared_model')
-      .getByTestId('start-model-button')
-      .click();
+    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-button').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
     const modelUrl = page.url();
@@ -186,10 +166,7 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-shared_model')
-      .getByTestId('start-model-button')
-      .click();
+    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-button').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
     const modelUrl = page.url();
@@ -221,15 +198,9 @@ test.describe('yjs shared_model collaboration', () => {
     });
   });
 
-  test('Cmd+Shift+Z redoes the undone op', async ({
-    signedInPage: page,
-    seededSession,
-  }) => {
+  test('Cmd+Shift+Z redoes the undone op', async ({ signedInPage: page, seededSession }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-shared_model')
-      .getByTestId('start-model-button')
-      .click();
+    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-button').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -252,10 +223,7 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-shared_model')
-      .getByTestId('start-model-button')
-      .click();
+    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-button').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -276,20 +244,15 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-individual_model')
-      .getByTestId('start-model-button')
-      .click();
+    await page.getByTestId('stage-card-individual_model').getByTestId('start-model-button').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
     await dropFirstBrickAt(page, 200, 200);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
-    await expect(page.getByTestId('save-status')).toHaveAttribute(
-      'data-status',
-      'saved',
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+      timeout: 15_000,
+    });
 
     const canvasBox = await page.getByTestId('builder-canvas').boundingBox();
     if (!canvasBox) throw new Error('canvas measurement failed');
@@ -387,15 +350,15 @@ test.describe('yjs shared_model collaboration', () => {
     if (!boxA) throw new Error('canvas A box missing');
     await page.mouse.move(boxA.x + 100, boxA.y + 100);
 
-    await expect(
-      pageB.locator('[data-testid^="people-here-avatar-"]'),
-    ).toHaveCount(2, { timeout: 5000 });
+    await expect(pageB.locator('[data-testid^="people-here-avatar-"]')).toHaveCount(2, {
+      timeout: 5000,
+    });
 
     await page.close();
 
     // B should drop back to self only.
-    await expect(
-      pageB.locator('[data-testid^="people-here-avatar-"]'),
-    ).toHaveCount(1, { timeout: 10_000 });
+    await expect(pageB.locator('[data-testid^="people-here-avatar-"]')).toHaveCount(1, {
+      timeout: 10_000,
+    });
   });
 });

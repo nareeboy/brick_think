@@ -19,9 +19,7 @@ export function ReplayWalkthroughCard() {
       data-testid="replay-walkthrough"
       className="rounded-2xl border border-zinc-900/10 bg-white p-6"
     >
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-        Walkthrough
-      </p>
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Walkthrough</p>
       <h2 className="mt-1 text-[16px] font-semibold tracking-tight text-zinc-950">
         Replay the welcome tour
       </h2>

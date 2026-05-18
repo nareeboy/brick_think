@@ -28,10 +28,7 @@ export interface CreatedShareLink {
   expiresAt: string | null;
 }
 
-export async function createShareLink(
-  modelId: string,
-  ttl: ShareTtl,
-): Promise<CreatedShareLink> {
+export async function createShareLink(modelId: string, ttl: ShareTtl): Promise<CreatedShareLink> {
   if (!isShareTtl(ttl)) throw new Error(`Invalid ttl: ${String(ttl)}`);
 
   const { supabase, user } = await requireUser();

@@ -8,10 +8,7 @@ vi.mock('@/lib/db/serviceRole', () => ({
 
 import { createServiceRoleSupabaseClient } from '@/lib/db/serviceRole';
 
-function mockSelectSingle(payload: {
-  data: unknown;
-  error: unknown;
-}): void {
+function mockSelectSingle(payload: { data: unknown; error: unknown }): void {
   (createServiceRoleSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
     from: () => ({
       select: () => ({
@@ -44,7 +41,11 @@ describe('getCanvasForToken', () => {
       data: {
         revoked_at: null,
         expires_at: null,
-        models: { title: 't', canvas_state: { groups: [], bricks: [] }, deleted_at: '2026-05-13T00:00:00Z' },
+        models: {
+          title: 't',
+          canvas_state: { groups: [], bricks: [] },
+          deleted_at: '2026-05-13T00:00:00Z',
+        },
       },
       error: null,
     });

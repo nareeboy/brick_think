@@ -48,12 +48,7 @@ function PeerAvatar({ peer, stackIndex }: { peer: PeerSummary; stackIndex: numbe
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={peer.avatarUrl}
-          alt=""
-          className="h-full w-full object-cover"
-          draggable={false}
-        />
+        <img src={peer.avatarUrl} alt="" className="h-full w-full object-cover" draggable={false} />
       </span>
     );
   }
@@ -69,9 +64,7 @@ function PeerAvatar({ peer, stackIndex }: { peer: PeerSummary; stackIndex: numbe
         fontFamily: 'system-ui, sans-serif',
       }}
     >
-      {initial ? (
-        <span data-testid={`people-here-initial-${peer.clientId}`}>{initial}</span>
-      ) : null}
+      {initial ? <span data-testid={`people-here-initial-${peer.clientId}`}>{initial}</span> : null}
     </span>
   );
 }

@@ -31,9 +31,7 @@ interface Fixtures {
 }
 
 function makeTestEmail(): string {
-  const suffix = `${Date.now().toString(36)}-${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
+  const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   return `e2e-${suffix}@brick-think.test`;
 }
 
@@ -56,9 +54,7 @@ export const test = base.extend<Fixtures>({
       data: { email: signedInEmail },
     });
     if (!res.ok()) {
-      throw new Error(
-        `Test sign-in failed (${res.status()}): ${await res.text()}`,
-      );
+      throw new Error(`Test sign-in failed (${res.status()}): ${await res.text()}`);
     }
     const signInBody = (await res.json()) as { userId?: string | null };
     const userId = signInBody.userId ?? null;
@@ -82,9 +78,7 @@ export const test = base.extend<Fixtures>({
       data: { callerEmail: signedInEmail },
     });
     if (!res.ok()) {
-      throw new Error(
-        `Seed session failed (${res.status()}): ${await res.text()}`,
-      );
+      throw new Error(`Seed session failed (${res.status()}): ${await res.text()}`);
     }
     const body = (await res.json()) as Fixtures['seededSession'];
     await use(body);

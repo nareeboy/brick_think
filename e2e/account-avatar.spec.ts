@@ -46,9 +46,7 @@ test.describe('account avatar', () => {
     // eyebrow + <h1> inside `<main><header>…</header>`. Asserting on the first
     // <img> inside main's first <header> is robust against minor markup shifts
     // (e.g. wrapping the title in an extra div).
-    const myDesignsHeadingAvatar = signedInPage
-      .locator('main header img')
-      .first();
+    const myDesignsHeadingAvatar = signedInPage.locator('main header img').first();
     await expect(myDesignsHeadingAvatar).toHaveAttribute(
       'src',
       /\/storage\/v1\/object\/public\/avatars\/[a-f0-9-]+\/avatar\.png\?v=\d+$/,
@@ -63,9 +61,7 @@ test.describe('account avatar', () => {
     await expect(signedInPage.locator('form img[alt]')).toHaveCount(0);
     // Header reflects the removal after a refresh / navigation.
     await signedInPage.goto('/app/my-designs');
-    await expect(
-      signedInPage.getByTestId('header-user-block').locator('img'),
-    ).toHaveCount(0);
+    await expect(signedInPage.getByTestId('header-user-block').locator('img')).toHaveCount(0);
   });
 
   test('rejects oversize uploads inline', async ({ signedInPage }) => {
@@ -74,9 +70,7 @@ test.describe('account avatar', () => {
 
     // Synthesise a 6 MB blob in the browser context and dispatch a fake file.
     await signedInPage.evaluate(() => {
-      const input = document.querySelector(
-        '[data-testid="avatar-file-input"]',
-      ) as HTMLInputElement;
+      const input = document.querySelector('[data-testid="avatar-file-input"]') as HTMLInputElement;
       const buf = new Uint8Array(6 * 1024 * 1024);
       const file = new File([buf], 'huge.png', { type: 'image/png' });
       const dt = new DataTransfer();
@@ -85,8 +79,6 @@ test.describe('account avatar', () => {
       input.dispatchEvent(new Event('change', { bubbles: true }));
     });
 
-    await expect(signedInPage.getByTestId('avatar-upload-error')).toContainText(
-      /5 MB or smaller/i,
-    );
+    await expect(signedInPage.getByTestId('avatar-upload-error')).toContainText(/5 MB or smaller/i);
   });
 });

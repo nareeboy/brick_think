@@ -43,11 +43,7 @@ export function MemberRow({ orgId, member, canRemove }: Props) {
           title="Remove member"
           className="absolute right-3 top-3 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 opacity-0 transition-all hover:bg-zinc-900/5 hover:text-zinc-700 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-40 [@media(hover:none)]:opacity-100"
         >
-          {pending ? (
-            <Spinner className="h-3.5 w-3.5" />
-          ) : (
-            <CloseIcon className="h-4 w-4" />
-          )}
+          {pending ? <Spinner className="h-3.5 w-3.5" /> : <CloseIcon className="h-4 w-4" />}
         </button>
       ) : null}
     </li>

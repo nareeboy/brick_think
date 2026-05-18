@@ -32,12 +32,8 @@ describe('formatDaysRemaining', () => {
   });
 
   it('reports "Purging soon" once the window has elapsed', () => {
-    expect(formatDaysRemaining(daysAgo(now, 30), TRASH_RETENTION_DAYS, now)).toBe(
-      'Purging soon',
-    );
-    expect(formatDaysRemaining(daysAgo(now, 45), TRASH_RETENTION_DAYS, now)).toBe(
-      'Purging soon',
-    );
+    expect(formatDaysRemaining(daysAgo(now, 30), TRASH_RETENTION_DAYS, now)).toBe('Purging soon');
+    expect(formatDaysRemaining(daysAgo(now, 45), TRASH_RETENTION_DAYS, now)).toBe('Purging soon');
   });
 
   it('exposes the retention constant', () => {

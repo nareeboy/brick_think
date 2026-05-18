@@ -104,10 +104,7 @@ describe('parseTagList', () => {
   });
 
   it('drops invalid shapes silently', () => {
-    expect(parseTagList('good,UPPER,has space,-bad,also-good')).toEqual([
-      'good',
-      'also-good',
-    ]);
+    expect(parseTagList('good,UPPER,has space,-bad,also-good')).toEqual(['good', 'also-good']);
   });
 
   it('dedupes while preserving order', () => {

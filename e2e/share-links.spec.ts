@@ -60,9 +60,7 @@ test.describe('public sharing links', () => {
     // the guest page. The action fires after click; we intercept the POST
     // response so we know the DB write is committed.
     const revokeResponse = page.waitForResponse(
-      (res) =>
-        res.request().method() === 'POST' &&
-        res.url().includes('/app/designs/'),
+      (res) => res.request().method() === 'POST' && res.url().includes('/app/designs/'),
     );
     await row.getByRole('button', { name: /^revoke$/i }).click();
     await revokeResponse;
@@ -104,14 +102,15 @@ test.describe('public sharing links', () => {
     // Its accessible name is `Delete ${model.title}` — newly created designs
     // default to "Untitled model". We use a loose /^delete /i regex so the
     // test is robust to any auto-assigned title.
-    await page.getByRole('button', { name: /^delete /i }).first().click();
+    await page
+      .getByRole('button', { name: /^delete /i })
+      .first()
+      .click();
     // The confirm dialog's destructive action is "Delete".
     // Wait for the deleteModelAction server action to finish before visiting
     // the share URL — the page re-validates and the delete card disappears.
     const deleteResponse = page.waitForResponse(
-      (res) =>
-        res.request().method() === 'POST' &&
-        res.url().includes('/app/my-designs'),
+      (res) => res.request().method() === 'POST' && res.url().includes('/app/my-designs'),
     );
     await page.getByRole('button', { name: /^delete$/i }).click();
     await deleteResponse;

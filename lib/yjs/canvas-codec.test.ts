@@ -12,11 +12,7 @@ import {
   updateBrickInDoc,
 } from './canvas-codec';
 
-function makeBrick(
-  id: string,
-  groupId: string,
-  overrides: Partial<{ x: number; y: number }> = {},
-) {
+function makeBrick(id: string, groupId: string, overrides: Partial<{ x: number; y: number }> = {}) {
   return {
     id,
     groupId,
@@ -54,9 +50,7 @@ describe('canvas-codec', () => {
 
     const snap = projectDocToCanvas(doc);
     expect(snap.title).toBe('Hello');
-    expect(snap.groups).toEqual([
-      { id: 'g1', name: 'Untitled', collapsed: false, visible: true },
-    ]);
+    expect(snap.groups).toEqual([{ id: 'g1', name: 'Untitled', collapsed: false, visible: true }]);
     expect(snap.bricks).toHaveLength(1);
     expect(snap.bricks[0]?.id).toBe('b1');
   });

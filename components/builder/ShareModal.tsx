@@ -2,10 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-import {
-  createShareLink,
-  revokeShareLink,
-} from '@/app/(authed)/app/designs/[id]/share-actions';
+import { createShareLink, revokeShareLink } from '@/app/(authed)/app/designs/[id]/share-actions';
 import type { ShareTtl } from '@/lib/share/ttl';
 
 interface ShareLinkRow {

@@ -69,11 +69,7 @@ async function seedPersonalModel(opts: {
   return res.data.id as string;
 }
 
-async function seedVersion(
-  modelId: string,
-  label: string,
-  createdBy: string,
-): Promise<string> {
+async function seedVersion(modelId: string, label: string, createdBy: string): Promise<string> {
   const admin = getAdminClient();
   const res = await admin
     .from('model_versions')
@@ -132,11 +128,7 @@ describe('Consolidated SELECT policy on models', () => {
     const modelId = insRes.data.id as string;
 
     const memberClient = await signInAs(fx.orgMember);
-    const res = await memberClient
-      .from('models')
-      .select('id')
-      .eq('id', modelId)
-      .maybeSingle();
+    const res = await memberClient.from('models').select('id').eq('id', modelId).maybeSingle();
     expect(res.error).toBeNull();
     // RLS filters the row out for the org member; the active branch of the
     // SELECT policy requires deleted_at IS NULL.
@@ -163,10 +155,7 @@ describe('Tightened SELECT on model_versions', () => {
     expect(trashRes.error).toBeNull();
 
     const ownerClient = await signInAs(fx.owner);
-    const res = await ownerClient
-      .from('model_versions')
-      .select('id')
-      .eq('model_id', modelId);
+    const res = await ownerClient.from('model_versions').select('id').eq('model_id', modelId);
     expect(res.error).toBeNull();
     // Tightened policy: versions of trashed models are invisible.
     expect(res.data ?? []).toHaveLength(0);
@@ -224,11 +213,7 @@ describe('Soft delete & cascade behaviour', () => {
 
     // Confirm the canvas_state didn't change.
     const admin = getAdminClient();
-    const verify = await admin
-      .from('models')
-      .select('canvas_state')
-      .eq('id', modelId)
-      .single();
+    const verify = await admin.from('models').select('canvas_state').eq('id', modelId).single();
     expect(verify.data?.canvas_state).toEqual(EMPTY_CANVAS_STATE);
   });
 
@@ -246,10 +231,7 @@ describe('Soft delete & cascade behaviour', () => {
     expect(delRes.error).toBeNull();
     expect(delRes.data ?? []).toHaveLength(1);
 
-    const versionsAfter = await admin
-      .from('model_versions')
-      .select('id')
-      .eq('model_id', modelId);
+    const versionsAfter = await admin.from('model_versions').select('id').eq('model_id', modelId);
     expect(versionsAfter.error).toBeNull();
     expect(versionsAfter.data ?? []).toHaveLength(0);
   });
@@ -296,19 +278,11 @@ describe('purge_expired_trashed_models()', () => {
     const rpcRes = await admin.rpc('purge_expired_trashed_models');
     expect(rpcRes.error).toBeNull();
 
-    const oldLookup = await admin
-      .from('models')
-      .select('id')
-      .eq('id', oldId)
-      .maybeSingle();
+    const oldLookup = await admin.from('models').select('id').eq('id', oldId).maybeSingle();
     expect(oldLookup.error).toBeNull();
     expect(oldLookup.data).toBeNull();
 
-    const recentLookup = await admin
-      .from('models')
-      .select('id')
-      .eq('id', recentId)
-      .maybeSingle();
+    const recentLookup = await admin.from('models').select('id').eq('id', recentId).maybeSingle();
     expect(recentLookup.error).toBeNull();
     expect(recentLookup.data?.id).toBe(recentId);
 

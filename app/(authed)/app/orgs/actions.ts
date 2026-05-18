@@ -63,10 +63,7 @@ export type AddMemberResult =
   | { kind: 'already_member' }
   | { kind: 'forbidden' };
 
-export async function addOrgMemberAction(
-  orgId: string,
-  email: string,
-): Promise<AddMemberResult> {
+export async function addOrgMemberAction(orgId: string, email: string): Promise<AddMemberResult> {
   const { supabase } = await requireUser();
   const trimmed = email.trim();
   if (trimmed.length === 0) return { kind: 'invalid_input' };
@@ -109,10 +106,7 @@ export async function addOrgMemberAction(
   return { kind: 'ok' };
 }
 
-export async function removeOrgMemberAction(
-  orgId: string,
-  profileId: string,
-): Promise<void> {
+export async function removeOrgMemberAction(orgId: string, profileId: string): Promise<void> {
   const { supabase } = await requireUser();
   const { data, error } = await supabase
     .from('org_memberships')
@@ -135,10 +129,7 @@ export type RenameOrgResult =
   | { kind: 'forbidden' }
   | { kind: 'not_found' };
 
-export async function renameOrgAction(
-  orgId: string,
-  name: string,
-): Promise<RenameOrgResult> {
+export async function renameOrgAction(orgId: string, name: string): Promise<RenameOrgResult> {
   const { supabase } = await requireUser();
   const trimmed = name.trim();
   if (trimmed.length < 1 || trimmed.length > 80) {
@@ -171,10 +162,7 @@ export async function renameOrgAction(
   return { kind: 'ok' };
 }
 
-export type DeleteOrgResult =
-  | { kind: 'ok' }
-  | { kind: 'forbidden' }
-  | { kind: 'not_found' };
+export type DeleteOrgResult = { kind: 'ok' } | { kind: 'forbidden' } | { kind: 'not_found' };
 
 export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
   const { supabase } = await requireUser();

@@ -4,11 +4,7 @@ export const TRASH_RETENTION_DAYS = 30;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function formatDaysRemaining(
-  deletedAt: string,
-  retentionDays: number,
-  now: Date,
-): string {
+export function formatDaysRemaining(deletedAt: string, retentionDays: number, now: Date): string {
   const purgeAt = new Date(deletedAt).getTime() + retentionDays * DAY_MS;
   const msRemaining = purgeAt - now.getTime();
   if (msRemaining <= 0) return 'Purging soon';

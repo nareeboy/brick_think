@@ -116,11 +116,7 @@ export function PresenceCursors({
               avatarUrl={p.avatarUrl}
               color={color}
             />
-            <PeerNameChip
-              userId={p.userId}
-              displayName={p.displayName}
-              color={color}
-            />
+            <PeerNameChip userId={p.userId} displayName={p.displayName} color={color} />
           </div>
         );
       })}
@@ -153,12 +149,7 @@ function PeerAvatar({
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={avatarUrl}
-          alt=""
-          className="h-full w-full object-cover"
-          draggable={false}
-        />
+        <img src={avatarUrl} alt="" className="h-full w-full object-cover" draggable={false} />
       </span>
     );
   }

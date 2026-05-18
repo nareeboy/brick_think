@@ -10,9 +10,7 @@ test.describe('session-scoped designs', () => {
     await expect(page.getByTestId('session-title')).toBeVisible();
 
     // Stage cards render in canonical order.
-    await expect(
-      page.getByTestId('stage-card-individual_model'),
-    ).toBeVisible();
+    await expect(page.getByTestId('stage-card-individual_model')).toBeVisible();
 
     // Click "Start your model" on the individual_model stage.
     await page
@@ -35,10 +33,7 @@ test.describe('session-scoped designs', () => {
     const pieceBox = await piece.boundingBox();
     const canvasBox = await canvas.boundingBox();
     if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-    await page.mouse.move(
-      pieceBox.x + pieceBox.width / 2,
-      pieceBox.y + pieceBox.height / 2,
-    );
+    await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
     await page.mouse.down();
     await page.mouse.move(canvasBox.x + 200, canvasBox.y + 200, { steps: 12 });
     await page.mouse.up();
@@ -46,11 +41,9 @@ test.describe('session-scoped designs', () => {
 
     // Wait for autosave to land. The save-status indicator transitions to
     // data-status="saved" once the PATCH completes.
-    await expect(page.getByTestId('save-status')).toHaveAttribute(
-      'data-status',
-      'saved',
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+      timeout: 15_000,
+    });
 
     // Reload the builder to verify the saved state survives a page refresh
     // (the "refresh" in the test title), then also navigate away and back.
@@ -82,16 +75,13 @@ test.describe('session-scoped designs', () => {
       .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     const sessionModelUrl = page.url();
-    const sessionModelId =
-      sessionModelUrl.match(/\/app\/designs\/([0-9a-f-]+)/)?.[1] ?? '';
+    const sessionModelId = sessionModelUrl.match(/\/app\/designs\/([0-9a-f-]+)/)?.[1] ?? '';
     expect(sessionModelId).not.toBe('');
 
     // Visit My Designs under the Personal filter — session-scoped models
     // should be filtered out from the personal view.
     await page.goto('/app/my-designs?filter=personal');
-    await expect(
-      page.getByRole('heading', { level: 1, name: /my designs/i }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /my designs/i })).toBeVisible();
     // Cards link to /app/designs/<id>; a card link containing the session
     // model's id would mean it leaked into the Personal filter view.
     const leak = page.locator(`a[href="/app/designs/${sessionModelId}"]`);

@@ -39,8 +39,8 @@ export function DeleteSessionModelButton({
           title="Delete this model?"
           description={
             <>
-              &ldquo;{modelTitle}&rdquo; is hard-deleted. Session-scoped models are not
-              recoverable from Trash.
+              &ldquo;{modelTitle}&rdquo; is hard-deleted. Session-scoped models are not recoverable
+              from Trash.
             </>
           }
           pending={pending}

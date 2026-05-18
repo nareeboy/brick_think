@@ -16,16 +16,16 @@ Stack: Next.js 15 App Router, React 19, Supabase (Postgres + Auth + Storage + RL
 
 ### URLs
 
-| What | URL | Notes |
-|---|---|---|
-| Dev server (default) | `http://localhost:3000` | `pnpm dev` — talks to **remote** Supabase |
-| Dev server (local Supabase) | `http://localhost:3000` | `pnpm dev:e2e` — talks to **local** Supabase via `.env.test` |
-| Local Supabase API | `http://127.0.0.1:54321` | Started by `pnpm db:start` |
-| Local Supabase DB | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | direct psql / docker exec |
-| Local Supabase Studio | `http://127.0.0.1:54323` | SQL editor, table editor, auth users |
-| Local Mailpit | `http://127.0.0.1:54324` | Catches magic-link emails sent by local stack |
-| Remote Supabase project | `https://<your-supabase-project-ref>.supabase.co` | Configured in `.env.local` (`SUPABASE_PROJECT_REF`, `NEXT_PUBLIC_SUPABASE_URL`) |
-| Remote Supabase Dashboard | `https://supabase.com/dashboard/project/<your-supabase-project-ref>` | SQL editor, logs, settings |
+| What                        | URL                                                                  | Notes                                                                           |
+| --------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Dev server (default)        | `http://localhost:3000`                                              | `pnpm dev` — talks to **remote** Supabase                                       |
+| Dev server (local Supabase) | `http://localhost:3000`                                              | `pnpm dev:e2e` — talks to **local** Supabase via `.env.test`                    |
+| Local Supabase API          | `http://127.0.0.1:54321`                                             | Started by `pnpm db:start`                                                      |
+| Local Supabase DB           | `postgresql://postgres:postgres@127.0.0.1:54322/postgres`            | direct psql / docker exec                                                       |
+| Local Supabase Studio       | `http://127.0.0.1:54323`                                             | SQL editor, table editor, auth users                                            |
+| Local Mailpit               | `http://127.0.0.1:54324`                                             | Catches magic-link emails sent by local stack                                   |
+| Remote Supabase project     | `https://<your-supabase-project-ref>.supabase.co`                    | Configured in `.env.local` (`SUPABASE_PROJECT_REF`, `NEXT_PUBLIC_SUPABASE_URL`) |
+| Remote Supabase Dashboard   | `https://supabase.com/dashboard/project/<your-supabase-project-ref>` | SQL editor, logs, settings                                                      |
 
 ### Daily commands
 
@@ -67,11 +67,11 @@ pnpm db:push            # apply pending local migrations to remote — ASK FIRST
 
 ### Test environment flags
 
-| Flag | Purpose | Where it's set |
-|---|---|---|
-| `E2E_AUTH_ENABLED=1` | Unlocks `/api/test/sign-in` (mints a Supabase session for `@brick-think.test` emails) | `playwright.config.ts` webServer.env |
-| `E2E_SESSIONS_ENABLED=1` | Unlocks `/api/test/seed-session` (creates a session + 5 stages for the caller) | `playwright.config.ts` webServer.env |
-| **Never set either on Railway** | These are dev-only gates | — |
+| Flag                            | Purpose                                                                               | Where it's set                       |
+| ------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------ |
+| `E2E_AUTH_ENABLED=1`            | Unlocks `/api/test/sign-in` (mints a Supabase session for `@brick-think.test` emails) | `playwright.config.ts` webServer.env |
+| `E2E_SESSIONS_ENABLED=1`        | Unlocks `/api/test/seed-session` (creates a session + 5 stages for the caller)        | `playwright.config.ts` webServer.env |
+| **Never set either on Railway** | These are dev-only gates                                                              | —                                    |
 
 Both routes also require a localhost host header AND a `@brick-think.test` email pattern — three independent gates per route.
 
@@ -208,6 +208,7 @@ The seed response contains a `sessionId` → open `http://localhost:3000/app/ses
 Drives real-time collaboration on `shared_model` session designs: brick/group propagation, presence cursors with avatars + names, and per-client `Cmd+Z` / `Cmd+Shift+Z` undo. Other stages and personal designs still use the autosave path; the worker is only consulted in live mode. Auth via 60s HS256 JWT from `/api/yjs/token`, verified worker-side before WS upgrade.
 
 Required env (web and worker share `YJS_JWT_SECRET`):
+
 - `NEXT_PUBLIC_YJS_COLLAB_ENABLED=1` — bakes the binding into the client bundle at build time.
 - `NEXT_PUBLIC_YJS_WS_URL` — `ws://localhost:1234/yjs` in dev, `wss://<host>/yjs` in prod.
 - `YJS_JWT_SECRET` — `openssl rand -hex 32`, identical on web and worker.

@@ -72,14 +72,7 @@ describe('PresenceCursors', () => {
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
-    render(
-      <PresenceCursors
-        awareness={awareness}
-        selfClientId={1}
-        pan={noPan}
-        zoom={1}
-      />,
-    );
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
     // getByTestId throws if absent — its return value is the assertion.
     screen.getByTestId('presence-cursor-u-alice');
     screen.getByTestId('presence-cursor-u-bob');
@@ -101,14 +94,7 @@ describe('PresenceCursors', () => {
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
-    render(
-      <PresenceCursors
-        awareness={awareness}
-        selfClientId={1}
-        pan={noPan}
-        zoom={1}
-      />,
-    );
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
     const cursor = screen.getByTestId('presence-cursor-u-photo');
     const img = cursor.querySelector('img');
     expect(img).not.toBeNull();
@@ -130,17 +116,8 @@ describe('PresenceCursors', () => {
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
-    render(
-      <PresenceCursors
-        awareness={awareness}
-        selfClientId={1}
-        pan={noPan}
-        zoom={1}
-      />,
-    );
-    expect(
-      screen.getByTestId('presence-initial-u-letter').textContent,
-    ).toBe('A');
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
+    expect(screen.getByTestId('presence-initial-u-letter').textContent).toBe('A');
   });
 
   it('renders the person glyph when displayName is empty (no name + no avatar)', () => {
@@ -158,14 +135,7 @@ describe('PresenceCursors', () => {
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
-    render(
-      <PresenceCursors
-        awareness={awareness}
-        selfClientId={1}
-        pan={noPan}
-        zoom={1}
-      />,
-    );
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
     screen.getByTestId('presence-glyph-u-anon');
     expect(screen.queryByTestId('presence-initial-u-anon')).toBeNull();
   });
@@ -185,17 +155,8 @@ describe('PresenceCursors', () => {
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
-    render(
-      <PresenceCursors
-        awareness={awareness}
-        selfClientId={1}
-        pan={noPan}
-        zoom={1}
-      />,
-    );
-    expect(screen.getByTestId('presence-name-u-name').textContent).toBe(
-      'Maya Robertson',
-    );
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
+    expect(screen.getByTestId('presence-name-u-name').textContent).toBe('Maya Robertson');
   });
 
   it('positions the cursor at pan + cursor * zoom', () => {
@@ -214,12 +175,7 @@ describe('PresenceCursors', () => {
     ]);
     const { awareness } = makeMockAwareness(peers);
     render(
-      <PresenceCursors
-        awareness={awareness}
-        selfClientId={1}
-        pan={{ x: 10, y: 20 }}
-        zoom={2}
-      />,
+      <PresenceCursors awareness={awareness} selfClientId={1} pan={{ x: 10, y: 20 }} zoom={2} />,
     );
     const el = screen.getByTestId('presence-cursor-u-pos');
     // left = 100 * 2 + 10 = 210; top = 200 * 2 + 20 = 420
@@ -242,23 +198,13 @@ describe('PresenceCursors', () => {
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
-    render(
-      <PresenceCursors
-        awareness={awareness}
-        selfClientId={1}
-        pan={noPan}
-        zoom={1}
-      />,
-    );
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
     expect(screen.queryByTestId('presence-cursor-u-no-cursor')).toBeNull();
   });
 });
 
 describe('PresenceCursors idle fade', () => {
-  function makePeer(
-    userId: string,
-    cursor: { x: number; y: number } | null,
-  ): { user: PeerUser } {
+  function makePeer(userId: string, cursor: { x: number; y: number } | null): { user: PeerUser } {
     return {
       user: {
         userId,
@@ -272,18 +218,9 @@ describe('PresenceCursors idle fade', () => {
   it('fades a peer to opacity 0.3 after 10s of no cursor movement', async () => {
     vi.useFakeTimers();
     try {
-      const peers = new Map<number, { user: PeerUser }>([
-        [2, makePeer('u-idle', { x: 0, y: 0 })],
-      ]);
+      const peers = new Map<number, { user: PeerUser }>([[2, makePeer('u-idle', { x: 0, y: 0 })]]);
       const { awareness, notify } = makeMockAwareness(peers);
-      render(
-        <PresenceCursors
-          awareness={awareness}
-          selfClientId={1}
-          pan={noPan}
-          zoom={1}
-        />,
-      );
+      render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
       const el = screen.getByTestId('presence-cursor-u-idle');
       expect(el.style.opacity).toBe('1');
 
@@ -313,14 +250,7 @@ describe('PresenceCursors idle fade', () => {
         [2, makePeer('u-active', { x: 0, y: 0 })],
       ]);
       const { awareness, notify } = makeMockAwareness(peers);
-      render(
-        <PresenceCursors
-          awareness={awareness}
-          selfClientId={1}
-          pan={noPan}
-          zoom={1}
-        />,
-      );
+      render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
 
       for (let t = 3; t <= 15; t += 3) {
         peers.set(2, makePeer('u-active', { x: t, y: t }));

@@ -36,7 +36,8 @@ export function LeaveOrgButton({ orgId, profileId }: Props) {
               Leave this organisation?
             </h2>
             <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              You will lose access to its sessions and shared designs. An admin can re-add you later.
+              You will lose access to its sessions and shared designs. An admin can re-add you
+              later.
             </p>
             <div className="mt-6 flex items-center justify-end gap-2">
               <button

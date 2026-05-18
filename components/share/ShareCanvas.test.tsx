@@ -35,15 +35,58 @@ describe('<ShareCanvas>', () => {
     // The component reads getBoundingClientRect() at mount.
     // Force a non-zero rect so the size-gated branch renders.
     Element.prototype.getBoundingClientRect = function () {
-      return { width: 800, height: 600, x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 600, toJSON: () => ({}) } as DOMRect;
+      return {
+        width: 800,
+        height: 600,
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 800,
+        bottom: 600,
+        toJSON: () => ({}),
+      } as DOMRect;
     };
   });
 
   const visibleGroup = { id: 'g1', name: 'g', collapsed: false, visible: true };
   const hiddenGroup = { id: 'g2', name: 'h', collapsed: false, visible: false };
-  const brickA = { id: 'a', groupId: 'g1', code: 'x', image: '/x.png', x: 0, y: 0, width: 10, height: 10, rotation: 0, visible: true };
-  const brickB = { id: 'b', groupId: 'g2', code: 'x', image: '/x.png', x: 0, y: 0, width: 10, height: 10, rotation: 0, visible: true };
-  const brickC = { id: 'c', groupId: 'g1', code: 'x', image: '/x.png', x: 0, y: 0, width: 10, height: 10, rotation: 0, visible: false };
+  const brickA = {
+    id: 'a',
+    groupId: 'g1',
+    code: 'x',
+    image: '/x.png',
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 10,
+    rotation: 0,
+    visible: true,
+  };
+  const brickB = {
+    id: 'b',
+    groupId: 'g2',
+    code: 'x',
+    image: '/x.png',
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 10,
+    rotation: 0,
+    visible: true,
+  };
+  const brickC = {
+    id: 'c',
+    groupId: 'g1',
+    code: 'x',
+    image: '/x.png',
+    x: 0,
+    y: 0,
+    width: 10,
+    height: 10,
+    rotation: 0,
+    visible: false,
+  };
 
   it('renders only visible bricks in visible groups', () => {
     render(

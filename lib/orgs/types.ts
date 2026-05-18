@@ -17,6 +17,4 @@ export interface OrgMember {
   role: OrgRole;
 }
 
-export type ActiveContext =
-  | { kind: 'personal' }
-  | { kind: 'org'; org: OrgSummary };
+export type ActiveContext = { kind: 'personal' } | { kind: 'org'; org: OrgSummary };

@@ -66,11 +66,7 @@ describe('updateProfileAction', () => {
     expect(result).toEqual({ kind: 'ok', fullName: 'Naresh' });
 
     const admin = getAdminClient();
-    const verify = await admin
-      .from('profiles')
-      .select('full_name')
-      .eq('id', fx.owner.id)
-      .single();
+    const verify = await admin.from('profiles').select('full_name').eq('id', fx.owner.id).single();
     expect(verify.data?.full_name).toBe('Naresh');
   });
 
@@ -81,11 +77,7 @@ describe('updateProfileAction', () => {
     expect(cleared).toEqual({ kind: 'ok', fullName: null });
 
     const admin = getAdminClient();
-    const verify = await admin
-      .from('profiles')
-      .select('full_name')
-      .eq('id', fx.owner.id)
-      .single();
+    const verify = await admin.from('profiles').select('full_name').eq('id', fx.owner.id).single();
     expect(verify.data?.full_name).toBeNull();
   });
 
@@ -114,11 +106,7 @@ describe('updateProfileAction', () => {
     expect(probe.error).toBeNull();
 
     const admin = getAdminClient();
-    const verify = await admin
-      .from('profiles')
-      .select('full_name')
-      .eq('id', fx.owner.id)
-      .single();
+    const verify = await admin.from('profiles').select('full_name').eq('id', fx.owner.id).single();
     expect(verify.data?.full_name).toBe('Owner Name');
   });
 });

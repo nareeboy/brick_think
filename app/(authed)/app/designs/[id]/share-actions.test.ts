@@ -34,7 +34,10 @@ function mockUser(
         select: () => ({
           single: async () => {
             inserted.push(row);
-            return { data: { id: 'l1', token: row.token, expires_at: row.expires_at }, error: null };
+            return {
+              data: { id: 'l1', token: row.token, expires_at: row.expires_at },
+              error: null,
+            };
           },
         }),
       }),
@@ -86,7 +89,9 @@ describe('createShareLink', () => {
 
   it('throws when the model is org-shared (Q7a forward-compat gate)', async () => {
     mockUser('u1', { org_id: 'org-1' });
-    await expect(createShareLink('m1', '7d')).rejects.toThrow(/Org-shared designs are not shareable/);
+    await expect(createShareLink('m1', '7d')).rejects.toThrow(
+      /Org-shared designs are not shareable/,
+    );
   });
 
   it('throws when the model is session-scoped (Q7b forward-compat gate)', async () => {

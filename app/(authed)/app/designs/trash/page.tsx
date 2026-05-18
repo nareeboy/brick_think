@@ -45,9 +45,7 @@ export default async function TrashPage() {
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               BrickThink
             </p>
-            <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">
-              Trash
-            </h1>
+            <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">Trash</h1>
           </div>
           <Link
             href="/app/my-designs"

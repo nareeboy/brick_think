@@ -27,11 +27,7 @@ import {
 } from '@/lib/yjs/canvas-codec';
 
 import { useAutosave, type SaveStatus } from './useAutosave';
-import {
-  useYjsBinding,
-  type PresenceSelf,
-  type YjsConnectionStatus,
-} from './useYjsBinding';
+import { useYjsBinding, type PresenceSelf, type YjsConnectionStatus } from './useYjsBinding';
 import { useYjsToken } from './useYjsToken';
 import { useYjsUndoManager } from './useYjsUndoManager';
 
@@ -133,17 +129,10 @@ export interface BuilderState {
   moveGroup: (id: string, toIndex: number) => void;
 
   addBrick: (brick: BrickInstance) => void;
-  updateBrick: (
-    id: string,
-    partial: Partial<Omit<BrickInstance, 'id' | 'groupId'>>,
-  ) => void;
+  updateBrick: (id: string, partial: Partial<Omit<BrickInstance, 'id' | 'groupId'>>) => void;
   deleteBrick: (id: string) => void;
   toggleBrickVisible: (id: string) => void;
-  moveBrick: (
-    brickId: string,
-    toGroupId: string,
-    beforeBrickId: string | null,
-  ) => void;
+  moveBrick: (brickId: string, toGroupId: string, beforeBrickId: string | null) => void;
 
   toast: ToastState | null;
   dismissToast: () => void;
@@ -259,13 +248,10 @@ export function BuilderProvider({
     }
     return makeInitialData();
   });
-  const [title, setTitleLocal] = useState<string>(
-    initial?.title ?? 'Untitled model',
-  );
+  const [title, setTitleLocal] = useState<string>(initial?.title ?? 'Untitled model');
   const modelId = initial?.modelId ?? null;
 
-  const wsBaseUrl =
-    process.env.NEXT_PUBLIC_YJS_WS_URL ?? 'ws://localhost:1234/yjs';
+  const wsBaseUrl = process.env.NEXT_PUBLIC_YJS_WS_URL ?? 'ws://localhost:1234/yjs';
   const tokenResult = useYjsToken(liveMode && modelId ? modelId : null);
   const yjs = useYjsBinding({
     modelId: liveMode && modelId ? modelId : '',
@@ -314,9 +300,7 @@ export function BuilderProvider({
 
   const liveSnapshot = liveMode ? yjs.snapshot : null;
   const liveDoc = liveMode ? yjs.doc : null;
-  const undoManager = useYjsUndoManager(
-    liveMode && !readOnly ? liveDoc : null,
-  );
+  const undoManager = useYjsUndoManager(liveMode && !readOnly ? liveDoc : null);
   const effectiveGroups = liveSnapshot?.groups ?? data.groups;
   const effectiveBricks = liveSnapshot?.bricks ?? data.bricks;
   const effectiveTitle = liveSnapshot?.title ?? title;
@@ -327,9 +311,7 @@ export function BuilderProvider({
   useEffect(() => {
     if (!liveMode) return;
     setData((d) => {
-      const stillExists = effectiveGroups.some(
-        (g) => g.id === d.activeGroupId,
-      );
+      const stillExists = effectiveGroups.some((g) => g.id === d.activeGroupId);
       if (stillExists) return d;
       const fallback = effectiveGroups[0]?.id ?? d.activeGroupId;
       return d.activeGroupId === fallback ? d : { ...d, activeGroupId: fallback };
@@ -355,12 +337,9 @@ export function BuilderProvider({
   const hasCapturedThisSession = useRef(false);
   const prevAutosaveStatusRef = useRef<SaveStatus>('idle');
 
-  const registerThumbnailCapture = useCallback(
-    (fn: (() => Promise<Blob | null>) | null) => {
-      captureFnRef.current = fn;
-    },
-    [],
-  );
+  const registerThumbnailCapture = useCallback((fn: (() => Promise<Blob | null>) | null) => {
+    captureFnRef.current = fn;
+  }, []);
 
   function guard<Args extends unknown[], R>(
     fn: (...args: Args) => R,
@@ -428,21 +407,18 @@ export function BuilderProvider({
     void captureAndUploadThumbnail();
   }, [autosave.status, captureAndUploadThumbnail, liveMode]);
 
-  const zoomBy = useCallback(
-    (factor: number, anchor: { x: number; y: number }) => {
-      setZoom((prevZoom) => {
-        const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prevZoom * factor));
-        if (next === prevZoom) return prevZoom;
-        const applied = next / prevZoom;
-        setPan((p) => ({
-          x: anchor.x - (anchor.x - p.x) * applied,
-          y: anchor.y - (anchor.y - p.y) * applied,
-        }));
-        return next;
-      });
-    },
-    [],
-  );
+  const zoomBy = useCallback((factor: number, anchor: { x: number; y: number }) => {
+    setZoom((prevZoom) => {
+      const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prevZoom * factor));
+      if (next === prevZoom) return prevZoom;
+      const applied = next / prevZoom;
+      setPan((p) => ({
+        x: anchor.x - (anchor.x - p.x) * applied,
+        y: anchor.y - (anchor.y - p.y) * applied,
+      }));
+      return next;
+    });
+  }, []);
 
   const dismissToast = useCallback(() => setToast(null), []);
 
@@ -526,9 +502,7 @@ export function BuilderProvider({
         setData((d) => {
           const stillSelected =
             d.selectedId !== null &&
-            effectiveBricks.some(
-              (b) => b.id === d.selectedId && b.groupId !== id,
-            );
+            effectiveBricks.some((b) => b.id === d.selectedId && b.groupId !== id);
           return {
             ...d,
             selectedId: stillSelected ? d.selectedId : null,
@@ -550,8 +524,7 @@ export function BuilderProvider({
         return {
           groups: newGroups,
           bricks: newBricks,
-          activeGroupId:
-            d.activeGroupId === id ? fallbackActive : d.activeGroupId,
+          activeGroupId: d.activeGroupId === id ? fallbackActive : d.activeGroupId,
           selectedId: selectedStillExists ? d.selectedId : null,
         };
       });
@@ -569,9 +542,7 @@ export function BuilderProvider({
       }
       setData((d) => ({
         ...d,
-        groups: d.groups.map((g) =>
-          g.id === id ? { ...g, visible: !g.visible } : g,
-        ),
+        groups: d.groups.map((g) => (g.id === id ? { ...g, visible: !g.visible } : g)),
       }));
     },
     [liveMode, liveDoc, effectiveGroups],
@@ -587,9 +558,7 @@ export function BuilderProvider({
       }
       setData((d) => ({
         ...d,
-        groups: d.groups.map((g) =>
-          g.id === id ? { ...g, collapsed: !g.collapsed } : g,
-        ),
+        groups: d.groups.map((g) => (g.id === id ? { ...g, collapsed: !g.collapsed } : g)),
       }));
     },
     [liveMode, liveDoc, effectiveGroups],
@@ -636,11 +605,7 @@ export function BuilderProvider({
       setData((d) => {
         if (!d.groups.some((g) => g.id === brick.groupId)) return d;
         const insertIdx = findGroupInsertionStart(d.bricks, d.groups, brick.groupId);
-        const newBricks = [
-          ...d.bricks.slice(0, insertIdx),
-          brick,
-          ...d.bricks.slice(insertIdx),
-        ];
+        const newBricks = [...d.bricks.slice(0, insertIdx), brick, ...d.bricks.slice(insertIdx)];
         return { ...d, bricks: newBricks };
       });
     },
@@ -687,9 +652,7 @@ export function BuilderProvider({
       }
       setData((d) => ({
         ...d,
-        bricks: d.bricks.map((b) =>
-          b.id === id ? { ...b, visible: !b.visible } : b,
-        ),
+        bricks: d.bricks.map((b) => (b.id === id ? { ...b, visible: !b.visible } : b)),
       }));
     },
     [liveMode, liveDoc, effectiveBricks],
@@ -708,27 +671,18 @@ export function BuilderProvider({
         if (!d.groups.some((g) => g.id === toGroupId)) return d;
         const brick = d.bricks[fromIdx];
         if (!brick) return d;
-        const without = [
-          ...d.bricks.slice(0, fromIdx),
-          ...d.bricks.slice(fromIdx + 1),
-        ];
+        const without = [...d.bricks.slice(0, fromIdx), ...d.bricks.slice(fromIdx + 1)];
         const updated: BrickInstance = { ...brick, groupId: toGroupId };
 
         let insertIdx: number;
         if (beforeBrickId && beforeBrickId !== brickId) {
           const beforeIdx = without.findIndex((b) => b.id === beforeBrickId);
           insertIdx =
-            beforeIdx >= 0
-              ? beforeIdx
-              : findGroupInsertionEnd(without, d.groups, toGroupId);
+            beforeIdx >= 0 ? beforeIdx : findGroupInsertionEnd(without, d.groups, toGroupId);
         } else {
           insertIdx = findGroupInsertionEnd(without, d.groups, toGroupId);
         }
-        const newBricks = [
-          ...without.slice(0, insertIdx),
-          updated,
-          ...without.slice(insertIdx),
-        ];
+        const newBricks = [...without.slice(0, insertIdx), updated, ...without.slice(insertIdx)];
         return { ...d, bricks: newBricks };
       });
     },

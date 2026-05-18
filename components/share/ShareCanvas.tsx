@@ -99,7 +99,14 @@ export function ShareCanvas({ groups, bricks, pan, zoom, onZoomBy, onPanBy }: Sh
       </ul>
       {size.width > 0 && size.height > 0 ? (
         <>
-          <Stage width={size.width} height={size.height} x={pan.x} y={pan.y} scaleX={zoom} scaleY={zoom}>
+          <Stage
+            width={size.width}
+            height={size.height}
+            x={pan.x}
+            y={pan.y}
+            scaleX={zoom}
+            scaleY={zoom}
+          >
             <Layer>
               {visibleBricks.map((b) => (
                 <BrickImage key={b.id} brick={b} />

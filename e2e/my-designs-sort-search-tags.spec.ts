@@ -11,9 +11,7 @@ test.describe('my-designs sort/search/tags', () => {
     signedInPage: page,
   }) => {
     await page.goto('/app/my-designs');
-    await expect(
-      page.getByRole('heading', { name: /my designs/i, level: 1 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /my designs/i, level: 1 })).toBeVisible();
 
     const sortButton = page.getByTestId('my-designs-sort-button');
     await expect(sortButton).toContainText(/newest/i);

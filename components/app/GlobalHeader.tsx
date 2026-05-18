@@ -30,10 +30,7 @@ export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
         </div>
 
         <div className="flex items-center gap-2">
-          <div
-            className="flex items-center gap-2"
-            data-testid="header-user-block"
-          >
+          <div className="flex items-center gap-2" data-testid="header-user-block">
             <Avatar url={userAvatarUrl} name={userName} size="sm" />
             <span className="hidden max-w-[140px] truncate text-[13px] text-zinc-800 sm:inline">
               {userName}

@@ -117,10 +117,7 @@ function DesignCard({
         </p>
         <Badge badge={design.badge} />
         {visibleTags.length > 0 ? (
-          <div
-            data-testid={`card-tags-${design.id}`}
-            className="mt-2 flex flex-wrap gap-1"
-          >
+          <div data-testid={`card-tags-${design.id}`} className="mt-2 flex flex-wrap gap-1">
             {visibleTags.slice(0, MAX_VISIBLE_CARD_TAGS).map((tag) => (
               <span
                 key={tag}
@@ -132,7 +129,10 @@ function DesignCard({
             {visibleTags.length > MAX_VISIBLE_CARD_TAGS ? (
               <span
                 data-testid={`card-tags-overflow-${design.id}`}
-                title={visibleTags.slice(MAX_VISIBLE_CARD_TAGS).map((t) => `#${t}`).join(' ')}
+                title={visibleTags
+                  .slice(MAX_VISIBLE_CARD_TAGS)
+                  .map((t) => `#${t}`)
+                  .join(' ')}
                 className="inline-flex items-center rounded-full bg-zinc-900/5 px-2 py-0.5 font-mono text-[10px] text-zinc-600"
               >
                 +{visibleTags.length - MAX_VISIBLE_CARD_TAGS}
@@ -199,9 +199,7 @@ function DesignCard({
         <DeleteConfirmDialog
           title="Delete this design?"
           description={
-            <>
-              &ldquo;{design.title}&rdquo; moves to Trash. You can restore it within 30 days.
-            </>
+            <>&ldquo;{design.title}&rdquo; moves to Trash. You can restore it within 30 days.</>
           }
           pending={pending}
           onCancel={closeAndRestoreFocus}
