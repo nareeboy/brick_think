@@ -384,7 +384,7 @@ export type Database = {
       }
       stage_events: {
         Row: {
-          actor_profile_id: string
+          actor_profile_id: string | null
           created_at: string
           id: string
           metadata: Json
@@ -393,7 +393,7 @@ export type Database = {
           verb: string
         }
         Insert: {
-          actor_profile_id: string
+          actor_profile_id?: string | null
           created_at?: string
           id?: string
           metadata?: Json
@@ -402,7 +402,7 @@ export type Database = {
           verb: string
         }
         Update: {
-          actor_profile_id?: string
+          actor_profile_id?: string | null
           created_at?: string
           id?: string
           metadata?: Json

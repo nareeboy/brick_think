@@ -40,12 +40,13 @@ create table if not exists public.stage_events (
   session_id uuid not null references public.sessions(id) on delete cascade,
   stage_id uuid not null references public.stages(id) on delete cascade,
   verb text not null check (verb in ('start','pause','resume','extend','advance','rollback')),
-  actor_profile_id uuid not null references public.profiles(id),
+  actor_profile_id uuid references public.profiles(id) on delete set null,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
 
 create index if not exists stage_events_session_idx on public.stage_events(session_id, created_at);
+create index if not exists stage_events_stage_idx on public.stage_events(stage_id);
 
 alter table public.stage_events enable row level security;
 
