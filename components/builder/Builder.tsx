@@ -246,8 +246,11 @@ function ExportButton() {
   const stageRef = useRef<typeof stage>(stage);
   stageRef.current = stage;
   if (!modelId) return null;
+  // Top-right slot rhythm in the canvas section: PiecesDrawer trigger sits at
+  // right-5 and ShareButton at right-[72px] (both z-30, both h-11 w-11). Slot
+  // Export to the left of Share so all three sit in a row without collision.
   return (
-    <div className="absolute right-5 top-5 z-30">
+    <div className="absolute right-[124px] top-5 z-30">
       <ExportMenu
         source={{
           kind: 'stage',
