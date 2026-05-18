@@ -107,3 +107,12 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* WCAG 2.4.11 — focusable list items sit under the sticky header.
+   Without scroll-margin-top, keyboard nav scrolls focus to the very
+   top of the viewport where the header occludes it. GlobalHeader is
+   h-14 (3.5rem); 4.5rem = header + 1rem visual buffer. */
+[data-scroll-target]:focus-visible,
+[data-scroll-target] :focus-visible {
+  scroll-margin-top: 4.5rem;
+}
