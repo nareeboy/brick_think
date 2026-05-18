@@ -14,17 +14,20 @@ const STAGE_B = { ...STAGE_A, id: 'b', position: 1 };
 let mockChannel: ReturnType<typeof makeChannel>;
 function makeChannel() {
   const handlers: Array<(payload: unknown) => void> = [];
+  let subscribeCb: ((status: string) => void) | null = null;
   return {
     on: vi.fn((_event: string, _filter: unknown, cb: (p: unknown) => void) => {
       handlers.push(cb);
       return mockChannel;
     }),
     subscribe: vi.fn((cb?: (status: string) => void) => {
+      subscribeCb = cb ?? null;
       cb?.('SUBSCRIBED');
       return mockChannel;
     }),
     unsubscribe: vi.fn(),
     emit: (payload: unknown) => handlers.forEach((h) => h(payload)),
+    fireSubscribed: () => subscribeCb?.('SUBSCRIBED'),
   };
 }
 
@@ -123,5 +126,23 @@ describe('useSessionStages', () => {
     await waitFor(() => expect(mockChannel.subscribe).toHaveBeenCalled());
     unmount();
     expect(mockSupabase.removeChannel).toHaveBeenCalled();
+  });
+
+  it('does not refetch on the initial SUBSCRIBED (already fetched inline)', async () => {
+    const { result } = renderHook(() => useSessionStages('s'));
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    // The initial fetch only — no second invocation expected.
+    expect(fromMock).toHaveBeenCalledTimes(2); // stages + sessions, once each
+  });
+
+  it('refetches when SUBSCRIBED fires a second time (reconnect)', async () => {
+    const { result } = renderHook(() => useSessionStages('s'));
+    await waitFor(() => expect(result.current.ready).toBe(true));
+    fromMock.mockClear();
+    // Simulate a reconnect: drive the subscribe callback's stored handler again.
+    act(() => {
+      mockChannel.fireSubscribed?.();
+    });
+    await waitFor(() => expect(fromMock).toHaveBeenCalledTimes(2));
   });
 });

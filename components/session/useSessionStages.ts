@@ -50,6 +50,8 @@ export function useSessionStages(sessionId: string): {
           .maybeSingle(),
       ]);
       if (cancelled) return;
+      if (stagesRes.error) console.error('useSessionStages: stages fetch failed', stagesRes.error);
+      if (sessionRes.error) console.error('useSessionStages: session fetch failed', sessionRes.error);
       if (stagesRes.data) setStages(stagesRes.data as unknown as StageRow[]);
       if (sessionRes.data) setSession(sessionRes.data as unknown as SessionRow);
       setReady(true);
@@ -57,6 +59,7 @@ export function useSessionStages(sessionId: string): {
 
     void refetch();
 
+    let hasSubscribedBefore = false;
     const channel = supabase
       .channel(`session:${sessionId}`)
       .on(
@@ -64,9 +67,7 @@ export function useSessionStages(sessionId: string): {
         { event: '*', schema: 'public', table: 'stages', filter: `session_id=eq.${sessionId}` },
         (payload) => {
           if (cancelled) return;
-          const eventType =
-            (payload as unknown as { eventType?: string }).eventType ??
-            (payload as unknown as { event?: string }).event;
+          const eventType = (payload as unknown as { eventType?: string }).eventType;
           const next = (payload as unknown as { new?: StageRow }).new;
           const old = (payload as unknown as { old?: { id: string } }).old;
           if (eventType === 'INSERT' && next) {
@@ -88,8 +89,13 @@ export function useSessionStages(sessionId: string): {
         },
       )
       .subscribe((status) => {
-        // On reconnect after CHANNEL_ERROR / CLOSED, refetch to backfill missed events.
-        if (status === 'SUBSCRIBED') void refetch();
+        // Skip the initial SUBSCRIBED — refetch() was called inline at mount.
+        // Subsequent SUBSCRIBED events indicate a reconnect after CHANNEL_ERROR /
+        // CLOSED, where we need to backfill any missed postgres_changes.
+        if (status === 'SUBSCRIBED') {
+          if (hasSubscribedBefore) void refetch();
+          hasSubscribedBefore = true;
+        }
       });
 
     return () => {
