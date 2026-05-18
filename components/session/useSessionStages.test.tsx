@@ -36,6 +36,12 @@ const mockSupabase = {
   channel: vi.fn(() => mockChannel),
   from: fromMock,
   removeChannel: vi.fn(),
+  auth: {
+    getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+  },
+  realtime: {
+    setAuth: vi.fn(),
+  },
 };
 
 vi.mock('@/lib/db/client', () => ({
