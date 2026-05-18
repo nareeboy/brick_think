@@ -27,6 +27,9 @@ const stage = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
+// A dummy second stage so the first stage is NOT the last (Advance must appear).
+const pendingNextStage = () => stage({ id: 'z', position: 99, status: 'pending' });
+
 const sessionRow = { id: 's', current_stage_id: null, status: 'draft' };
 
 function mockActions() {
@@ -50,7 +53,7 @@ describe('StageController', () => {
   it('shows Pause, Extend, Advance on active stage', () => {
     render(
       <StageController
-        stages={[stage({ status: 'active', started_at: new Date().toISOString() })]}
+        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={mockActions()}
@@ -64,7 +67,7 @@ describe('StageController', () => {
   it('shows Resume, Extend, Advance on paused stage', () => {
     render(
       <StageController
-        stages={[stage({ status: 'paused', started_at: new Date().toISOString(), paused_at: new Date().toISOString() })]}
+        stages={[stage({ status: 'paused', started_at: new Date().toISOString(), paused_at: new Date().toISOString() }), pendingNextStage()]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={mockActions()}
@@ -102,7 +105,7 @@ describe('StageController', () => {
     const actions = mockActions();
     render(
       <StageController
-        stages={[stage({ status: 'active', started_at: new Date().toISOString() })]}
+        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={actions}
@@ -126,6 +129,33 @@ describe('StageController', () => {
     await waitFor(() => expect(actions.extend).toHaveBeenCalledWith('a', 300));
   });
 
+  it('hides Advance button on the last stage', () => {
+    const stages = [
+      stage({ id: 'a', status: 'completed' }),
+      stage({ id: 'b', position: 1, status: 'active', started_at: new Date().toISOString() }),
+    ];
+    render(<StageController stages={stages} session={{ ...sessionRow, current_stage_id: 'b' }} canManage actions={mockActions()} />);
+    expect(screen.queryByRole('button', { name: /^advance$/i })).toBeNull();
+  });
+
+  it('shows an error message when the action fails', async () => {
+    const actions = {
+      ...mockActions(),
+      advance: vi.fn().mockResolvedValue({ ok: false, code: 'invalid_transition' }),
+    };
+    render(
+      <StageController
+        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
+        session={{ ...sessionRow, current_stage_id: 'a' }}
+        canManage
+        actions={actions}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /^advance$/i }));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+    expect(screen.getByRole('alert').textContent).toContain('Stage state changed');
+  });
+
   it('disables button while action is pending', async () => {
     let resolveAdvance: ((v: { ok: boolean }) => void) | null = null;
     const actions: StageActionsBundle = {
@@ -137,7 +167,7 @@ describe('StageController', () => {
     };
     render(
       <StageController
-        stages={[stage({ status: 'active', started_at: new Date().toISOString() })]}
+        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={actions}
