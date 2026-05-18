@@ -144,11 +144,14 @@ export function BuilderCanvas() {
   } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   const peerOutlinesByBrick = useMemo(() => {
-    const m = new Map<string, Array<{ userId: string; color: string }>>();
+    const m = new Map<
+      string,
+      Array<{ clientId: number; userId: string; color: string }>
+    >();
     for (const [brickId, peers] of presence.selectionsByBrick) {
       m.set(
         brickId,
-        peers.map((p) => ({ userId: p.userId, color: p.color })),
+        peers.map((p) => ({ clientId: p.clientId, userId: p.userId, color: p.color })),
       );
     }
     return m;
@@ -400,10 +403,11 @@ export function BuilderCanvas() {
         {visibleBricks.flatMap((b) =>
           (peerOutlinesByBrick.get(b.id) ?? []).map((po) => (
             <li
-              key={`${b.id}:${po.userId}`}
-              data-testid={`peer-outline-${po.userId}`}
+              key={`${b.id}:${po.clientId}`}
+              data-testid={`peer-outline-${po.clientId}`}
               data-brick-id={b.id}
               data-color={po.color}
+              data-user-id={po.userId}
             />
           )),
         )}
@@ -443,7 +447,7 @@ export function BuilderCanvas() {
                   const h = b.height + offsetPx * 2;
                   return (
                     <Rect
-                      key={`${b.id}:${po.userId}`}
+                      key={`${b.id}:${po.clientId}`}
                       x={b.x}
                       y={b.y}
                       width={w}
