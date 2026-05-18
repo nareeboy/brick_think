@@ -100,6 +100,12 @@ export function ShareModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/30 px-4"
     >
       <div className="w-full max-w-md rounded-2xl border border-zinc-900/10 bg-white p-5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]">
+        {/* WCAG 4.1.3 — "Copy link" → "Copied" is a re-render; screen readers
+            don't re-announce button text changes. This live region emits the
+            confirmation so AT users hear the copy-success feedback. */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {copiedId ? 'Share link copied to clipboard.' : ''}
+        </div>
         <header className="mb-4 flex items-center justify-between">
           <h2 className="text-[15px] font-semibold tracking-tight">Share this design</h2>
           <button
