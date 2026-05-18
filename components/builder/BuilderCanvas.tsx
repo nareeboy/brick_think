@@ -9,6 +9,12 @@ import { useBrickImage } from '@/components/canvas/BrickImage';
 import { fitToBox, padBbox, unionRects } from '@/lib/canvas/thumbnailBox';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 
+import { isCanvasGridFocused } from '@/lib/a11y/isCanvasGridFocused';
+import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
+import { extractColorFromCode, nextColorVariant } from '@/lib/bricks/color-from-code';
+import { brickToCell } from '@/lib/bricks/grid';
+
+import { CanvasA11yMirror, type MirrorBrick } from './CanvasA11yMirror';
 import {
   MAX_PIECE_SIZE,
   MAX_ZOOM,
@@ -159,6 +165,7 @@ export function BuilderCanvas() {
     }
     return m;
   }, [presence.selectionsByBrick]);
+
   const { pan, zoom } = view;
   const lastCursorPublishRef = useRef(0);
   const [interacting, setInteracting] = useState(false);
@@ -179,6 +186,22 @@ export function BuilderCanvas() {
     const visible = bricks.filter((b) => b.visible && groupVisible.get(b.groupId) !== false);
     return visible.slice().reverse();
   }, [bricks, groups]);
+
+  const [focusedBrickId, setFocusedBrickId] = useState<string | null>(null);
+
+  const mirrorBricks: MirrorBrick[] = useMemo(() => {
+    return visibleBricks.map((b) => {
+      const canonical = CANONICAL_BRICKS.find((c) => c.code === b.code);
+      const cell = brickToCell(b);
+      return {
+        id: b.id,
+        name: canonical?.name ?? b.code,
+        color: extractColorFromCode(b.code),
+        row: cell.row,
+        col: cell.col,
+      };
+    });
+  }, [visibleBricks]);
 
   function zoomFromCenter(factor: number) {
     zoomBy(factor, { x: size.width / 2, y: size.height / 2 });
@@ -303,10 +326,76 @@ export function BuilderCanvas() {
     nodeRegistry.current.delete(id);
   }
 
+  function moveFocus(currentId: string, dir: 'left' | 'right' | 'up' | 'down') {
+    const current = visibleBricks.find((b) => b.id === currentId);
+    if (!current) return;
+    const candidates = visibleBricks.filter((b) => {
+      if (b.id === currentId) return false;
+      if (dir === 'right') return b.x > current.x;
+      if (dir === 'left') return b.x < current.x;
+      if (dir === 'down') return b.y > current.y;
+      return b.y < current.y;
+    });
+    if (candidates.length === 0) return;
+    const next = candidates.reduce((best, b) =>
+      Math.hypot(b.x - current.x, b.y - current.y) <
+      Math.hypot(best.x - current.x, best.y - current.y)
+        ? b
+        : best,
+    );
+    setFocusedBrickId(next.id);
+  }
+
+  function handleKeyboardDelete(id: string) {
+    // Capture the nearest neighbour before deleting so focus can land somewhere.
+    const dirs: Array<'right' | 'left' | 'down' | 'up'> = ['right', 'left', 'down', 'up'];
+    let nextId: string | null = null;
+    for (const dir of dirs) {
+      const current = visibleBricks.find((b) => b.id === id);
+      if (!current) break;
+      const candidates = visibleBricks.filter((b) => {
+        if (b.id === id) return false;
+        if (dir === 'right') return b.x > current.x;
+        if (dir === 'left') return b.x < current.x;
+        if (dir === 'down') return b.y > current.y;
+        return b.y < current.y;
+      });
+      if (candidates.length > 0) {
+        nextId = candidates.reduce((best, b) =>
+          Math.hypot(b.x - current.x, b.y - current.y) <
+          Math.hypot(best.x - current.x, best.y - current.y)
+            ? b
+            : best,
+        ).id;
+        break;
+      }
+    }
+    handleDelete(id);
+    setFocusedBrickId(nextId);
+  }
+
+  function handleKeyboardRotate(id: string) {
+    const b = visibleBricks.find((x) => x.id === id);
+    if (!b) return;
+    updateBrick(id, { rotation: ((b.rotation ?? 0) + 90) % 360 });
+  }
+
+  function handleCycleColor(id: string) {
+    const b = visibleBricks.find((x) => x.id === id);
+    if (!b) return;
+    const next = nextColorVariant(b.code);
+    if (!next) return;
+    const canonical = CANONICAL_BRICKS.find((c) => c.code === next);
+    if (!canonical) return;
+    updateBrick(id, { code: next, image: canonical.image });
+  }
+
   useEffect(() => {
     if (selectedId === null) return;
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      // Defer to the grid cell's own handler when a gridcell has focus.
+      if (isCanvasGridFocused()) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
@@ -330,6 +419,8 @@ export function BuilderCanvas() {
     }
     function onDown(e: KeyboardEvent) {
       if (e.code !== 'Space' || e.repeat) return;
+      // Defer to the grid cell's own handler when a gridcell has focus.
+      if (isCanvasGridFocused()) return;
       if (shouldIgnore(e.target)) return;
       e.preventDefault();
       setPanLocked(true);
@@ -384,6 +475,10 @@ export function BuilderCanvas() {
   const selectedBrick = selectedId ? (bricks.find((b) => b.id === selectedId) ?? null) : null;
   const overlay = selectedBrick && !interacting ? selectionOverlay(selectedBrick, pan, zoom) : null;
 
+  const focusedBrick = focusedBrickId
+    ? visibleBricks.find((b) => b.id === focusedBrickId) ?? null
+    : null;
+
   return (
     <div
       ref={containerRef}
@@ -397,13 +492,24 @@ export function BuilderCanvas() {
       onPointerCancel={endPan}
       onPointerLeave={handleContainerPointerLeave}
     >
-      <ul aria-hidden="true" className="sr-only" data-testid="placed-brick-list">
-        {visibleBricks.map((b) => (
-          <li key={b.id} data-testid="placed-brick" data-brick-id={b.id} />
-        ))}
+      <CanvasA11yMirror
+        bricks={mirrorBricks}
+        rows={Math.max(20, ...mirrorBricks.map((b) => b.row), 0)}
+        cols={Math.max(20, ...mirrorBricks.map((b) => b.col), 0)}
+        focusedId={focusedBrickId}
+        selectedId={selectedId}
+        onFocusBrick={setFocusedBrickId}
+        onSelectBrick={(id) => selectBrick(id)}
+        onMoveFocus={moveFocus}
+        onDelete={handleKeyboardDelete}
+        onRotate={handleKeyboardRotate}
+        onCycleColor={handleCycleColor}
+      />
+      {/* Peer-outline markers — flat hidden DOM for e2e selector contracts. */}
+      <div aria-hidden="true" className="sr-only">
         {visibleBricks.flatMap((b) =>
           (peerOutlinesByBrick.get(b.id) ?? []).map((po) => (
-            <li
+            <span
               key={`${b.id}:${po.clientId}`}
               data-testid={`peer-outline-${po.clientId}`}
               data-brick-id={b.id}
@@ -412,7 +518,7 @@ export function BuilderCanvas() {
             />
           )),
         )}
-      </ul>
+      </div>
       {size.width > 0 && size.height > 0 ? (
         <>
           <Stage
@@ -441,6 +547,22 @@ export function BuilderCanvas() {
                   onInteractEnd={() => setInteracting(false)}
                 />
               ))}
+              {focusedBrick && (
+                <Rect
+                  x={focusedBrick.x}
+                  y={focusedBrick.y}
+                  width={focusedBrick.width}
+                  height={focusedBrick.height}
+                  offsetX={focusedBrick.width / 2}
+                  offsetY={focusedBrick.height / 2}
+                  rotation={focusedBrick.rotation}
+                  stroke="oklch(58% 0.18 260)"
+                  strokeWidth={3}
+                  dash={[6, 4]}
+                  listening={false}
+                  fillEnabled={false}
+                />
+              )}
               {visibleBricks.flatMap((b) => {
                 const outlines = peerOutlinesByBrick.get(b.id) ?? [];
                 return outlines.map((po, i) => {
@@ -506,6 +628,8 @@ export function BuilderCanvas() {
               </button>
             ) : null}
             <div
+              role="toolbar"
+              aria-label="Canvas actions"
               className="pointer-events-auto absolute bottom-5 right-5 inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white/85 p-1.5 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur"
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -557,7 +681,6 @@ function ZoomButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButto
   return (
     <button
       type="button"
-      tabIndex={-1}
       className="inline-flex h-9 w-9 !cursor-pointer items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 disabled:!cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-500"
       {...props}
     >
