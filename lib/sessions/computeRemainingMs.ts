@@ -19,5 +19,5 @@ export function computeRemainingMs(stage: StageRuntime, nowMs: number): number |
       ? Date.parse(stage.paused_at)
       : nowMs;
   const elapsedMs = referenceMs - startedAtMs - stage.total_paused_ms;
-  return Math.max(0, totalMs - elapsedMs);
+  return Math.max(0, Math.min(totalMs, totalMs - elapsedMs));
 }
