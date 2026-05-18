@@ -32,6 +32,7 @@ import { useYjsToken } from './useYjsToken';
 import { useYjsUndoManager } from './useYjsUndoManager';
 
 import type { Awareness } from 'y-protocols/awareness';
+import type Konva from 'konva';
 
 export interface BrickInstance {
   id: string;
@@ -142,6 +143,8 @@ export interface BuilderState {
   retrySave: () => void;
   registerThumbnailCapture: (fn: (() => Promise<Blob | null>) | null) => void;
   captureAndUploadThumbnail: () => Promise<void>;
+  stage: Konva.Stage | null;
+  registerStage: (stage: Konva.Stage | null) => void;
   liveMode: boolean;
   connectionStatus: YjsConnectionStatus | null;
   awareness: Awareness | null;
@@ -400,6 +403,13 @@ export function BuilderProvider({
 
   const registerThumbnailCapture = useCallback((fn: (() => Promise<Blob | null>) | null) => {
     captureFnRef.current = fn;
+  }, []);
+
+  // Konva.Stage reference, registered by BuilderCanvas on mount so the
+  // ExportMenu can drive PNG capture off the live canvas (Builder mode).
+  const [stage, setStage] = useState<Konva.Stage | null>(null);
+  const registerStage = useCallback((next: Konva.Stage | null) => {
+    setStage(next);
   }, []);
 
   function guard<Args extends unknown[], R>(
@@ -786,6 +796,8 @@ export function BuilderProvider({
       retrySave: autosave.retry,
       registerThumbnailCapture,
       captureAndUploadThumbnail,
+      stage,
+      registerStage,
       liveMode,
       connectionStatus: liveMode ? yjs.connectionStatus : null,
       awareness: liveMode ? awareness : null,
@@ -831,6 +843,8 @@ export function BuilderProvider({
       autosave.retry,
       registerThumbnailCapture,
       captureAndUploadThumbnail,
+      stage,
+      registerStage,
       liveMode,
       yjs.connectionStatus,
       awareness,
