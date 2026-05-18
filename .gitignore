@@ -41,6 +41,7 @@ test-results/
 playwright-report/
 playwright/.cache/
 .lhci/
+.lighthouseci/
 
 # Supabase local state
 supabase/.temp/
