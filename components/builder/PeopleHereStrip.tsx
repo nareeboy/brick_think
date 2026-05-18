@@ -17,7 +17,7 @@ export function PeopleHereStrip({ peers }: { peers: PeerSummary[] }) {
       className="pointer-events-none absolute right-4 top-4 z-20 inline-flex items-center gap-0 rounded-full border border-zinc-900/10 bg-white/95 px-2 py-1.5 shadow-[0_8px_18px_-10px_rgba(0,0,0,0.18)] backdrop-blur"
     >
       {visible.map((p, i) => (
-        <PeerAvatar peer={p} stackIndex={i} key={p.userId} />
+        <PeerAvatar peer={p} stackIndex={i} key={p.clientId} />
       ))}
       {overflowCount > 0 ? (
         <span
@@ -39,7 +39,7 @@ function PeerAvatar({ peer, stackIndex }: { peer: PeerSummary; stackIndex: numbe
   if (peer.avatarUrl) {
     return (
       <span
-        data-testid={`people-here-avatar-${peer.userId}`}
+        data-testid={`people-here-avatar-${peer.clientId}`}
         title={peer.displayName}
         className="inline-flex h-[22px] w-[22px] overflow-hidden rounded-full"
         style={{
@@ -59,7 +59,7 @@ function PeerAvatar({ peer, stackIndex }: { peer: PeerSummary; stackIndex: numbe
   }
   return (
     <span
-      data-testid={`people-here-avatar-${peer.userId}`}
+      data-testid={`people-here-avatar-${peer.clientId}`}
       title={peer.displayName}
       className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full text-[11px] font-bold text-white"
       style={{
@@ -70,7 +70,7 @@ function PeerAvatar({ peer, stackIndex }: { peer: PeerSummary; stackIndex: numbe
       }}
     >
       {initial ? (
-        <span data-testid={`people-here-initial-${peer.userId}`}>{initial}</span>
+        <span data-testid={`people-here-initial-${peer.clientId}`}>{initial}</span>
       ) : null}
     </span>
   );
