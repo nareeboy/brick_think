@@ -53,33 +53,7 @@ const PERSONAS = [
   },
 ];
 
-const TIERS = [
-  {
-    name: 'Free',
-    price: '£0',
-    cadence: '/month',
-    line: '2 sessions, up to 8 participants. Sync only.',
-    cta: 'Start free',
-    href: '/sign-in',
-  },
-  {
-    name: 'Pro',
-    price: 'TBC',
-    cadence: '/month',
-    line: 'Unlimited sessions. Async + AI summaries. Full prompt library.',
-    cta: 'Join the beta',
-    href: '/sign-in',
-    accent: true,
-  },
-  {
-    name: 'Team',
-    price: 'TBC',
-    cadence: '/seat',
-    line: 'Co-facilitation, shared library, branded exports, SSO.',
-    cta: 'Talk to us',
-    href: '/sign-in',
-  },
-];
+const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 
 interface HomePageProps {
   searchParams: Promise<{ code?: string; error_description?: string }>;
@@ -104,7 +78,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <FeatureBento />
         <PersonasSection />
         <FidelitySection />
-        <PricingSection />
+        <OpenSourceSection />
         <CtaBand />
       </main>
       <Footer />
@@ -127,11 +101,20 @@ function NavBar() {
           <a href="#features" className="text-sm text-zinc-600 hover:text-zinc-900">
             Features
           </a>
-          <a href="#pricing" className="text-sm text-zinc-600 hover:text-zinc-900">
-            Pricing
+          <a href="#open-source" className="text-sm text-zinc-600 hover:text-zinc-900">
+            Open source
           </a>
         </nav>
         <div className="flex items-center gap-2">
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="BrickThink on GitHub"
+            className="hidden h-8 w-8 items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 md:inline-flex"
+          >
+            <GitHubGlyph className="h-4 w-4" />
+          </a>
           <Link
             href="/sign-in"
             className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
@@ -216,9 +199,9 @@ function Hero() {
 
           <dl className="mt-12 grid max-w-xl grid-cols-3 gap-x-6 border-t border-white/15 pt-6">
             {[
-              ['52', 'tile types in the canon'],
+              ['57', 'brick pieces in the canon'],
               ['WCAG 2.2 AA', 'from day one'],
-              ['Sync · Async · Hybrid', 'session modes'],
+              ['Apache 2.0', 'open source'],
             ].map(([val, label]) => (
               <div key={label}>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-400">
@@ -316,8 +299,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-4 md:row-span-2"
             label="canvas"
-            title="A 2D tile canvas built for serious work."
-            body="Konva-rendered grid up to 128×128. Place, rotate, recolour, group, lock. Z-ordered for stacked builds. Yjs CRDT under the hood means 25 cursors stay smooth on a shared model."
+            title="A brick canvas built for serious work."
+            body="Konva-rendered, infinite zoom, layer groups, lock, z-order, drag-rotate-recolour. Yjs CRDT under the hood — shared-model stages stay smooth with every facilitator and participant pointing at the same canvas."
           >
             <CanvasFeatureVisual />
           </FeatureCard>
@@ -327,7 +310,8 @@ function FeatureBento() {
             className="md:col-span-2"
             label="ai assist"
             title="Claude in the facilitator chair."
-            body="Prompt suggestions from a topic, theme extraction across narrations, and candidate principles drafted from the system model. Always assistive — facilitator approves before participants see it."
+            body="Prompt suggestions from a topic, theme extraction across narrations, and candidate principles drafted from the system model. Always assistive — the facilitator approves before participants see anything."
+            status="roadmap"
           >
             <PromptVisual />
           </FeatureCard>
@@ -337,7 +321,8 @@ function FeatureBento() {
             className="md:col-span-2"
             label="story capture"
             title="Narration is the artefact."
-            body="Text, voice, video — captured on the canvas, not in a separate tab. Auto-transcribed. Indexed by participant and stage."
+            body="Text, voice and video captured on the canvas, not in a separate tab. Auto-transcribed and indexed by participant and stage."
+            status="roadmap"
           >
             <NarrationVisual />
           </FeatureCard>
@@ -346,8 +331,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-3"
             label="facilitator tooling"
-            title="Stage controller, prompt library, roster, timer."
-            body="Pre-seeded canonical prompts. Pause, extend, rollback a stage. Spotlight a build. Private notes panel. Pre-session checklist for consent and accessibility."
+            title="Sessions, stages, roster — wired end to end."
+            body="Create a session, configure the five stages, invite an org, start each participant's model. Stage timer controls, spotlight a build, private notes and a pre-session consent checklist are next."
           >
             <ToolingVisual />
           </FeatureCard>
@@ -357,7 +342,8 @@ function FeatureBento() {
             className="md:col-span-3"
             label="outputs"
             title="A session ends with a record, not a screenshot."
-            body="PDF and DOCX session reports. Per-stage PNG and SVG. Narrated MP4 per participant. Full JSON state for re-import. CSV of stories and principles."
+            body="PDF and DOCX session reports, per-stage PNG and SVG, narrated MP4 per participant, full JSON state for re-import, CSV of stories and principles. Canvas thumbnails ship today; the rest is next."
+            status="roadmap"
           >
             <ExportsVisual />
           </FeatureCard>
@@ -366,8 +352,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-6"
             label="accessibility"
-            title="WCAG 2.2 AA is a hard requirement, not a roadmap item."
-            body="Keyboard-navigable canvas. Screen-reader names, positions and colours per brick. Voice-described builds rendered as a text-equivalent artefact alongside visual ones. Colour-blind safe palette with pattern overlays. Reduced-motion mode."
+            title="WCAG 2.2 AA is the bar, from day one."
+            body="Reduced-motion respected. Keyboard navigation across modals and panels. Screen-reader-named brick canvas, colour-blind safe palette with pattern overlays, and voice-described builds rendered as text-equivalents are next on the bar to clear."
           >
             <AccessibilityVisual />
           </FeatureCard>
@@ -382,19 +368,29 @@ function FeatureCard({
   label,
   title,
   body,
+  status,
   children,
 }: {
   className?: string;
   label: string;
   title: string;
   body: string;
+  status?: 'roadmap';
   children?: React.ReactNode;
 }) {
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-[28px] border border-zinc-900/10 bg-white p-7 transition-shadow duration-300 hover:shadow-[0_30px_60px_-30px_rgba(60,30,15,0.25)] ${className}`}
     >
-      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">{label}</p>
+        {status === 'roadmap' ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-900/10 bg-zinc-50 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            On the roadmap
+          </span>
+        ) : null}
+      </div>
       <h3 className="mt-3 max-w-[28ch] text-[22px] font-semibold leading-tight tracking-tight text-zinc-950">
         {title}
       </h3>
@@ -404,10 +400,21 @@ function FeatureCard({
   );
 }
 
+const CANVAS_BRICKS = [
+  { src: '/bricks/flat-1-black-large-left.png', left: '6%', top: '64%', width: '32%', ratio: 300 / 190 },
+  { src: '/bricks/block-red-medium-left.png', left: '10%', top: '40%', width: '20%', ratio: 180 / 156 },
+  { src: '/bricks/block-yellow-medium.png', left: '32%', top: '38%', width: '20%', ratio: 180 / 156 },
+  { src: '/bricks/block-navy-medium-left.png', left: '54%', top: '46%', width: '20%', ratio: 180 / 156 },
+  { src: '/bricks/piece-head.png', left: '40%', top: '8%', width: '13%', ratio: 150 / 161 },
+  { src: '/bricks/piece-body.png', left: '40%', top: '22%', width: '13%', ratio: 150 / 158 },
+  { src: '/bricks/corner-orange-small.png', left: '76%', top: '62%', width: '10%', ratio: 100 / 98 },
+  { src: '/bricks/flower-pink-small.png', left: '74%', top: '24%', width: '10%', ratio: 100 / 94 },
+];
+
 function CanvasFeatureVisual() {
   return (
     <div
-      className="relative h-full min-h-[220px] overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#FBF7F1]"
+      className="relative h-full min-h-[260px] overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#FBF7F1]"
       style={{
         backgroundImage:
           'linear-gradient(to right, rgba(60,30,15,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(60,30,15,0.06) 1px, transparent 1px)',
@@ -415,12 +422,22 @@ function CanvasFeatureVisual() {
       }}
       aria-hidden="true"
     >
-      <Tile className="left-[8%] top-[20%]" w="22%" h="14%" color="#c0613d" studs={4} />
-      <Tile className="left-[12%] top-[40%]" w="34%" h="18%" color="#d8a85d" studs={6} />
-      <Tile className="left-[40%] top-[24%]" w="14%" h="14%" color="#3b6f8a" studs={2} />
-      <Tile className="left-[58%] top-[50%]" w="28%" h="14%" color="#8a9a78" studs={4} />
-      <Tile className="left-[64%] top-[18%]" w="14%" h="14%" color="#5b3a8a" studs={2} />
-      <Tile className="left-[36%] top-[70%]" w="44%" h="12%" color="#1f1f1f" studs={6} />
+      {CANVAS_BRICKS.map((b) => (
+        <span
+          key={b.src}
+          className="absolute drop-shadow-[0_6px_10px_rgba(60,30,15,0.18)]"
+          style={{
+            left: b.left,
+            top: b.top,
+            width: b.width,
+            aspectRatio: b.ratio,
+            backgroundImage: `url(${b.src})`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+          }}
+        />
+      ))}
 
       <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-zinc-900/10 bg-white/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.16em] text-zinc-600 backdrop-blur">
         <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />4
@@ -709,80 +726,80 @@ function FidelitySection() {
   );
 }
 
-function PricingSection() {
+function OpenSourceSection() {
   return (
-    <section id="pricing" aria-labelledby="pricing-heading" className="border-b border-zinc-900/5">
+    <section
+      id="open-source"
+      aria-labelledby="open-source-heading"
+      className="border-b border-zinc-900/5"
+    >
       <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              Pricing
+              Open source
             </p>
             <h2
-              id="pricing-heading"
+              id="open-source-heading"
               className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
-              Per facilitator seat. Participants are free.
+              Free to use. Free to self-host. Apache&nbsp;2.0.
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Pro and Team pricing are in market research. Free tier stays free. Existing seats are
-            grandfathered.
+            BrickThink is built in the open. Use the hosted version, or run your own — the entire
+            stack is on GitHub.
           </p>
         </div>
 
-        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-          {TIERS.map((t) => (
-            <div
-              key={t.name}
-              className={`flex flex-col rounded-3xl border p-7 ${
-                t.accent
-                  ? 'border-zinc-900 bg-zinc-950 text-zinc-100'
-                  : 'border-zinc-900/10 bg-white text-zinc-900'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <p className="text-[15px] font-medium tracking-tight">{t.name}</p>
-                {t.accent ? (
-                  <span className="rounded-full bg-[#c0613d] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white">
-                    Recommended
-                  </span>
-                ) : null}
-              </div>
-              <div className="mt-6 flex items-baseline gap-1">
-                <span className="text-4xl font-semibold tracking-tight">{t.price}</span>
-                <span
-                  className={`font-mono text-[11px] uppercase tracking-[0.16em] ${
-                    t.accent ? 'text-zinc-400' : 'text-zinc-500'
-                  }`}
-                >
-                  {t.cadence}
-                </span>
-              </div>
-              <p
-                className={`mt-3 text-[14px] leading-relaxed ${
-                  t.accent ? 'text-zinc-300' : 'text-zinc-600'
-                }`}
-              >
-                {t.line}
-              </p>
-              <Link
-                href={t.href}
-                className={`mt-8 inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
-                  t.accent
-                    ? 'bg-white text-zinc-900 hover:bg-zinc-100'
-                    : 'border border-zinc-900/15 bg-white text-zinc-900 hover:bg-zinc-50'
-                }`}
-              >
-                {t.cta}
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="flex flex-col rounded-3xl border border-zinc-900/10 bg-white p-7 text-zinc-900">
+            <div className="flex items-center justify-between">
+              <p className="text-[15px] font-medium tracking-tight">Hosted</p>
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
+                brickthink.io
+              </span>
             </div>
-          ))}
+            <p className="mt-6 max-w-[42ch] text-[14px] leading-relaxed text-zinc-600">
+              Sign in and run a session. No setup, no infrastructure, no bill. EU residency, WCAG
+              2.2 AA, GDPR-aligned.
+            </p>
+            <Link
+              href="/sign-in"
+              className="mt-8 inline-flex items-center justify-center gap-1.5 self-start rounded-full border border-zinc-900/15 bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-50"
+            >
+              Create a facilitator account
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="flex flex-col rounded-3xl border border-zinc-900 bg-zinc-950 p-7 text-zinc-100">
+            <div className="flex items-center justify-between">
+              <p className="text-[15px] font-medium tracking-tight">Self-host</p>
+              <span className="rounded-full bg-[#c0613d] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white">
+                Apache 2.0
+              </span>
+            </div>
+            <p className="mt-6 max-w-[42ch] text-[14px] leading-relaxed text-zinc-300">
+              Clone the repo, point it at your own Supabase, run it on Railway or anywhere Node
+              runs. Same five-stage methodology, your data on your infrastructure. Issues and PRs
+              welcome.
+            </p>
+            <a
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center justify-center gap-2 self-start rounded-full bg-white px-4 py-2.5 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100"
+            >
+              <GitHubGlyph className="h-4 w-4" />
+              View on GitHub
+            </a>
+          </div>
         </div>
 
         <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-500">
-          Enterprise tier available — SAML SSO, audit log, DPA, custom retention. Contact us.
+          Apache 2.0 · Built with Next.js, Supabase, Yjs and Konva · Methodology referenced under CC
+          BY-SA 3.0
         </p>
       </div>
     </section>
@@ -870,8 +887,8 @@ function Footer() {
               </a>
             </li>
             <li>
-              <a href="#pricing" className="hover:text-zinc-950">
-                Pricing
+              <a href="#open-source" className="hover:text-zinc-950">
+                Open source
               </a>
             </li>
           </ul>
@@ -890,9 +907,15 @@ function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/join/demo" className="hover:text-zinc-950">
-                Join with code
-              </Link>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 hover:text-zinc-950"
+              >
+                <GitHubGlyph className="h-3.5 w-3.5" />
+                GitHub
+              </a>
             </li>
           </ul>
         </div>
@@ -954,6 +977,23 @@ function ArrowRight({ className = '' }: { className?: string }) {
     >
       <path d="M5 12h14" />
       <path d="m13 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+function GitHubGlyph({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 0C5.37 0 0 5.373 0 12c0 5.303 3.438 9.8 8.207 11.387.6.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.236 1.839 1.236 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.605-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.51 11.51 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.103.823 2.222v3.293c0 .319.192.694.801.576C20.565 21.796 24 17.3 24 12c0-6.627-5.373-12-12-12z"
+      />
     </svg>
   );
 }
