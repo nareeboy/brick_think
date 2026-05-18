@@ -298,4 +298,104 @@ test.describe('yjs shared_model collaboration', () => {
     await page.keyboard.press('Meta+KeyZ');
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
   });
+
+  test('flag on: tab B sees tab A in the People Here strip', async ({
+    signedInPage: page,
+    seededSession,
+  }) => {
+    await page.goto(`/app/sessions/${seededSession.sessionId}`);
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+    const modelUrl = page.url();
+
+    const pageB = await page.context().newPage();
+    await pageB.goto(modelUrl);
+    await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
+
+    // Move cursor in A so A publishes a presence payload.
+    const canvasA = page.getByTestId('builder-canvas');
+    const boxA = await canvasA.boundingBox();
+    if (!boxA) throw new Error('canvas A box missing');
+    await page.mouse.move(boxA.x + 150, boxA.y + 150);
+
+    // Strip on B should show self (B) + the peer (A) — 2 avatars total.
+    const avatars = pageB.locator('[data-testid^="people-here-avatar-"]');
+    await expect(avatars).toHaveCount(2, { timeout: 5000 });
+  });
+
+  test('flag on: peer selection renders an outline that clears on deselect', async ({
+    signedInPage: page,
+    seededSession,
+  }) => {
+    await page.goto(`/app/sessions/${seededSession.sessionId}`);
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+    const modelUrl = page.url();
+
+    const pageB = await page.context().newPage();
+    await pageB.goto(modelUrl);
+    await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
+
+    // A drops a brick; both tabs see it.
+    await dropFirstBrickAt(page, 200, 200);
+    await expect(page.getByTestId('placed-brick')).toHaveCount(1);
+    await expect(pageB.getByTestId('placed-brick')).toHaveCount(1, {
+      timeout: 5000,
+    });
+
+    // A clicks the brick to select it.
+    const canvasA = await page.getByTestId('builder-canvas').boundingBox();
+    if (!canvasA) throw new Error('canvas A box missing');
+    await page.mouse.click(canvasA.x + 200, canvasA.y + 200);
+
+    // B should see exactly one peer-outline element appear.
+    const outlinesB = pageB.locator('[data-testid^="peer-outline-"]');
+    await expect(outlinesB).toHaveCount(1, { timeout: 5000 });
+
+    // A clicks empty area to deselect; outline disappears on B.
+    await page.mouse.click(canvasA.x + 30, canvasA.y + 30);
+    await expect(outlinesB).toHaveCount(0, { timeout: 5000 });
+  });
+
+  test('flag on: closing tab A removes its avatar from tab B strip', async ({
+    signedInPage: page,
+    seededSession,
+  }) => {
+    await page.goto(`/app/sessions/${seededSession.sessionId}`);
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+    const modelUrl = page.url();
+
+    const pageB = await page.context().newPage();
+    await pageB.goto(modelUrl);
+    await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
+
+    const canvasA = page.getByTestId('builder-canvas');
+    const boxA = await canvasA.boundingBox();
+    if (!boxA) throw new Error('canvas A box missing');
+    await page.mouse.move(boxA.x + 100, boxA.y + 100);
+
+    await expect(
+      pageB.locator('[data-testid^="people-here-avatar-"]'),
+    ).toHaveCount(2, { timeout: 5000 });
+
+    await page.close();
+
+    // B should drop back to self only.
+    await expect(
+      pageB.locator('[data-testid^="people-here-avatar-"]'),
+    ).toHaveCount(1, { timeout: 10_000 });
+  });
 });
