@@ -7,7 +7,10 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
-import { defaultModelTitle } from '@/lib/sessions/stage-labels';
+import {
+  STAGE_DEFAULT_DURATIONS_SECONDS,
+  defaultModelTitle,
+} from '@/lib/sessions/stage-labels';
 import {
   CANONICAL_STAGE_TYPES,
   SESSION_MODES,
@@ -84,6 +87,7 @@ export async function createSession(formData: FormData): Promise<void> {
     session_id: sessionId,
     stage_type,
     position,
+    duration_seconds: STAGE_DEFAULT_DURATIONS_SECONDS[stage_type],
   }));
   const stagesRes = await supabase.from('stages').insert(stageRows);
   if (stagesRes.error) {
