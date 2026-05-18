@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
+import { ExportMenu } from '@/components/exports/ExportMenu';
 import { deleteModelAction } from '@/app/(authed)/app/designs/actions';
 import type { AggregateDesignRow } from '@/lib/my-designs/types';
 import type { OrgSummary } from '@/lib/orgs/types';
@@ -84,6 +85,20 @@ function DesignCard({
   // mutate tags, and ownership of a session-scoped row still belongs to the
   // creator, so allow tagging there too.
 
+  // Hover-revealed action positions, right-to-left. Trash sits rightmost
+  // when present; Export is always present so it claims the rightmost slot
+  // when Trash is hidden.
+  const slots: Array<'trash' | 'send' | 'tag' | 'export'> = [];
+  if (canTrash) slots.push('trash');
+  slots.push('export');
+  if (canSend) slots.push('send');
+  slots.push('tag');
+  const offsetByIndex = ['right-6', 'right-14', 'right-[5.5rem]', 'right-[8rem]'];
+  function rightFor(slot: 'trash' | 'send' | 'tag' | 'export'): string {
+    const idx = slots.indexOf(slot);
+    return offsetByIndex[idx] ?? 'right-6';
+  }
+
   return (
     <li
       data-testid={`design-card-${design.id}`}
@@ -147,7 +162,7 @@ function DesignCard({
         onClick={() => setTagging(true)}
         aria-label={`Edit tags for ${design.title}`}
         data-testid={`tag-${design.id}`}
-        className={`absolute ${canTrash ? (canSend ? 'right-[5.5rem]' : 'right-14') : 'right-6'} top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100`}
+        className={`absolute ${rightFor('tag')} top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100`}
       >
         <TagIcon className="h-4 w-4" />
       </button>
@@ -157,18 +172,21 @@ function DesignCard({
           onClick={() => setSending(true)}
           aria-label={`Send ${design.title} to a session`}
           data-testid={`send-${design.id}`}
-          className="absolute right-14 top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+          className={`absolute ${rightFor('send')} top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100`}
         >
           <SendIcon className="h-4 w-4" />
         </button>
       ) : null}
+      <div className={`absolute ${rightFor('export')} top-6`} data-testid={`export-${design.id}`}>
+        <ExportMenu source={{ kind: 'modelId', modelId: design.id }} size="card" />
+      </div>
       {canTrash ? (
         <button
           ref={trashButtonRef}
           type="button"
           onClick={() => setConfirming(true)}
           aria-label={`Delete ${design.title}`}
-          className="absolute right-6 top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+          className={`absolute ${rightFor('trash')} top-6 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 bg-white text-zinc-500 opacity-0 shadow-sm transition-all hover:text-zinc-900 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100`}
         >
           <TrashIcon className="h-4 w-4" />
         </button>
