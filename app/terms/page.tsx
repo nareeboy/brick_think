@@ -713,7 +713,8 @@ function TableOfContents({ ariaLabel }: { ariaLabel: string }) {
       <ol className="space-y-1.5">
         {SECTIONS.map((s, i) => (
           <li key={s} className="flex items-baseline gap-2 text-[13px] leading-snug text-zinc-600">
-            <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-400">
+            {/* WCAG 1.4.3 — was text-zinc-400 (2.56:1), bumped to text-zinc-500 for 4.83:1 on white */}
+            <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-500">
               {String(i + 1).padStart(2, '0')}
             </span>
             <a href={`#${slug(s)}`} className="transition-colors hover:text-zinc-950">
@@ -731,9 +732,10 @@ function MobileTOC() {
     <details className="group mt-8 rounded-2xl border border-zinc-900/10 bg-white/60 px-5 py-4 lg:hidden">
       <summary className="flex cursor-pointer list-none items-center justify-between font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-600">
         <span>On this page</span>
+        {/* WCAG 1.4.11 — was text-zinc-400 (2.56:1), bumped to text-zinc-500 for 4.83:1 non-text contrast */}
         <span
           aria-hidden="true"
-          className="text-[12px] text-zinc-400 transition-transform group-open:rotate-180"
+          className="text-[12px] text-zinc-500 transition-transform group-open:rotate-180"
         >
           &#9662;
         </span>
@@ -741,7 +743,8 @@ function MobileTOC() {
       <ol className="mt-4 space-y-2">
         {SECTIONS.map((s, i) => (
           <li key={s} className="flex items-baseline gap-2 text-[13px] leading-snug text-zinc-600">
-            <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-400">
+            {/* WCAG 1.4.3 — was text-zinc-400 (2.56:1), bumped to text-zinc-500 for 4.83:1 on white */}
+            <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-500">
               {String(i + 1).padStart(2, '0')}
             </span>
             <a href={`#${slug(s)}`} className="hover:text-zinc-950">
