@@ -252,7 +252,8 @@ function MethodologySection() {
                   i === STAGES.length - 1 ? 'border-b' : ''
                 } border-zinc-900/10`}
               >
-                <span className="col-span-2 font-mono text-[12px] tabular-nums tracking-tight text-zinc-400 md:col-span-1">
+                {/* WCAG 1.4.3 — was text-zinc-400 (2.56:1), bumped to text-zinc-500 for 4.83:1 on white */}
+                <span className="col-span-2 font-mono text-[12px] tabular-nums tracking-tight text-zinc-500 md:col-span-1">
                   {s.n}
                 </span>
                 <div className="col-span-10 md:col-span-7">

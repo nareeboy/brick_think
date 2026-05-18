@@ -19,7 +19,8 @@ export function TrashList({ items }: TrashListProps) {
     return (
       <div className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center">
         <p className="text-[13px] text-zinc-500">Trash is empty.</p>
-        <p className="mt-2 text-[12px] text-zinc-400">
+        {/* WCAG 1.4.3 — was text-zinc-400 (2.56:1), bumped to text-zinc-500 for 4.83:1 on white */}
+        <p className="mt-2 text-[12px] text-zinc-500">
           Designs you delete will appear here for 30 days before being permanently removed.
         </p>
         <Link
