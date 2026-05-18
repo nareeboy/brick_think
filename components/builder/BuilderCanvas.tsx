@@ -600,6 +600,8 @@ export function BuilderCanvas() {
               </button>
             ) : null}
             <div
+              role="toolbar"
+              aria-label="Canvas actions"
               className="pointer-events-auto absolute bottom-5 right-5 inline-flex items-center gap-1 rounded-2xl border border-zinc-900/10 bg-white/85 p-1.5 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur"
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -651,7 +653,6 @@ function ZoomButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButto
   return (
     <button
       type="button"
-      tabIndex={-1}
       className="inline-flex h-9 w-9 !cursor-pointer items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 disabled:!cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-500"
       {...props}
     >
