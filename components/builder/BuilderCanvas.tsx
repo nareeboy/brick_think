@@ -468,6 +468,10 @@ export function BuilderCanvas() {
   const selectedBrick = selectedId ? (bricks.find((b) => b.id === selectedId) ?? null) : null;
   const overlay = selectedBrick && !interacting ? selectionOverlay(selectedBrick, pan, zoom) : null;
 
+  const focusedBrick = focusedBrickId
+    ? visibleBricks.find((b) => b.id === focusedBrickId) ?? null
+    : null;
+
   return (
     <div
       ref={containerRef}
@@ -535,6 +539,22 @@ export function BuilderCanvas() {
                   onInteractEnd={() => setInteracting(false)}
                 />
               ))}
+              {focusedBrick && (
+                <Rect
+                  x={focusedBrick.x}
+                  y={focusedBrick.y}
+                  width={focusedBrick.width}
+                  height={focusedBrick.height}
+                  offsetX={focusedBrick.width / 2}
+                  offsetY={focusedBrick.height / 2}
+                  rotation={focusedBrick.rotation}
+                  stroke="oklch(58% 0.18 260)"
+                  strokeWidth={3}
+                  dash={[6, 4]}
+                  listening={false}
+                  fillEnabled={false}
+                />
+              )}
               {visibleBricks.flatMap((b) => {
                 const outlines = peerOutlinesByBrick.get(b.id) ?? [];
                 return outlines.map((po, i) => {
