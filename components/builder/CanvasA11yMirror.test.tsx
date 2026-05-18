@@ -29,7 +29,7 @@ describe('CanvasA11yMirror', () => {
     render(
       <CanvasA11yMirror
         bricks={[
-          { id: 'b1', name: 'Brick 2x4', color: 'red', row: 5, col: 8 },
+          { id: 'b1', name: 'Block red medium left', color: 'red', row: 5, col: 8 },
         ]}
         rows={20}
         cols={20}
@@ -40,7 +40,7 @@ describe('CanvasA11yMirror', () => {
       />,
     );
     const cell = screen.getByRole('gridcell', {
-      name: /brick 2x4, red, row 5 column 8/i,
+      name: /^block red medium left, red, row 5 column 8$/i,
     });
     expect(cell.getAttribute('tabindex')).toBe('0');
     expect(cell.getAttribute('aria-rowindex')).toBe('5');
@@ -50,7 +50,7 @@ describe('CanvasA11yMirror', () => {
   it('marks the selected brick aria-selected', () => {
     render(
       <CanvasA11yMirror
-        bricks={[{ id: 'b1', name: 'Brick 2x4', color: 'red', row: 5, col: 8 }]}
+        bricks={[{ id: 'b1', name: 'Block red medium left', color: 'red', row: 5, col: 8 }]}
         rows={20}
         cols={20}
         focusedId={null}
@@ -66,7 +66,7 @@ describe('CanvasA11yMirror', () => {
   it('marks unselected bricks aria-selected="false"', () => {
     render(
       <CanvasA11yMirror
-        bricks={[{ id: 'b1', name: 'Brick 2x4', color: 'red', row: 5, col: 8 }]}
+        bricks={[{ id: 'b1', name: 'Block red medium left', color: 'red', row: 5, col: 8 }]}
         rows={20}
         cols={20}
         focusedId={null}
@@ -82,7 +82,7 @@ describe('CanvasA11yMirror', () => {
     const onFocusBrick = vi.fn();
     render(
       <CanvasA11yMirror
-        bricks={[{ id: 'b1', name: 'Brick 2x4', color: 'red', row: 5, col: 8 }]}
+        bricks={[{ id: 'b1', name: 'Block red medium left', color: 'red', row: 5, col: 8 }]}
         rows={20}
         cols={20}
         focusedId={null}
@@ -100,7 +100,7 @@ describe('CanvasA11yMirror', () => {
     const onSelectBrick = vi.fn();
     const { rerender: _rerender } = render(
       <CanvasA11yMirror
-        bricks={[{ id: 'b1', name: 'Brick 2x4', color: 'red', row: 5, col: 8 }]}
+        bricks={[{ id: 'b1', name: 'Block red medium left', color: 'red', row: 5, col: 8 }]}
         rows={20}
         cols={20}
         focusedId={null}
