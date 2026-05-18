@@ -25,6 +25,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import { STAGE_DEFAULT_DURATIONS_SECONDS } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
 
 export const dynamic = 'force-dynamic';
@@ -166,6 +167,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     session_id: sessionId,
     stage_type,
     position,
+    duration_seconds: STAGE_DEFAULT_DURATIONS_SECONDS[stage_type],
   }));
   const stagesRes = await admin.from('stages').insert(stageRows).select('id, stage_type');
   if (stagesRes.error || !stagesRes.data) {

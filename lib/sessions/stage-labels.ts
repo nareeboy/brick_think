@@ -37,3 +37,18 @@ export const DEFAULT_MODEL_TITLES: Record<StageType, string> = {
 export function defaultModelTitle(stageType: StageType): string {
   return DEFAULT_MODEL_TITLES[stageType];
 }
+
+// Default per-stage duration in seconds. Sourced from PRD §4 ("methodology
+// stages") — applied at session creation so the participant timer chip has
+// something to count down. Facilitator can extend per-stage at runtime.
+//
+// PRD §4.2 individual_model is "10 min build + 3 min narration per person"
+// — we encode the build portion only (10 min). Narration is a future
+// per-participant timer outside this scope.
+export const STAGE_DEFAULT_DURATIONS_SECONDS: Record<StageType, number> = {
+  skill_building: 15 * 60,
+  individual_model: 10 * 60,
+  shared_model: 30 * 60,
+  system_model: 25 * 60,
+  guiding_principles: 20 * 60,
+};
