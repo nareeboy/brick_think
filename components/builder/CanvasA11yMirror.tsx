@@ -18,6 +18,10 @@ type Props = {
   selectedId: string | null;
   onFocusBrick: (id: string) => void;
   onSelectBrick: (id: string) => void;
+  onMoveFocus: (id: string, direction: 'up' | 'down' | 'left' | 'right') => void;
+  onDelete: (id: string) => void;
+  onRotate: (id: string) => void;
+  onCycleColor: (id: string) => void;
 };
 
 export function CanvasA11yMirror({
@@ -28,6 +32,10 @@ export function CanvasA11yMirror({
   selectedId,
   onFocusBrick,
   onSelectBrick,
+  onMoveFocus,
+  onDelete,
+  onRotate,
+  onCycleColor,
 }: Props) {
   const cellRefs = useRef(new Map<string, HTMLDivElement>());
 
@@ -69,6 +77,27 @@ export function CanvasA11yMirror({
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 onSelectBrick(b.id);
+              } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                onMoveFocus(b.id, 'right');
+              } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                onMoveFocus(b.id, 'left');
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                onMoveFocus(b.id, 'down');
+              } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                onMoveFocus(b.id, 'up');
+              } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                onDelete(b.id);
+              } else if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                onRotate(b.id);
+              } else if (e.key === 'c' || e.key === 'C') {
+                e.preventDefault();
+                onCycleColor(b.id);
               }
             }}
             className="pointer-events-auto absolute left-0 top-0 h-px w-px overflow-hidden outline-none"

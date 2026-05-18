@@ -9,8 +9,9 @@ import { useBrickImage } from '@/components/canvas/BrickImage';
 import { fitToBox, padBbox, unionRects } from '@/lib/canvas/thumbnailBox';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 
+import { isCanvasGridFocused } from '@/lib/a11y/isCanvasGridFocused';
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
-import { extractColorFromCode } from '@/lib/bricks/color-from-code';
+import { extractColorFromCode, nextColorVariant } from '@/lib/bricks/color-from-code';
 import { brickToCell } from '@/lib/bricks/grid';
 
 import { CanvasA11yMirror, type MirrorBrick } from './CanvasA11yMirror';
@@ -323,10 +324,76 @@ export function BuilderCanvas() {
     nodeRegistry.current.delete(id);
   }
 
+  function moveFocus(currentId: string, dir: 'left' | 'right' | 'up' | 'down') {
+    const current = visibleBricks.find((b) => b.id === currentId);
+    if (!current) return;
+    const candidates = visibleBricks.filter((b) => {
+      if (b.id === currentId) return false;
+      if (dir === 'right') return b.x > current.x;
+      if (dir === 'left') return b.x < current.x;
+      if (dir === 'down') return b.y > current.y;
+      return b.y < current.y;
+    });
+    if (candidates.length === 0) return;
+    const next = candidates.reduce((best, b) =>
+      Math.hypot(b.x - current.x, b.y - current.y) <
+      Math.hypot(best.x - current.x, best.y - current.y)
+        ? b
+        : best,
+    );
+    setFocusedBrickId(next.id);
+  }
+
+  function handleKeyboardDelete(id: string) {
+    // Capture the nearest neighbour before deleting so focus can land somewhere.
+    const dirs: Array<'right' | 'left' | 'down' | 'up'> = ['right', 'left', 'down', 'up'];
+    let nextId: string | null = null;
+    for (const dir of dirs) {
+      const current = visibleBricks.find((b) => b.id === id);
+      if (!current) break;
+      const candidates = visibleBricks.filter((b) => {
+        if (b.id === id) return false;
+        if (dir === 'right') return b.x > current.x;
+        if (dir === 'left') return b.x < current.x;
+        if (dir === 'down') return b.y > current.y;
+        return b.y < current.y;
+      });
+      if (candidates.length > 0) {
+        nextId = candidates.reduce((best, b) =>
+          Math.hypot(b.x - current.x, b.y - current.y) <
+          Math.hypot(best.x - current.x, best.y - current.y)
+            ? b
+            : best,
+        ).id;
+        break;
+      }
+    }
+    handleDelete(id);
+    setFocusedBrickId(nextId);
+  }
+
+  function handleKeyboardRotate(id: string) {
+    const b = visibleBricks.find((x) => x.id === id);
+    if (!b) return;
+    updateBrick(id, { rotation: ((b.rotation ?? 0) + 90) % 360 });
+  }
+
+  function handleCycleColor(id: string) {
+    const b = visibleBricks.find((x) => x.id === id);
+    if (!b) return;
+    const next = nextColorVariant(b.code);
+    if (!next) return;
+    const canonical = CANONICAL_BRICKS.find((c) => c.code === next);
+    if (!canonical) return;
+    updateBrick(id, { code: next, image: canonical.image });
+  }
+
   useEffect(() => {
     if (selectedId === null) return;
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      // Defer to the grid cell's own handler when a gridcell has focus.
+      if (isCanvasGridFocused()) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
@@ -350,6 +417,8 @@ export function BuilderCanvas() {
     }
     function onDown(e: KeyboardEvent) {
       if (e.code !== 'Space' || e.repeat) return;
+      // Defer to the grid cell's own handler when a gridcell has focus.
+      if (isCanvasGridFocused()) return;
       if (shouldIgnore(e.target)) return;
       e.preventDefault();
       setPanLocked(true);
@@ -420,6 +489,10 @@ export function BuilderCanvas() {
         selectedId={selectedId}
         onFocusBrick={setFocusedBrickId}
         onSelectBrick={(id) => selectBrick(id)}
+        onMoveFocus={moveFocus}
+        onDelete={handleKeyboardDelete}
+        onRotate={handleKeyboardRotate}
+        onCycleColor={handleCycleColor}
       />
       {/* Peer-outline markers — flat hidden DOM for e2e selector contracts. */}
       <div aria-hidden="true" className="sr-only">
