@@ -114,6 +114,22 @@ describe('CanvasA11yMirror', () => {
     expect(onFocusBrick).toHaveBeenCalledWith('b1');
   });
 
+  it('emits data-testid="placed-brick" + data-brick-id on each cell (e2e contract)', () => {
+    render(
+      <CanvasA11yMirror
+        bricks={[{ id: 'b1', name: 'Block red medium left', color: 'red', row: 5, col: 8 }]}
+        rows={20}
+        cols={20}
+        focusedId={null}
+        selectedId={null}
+        onFocusBrick={() => {}}
+        onSelectBrick={() => {}}
+      />,
+    );
+    const cell = screen.getByTestId('placed-brick');
+    expect(cell.getAttribute('data-brick-id')).toBe('b1');
+  });
+
   it('emits onSelectBrick on Enter and Space', () => {
     const onSelectBrick = vi.fn();
     const { rerender: _rerender } = render(

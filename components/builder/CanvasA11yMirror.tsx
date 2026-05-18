@@ -62,6 +62,8 @@ export function CanvasA11yMirror({
             aria-colindex={b.col}
             aria-label={accessibleName}
             aria-selected={selectedId === b.id ? 'true' : 'false'}
+            data-testid="placed-brick"
+            data-brick-id={b.id}
             onFocus={() => onFocusBrick(b.id)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
