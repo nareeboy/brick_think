@@ -1,6 +1,16 @@
 # BrickThink
 
-A virtual Serious Play platform. Next.js 15 App Router, React 19, Supabase (Postgres + Auth + Storage + RLS), TypeScript, pnpm.
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+A virtual way to allow your teams to remotely conduct Serious Play. The hosted instance lives at [https://www.brickthink.io](https://www.brickthink.io).
+
+Stack: Next.js 15 App Router, React 19, Supabase (Postgres + Auth + Storage + RLS), TypeScript, pnpm.
+
+> **Status:** active development. `main` is the working branch and breaking changes are expected before a 1.0 release.
+
+- Contributing — see [CONTRIBUTING.md](CONTRIBUTING.md)
+- Code of conduct — [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Security disclosures — [SECURITY.md](SECURITY.md)
 
 ## Quick reference
 
@@ -14,8 +24,8 @@ A virtual Serious Play platform. Next.js 15 App Router, React 19, Supabase (Post
 | Local Supabase DB | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` | direct psql / docker exec |
 | Local Supabase Studio | `http://127.0.0.1:54323` | SQL editor, table editor, auth users |
 | Local Mailpit | `http://127.0.0.1:54324` | Catches magic-link emails sent by local stack |
-| Remote Supabase project | `https://wreypwrvfpzjyijpyhkb.supabase.co` | Configured in `.env.local` |
-| Remote Supabase Dashboard | `https://supabase.com/dashboard/project/wreypwrvfpzjyijpyhkb` | SQL editor, logs, settings |
+| Remote Supabase project | `https://<your-supabase-project-ref>.supabase.co` | Configured in `.env.local` (`SUPABASE_PROJECT_REF`, `NEXT_PUBLIC_SUPABASE_URL`) |
+| Remote Supabase Dashboard | `https://supabase.com/dashboard/project/<your-supabase-project-ref>` | SQL editor, logs, settings |
 
 ### Daily commands
 
@@ -117,7 +127,7 @@ WITH me AS (
   SELECT p.id AS profile_id, m.org_id
   FROM public.profiles p
   JOIN public.org_memberships m ON m.profile_id = p.id
-  WHERE p.email = 'mail@naresh-shan.com'   -- substitute your email
+  WHERE p.email = 'you@example.com'   -- substitute your email
   LIMIT 1
 ),
 new_session AS (
@@ -279,3 +289,11 @@ docs/                        local-only docs (specs, plans, followups, conventio
 - Never skip git hooks (`--no-verify`) without an explicit ask.
 
 [CLAUDE.md](CLAUDE.md) has the deeper agent-facing notes — conventions, gotchas, defence-in-depth patterns.
+
+## License
+
+BrickThink is licensed under the [Apache License 2.0](LICENSE). Third-party attribution and provenance live in [NOTICE](NOTICE). Contributions are accepted under the same terms — see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+## Trademark
+
+LEGO, SERIOUS PLAY, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations are trademarks of the LEGO Group, which does not sponsor, authorize or endorse this product.

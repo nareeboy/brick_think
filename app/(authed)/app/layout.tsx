@@ -29,7 +29,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   const email = profileRes.data?.email ?? user.email ?? null;
   // When profiles.full_name happens to equal the email's local part (e.g.
-  // Google OAuth backfilled "mail" from "mail@naresh-shan.com"), the name
+  // Google OAuth backfilled "mail" from "mail@example.com"), the name
   // looks like a truncated email in the header. Fall through to the full
   // email in that case. Legitimate names (containing a space, or distinct
   // from the local part) are still preferred.

@@ -31,9 +31,10 @@ Thumbs.db
 !.vscode/extensions.json
 .idea/
 
-# Claude Code local workspaces (per-task git worktrees)
-.claude/worktrees/
+# Claude Code (per-user config, installed taste skills, per-task worktrees) — keep local
+.claude/
 .worktrees/
+skills-lock.json
 
 # Testing
 test-results/
