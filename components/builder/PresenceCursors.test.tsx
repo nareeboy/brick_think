@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
 
 import { PresenceCursors } from './PresenceCursors';
@@ -200,6 +200,76 @@ describe('PresenceCursors', () => {
     const { awareness } = makeMockAwareness(peers);
     render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
     expect(screen.queryByTestId('presence-cursor-u-no-cursor')).toBeNull();
+  });
+});
+
+describe('PresenceCursors reduced-motion', () => {
+  let originalMatchMedia: typeof window.matchMedia;
+
+  beforeEach(() => {
+    originalMatchMedia = window.matchMedia;
+  });
+
+  afterEach(() => {
+    vi.stubGlobal('matchMedia', originalMatchMedia);
+  });
+
+  it('drops the opacity transition when prefers-reduced-motion is reduce', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockReturnValue({
+        matches: true,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    );
+
+    const peers = new Map<number, { user: PeerUser }>([
+      [
+        2,
+        {
+          user: {
+            userId: 'u-reduced',
+            displayName: 'Reduced',
+            avatarUrl: null,
+            cursor: { x: 0, y: 0 },
+          },
+        },
+      ],
+    ]);
+    const { awareness } = makeMockAwareness(peers);
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
+    const el = screen.getByTestId('presence-cursor-u-reduced');
+    expect(el.style.transition).toBe('none');
+  });
+
+  it('keeps the opacity transition when prefers-reduced-motion is no-preference', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockReturnValue({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      }),
+    );
+
+    const peers = new Map<number, { user: PeerUser }>([
+      [
+        2,
+        {
+          user: {
+            userId: 'u-motion',
+            displayName: 'Motion',
+            avatarUrl: null,
+            cursor: { x: 0, y: 0 },
+          },
+        },
+      ],
+    ]);
+    const { awareness } = makeMockAwareness(peers);
+    render(<PresenceCursors awareness={awareness} selfClientId={1} pan={noPan} zoom={1} />);
+    const el = screen.getByTestId('presence-cursor-u-motion');
+    expect(el.style.transition).toBe('opacity 200ms ease');
   });
 });
 
