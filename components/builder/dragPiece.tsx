@@ -33,6 +33,7 @@ interface DragState {
 
 interface DragPieceContext {
   startDrag: (def: BrickDefinition, e: React.PointerEvent) => void;
+  addAtCenter: (def: BrickDefinition) => void;
   active: boolean;
 }
 
@@ -67,6 +68,33 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
       pointerId: e.pointerId,
     });
   }, []);
+
+  const addAtCenter = useCallback(
+    (def: BrickDefinition) => {
+      const target = document.querySelector(
+        `[${DROP_TARGET_ATTR}="${CANVAS_DROP_TARGET}"]`,
+      ) as HTMLElement | null;
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      const { pan, zoom } = viewRef.current;
+      const x = (rect.width / 2 - pan.x) / zoom;
+      const y = (rect.height / 2 - pan.y) / zoom;
+      const instance: BrickInstance = {
+        id: makeBrickId(),
+        groupId: activeGroupRef.current,
+        code: def.code,
+        image: def.image,
+        width: def.width,
+        height: def.height,
+        x,
+        y,
+        rotation: 0,
+        visible: true,
+      };
+      addBrick(instance);
+    },
+    [addBrick],
+  );
 
   useEffect(() => {
     if (!drag) return;
@@ -116,16 +144,9 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
         y = (ev.clientY - rect.top - pan.y) / zoom;
       } else {
         // Tap-to-add: place at the visible canvas center.
-        const target = document.querySelector(
-          `[${DROP_TARGET_ATTR}="${CANVAS_DROP_TARGET}"]`,
-        ) as HTMLElement | null;
-        if (!target) {
-          cancel();
-          return;
-        }
-        const rect = target.getBoundingClientRect();
-        x = (rect.width / 2 - pan.x) / zoom;
-        y = (rect.height / 2 - pan.y) / zoom;
+        addAtCenter(current.def);
+        cancel();
+        return;
       }
       const instance: BrickInstance = {
         id: makeBrickId(),
@@ -163,7 +184,7 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('pointercancel', onCancel);
       window.removeEventListener('keydown', onKey);
     };
-  }, [drag, cancel, addBrick]);
+  }, [drag, cancel, addBrick, addAtCenter]);
 
   useEffect(() => {
     if (!drag?.active) return;
@@ -175,8 +196,8 @@ export function DragPieceProvider({ children }: { children: ReactNode }) {
   }, [drag?.active]);
 
   const value = useMemo<DragPieceContext>(
-    () => ({ startDrag, active: drag?.active === true }),
-    [startDrag, drag?.active],
+    () => ({ startDrag, addAtCenter, active: drag?.active === true }),
+    [startDrag, addAtCenter, drag?.active],
   );
 
   return (
