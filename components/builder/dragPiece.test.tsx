@@ -1,8 +1,12 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { ReactNode } from 'react';
 
 import type { BrickDefinition } from '@/lib/bricks/types';
+
+// Static import for the type used inside vi.mock factory — avoids the
+// `import()` type annotation that @typescript-eslint/consistent-type-imports
+// forbids inside mock factories.
+import type * as BuilderStateModule from './builderState';
 
 import { CANVAS_DROP_TARGET, DragPieceProvider, useDragPiece } from './dragPiece';
 
@@ -15,7 +19,7 @@ const mockView = { pan: { x: 0, y: 0 }, zoom: 1 };
 const mockActiveGroupId = 'g1';
 
 vi.mock('./builderState', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./builderState')>();
+  const actual = await importOriginal<typeof BuilderStateModule>();
   return {
     ...actual,
     useBuilderState: () => ({
@@ -39,9 +43,9 @@ const SAMPLE_BRICK: BrickDefinition = {
   image: '/bricks/brick-2x4-red.png',
 };
 
-/** Renders DragPieceProvider and returns the context via a consumer child. */
+/** Renders DragPieceProvider with a fake canvas drop-target in the DOM. */
 function renderWithProvider(
-  Child: () => JSX.Element,
+  Child: () => React.ReactElement,
   wrapperOptions?: { canvasWidth?: number; canvasHeight?: number },
 ) {
   const { canvasWidth = 800, canvasHeight = 600 } = wrapperOptions ?? {};
@@ -71,7 +75,7 @@ function renderWithProvider(
 
   return {
     ...result,
-    cleanup: () => {
+    removeTarget: () => {
       document.body.removeChild(canvasTarget);
     },
   };
@@ -89,32 +93,39 @@ describe('DragPieceProvider / addAtCenter', () => {
   it('exposes addAtCenter via useDragPiece()', () => {
     let ctx: ReturnType<typeof useDragPiece> | undefined;
 
-    function Probe() {
+    function Probe(): React.ReactElement {
       ctx = useDragPiece();
       return <div />;
     }
 
-    const { cleanup } = renderWithProvider(Probe);
+    const { removeTarget } = renderWithProvider(Probe);
     expect(typeof ctx!.addAtCenter).toBe('function');
-    cleanup();
+    removeTarget();
   });
 
   it('calls addBrick with the correct code, image, and groupId when addAtCenter is invoked', () => {
     let ctx: ReturnType<typeof useDragPiece> | undefined;
 
-    function Probe() {
+    function Probe(): React.ReactElement {
       ctx = useDragPiece();
       return <div />;
     }
 
-    const { cleanup } = renderWithProvider(Probe);
+    const { removeTarget } = renderWithProvider(Probe);
 
     act(() => {
       ctx!.addAtCenter(SAMPLE_BRICK);
     });
 
     expect(mockAddBrick).toHaveBeenCalledTimes(1);
-    const instance = mockAddBrick.mock.calls[0][0];
+    const instance = mockAddBrick.mock.calls[0]?.[0] as unknown as {
+      id: string;
+      code: string;
+      image: string;
+      groupId: string;
+      rotation: number;
+      visible: boolean;
+    };
     expect(instance.code).toBe(SAMPLE_BRICK.code);
     expect(instance.image).toBe(SAMPLE_BRICK.image);
     expect(instance.groupId).toBe(mockActiveGroupId);
@@ -122,36 +133,36 @@ describe('DragPieceProvider / addAtCenter', () => {
     expect(instance.visible).toBe(true);
     expect(typeof instance.id).toBe('string');
 
-    cleanup();
+    removeTarget();
   });
 
   it('places the brick at canvas centre coordinates (pan=0, zoom=1)', () => {
     let ctx: ReturnType<typeof useDragPiece> | undefined;
 
-    function Probe() {
+    function Probe(): React.ReactElement {
       ctx = useDragPiece();
       return <div />;
     }
 
     // canvas 800×600, pan {0,0}, zoom 1 → expected centre: x=400, y=300
-    const { cleanup } = renderWithProvider(Probe, { canvasWidth: 800, canvasHeight: 600 });
+    const { removeTarget } = renderWithProvider(Probe, { canvasWidth: 800, canvasHeight: 600 });
 
     act(() => {
       ctx!.addAtCenter(SAMPLE_BRICK);
     });
 
-    const instance = mockAddBrick.mock.calls[0][0];
-    expect(instance.x).toBe(400); // 800/2 - 0) / 1
+    const instance = mockAddBrick.mock.calls[0]?.[0] as unknown as { x: number; y: number };
+    expect(instance.x).toBe(400); // (800/2 - 0) / 1
     expect(instance.y).toBe(300); // (600/2 - 0) / 1
 
-    cleanup();
+    removeTarget();
   });
 
   it('does nothing when no canvas drop-target element exists', () => {
     // Render WITHOUT adding a canvas target to the DOM.
     let ctx: ReturnType<typeof useDragPiece> | undefined;
 
-    function Probe() {
+    function Probe(): React.ReactElement {
       ctx = useDragPiece();
       return <div />;
     }
@@ -170,7 +181,7 @@ describe('DragPieceProvider / addAtCenter', () => {
   });
 
   it('throws when useDragPiece is used outside DragPieceProvider', () => {
-    function Rogue() {
+    function Rogue(): React.ReactElement {
       useDragPiece();
       return <div />;
     }
