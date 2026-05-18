@@ -89,6 +89,7 @@ export function SessionTitle({
           cancel();
         }
       }}
+      autoComplete="off"
       className="-mx-1.5 mt-1 w-[calc(100%+0.75rem)] rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[26px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d]"
     />
   ) : (

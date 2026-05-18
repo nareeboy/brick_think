@@ -50,6 +50,7 @@ export function SessionStageList({
         return (
           <li
             key={stage.id}
+            data-scroll-target=""
             className="flex flex-col gap-3 rounded-2xl border border-zinc-900/10 bg-white p-4"
             data-testid={`stage-card-${stage.stage_type as StageType}`}
             {...(index === 0 ? { 'data-tour-id': 'first-stage-card' } : {})}

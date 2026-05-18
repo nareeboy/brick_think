@@ -182,6 +182,7 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
                       placeholder="Session title"
                       value={newSessionTitle}
                       onChange={(e) => setNewSessionTitle(e.target.value)}
+                      autoComplete="off"
                       className="rounded-md border border-zinc-900/10 px-3 py-2 text-[14px]"
                       // autoFocus is intentional: the input only appears after a
                       // deliberate user click on "+ New session", so it doesn't

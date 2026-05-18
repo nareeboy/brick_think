@@ -127,6 +127,7 @@ export function StageMetaEditor({
               cancel();
             }
           }}
+          autoComplete="off"
           className="-mx-1.5 rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[16px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d]"
         />
         <textarea

@@ -125,6 +125,7 @@ export function SessionMetaForm({
             value={scheduledFor}
             onChange={(e) => setScheduledFor(e.target.value)}
             disabled={pending}
+            autoComplete="off"
             className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[13px] text-zinc-800 transition-colors hover:bg-zinc-900/5 disabled:opacity-60"
           />
         </label>

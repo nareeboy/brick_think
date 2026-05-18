@@ -96,6 +96,7 @@ export function ManageTagsDialog({ tags, onClose }: Props) {
                       }}
                       aria-label={`New name for ${tag}`}
                       data-testid={`manage-tags-input-${tag}`}
+                      autoComplete="off"
                       className="h-8 flex-1 rounded-lg border border-zinc-900/10 bg-white px-3 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-400 focus:border-[#c0613d] focus:outline-none"
                     />
                     <button

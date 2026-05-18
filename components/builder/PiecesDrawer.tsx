@@ -103,15 +103,20 @@ export function PiecesDrawer() {
           </div>
 
           <div className="px-5 pt-4">
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+            <div
+              role="radiogroup"
+              aria-label="Piece category"
+              className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+            >
               {categories.map((cat) => {
                 const active = cat.id === filter;
                 return (
                   <button
                     type="button"
                     key={cat.id}
+                    role="radio"
                     onClick={() => setFilter(cat.id)}
-                    aria-pressed={active}
+                    aria-checked={active}
                     className={`shrink-0 cursor-pointer rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] transition-colors ${
                       active
                         ? 'border-transparent bg-zinc-900 text-white'

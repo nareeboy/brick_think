@@ -78,6 +78,7 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="teammate@example.com"
+            autoComplete="email"
             className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#c0613d]"
           />
         </label>

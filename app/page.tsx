@@ -1,6 +1,9 @@
 // marketing landing — root route. cache-bust marker: bt-marketing-2026-05-11
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+
+export const metadata: Metadata = { title: 'BrickThink' };
 
 const STAGES = [
   {
