@@ -12,6 +12,7 @@ import { SessionTitle } from './SessionTitle';
 import type { SessionMode, SessionStatus } from '@/lib/sessions/types';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
+import { StageControllerContainer } from '@/components/session/StageControllerContainer';
 
 export const dynamic = 'force-dynamic';
 
@@ -176,6 +177,14 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
           ) : null}
         </header>
+        <section className="rounded-2xl border border-zinc-200 bg-white p-4">
+          <h2 className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Stage controller
+          </h2>
+          <div className="mt-3">
+            <StageControllerContainer sessionId={session.id} canManage={canManageSession} />
+          </div>
+        </section>
         <SessionStageList
           sessionId={session.id}
           stages={stages}
