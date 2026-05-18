@@ -123,6 +123,7 @@ function BrickNode({
 export function BuilderCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<Konva.Layer | null>(null);
+  const stageRef = useRef<Konva.Stage | null>(null);
   const [size, setSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
   const {
     groups,
@@ -135,6 +136,7 @@ export function BuilderCanvas() {
     setPan,
     zoomBy,
     registerThumbnailCapture,
+    registerStage,
     liveMode,
     publishCursor,
     clearCursor,
@@ -351,6 +353,11 @@ export function BuilderCanvas() {
   }, []);
 
   useEffect(() => {
+    registerStage(stageRef.current);
+    return () => registerStage(null);
+  }, [registerStage]);
+
+  useEffect(() => {
     registerThumbnailCapture(async () => {
       await new Promise(requestAnimationFrame);
       const layer = layerRef.current;
@@ -409,6 +416,7 @@ export function BuilderCanvas() {
       {size.width > 0 && size.height > 0 ? (
         <>
           <Stage
+            ref={stageRef}
             width={size.width}
             height={size.height}
             x={pan.x}

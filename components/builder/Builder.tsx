@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { SaveVersionModal } from './SaveVersionModal';
 import { ShareModal } from './ShareModal';
@@ -15,6 +15,7 @@ import { PeopleHereStrip } from './PeopleHereStrip';
 import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
+import { ExportMenu } from '@/components/exports/ExportMenu';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
@@ -233,9 +234,30 @@ function CanvasStage({ orgId }: { orgId: string | null }) {
         <PeopleHereStrip peers={presence.peers} />
 
         <ShareButton orgId={orgId} />
+        <ExportButton />
         <PiecesDrawer />
       </section>
     </DragPieceProvider>
+  );
+}
+
+function ExportButton() {
+  const { modelId, title, groups, bricks, stage } = useBuilderState();
+  const stageRef = useRef<typeof stage>(stage);
+  stageRef.current = stage;
+  if (!modelId) return null;
+  return (
+    <div className="absolute right-5 top-5 z-30">
+      <ExportMenu
+        source={{
+          kind: 'stage',
+          stageRef,
+          canvasState: { groups, bricks },
+          title,
+        }}
+        size="builder"
+      />
+    </div>
   );
 }
 
