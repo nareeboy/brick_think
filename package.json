@@ -26,6 +26,7 @@
     "test:watch": "vitest",
     "test:integration": "dotenv -e .env.test -- vitest run -c vitest.integration.config.ts",
     "test:e2e": "playwright test",
+    "a11y:lhci": "lhci autorun --config=lighthouserc.json",
     "worker:dev": "tsx watch worker/src/yjs-server.ts",
     "worker:start": "tsx worker/src/yjs-server.ts",
     "db:start": "supabase start",
@@ -59,6 +60,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
     "@eslint/js": "^9.18.0",
+    "@lhci/cli": "^0.15.1",
     "@next/eslint-plugin-next": "^15.1.6",
     "@playwright/test": "^1.49.1",
     "@tailwindcss/postcss": "^4.0.0",
