@@ -4,6 +4,9 @@ import { redirect } from 'next/navigation';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
+import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
+
+import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
@@ -24,7 +27,7 @@ export default async function AccountPage() {
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, created_at, avatar_url')
+    .select('full_name, email, created_at, avatar_url, a11y_preferences')
     .eq('id', user.id)
     .single();
   if (profileRes.error) {
@@ -65,6 +68,10 @@ export default async function AccountPage() {
         </section>
 
         <ReplayWalkthroughCard />
+
+        <A11yPreferencesCard
+          initialColourblindMode={normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode}
+        />
 
         <ContributionCard />
 
