@@ -20,6 +20,7 @@ import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
+import { StageTimerContainer } from '@/components/session/StageTimerContainer';
 
 interface BuilderProps {
   initialModel?: ModelDetail;
@@ -121,6 +122,7 @@ function UnifiedSidebar({
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
         </div>
+        {sessionContext ? <StageTimerContainer sessionId={sessionContext.sessionId} /> : null}
         <div className="flex items-center justify-between gap-2">
           <SaveStatus />
           <div className="flex items-center gap-2">
