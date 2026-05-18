@@ -5,7 +5,9 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Json } from '@/lib/db/types.generated';
+import { parseCanvasState } from '@/lib/models/canvasState';
 import { isValidTag, normaliseTag } from '@/lib/my-designs/types';
+import type { CanvasState } from '@/lib/models/types';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -248,4 +250,28 @@ export async function setModelTagsAction(modelId: string, rawTags: string[]): Pr
 
   revalidatePath('/app/my-designs');
   return cleaned;
+}
+
+export interface ModelExportPayload {
+  title: string;
+  canvasState: CanvasState;
+}
+
+export async function getModelExportPayload(modelId: string): Promise<ModelExportPayload> {
+  if (!UUID_RE.test(modelId)) throw new Error('Invalid modelId');
+  const { supabase } = await requireUser();
+  // RLS scopes the row — owner, session members, or org members can read.
+  // ExportMenu only renders on cards the current user already sees, so this
+  // matches the surface the user is acting on.
+  const { data, error } = await supabase
+    .from('models')
+    .select('title, canvas_state')
+    .eq('id', modelId)
+    .maybeSingle();
+  if (error) throw new Error(`Failed to load design: ${error.message}`);
+  if (!data) throw new Error('Design not found');
+  return {
+    title: data.title,
+    canvasState: parseCanvasState(data.canvas_state),
+  };
 }
