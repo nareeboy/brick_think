@@ -141,6 +141,10 @@ export function BuilderCanvas() {
     awareness,
     selfClientId,
     self,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   const peerOutlinesByBrick = useMemo(() => {
@@ -498,6 +502,25 @@ export function BuilderCanvas() {
               onPointerDown={(e) => e.stopPropagation()}
             >
               <ZoomButton
+                aria-label="Undo"
+                title={undoShortcutLabel('undo')}
+                data-testid="builder-undo"
+                disabled={!canUndo}
+                onClick={() => undo()}
+              >
+                <UndoIcon className="h-4 w-4" />
+              </ZoomButton>
+              <ZoomButton
+                aria-label="Redo"
+                title={undoShortcutLabel('redo')}
+                data-testid="builder-redo"
+                disabled={!canRedo}
+                onClick={() => redo()}
+              >
+                <RedoIcon className="h-4 w-4" />
+              </ZoomButton>
+              <span aria-hidden="true" className="mx-1 h-5 w-px bg-zinc-900/10" />
+              <ZoomButton
                 aria-label="Zoom out"
                 disabled={zoom <= MIN_ZOOM + 1e-6}
                 onClick={() => zoomFromCenter(1 / ZOOM_STEP)}
@@ -593,4 +616,47 @@ function ZoomOutIcon({ className = '' }: { className?: string }) {
       <path d="M8 11h6" />
     </svg>
   );
+}
+
+function UndoIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M9 13 4 8l5-5" />
+      <path d="M4 8h11a5 5 0 0 1 0 10h-4" />
+    </svg>
+  );
+}
+
+function RedoIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m15 13 5-5-5-5" />
+      <path d="M20 8H9a5 5 0 0 0 0 10h4" />
+    </svg>
+  );
+}
+
+function undoShortcutLabel(action: 'undo' | 'redo'): string {
+  const isMac =
+    typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (action === 'undo') return isMac ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)';
+  return isMac ? 'Redo (⇧⌘Z)' : 'Redo (Ctrl+Shift+Z)';
 }

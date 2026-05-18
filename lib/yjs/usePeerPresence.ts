@@ -26,11 +26,17 @@ export interface UsePeerPresenceResult {
   selectionsByBrick: Map<string, PeerSummary[]>;
 }
 
+export interface UndoAnnouncement {
+  ts: number;
+  kind: 'undo' | 'redo';
+}
+
 interface AwarenessUser {
   userId?: string;
   displayName?: string;
   avatarUrl?: string | null;
   selectedBrickId?: string | null;
+  lastUndoAnnouncement?: UndoAnnouncement | null;
 }
 
 interface AwarenessState {

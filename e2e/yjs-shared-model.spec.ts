@@ -218,6 +218,62 @@ test.describe('yjs shared_model collaboration', () => {
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
   });
 
+  test('toolbar undo button undoes a local brick add', async ({
+    signedInPage: page,
+    seededSession,
+  }) => {
+    await page.goto(`/app/sessions/${seededSession.sessionId}`);
+    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+
+    const undoButton = page.getByTestId('builder-undo');
+    const redoButton = page.getByTestId('builder-redo');
+    await expect(undoButton).toBeDisabled();
+    await expect(redoButton).toBeDisabled();
+
+    await dropFirstBrickAt(page, 200, 200);
+    await expect(page.getByTestId('placed-brick')).toHaveCount(1);
+    await expect(undoButton).toBeEnabled();
+
+    await undoButton.click();
+    await expect(page.getByTestId('placed-brick')).toHaveCount(0);
+    await expect(redoButton).toBeEnabled();
+
+    await redoButton.click();
+    await expect(page.getByTestId('placed-brick')).toHaveCount(1);
+  });
+
+  test('remote undo announcement renders a toast on the peer tab', async ({
+    signedInPage: page,
+    seededSession,
+  }) => {
+    await page.goto(`/app/sessions/${seededSession.sessionId}`);
+    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
+    const modelUrl = page.url();
+
+    const pageB = await page.context().newPage();
+    await pageB.goto(modelUrl);
+    await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
+
+    await dropFirstBrickAt(page, 200, 200);
+    await expect(page.getByTestId('placed-brick')).toHaveCount(1);
+    await expect(pageB.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
+
+    // Click empty canvas in tab A so the undo keystroke isn't swallowed
+    // by a focused control, then press undo.
+    const canvasBox = await page.getByTestId('builder-canvas').boundingBox();
+    if (!canvasBox) throw new Error('canvas measurement failed');
+    await page.mouse.click(canvasBox.x + 50, canvasBox.y + 50);
+    await page.keyboard.press('Meta+KeyZ');
+
+    // Tab B should see the brick removed AND a toast announcing the undo.
+    await expect(pageB.getByTestId('placed-brick')).toHaveCount(0, { timeout: 5000 });
+    await expect(pageB.getByText(/undid a change/i)).toBeVisible({ timeout: 5000 });
+  });
+
   test('Cmd+Z is suppressed while the title input is focused', async ({
     signedInPage: page,
     seededSession,

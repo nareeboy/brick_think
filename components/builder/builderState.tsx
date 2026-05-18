@@ -267,7 +267,8 @@ export function BuilderProvider({
   const awarenessStateRef = useRef<{
     cursor: { x: number; y: number } | null;
     selectedBrickId: string | null;
-  }>({ cursor: null, selectedBrickId: null });
+    lastUndoAnnouncement: { ts: number; kind: 'undo' | 'redo' } | null;
+  }>({ cursor: null, selectedBrickId: null, lastUndoAnnouncement: null });
 
   const publishAwareness = useCallback(() => {
     if (!awareness || !self) return;
@@ -277,6 +278,7 @@ export function BuilderProvider({
       avatarUrl: self.avatarUrl,
       cursor: awarenessStateRef.current.cursor,
       selectedBrickId: awarenessStateRef.current.selectedBrickId,
+      lastUndoAnnouncement: awarenessStateRef.current.lastUndoAnnouncement,
     });
   }, [awareness, self]);
 
@@ -300,7 +302,32 @@ export function BuilderProvider({
 
   const liveSnapshot = liveMode ? yjs.snapshot : null;
   const liveDoc = liveMode ? yjs.doc : null;
-  const undoManager = useYjsUndoManager(liveMode && !readOnly ? liveDoc : null);
+
+  // Mirror the latest selection into a ref so useYjsUndoManager can
+  // snapshot it onto each stack item without re-binding when selection
+  // changes.
+  const selectedIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedIdRef.current = data.selectedId;
+  }, [data.selectedId]);
+
+  const restoreSelection = useCallback((id: string | null) => {
+    setData((d) => (d.selectedId === id ? d : { ...d, selectedId: id }));
+  }, []);
+
+  const announceUndo = useCallback(
+    (kind: 'undo' | 'redo') => {
+      awarenessStateRef.current.lastUndoAnnouncement = { ts: Date.now(), kind };
+      publishAwareness();
+    },
+    [publishAwareness],
+  );
+
+  const undoManager = useYjsUndoManager(liveMode && !readOnly ? liveDoc : null, {
+    selectionRef: selectedIdRef,
+    restoreSelection,
+    onPopped: announceUndo,
+  });
   const effectiveGroups = liveSnapshot?.groups ?? data.groups;
   const effectiveBricks = liveSnapshot?.bricks ?? data.bricks;
   const effectiveTitle = liveSnapshot?.title ?? title;
@@ -332,6 +359,40 @@ export function BuilderProvider({
   const [zoom, setZoom] = useState(1);
   const [toast, setToast] = useState<ToastState | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Show a transient toast when a peer broadcasts an undo/redo via
+  // awareness. Dedupe by (clientId, ts) and ignore stale announcements
+  // (>10s) so a peer joining mid-session doesn't see history replay.
+  const lastSeenAnnouncementRef = useRef<Map<number, number>>(new Map());
+  useEffect(() => {
+    if (!awareness || selfClientId === null) return undefined;
+    const onChange = (): void => {
+      const states = awareness.getStates() as Map<
+        number,
+        {
+          user?: {
+            displayName?: string;
+            lastUndoAnnouncement?: { ts: number; kind: 'undo' | 'redo' } | null;
+          };
+        }
+      >;
+      const now = Date.now();
+      for (const [clientId, state] of states) {
+        if (clientId === selfClientId) continue;
+        const ann = state.user?.lastUndoAnnouncement;
+        if (!ann) continue;
+        if (now - ann.ts > 10_000) continue;
+        const lastSeen = lastSeenAnnouncementRef.current.get(clientId) ?? 0;
+        if (ann.ts <= lastSeen) continue;
+        lastSeenAnnouncementRef.current.set(clientId, ann.ts);
+        const name = state.user?.displayName?.trim() || 'A teammate';
+        const verb = ann.kind === 'undo' ? 'undid' : 'redid';
+        setToast({ id: ann.ts, message: `${name} ${verb} a change` });
+      }
+    };
+    awareness.on('change', onChange);
+    return () => awareness.off('change', onChange);
+  }, [awareness, selfClientId]);
 
   const captureFnRef = useRef<(() => Promise<Blob | null>) | null>(null);
   const hasCapturedThisSession = useRef(false);
