@@ -1,3 +1,4 @@
+Initialising login role...
 export type Json =
   | string
   | number
@@ -7,6 +8,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -256,7 +262,6 @@ export type Database = {
           id: string
           name: string
           owner_id: string
-          plan_id: string | null
           slug: string
           trial_ends_at: string | null
           updated_at: string
@@ -266,7 +271,6 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
-          plan_id?: string | null
           slug: string
           trial_ends_at?: string | null
           updated_at?: string
@@ -276,7 +280,6 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
-          plan_id?: string | null
           slug?: string
           trial_ends_at?: string | null
           updated_at?: string
@@ -289,59 +292,7 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "organisations_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
         ]
-      }
-      plans: {
-        Row: {
-          active: boolean
-          created_at: string
-          display_name: string
-          features: Json
-          id: string
-          max_facilitators: number
-          max_participants_per_session: number
-          monthly_price_pence: number | null
-          retention_days: number
-          sort_order: number
-          storage_gb: number
-          tier: Database["public"]["Enums"]["plan_tier"]
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          display_name: string
-          features?: Json
-          id?: string
-          max_facilitators: number
-          max_participants_per_session: number
-          monthly_price_pence?: number | null
-          retention_days: number
-          sort_order?: number
-          storage_gb: number
-          tier: Database["public"]["Enums"]["plan_tier"]
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          display_name?: string
-          features?: Json
-          id?: string
-          max_facilitators?: number
-          max_participants_per_session?: number
-          monthly_price_pence?: number | null
-          retention_days?: number
-          sort_order?: number
-          storage_gb?: number
-          tier?: Database["public"]["Enums"]["plan_tier"]
-        }
-        Relationships: []
       }
       profiles: {
         Row: {
@@ -471,92 +422,6 @@ export type Database = {
           },
         ]
       }
-      stripe_customers: {
-        Row: {
-          created_at: string
-          org_id: string
-          stripe_customer_id: string
-        }
-        Insert: {
-          created_at?: string
-          org_id: string
-          stripe_customer_id: string
-        }
-        Update: {
-          created_at?: string
-          org_id?: string
-          stripe_customer_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stripe_customers_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: true
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      stripe_subscriptions: {
-        Row: {
-          cancel_at_period_end: boolean
-          created_at: string
-          current_period_end: string | null
-          current_period_start: string | null
-          id: string
-          org_id: string
-          plan_id: string | null
-          raw: Json | null
-          status: Database["public"]["Enums"]["subscription_status"]
-          stripe_price_id: string
-          stripe_subscription_id: string
-          updated_at: string
-        }
-        Insert: {
-          cancel_at_period_end?: boolean
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          org_id: string
-          plan_id?: string | null
-          raw?: Json | null
-          status: Database["public"]["Enums"]["subscription_status"]
-          stripe_price_id: string
-          stripe_subscription_id: string
-          updated_at?: string
-        }
-        Update: {
-          cancel_at_period_end?: boolean
-          created_at?: string
-          current_period_end?: string | null
-          current_period_start?: string | null
-          id?: string
-          org_id?: string
-          plan_id?: string | null
-          raw?: Json | null
-          status?: Database["public"]["Enums"]["subscription_status"]
-          stripe_price_id?: string
-          stripe_subscription_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stripe_subscriptions_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stripe_subscriptions_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       yjs_documents: {
         Row: {
           bytes: number | null
@@ -598,7 +463,6 @@ export type Database = {
     }
     Enums: {
       org_role: "owner" | "admin" | "facilitator" | "member"
-      plan_tier: "free" | "pro" | "team" | "enterprise"
       session_mode: "sync" | "async" | "hybrid"
       session_status: "draft" | "scheduled" | "live" | "completed" | "archived"
       stage_type:
@@ -607,15 +471,6 @@ export type Database = {
         | "shared_model"
         | "system_model"
         | "guiding_principles"
-      subscription_status:
-        | "incomplete"
-        | "incomplete_expired"
-        | "trialing"
-        | "active"
-        | "past_due"
-        | "canceled"
-        | "unpaid"
-        | "paused"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -747,7 +602,6 @@ export const Constants = {
   public: {
     Enums: {
       org_role: ["owner", "admin", "facilitator", "member"],
-      plan_tier: ["free", "pro", "team", "enterprise"],
       session_mode: ["sync", "async", "hybrid"],
       session_status: ["draft", "scheduled", "live", "completed", "archived"],
       stage_type: [
@@ -757,17 +611,7 @@ export const Constants = {
         "system_model",
         "guiding_principles",
       ],
-      subscription_status: [
-        "incomplete",
-        "incomplete_expired",
-        "trialing",
-        "active",
-        "past_due",
-        "canceled",
-        "unpaid",
-        "paused",
-      ],
     },
   },
 } as const
-
+<claude-code-hint v="1" type="plugin" value="supabase@claude-plugins-official" />
