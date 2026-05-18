@@ -3,10 +3,11 @@
 import type Konva from 'konva';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { Image as KImage, Layer, Stage, Transformer } from 'react-konva';
+import { Image as KImage, Layer, Rect, Stage, Transformer } from 'react-konva';
 
 import { useBrickImage } from '@/components/canvas/BrickImage';
 import { fitToBox, padBbox, unionRects } from '@/lib/canvas/thumbnailBox';
+import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 
 import {
   MAX_PIECE_SIZE,
@@ -137,7 +138,21 @@ export function BuilderCanvas() {
     liveMode,
     publishCursor,
     clearCursor,
+    awareness,
+    selfClientId,
+    self,
   } = useBuilderState();
+  const presence = usePeerPresence(awareness, selfClientId, self ?? null);
+  const peerOutlinesByBrick = useMemo(() => {
+    const m = new Map<string, Array<{ userId: string; color: string }>>();
+    for (const [brickId, peers] of presence.selectionsByBrick) {
+      m.set(
+        brickId,
+        peers.map((p) => ({ userId: p.userId, color: p.color })),
+      );
+    }
+    return m;
+  }, [presence.selectionsByBrick]);
   const { pan, zoom } = view;
   const lastCursorPublishRef = useRef(0);
   const [interacting, setInteracting] = useState(false);
@@ -382,6 +397,16 @@ export function BuilderCanvas() {
         {visibleBricks.map((b) => (
           <li key={b.id} data-testid="placed-brick" data-brick-id={b.id} />
         ))}
+        {visibleBricks.flatMap((b) =>
+          (peerOutlinesByBrick.get(b.id) ?? []).map((po) => (
+            <li
+              key={`${b.id}:${po.userId}`}
+              data-testid={`peer-outline-${po.userId}`}
+              data-brick-id={b.id}
+              data-color={po.color}
+            />
+          )),
+        )}
       </ul>
       {size.width > 0 && size.height > 0 ? (
         <>
@@ -410,6 +435,31 @@ export function BuilderCanvas() {
                   onInteractEnd={() => setInteracting(false)}
                 />
               ))}
+              {visibleBricks.flatMap((b) => {
+                const outlines = peerOutlinesByBrick.get(b.id) ?? [];
+                return outlines.map((po, i) => {
+                  const offsetPx = 2 + 4 * i;
+                  const w = b.width + offsetPx * 2;
+                  const h = b.height + offsetPx * 2;
+                  return (
+                    <Rect
+                      key={`${b.id}:${po.userId}`}
+                      x={b.x}
+                      y={b.y}
+                      width={w}
+                      height={h}
+                      offsetX={w / 2}
+                      offsetY={h / 2}
+                      rotation={b.rotation}
+                      stroke={po.color}
+                      strokeWidth={3}
+                      dash={[8, 4]}
+                      listening={false}
+                      fillEnabled={false}
+                    />
+                  );
+                });
+              })}
               <Transformer
                 ref={transformerRef}
                 rotateEnabled={false}
