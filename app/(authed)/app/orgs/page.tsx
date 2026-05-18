@@ -88,6 +88,7 @@ export default async function OrgsPage() {
             {orgs.map((o) => (
               <li
                 key={o.id}
+                data-scroll-target=""
                 className="rounded-2xl border border-zinc-900/10 bg-white p-4 transition-colors hover:bg-[#FAF7F1]"
               >
                 <Link href={`/app/orgs/${o.id}`} aria-label={`Open ${o.name}`} className="block">

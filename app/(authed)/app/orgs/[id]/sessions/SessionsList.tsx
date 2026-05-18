@@ -39,7 +39,7 @@ export function SessionsList({ sessions }: { sessions: SessionRow[] }) {
       className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3"
     >
       {sessions.map((row) => (
-        <li key={row.id}>
+        <li key={row.id} data-scroll-target="">
           <Link
             href={`/app/sessions/${row.id}`}
             data-testid={`session-card-${row.id}`}

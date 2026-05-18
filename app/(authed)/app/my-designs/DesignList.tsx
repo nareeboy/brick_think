@@ -102,6 +102,7 @@ function DesignCard({
   return (
     <li
       data-testid={`design-card-${design.id}`}
+      data-scroll-target=""
       className="group relative rounded-2xl border border-zinc-900/10 bg-white p-4 transition-colors hover:bg-[#FAF7F1]"
     >
       <Link
