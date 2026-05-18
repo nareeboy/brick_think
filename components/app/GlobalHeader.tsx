@@ -36,6 +36,15 @@ export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
               {userName}
             </span>
           </div>
+          <a
+            href="https://github.com/nareeboy/brick_think/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Help — opens GitHub Issues in a new tab"
+            className="text-[13px] text-zinc-600 hover:text-zinc-900"
+          >
+            Help
+          </a>
           <Link
             href="/app/account"
             aria-label="Account settings"
