@@ -305,7 +305,7 @@ function GroupBlock({
             e.stopPropagation();
             onToggleCollapsed(group.id);
           }}
-          className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-900"
+          className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-900"
         >
           <ChevronDown
             className={`h-3 w-3 transition-transform ${group.collapsed ? '-rotate-90' : ''}`}
