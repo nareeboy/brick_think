@@ -9,6 +9,11 @@ import { useBrickImage } from '@/components/canvas/BrickImage';
 import { fitToBox, padBbox, unionRects } from '@/lib/canvas/thumbnailBox';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 
+import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
+import { extractColorFromCode } from '@/lib/bricks/color-from-code';
+import { brickToCell } from '@/lib/bricks/grid';
+
+import { CanvasA11yMirror, type MirrorBrick } from './CanvasA11yMirror';
 import {
   MAX_PIECE_SIZE,
   MAX_ZOOM,
@@ -157,6 +162,7 @@ export function BuilderCanvas() {
     }
     return m;
   }, [presence.selectionsByBrick]);
+
   const { pan, zoom } = view;
   const lastCursorPublishRef = useRef(0);
   const [interacting, setInteracting] = useState(false);
@@ -177,6 +183,22 @@ export function BuilderCanvas() {
     const visible = bricks.filter((b) => b.visible && groupVisible.get(b.groupId) !== false);
     return visible.slice().reverse();
   }, [bricks, groups]);
+
+  const [focusedBrickId, setFocusedBrickId] = useState<string | null>(null);
+
+  const mirrorBricks: MirrorBrick[] = useMemo(() => {
+    return visibleBricks.map((b) => {
+      const canonical = CANONICAL_BRICKS.find((c) => c.code === b.code);
+      const cell = brickToCell(b);
+      return {
+        id: b.id,
+        name: canonical?.name ?? b.code,
+        color: extractColorFromCode(b.code),
+        row: cell.row,
+        col: cell.col,
+      };
+    });
+  }, [visibleBricks]);
 
   function zoomFromCenter(factor: number) {
     zoomBy(factor, { x: size.width / 2, y: size.height / 2 });
@@ -390,13 +412,20 @@ export function BuilderCanvas() {
       onPointerCancel={endPan}
       onPointerLeave={handleContainerPointerLeave}
     >
-      <ul aria-hidden="true" className="sr-only" data-testid="placed-brick-list">
-        {visibleBricks.map((b) => (
-          <li key={b.id} data-testid="placed-brick" data-brick-id={b.id} />
-        ))}
+      <CanvasA11yMirror
+        bricks={mirrorBricks}
+        rows={Math.max(20, ...mirrorBricks.map((b) => b.row), 0)}
+        cols={Math.max(20, ...mirrorBricks.map((b) => b.col), 0)}
+        focusedId={focusedBrickId}
+        selectedId={selectedId}
+        onFocusBrick={setFocusedBrickId}
+        onSelectBrick={(id) => selectBrick(id)}
+      />
+      {/* Peer-outline markers — flat hidden DOM for e2e selector contracts. */}
+      <div aria-hidden="true" className="sr-only">
         {visibleBricks.flatMap((b) =>
           (peerOutlinesByBrick.get(b.id) ?? []).map((po) => (
-            <li
+            <span
               key={`${b.id}:${po.clientId}`}
               data-testid={`peer-outline-${po.clientId}`}
               data-brick-id={b.id}
@@ -405,7 +434,7 @@ export function BuilderCanvas() {
             />
           )),
         )}
-      </ul>
+      </div>
       {size.width > 0 && size.height > 0 ? (
         <>
           <Stage
