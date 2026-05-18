@@ -145,14 +145,20 @@ export function PiecesDrawer() {
 }
 
 function PieceTile({ brick }: { brick: BrickDefinition }) {
-  const { startDrag } = useDragPiece();
+  const { startDrag, addAtCenter } = useDragPiece();
   return (
     <button
       type="button"
       data-testid="piece-card"
       title={brick.name}
-      aria-label={`Add ${brick.name} — click to place, or drag onto the canvas`}
+      aria-label={`Add ${brick.name} — Enter or Space to place at canvas centre, or drag onto the canvas`}
       onPointerDown={(e) => startDrag(brick, e)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          addAtCenter(brick);
+        }
+      }}
       className="group flex flex-col items-center gap-1.5 rounded-xl border border-zinc-900/10 bg-zinc-50 p-2 transition-colors touch-none cursor-pointer active:cursor-grabbing hover:border-zinc-900/25 hover:bg-white"
     >
       <span
