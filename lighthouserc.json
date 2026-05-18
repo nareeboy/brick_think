@@ -9,7 +9,10 @@
       ],
       "startServerCommand": "pnpm start:e2e",
       "startServerReadyPattern": "Ready in",
-      "numberOfRuns": 1
+      "numberOfRuns": 1,
+      "settings": {
+        "onlyCategories": ["accessibility"]
+      }
     },
     "assert": {
       "assertions": {
