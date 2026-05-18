@@ -78,6 +78,6 @@ test.describe('axe baseline scans', () => {
       .analyze();
 
     logViolations('design-builder', results.violations);
-    expect.soft(results.violations, 'axe violations on design-builder').toEqual([]);
+    expect(results.violations, 'axe violations on design-builder').toEqual([]);
   });
 });
