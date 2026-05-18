@@ -1,8 +1,10 @@
 -- supabase/migrations/20260518120000_stage_runtime_state.sql
 -- Stage controller + timer (PRD §5.3). Adds runtime state to `stages`, a
--- session-level `current_stage_id` pointer, an append-only event log, and a
--- jsonb a11y preferences column on profiles. Idempotent — re-running via
--- `pnpm db:reset` is a no-op past the first apply.
+-- session-level `current_stage_id` pointer, and an append-only event log.
+-- The `profiles.a11y_preferences` column is already added by
+-- 20260518000000_profile_a11y_preferences.sql (WCAG Phase 2); audio-cue and
+-- no-time-pressure prefs are scoped out of this PR and ship in a follow-up.
+-- Idempotent — re-running via `pnpm db:reset` is a no-op past the first apply.
 
 -- 1. Stage status enum.
 do $$ begin
@@ -73,14 +75,7 @@ create policy "Stage events: facilitator insert"
     )
   );
 
--- 5. Per-profile accessibility preferences (jsonb).
-alter table public.profiles
-  add column if not exists a11y_preferences jsonb not null default '{}'::jsonb;
-
-comment on column public.profiles.a11y_preferences is
-  'Per-user accessibility settings. Known keys: audioCues (boolean, default true), noTimePressure (boolean, default false), colourblindMode (boolean, default false — WCAG Phase 2).';
-
--- 6. Realtime publication — only `stages` + `sessions`.
+-- 5. Realtime publication — only `stages` + `sessions`.
 do $$ begin
   if not exists (
     select 1 from pg_publication_tables
