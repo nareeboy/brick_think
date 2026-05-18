@@ -5,7 +5,7 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { AccountForm } from './AccountForm';
-import { BillingCard } from './BillingCard';
+import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
 import { ReplayWalkthroughCard } from './ReplayWalkthroughCard';
 
@@ -64,7 +64,7 @@ export default async function AccountPage() {
 
         <ReplayWalkthroughCard />
 
-        <BillingCard userId={user.id} />
+        <ContributionCard />
 
         <DangerZone email={email} />
       </div>
