@@ -29,6 +29,7 @@ interface BuilderProps {
   sessionContext?: SessionContext | null;
   liveMode?: boolean;
   self?: { userId: string; displayName: string; avatarUrl: string | null } | null;
+  colourblindMode?: boolean;
 }
 
 export function Builder({
@@ -39,6 +40,7 @@ export function Builder({
   sessionContext = null,
   liveMode = false,
   self = null,
+  colourblindMode = false,
 }: BuilderProps) {
   return (
     <BuilderProvider
@@ -63,7 +65,7 @@ export function Builder({
               ownerLabel={ownerLabel}
               sessionContext={sessionContext}
             />
-            <CanvasStage orgId={orgId} />
+            <CanvasStage orgId={orgId} colourblindMode={colourblindMode} />
           </div>
         </div>
       </div>
@@ -197,7 +199,7 @@ function SaveToast() {
   );
 }
 
-function CanvasStage({ orgId }: { orgId: string | null }) {
+function CanvasStage({ orgId, colourblindMode = false }: { orgId: string | null; colourblindMode?: boolean }) {
   const { awareness, selfClientId, view, self } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   return (
@@ -223,7 +225,7 @@ function CanvasStage({ orgId }: { orgId: string | null }) {
           }}
         />
 
-        <BuilderCanvasLoader />
+        <BuilderCanvasLoader colourblindMode={colourblindMode} />
 
         <PresenceCursors
           awareness={awareness}

@@ -14,7 +14,9 @@ import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import { extractColorFromCode, nextColorVariant } from '@/lib/bricks/color-from-code';
 import { brickToCell } from '@/lib/bricks/grid';
 
+import { BrickPatternOverlay } from './BrickPatternOverlay';
 import { CanvasA11yMirror, type MirrorBrick } from './CanvasA11yMirror';
+import { patternForColor } from '@/lib/bricks/patterns';
 import {
   MAX_PIECE_SIZE,
   MAX_ZOOM,
@@ -126,7 +128,7 @@ function BrickNode({
   );
 }
 
-export function BuilderCanvas() {
+export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: boolean } = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<Konva.Layer | null>(null);
   const stageRef = useRef<Konva.Stage | null>(null);
@@ -547,6 +549,18 @@ export function BuilderCanvas() {
                   onInteractEnd={() => setInteracting(false)}
                 />
               ))}
+              {colourblindMode &&
+                visibleBricks.map((b) => (
+                  <BrickPatternOverlay
+                    key={`pat-${b.id}`}
+                    x={b.x}
+                    y={b.y}
+                    width={b.width}
+                    height={b.height}
+                    rotation={b.rotation}
+                    pattern={patternForColor(extractColorFromCode(b.code))}
+                  />
+                ))}
               {focusedBrick && (
                 <Rect
                   x={focusedBrick.x}

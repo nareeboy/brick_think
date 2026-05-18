@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { performAccountDelete, preDeleteAccount, type BlockingOrg } from '@/lib/account/delete';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { isPng } from '@/lib/images/validatePng';
+import { type A11yPreferences } from '@/lib/a11y/preferences';
+import type { Json } from '@/lib/db/types.generated';
 
 const MAX_NAME_LENGTH = 80;
 
@@ -128,6 +130,32 @@ export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
   revalidatePath('/app/my-designs');
   revalidatePath('/app/orgs');
   return { kind: 'ok' };
+}
+
+export async function updateA11yPreferencesAction(
+  formData: FormData,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: 'Not signed in.' };
+
+  // Form submits checkbox value as 'on' when checked, absent when not.
+  const colourblindMode = formData.get('colourblindMode') === 'on';
+  const next: A11yPreferences = { colourblindMode };
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ a11y_preferences: next as unknown as Json })
+    .eq('id', user.id);
+  if (error) return { ok: false, error: error.message };
+
+  // Pages that read the preference need to revalidate.
+  revalidatePath('/app/account');
+  revalidatePath('/app/designs', 'layout');
+
+  return { ok: true };
 }
 
 export type DeleteAccountResult =
