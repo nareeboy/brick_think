@@ -7,6 +7,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
+import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 import { canPlaceLive } from '@/lib/yjs/canPlaceLive';
 
 export const dynamic = 'force-dynamic';
@@ -70,6 +71,15 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
     }
   }
 
+  const prefsRes = await supabase
+    .from('profiles')
+    .select('a11y_preferences')
+    .eq('id', user.id)
+    .single();
+  const colourblindMode = normaliseA11yPreferences(
+    prefsRes.data?.a11y_preferences,
+  ).colourblindMode;
+
   const liveMode = canPlaceLive({
     sessionContext,
     flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
@@ -91,6 +101,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
       sessionContext={sessionContext}
       liveMode={liveMode}
       self={self}
+      colourblindMode={colourblindMode}
     />
   );
 }
