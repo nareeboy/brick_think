@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Json } from '@/lib/db/types.generated';
+import { isKnownBrickCode } from '@/lib/bricks/manifest';
+import { parseExportEnvelope } from '@/lib/exports/json';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import { isValidTag, normaliseTag } from '@/lib/my-designs/types';
 import type { CanvasState } from '@/lib/models/types';
@@ -274,4 +276,48 @@ export async function getModelExportPayload(modelId: string): Promise<ModelExpor
     title: data.title,
     canvasState: parseCanvasState(data.canvas_state),
   };
+}
+
+async function createPersonalModelFromCanvasState(
+  supabase: SupabaseFromRequireUser,
+  userId: string,
+  input: { title: string; canvasState: CanvasState },
+): Promise<string> {
+  const { data, error } = await supabase
+    .from('models')
+    .insert({
+      owner_profile_id: userId,
+      title: input.title,
+      canvas_state: input.canvasState as unknown as Json,
+      org_id: null,
+      session_id: null,
+      stage_id: null,
+    })
+    .select('id')
+    .single();
+  if (error || !data) throw new Error(`Failed to create design: ${error?.message}`);
+  return data.id;
+}
+
+export interface ImportDesignResult {
+  modelId: string;
+}
+
+export async function importDesignAction(rawEnvelope: unknown): Promise<ImportDesignResult> {
+  const parsed = parseExportEnvelope(rawEnvelope);
+  if (!parsed.ok) throw new Error(parsed.error);
+  const { value: env } = parsed;
+  const unknown = env.canvasState.bricks.find((b) => !isKnownBrickCode(b.code));
+  if (unknown) {
+    throw new Error(
+      `This design uses brick "${unknown.code}" which is no longer supported.`,
+    );
+  }
+  const { supabase, user } = await requireUser();
+  const modelId = await createPersonalModelFromCanvasState(supabase, user.id, {
+    title: env.title,
+    canvasState: env.canvasState,
+  });
+  revalidatePath('/app/my-designs');
+  return { modelId };
 }
