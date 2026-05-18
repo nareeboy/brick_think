@@ -536,10 +536,10 @@ export default function TermsPage() {
               information of the party giving it, the facts giving rise to the dispute, and the
               relief requested. You must send any Notice of Dispute via email to:{' '}
               <a
-                href="mailto:naresh.shan@googlemail.com"
+                href="mailto:privacy@brickthink.io"
                 className="font-medium text-zinc-900 underline-offset-2 hover:underline"
               >
-                naresh.shan@googlemail.com
+                privacy@brickthink.io
               </a>
               . Brick Think will send any Notice of Dispute to you by mail to your address if we
               have it, or otherwise to your email address. You and Brick Think will attempt to
@@ -670,10 +670,10 @@ export default function TermsPage() {
             <P>
               Via email:{' '}
               <a
-                href="mailto:naresh.shan@googlemail.com"
+                href="mailto:privacy@brickthink.io"
                 className="font-medium text-zinc-900 underline-offset-2 hover:underline"
               >
-                naresh.shan@googlemail.com
+                privacy@brickthink.io
               </a>
             </P>
           </Section>
@@ -789,26 +789,33 @@ function LegalTopBar() {
 
 function LegalFooterNav() {
   return (
-    <nav
-      aria-label="Legal"
-      className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-zinc-900/10 pt-6 text-[13px] text-zinc-600"
-    >
-      <Link href="/" className="hover:text-zinc-900">
-        Home
-      </Link>
-      <Link href="/privacy" className="hover:text-zinc-900">
-        Privacy Policy
-      </Link>
-      <Link href="/sign-in" className="hover:text-zinc-900">
-        Sign in
-      </Link>
-      <a
-        href="mailto:naresh.shan@googlemail.com"
-        className="hover:text-zinc-900"
+    <>
+      <nav
+        aria-label="Legal"
+        className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-zinc-900/10 pt-6 text-[13px] text-zinc-600"
       >
-        Contact
-      </a>
-    </nav>
+        <Link href="/" className="hover:text-zinc-900">
+          Home
+        </Link>
+        <Link href="/privacy" className="hover:text-zinc-900">
+          Privacy Policy
+        </Link>
+        <Link href="/sign-in" className="hover:text-zinc-900">
+          Sign in
+        </Link>
+        <a
+          href="mailto:privacy@brickthink.io"
+          className="hover:text-zinc-900"
+        >
+          Contact
+        </a>
+      </nav>
+      <p className="mt-4 max-w-3xl text-[12px] leading-relaxed text-zinc-500">
+        LEGO, SERIOUS PLAY, IMAGINOPEDIA, the Minifigure and the Brick and Knob
+        configurations are trademarks of the LEGO Group, which does not sponsor,
+        authorize or endorse this product.
+      </p>
+    </>
   );
 }
 
