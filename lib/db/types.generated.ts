@@ -322,6 +322,7 @@ export type Database = {
         Row: {
           created_at: string
           current_stage: Database["public"]["Enums"]["stage_type"] | null
+          current_stage_id: string | null
           facilitator_id: string | null
           id: string
           mode: Database["public"]["Enums"]["session_mode"]
@@ -334,6 +335,7 @@ export type Database = {
         Insert: {
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
+          current_stage_id?: string | null
           facilitator_id?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
@@ -346,6 +348,7 @@ export type Database = {
         Update: {
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
+          current_stage_id?: string | null
           facilitator_id?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
@@ -356,6 +359,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sessions_current_stage_id_fkey"
+            columns: ["current_stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sessions_facilitator_id_fkey"
             columns: ["facilitator_id"]
@@ -372,42 +382,106 @@ export type Database = {
           },
         ]
       }
+      stage_events: {
+        Row: {
+          actor_profile_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          session_id: string
+          stage_id: string
+          verb: string
+        }
+        Insert: {
+          actor_profile_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          session_id: string
+          stage_id: string
+          verb: string
+        }
+        Update: {
+          actor_profile_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          session_id?: string
+          stage_id?: string
+          verb?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_events_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_events_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stages: {
         Row: {
           created_at: string
           description: string | null
           duration_seconds: number | null
           ended_at: string | null
+          extended_seconds: number
           id: string
+          paused_at: string | null
           position: number
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
           started_at: string | null
+          status: Database["public"]["Enums"]["stage_status"]
           title: string | null
+          total_paused_ms: number
         }
         Insert: {
           created_at?: string
           description?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
+          extended_seconds?: number
           id?: string
+          paused_at?: string | null
           position: number
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
           started_at?: string | null
+          status?: Database["public"]["Enums"]["stage_status"]
           title?: string | null
+          total_paused_ms?: number
         }
         Update: {
           created_at?: string
           description?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
+          extended_seconds?: number
           id?: string
+          paused_at?: string | null
           position?: number
           session_id?: string
           stage_type?: Database["public"]["Enums"]["stage_type"]
           started_at?: string | null
+          status?: Database["public"]["Enums"]["stage_status"]
           title?: string | null
+          total_paused_ms?: number
         }
         Relationships: [
           {
@@ -462,6 +536,7 @@ export type Database = {
       org_role: "owner" | "admin" | "facilitator" | "member"
       session_mode: "sync" | "async" | "hybrid"
       session_status: "draft" | "scheduled" | "live" | "completed" | "archived"
+      stage_status: "pending" | "active" | "paused" | "completed"
       stage_type:
         | "skill_building"
         | "individual_model"
@@ -601,6 +676,7 @@ export const Constants = {
       org_role: ["owner", "admin", "facilitator", "member"],
       session_mode: ["sync", "async", "hybrid"],
       session_status: ["draft", "scheduled", "live", "completed", "archived"],
+      stage_status: ["pending", "active", "paused", "completed"],
       stage_type: [
         "skill_building",
         "individual_model",
