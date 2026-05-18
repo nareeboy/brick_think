@@ -9,3 +9,4 @@ public/bricks/
 supabase/.temp/
 supabase/.branches/
 docs/
+lib/db/types.generated.ts
