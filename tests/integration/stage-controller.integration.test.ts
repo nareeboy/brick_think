@@ -353,6 +353,21 @@ describe('stage-controller-actions (integration)', () => {
     expect(result).toMatchObject({ ok: false, code: 'no_previous_completed_stage' });
   });
 
+  // ── extend rejects null-duration stages ──────────────────────────────────
+  test('extend rejects null-duration stages', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { session, stages } = await freshSession();
+    const s0 = mustGet(stages, 0);
+
+    // Null out duration_seconds on all stages in the session.
+    const admin = getAdminClient();
+    await admin.from('stages').update({ duration_seconds: null }).eq('session_id', session.id);
+
+    await startStageAction(s0);
+    const result = await extendStageAction(s0, 60);
+    expect(result).toMatchObject({ ok: false, code: 'invalid_extend_amount' });
+  });
+
   // ── extend accepts the boundary value 3600 seconds ───────────────────────
   test('extend accepts the boundary value 3600 seconds', async () => {
     const { stages } = await freshSession();

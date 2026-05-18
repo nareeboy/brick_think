@@ -254,6 +254,10 @@ export async function extendStageAction(
   if ('error' in ctx) return ctx.error;
   const { stage, sessionId, userId } = ctx;
 
+  if (ctx.stage.duration_seconds === null) {
+    return { ok: false, code: 'invalid_extend_amount' };
+  }
+
   if (!isValidTransition(stage.status, 'extend')) {
     return { ok: false, code: 'invalid_transition', from: stage.status, verb: 'extend' };
   }

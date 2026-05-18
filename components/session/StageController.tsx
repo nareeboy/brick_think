@@ -9,12 +9,12 @@ import type { StageType } from '@/lib/sessions/types';
 import type { SessionRow, StageRow } from './useSessionStages';
 
 export type StageActionsBundle = {
-  start: (id: string) => Promise<{ ok: boolean }>;
-  pause: (id: string) => Promise<{ ok: boolean }>;
-  resume: (id: string) => Promise<{ ok: boolean }>;
-  extend: (id: string, seconds: number) => Promise<{ ok: boolean }>;
-  advance: (id: string) => Promise<{ ok: boolean }>;
-  rollback: (id: string) => Promise<{ ok: boolean }>;
+  start: (id: string) => Promise<{ ok: boolean; code?: string }>;
+  pause: (id: string) => Promise<{ ok: boolean; code?: string }>;
+  resume: (id: string) => Promise<{ ok: boolean; code?: string }>;
+  extend: (id: string, seconds: number) => Promise<{ ok: boolean; code?: string }>;
+  advance: (id: string) => Promise<{ ok: boolean; code?: string }>;
+  rollback: (id: string) => Promise<{ ok: boolean; code?: string }>;
 };
 
 type Props = {
@@ -31,12 +31,13 @@ export function StageController({ stages, session, canManage, actions }: Props) 
 
   return (
     <ol className="flex flex-col gap-3">
-      {sorted.map((stage) => (
+      {sorted.map((stage, index) => (
         <StageRowCard
           key={stage.id}
           stage={stage}
           isLastCompleted={stage.id === lastCompletedId}
           isCurrent={session?.current_stage_id === stage.id}
+          isLastStage={index === sorted.length - 1}
           canManage={canManage}
           actions={actions}
         />
@@ -45,24 +46,54 @@ export function StageController({ stages, session, canManage, actions }: Props) 
   );
 }
 
+function messageForCode(code: string): string {
+  switch (code) {
+    case 'invalid_transition':
+      return 'Stage state changed. Refresh to see the latest.';
+    case 'no_next_stage':
+      return 'No next stage to advance to.';
+    case 'no_previous_completed_stage':
+      return 'No prior stage to roll back to.';
+    case 'invalid_extend_amount':
+      return 'Cannot extend this stage.';
+    case 'not_facilitator':
+      return 'Only the session facilitator can do that.';
+    case 'stage_not_found':
+      return 'Stage not found. Refresh the page.';
+    default:
+      return 'Something went wrong. Refresh to recover.';
+  }
+}
+
 function StageRowCard({
   stage,
   isLastCompleted,
   isCurrent: _isCurrent,
+  isLastStage,
   canManage,
   actions,
 }: {
   stage: StageRow;
   isLastCompleted: boolean;
   isCurrent: boolean;
+  isLastStage: boolean;
   canManage: boolean;
   actions: StageActionsBundle;
 }) {
   const [pending, setPending] = useState(false);
-  const wrap = (fn: () => Promise<unknown>) => async () => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const wrap = (fn: () => Promise<{ ok: boolean; code?: string }>) => async () => {
     setPending(true);
+    setErrorMessage(null);
     try {
-      await fn();
+      const result = await fn();
+      if (!result.ok) {
+        const code = (result as { code?: string }).code ?? 'unknown';
+        setErrorMessage(messageForCode(code));
+      }
+    } catch (err) {
+      setErrorMessage('Unexpected error. Refresh to recover.');
+      console.error('stage controller action failed', err);
     } finally {
       setPending(false);
     }
@@ -96,12 +127,16 @@ function StageRowCard({
               <button type="button" onClick={wrap(() => actions.pause(stage.id))} disabled={pending} className={btn('secondary')}>
                 Pause
               </button>
-              <button type="button" onClick={wrap(() => actions.extend(stage.id, 300))} disabled={pending} className={btn('secondary')}>
-                Extend +5m
-              </button>
-              <button type="button" onClick={wrap(() => actions.advance(stage.id))} disabled={pending} className={btn('primary')}>
-                Advance
-              </button>
+              {stage.duration_seconds !== null && (
+                <button type="button" onClick={wrap(() => actions.extend(stage.id, 300))} disabled={pending} className={btn('secondary')}>
+                  Extend +5m
+                </button>
+              )}
+              {!isLastStage && (
+                <button type="button" onClick={wrap(() => actions.advance(stage.id))} disabled={pending} className={btn('primary')}>
+                  Advance
+                </button>
+              )}
             </>
           )}
           {stage.status === 'paused' && (
@@ -109,12 +144,16 @@ function StageRowCard({
               <button type="button" onClick={wrap(() => actions.resume(stage.id))} disabled={pending} className={btn('primary')}>
                 Resume
               </button>
-              <button type="button" onClick={wrap(() => actions.extend(stage.id, 300))} disabled={pending} className={btn('secondary')}>
-                Extend +5m
-              </button>
-              <button type="button" onClick={wrap(() => actions.advance(stage.id))} disabled={pending} className={btn('secondary')}>
-                Advance
-              </button>
+              {stage.duration_seconds !== null && (
+                <button type="button" onClick={wrap(() => actions.extend(stage.id, 300))} disabled={pending} className={btn('secondary')}>
+                  Extend +5m
+                </button>
+              )}
+              {!isLastStage && (
+                <button type="button" onClick={wrap(() => actions.advance(stage.id))} disabled={pending} className={btn('secondary')}>
+                  Advance
+                </button>
+              )}
             </>
           )}
           {stage.status === 'completed' && isLastCompleted && (
@@ -123,6 +162,11 @@ function StageRowCard({
             </button>
           )}
         </div>
+      ) : null}
+      {errorMessage ? (
+        <p role="alert" className="mt-2 text-[12px] text-red-700">
+          {errorMessage}
+        </p>
       ) : null}
     </li>
   );

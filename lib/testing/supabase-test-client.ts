@@ -186,6 +186,7 @@ export async function createTestSession({
     session_id: sessionId,
     stage_type,
     position,
+    duration_seconds: 600,
   }));
   const stagesRes = await admin.from('stages').insert(stageRows).select('id, stage_type');
   if (stagesRes.error || !stagesRes.data) {
