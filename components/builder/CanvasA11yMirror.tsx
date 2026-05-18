@@ -46,7 +46,9 @@ export function CanvasA11yMirror({
       className="pointer-events-none absolute inset-0 z-0"
     >
       {bricks.map((b) => {
-        const accessibleName = `${b.name}, ${b.color}, row ${b.row} column ${b.col}`;
+        const accessibleName = b.color
+          ? `${b.name}, ${b.color}, row ${b.row} column ${b.col}`
+          : `${b.name}, row ${b.row} column ${b.col}`;
         return (
           <div
             key={b.id}

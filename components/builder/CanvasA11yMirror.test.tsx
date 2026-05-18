@@ -63,6 +63,24 @@ describe('CanvasA11yMirror', () => {
     expect(cell.getAttribute('aria-selected')).toBe('true');
   });
 
+  it('omits color from the label when MirrorBrick.color is empty', () => {
+    render(
+      <CanvasA11yMirror
+        bricks={[{ id: 'b1', name: 'Connector bracket', color: '', row: 3, col: 2 }]}
+        rows={20}
+        cols={20}
+        focusedId={null}
+        selectedId={null}
+        onFocusBrick={() => {}}
+        onSelectBrick={() => {}}
+      />,
+    );
+    const cell = screen.getByRole('gridcell', {
+      name: /^connector bracket, row 3 column 2$/i,
+    });
+    expect(cell.getAttribute('aria-rowindex')).toBe('3');
+  });
+
   it('marks unselected bricks aria-selected="false"', () => {
     render(
       <CanvasA11yMirror
