@@ -40,6 +40,7 @@ skills-lock.json
 test-results/
 playwright-report/
 playwright/.cache/
+.lhci/
 
 # Supabase local state
 supabase/.temp/
