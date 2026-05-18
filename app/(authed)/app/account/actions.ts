@@ -3,11 +3,7 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
-import {
-  performAccountDelete,
-  preDeleteAccount,
-  type BlockingOrg,
-} from '@/lib/account/delete';
+import { performAccountDelete, preDeleteAccount, type BlockingOrg } from '@/lib/account/delete';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { isPng } from '@/lib/images/validatePng';
 
@@ -36,10 +32,7 @@ export async function updateProfileAction(rawName: string): Promise<UpdateProfil
   // the email (matching the existing precedence in app/(authed)/app/layout.tsx).
   const next = trimmed.length === 0 ? null : trimmed;
 
-  const res = await supabase
-    .from('profiles')
-    .update({ full_name: next })
-    .eq('id', user.id);
+  const res = await supabase.from('profiles').update({ full_name: next }).eq('id', user.id);
   if (res.error) throw new Error(`Failed to update profile: ${res.error.message}`);
 
   revalidatePath('/app/account');
@@ -55,13 +48,9 @@ const ALLOWED_AVATAR_MIME = 'image/png' as const;
 // has headroom without unbounding the upload surface.
 const MAX_AVATAR_BYTES = 512 * 1024;
 
-export type UpdateAvatarResult =
-  | { kind: 'ok'; url: string }
-  | { kind: 'error'; reason: string };
+export type UpdateAvatarResult = { kind: 'ok'; url: string } | { kind: 'error'; reason: string };
 
-export async function updateAvatarAction(
-  formData: FormData,
-): Promise<UpdateAvatarResult> {
+export async function updateAvatarAction(formData: FormData): Promise<UpdateAvatarResult> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -82,7 +71,10 @@ export async function updateAvatarAction(
     return { kind: 'error', reason: 'invalid_image' };
   }
   if (!(await isPng(raw))) {
-    console.warn('avatar rejected: PNG magic-byte check failed', { mime: raw.type, size: raw.size });
+    console.warn('avatar rejected: PNG magic-byte check failed', {
+      mime: raw.type,
+      size: raw.size,
+    });
     return { kind: 'error', reason: 'invalid_image' };
   }
 
@@ -99,10 +91,7 @@ export async function updateAvatarAction(
   const publicUrlRes = supabase.storage.from('avatars').getPublicUrl(path);
   const url = `${publicUrlRes.data.publicUrl}?v=${Date.now()}`;
 
-  const res = await supabase
-    .from('profiles')
-    .update({ avatar_url: url })
-    .eq('id', user.id);
+  const res = await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
   if (res.error) {
     return { kind: 'error', reason: `profile_update_failed:${res.error.message}` };
   }
@@ -113,9 +102,7 @@ export async function updateAvatarAction(
   return { kind: 'ok', url };
 }
 
-export type RemoveAvatarResult =
-  | { kind: 'ok' }
-  | { kind: 'error'; reason: string };
+export type RemoveAvatarResult = { kind: 'ok' } | { kind: 'error'; reason: string };
 
 export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
   const supabase = await createServerSupabaseClient();
@@ -128,17 +115,11 @@ export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
   // Idempotent on "not found" — log other errors so they surface in Railway
   // logs without failing the user-facing flow. The DB null still wins.
   const removeResult = await supabase.storage.from('avatars').remove([path]);
-  if (
-    removeResult.error &&
-    !/not found/i.test(removeResult.error.message)
-  ) {
+  if (removeResult.error && !/not found/i.test(removeResult.error.message)) {
     console.error('avatar storage removal failed (continuing):', removeResult.error.message);
   }
 
-  const res = await supabase
-    .from('profiles')
-    .update({ avatar_url: null })
-    .eq('id', user.id);
+  const res = await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);
   if (res.error) {
     return { kind: 'error', reason: `profile_update_failed:${res.error.message}` };
   }
@@ -154,9 +135,7 @@ export type DeleteAccountResult =
   | { kind: 'invalid_input'; reason: string }
   | { kind: 'blocked'; reasons: BlockingOrg[] };
 
-export async function deleteAccountAction(
-  confirmEmail: string,
-): Promise<DeleteAccountResult> {
+export async function deleteAccountAction(confirmEmail: string): Promise<DeleteAccountResult> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },

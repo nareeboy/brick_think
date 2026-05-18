@@ -108,10 +108,10 @@ describe('setModelTagsAction', () => {
     const modelId = await createDesignAction({ orgId: null, sessionId: null });
     try {
       const saved = await setModelTagsAction(modelId, [
-        'GoodOne',     // -> 'goodone'
-        '  Spaced ',   // -> 'spaced'
-        '',            // dropped
-        '-bad',        // dropped (leading hyphen)
+        'GoodOne', // -> 'goodone'
+        '  Spaced ', // -> 'spaced'
+        '', // dropped
+        '-bad', // dropped (leading hyphen)
         'x'.repeat(40), // dropped (length)
       ]);
       expect(saved.sort()).toEqual(['goodone', 'spaced']);
@@ -127,10 +127,7 @@ describe('setModelTagsAction', () => {
       await setModelTagsAction(modelId, ['secret']);
 
       const outsiderClient = await signInAs(fx.outsider);
-      const probe = await outsiderClient
-        .from('model_tags')
-        .select('tag')
-        .eq('model_id', modelId);
+      const probe = await outsiderClient.from('model_tags').select('tag').eq('model_id', modelId);
       expect(probe.error).toBeNull();
       expect(probe.data ?? []).toEqual([]);
     } finally {

@@ -105,7 +105,9 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
           {destination ? 'Pick a session' : 'New design'}
         </h2>
         <p className="mt-1 text-[13px] text-zinc-600">
-          {destination ? `In ${destination.kind === 'org' ? destination.org.name : 'Personal'}` : 'Where should this design live?'}
+          {destination
+            ? `In ${destination.kind === 'org' ? destination.org.name : 'Personal'}`
+            : 'Where should this design live?'}
         </p>
 
         {!destination ? (

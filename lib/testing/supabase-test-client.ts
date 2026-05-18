@@ -187,10 +187,7 @@ export async function createTestSession({
     stage_type,
     position,
   }));
-  const stagesRes = await admin
-    .from('stages')
-    .insert(stageRows)
-    .select('id, stage_type');
+  const stagesRes = await admin.from('stages').insert(stageRows).select('id, stage_type');
   if (stagesRes.error || !stagesRes.data) {
     throw new Error(`createTestSession stage insert failed: ${stagesRes.error?.message}`);
   }

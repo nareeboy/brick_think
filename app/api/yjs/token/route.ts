@@ -6,8 +6,7 @@ import { mintYjsToken } from '@/lib/yjs/jwt';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TTL_SECONDS = 60;
 
 export async function POST(request: Request): Promise<Response> {

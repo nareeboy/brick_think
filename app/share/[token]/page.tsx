@@ -13,11 +13,7 @@ export const metadata: Metadata = {
   title: 'Shared design · BrickThink',
 };
 
-export default async function SharePage({
-  params,
-}: {
-  params: Promise<{ token: string }>;
-}) {
+export default async function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const result = await getCanvasForToken(token);
 

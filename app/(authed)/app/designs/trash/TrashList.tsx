@@ -69,7 +69,8 @@ export function TrashList({ items }: TrashListProps) {
           <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
             <h2 className="text-[16px] font-semibold text-zinc-950">Empty trash?</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              Permanently delete all {items.length} design{items.length === 1 ? '' : 's'} in trash? This cannot be undone.
+              Permanently delete all {items.length} design{items.length === 1 ? '' : 's'} in trash?
+              This cannot be undone.
             </p>
             <div className="mt-6 flex items-center justify-end gap-2">
               <button
@@ -101,11 +102,7 @@ export function TrashList({ items }: TrashListProps) {
   );
 }
 
-function TrashCard({
-  item,
-}: {
-  item: TrashedModelSummary & { daysRemainingLabel: string };
-}) {
+function TrashCard({ item }: { item: TrashedModelSummary & { daysRemainingLabel: string } }) {
   const [confirmingPurge, setConfirmingPurge] = useState(false);
   const [pendingRestore, startRestore] = useTransition();
   const [pendingPurge, startPurge] = useTransition();
@@ -154,7 +151,8 @@ function TrashCard({
           <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
             <h2 className="text-[16px] font-semibold text-zinc-950">Delete this design?</h2>
             <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
-              Permanently delete &ldquo;{item.title}&rdquo;? Versions and history will be lost. This cannot be undone.
+              Permanently delete &ldquo;{item.title}&rdquo;? Versions and history will be lost. This
+              cannot be undone.
             </p>
             <div className="mt-6 flex items-center justify-end gap-2">
               <button

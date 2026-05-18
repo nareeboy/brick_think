@@ -53,13 +53,15 @@ export default async function AccountPage() {
           >
             Account
           </h1>
-          <p className="text-[13px] text-zinc-500">
-            Joined {createdLabel}.
-          </p>
+          <p className="text-[13px] text-zinc-500">Joined {createdLabel}.</p>
         </header>
 
         <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
-          <AccountForm initialFullName={fullName} email={email} initialAvatarUrl={initialAvatarUrl} />
+          <AccountForm
+            initialFullName={fullName}
+            email={email}
+            initialAvatarUrl={initialAvatarUrl}
+          />
         </section>
 
         <ReplayWalkthroughCard />

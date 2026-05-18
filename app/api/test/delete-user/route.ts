@@ -72,10 +72,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // deleted the same-user versions transitively — blocking the profile
   // delete when a test exercises "save a version". Safe to delete here
   // because gate 3 above already restricted us to the test domain.
-  const delVersions = await admin
-    .from('model_versions')
-    .delete()
-    .eq('created_by', userId);
+  const delVersions = await admin.from('model_versions').delete().eq('created_by', userId);
   if (delVersions.error) {
     return NextResponse.json(
       { error: 'pre_delete_versions_failed', detail: delVersions.error.message },

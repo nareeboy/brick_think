@@ -4,11 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
 
-import {
-  projectDocToCanvas,
-  seedDocFromCanvas,
-  YJS_SEED_ORIGIN,
-} from '@/lib/yjs/canvas-codec';
+import { projectDocToCanvas, seedDocFromCanvas, YJS_SEED_ORIGIN } from '@/lib/yjs/canvas-codec';
 
 import type { BrickInstance, LayerGroup } from './builderState';
 
@@ -59,8 +55,7 @@ export function useYjsBinding({
     groups: initialCanvasState.groups,
     bricks: initialCanvasState.bricks,
   }));
-  const [connectionStatus, setConnectionStatus] =
-    useState<YjsConnectionStatus>('connecting');
+  const [connectionStatus, setConnectionStatus] = useState<YjsConnectionStatus>('connecting');
   const docRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
   const [, forceRender] = useState(0);
@@ -112,8 +107,7 @@ export function useYjsBinding({
     }
     const onStatus = (event: { status: string }): void => {
       if (event.status === 'connected') setConnectionStatus('connected');
-      else if (event.status === 'disconnected')
-        setConnectionStatus('disconnected');
+      else if (event.status === 'disconnected') setConnectionStatus('disconnected');
       else setConnectionStatus('connecting');
     };
     provider.on('status', onStatus);

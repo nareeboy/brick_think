@@ -62,14 +62,11 @@ export function DangerZone({ email }: Props) {
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-red-700">
           Danger zone
         </p>
-        <h2 className="text-[18px] font-semibold tracking-tight text-red-900">
-          Delete account
-        </h2>
+        <h2 className="text-[18px] font-semibold tracking-tight text-red-900">Delete account</h2>
         <p className="mt-1 text-[13px] leading-relaxed text-zinc-600">
-          Removes your sign-in credentials, your personal designs, and any
-          organisations you own alone. Sessions you facilitated in someone
-          else&rsquo;s org stay there, with your name shown as &ldquo;Former
-          facilitator&rdquo;. This action cannot be undone.
+          Removes your sign-in credentials, your personal designs, and any organisations you own
+          alone. Sessions you facilitated in someone else&rsquo;s org stay there, with your name
+          shown as &ldquo;Former facilitator&rdquo;. This action cannot be undone.
         </p>
       </div>
 
@@ -95,8 +92,8 @@ export function DangerZone({ email }: Props) {
                 Delete your account?
               </h2>
               <p className="text-[12px] leading-relaxed text-red-900/80">
-                This permanently removes your sign-in, your personal designs,
-                and any sole-owner organisations. There is no recovery.
+                This permanently removes your sign-in, your personal designs, and any sole-owner
+                organisations. There is no recovery.
               </p>
             </div>
 

@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  DEFAULT_MODEL_TITLES,
-  STAGE_LABELS,
-  defaultModelTitle,
-  stageLabel,
-} from './stage-labels';
+import { DEFAULT_MODEL_TITLES, STAGE_LABELS, defaultModelTitle, stageLabel } from './stage-labels';
 import type { StageType } from './types';
 
 describe('STAGE_LABELS', () => {

@@ -144,10 +144,7 @@ export function BuilderCanvas() {
   } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   const peerOutlinesByBrick = useMemo(() => {
-    const m = new Map<
-      string,
-      Array<{ clientId: number; userId: string; color: string }>
-    >();
+    const m = new Map<string, Array<{ clientId: number; userId: string; color: string }>>();
     for (const [brickId, peers] of presence.selectionsByBrick) {
       m.set(
         brickId,
@@ -173,9 +170,7 @@ export function BuilderCanvas() {
     // Draw order = panel bottom-to-top, so reverse `bricks` (which is panel
     // top-to-bottom, grouped by groupId in `groups` order). Hidden bricks /
     // bricks in hidden groups are excluded entirely.
-    const visible = bricks.filter(
-      (b) => b.visible && groupVisible.get(b.groupId) !== false,
-    );
+    const visible = bricks.filter((b) => b.visible && groupVisible.get(b.groupId) !== false);
     return visible.slice().reverse();
   }, [bricks, groups]);
 
@@ -235,10 +230,7 @@ export function BuilderCanvas() {
     // panStartRef is either set (started on stage background) or null (started
     // on a brick). All we add here is DOM pointer capture so pan tracking
     // survives the pointer leaving the canvas mid-drag.
-    if (
-      panStartRef.current &&
-      typeof e.currentTarget.setPointerCapture === 'function'
-    ) {
+    if (panStartRef.current && typeof e.currentTarget.setPointerCapture === 'function') {
       e.currentTarget.setPointerCapture(e.pointerId);
     }
   }
@@ -361,9 +353,7 @@ export function BuilderCanvas() {
       if (!layer) return null;
       const nodes = Array.from(nodeRegistry.current.values());
       if (nodes.length === 0) return null;
-      const rects = nodes.map((n) =>
-        n.getClientRect({ skipTransform: false, relativeTo: layer }),
-      );
+      const rects = nodes.map((n) => n.getClientRect({ skipTransform: false, relativeTo: layer }));
       const bbox = unionRects(rects);
       const padded = padBbox(bbox, 0.08);
       const { scale } = fitToBox(padded, 400, 300);
@@ -380,7 +370,7 @@ export function BuilderCanvas() {
     return () => registerThumbnailCapture(null);
   }, [registerThumbnailCapture]);
 
-  const selectedBrick = selectedId ? bricks.find((b) => b.id === selectedId) ?? null : null;
+  const selectedBrick = selectedId ? (bricks.find((b) => b.id === selectedId) ?? null) : null;
   const overlay = selectedBrick && !interacting ? selectionOverlay(selectedBrick, pan, zoom) : null;
 
   return (
@@ -477,8 +467,10 @@ export function BuilderCanvas() {
                 // Suppress resize-handle interaction while space-pan is held.
                 listening={!panLocked}
                 boundBoxFunc={(oldBox, newBox) => {
-                  if (newBox.width < MIN_PIECE_SIZE || newBox.height < MIN_PIECE_SIZE) return oldBox;
-                  if (newBox.width > MAX_PIECE_SIZE || newBox.height > MAX_PIECE_SIZE) return oldBox;
+                  if (newBox.width < MIN_PIECE_SIZE || newBox.height < MIN_PIECE_SIZE)
+                    return oldBox;
+                  if (newBox.width > MAX_PIECE_SIZE || newBox.height > MAX_PIECE_SIZE)
+                    return oldBox;
                   return newBox;
                 }}
               />
@@ -530,10 +522,7 @@ export function BuilderCanvas() {
   );
 }
 
-function ZoomButton({
-  children,
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+function ZoomButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type="button"

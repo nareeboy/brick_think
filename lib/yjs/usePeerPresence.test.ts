@@ -94,40 +94,83 @@ describe('usePeerPresence', () => {
     const peers = new Map<number, { user: PeerUser }>([
       [
         2,
-        { user: { userId: 'u-c', displayName: 'Carol', avatarUrl: null, cursor: null, selectedBrickId: null } },
+        {
+          user: {
+            userId: 'u-c',
+            displayName: 'Carol',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: null,
+          },
+        },
       ],
       [
         3,
-        { user: { userId: 'u-a', displayName: 'Alice', avatarUrl: null, cursor: null, selectedBrickId: null } },
+        {
+          user: {
+            userId: 'u-a',
+            displayName: 'Alice',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: null,
+          },
+        },
       ],
       [
         4,
-        { user: { userId: 'u-b', displayName: 'Bob', avatarUrl: null, cursor: null, selectedBrickId: null } },
+        {
+          user: {
+            userId: 'u-b',
+            displayName: 'Bob',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: null,
+          },
+        },
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
     const { result } = renderHook(() => usePeerPresence(awareness, 1, SELF));
-    expect(result.current.peers.map((p) => p.userId)).toEqual([
-      'u-self',
-      'u-a',
-      'u-b',
-      'u-c',
-    ]);
+    expect(result.current.peers.map((p) => p.userId)).toEqual(['u-self', 'u-a', 'u-b', 'u-c']);
   });
 
   it('groups peer selections by brick id, excluding self', () => {
     const peers = new Map<number, { user: PeerUser }>([
       [
         1,
-        { user: { userId: 'u-self', displayName: 'Me', avatarUrl: null, cursor: null, selectedBrickId: 'brick-X' } },
+        {
+          user: {
+            userId: 'u-self',
+            displayName: 'Me',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: 'brick-X',
+          },
+        },
       ],
       [
         2,
-        { user: { userId: 'u-a', displayName: 'Alice', avatarUrl: null, cursor: null, selectedBrickId: 'brick-X' } },
+        {
+          user: {
+            userId: 'u-a',
+            displayName: 'Alice',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: 'brick-X',
+          },
+        },
       ],
       [
         3,
-        { user: { userId: 'u-b', displayName: 'Bob', avatarUrl: null, cursor: null, selectedBrickId: 'brick-Y' } },
+        {
+          user: {
+            userId: 'u-b',
+            displayName: 'Bob',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: 'brick-Y',
+          },
+        },
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
@@ -141,11 +184,27 @@ describe('usePeerPresence', () => {
     const peers = new Map<number, { user: PeerUser }>([
       [
         5,
-        { user: { userId: 'u-late', displayName: 'Late', avatarUrl: null, cursor: null, selectedBrickId: 'X' } },
+        {
+          user: {
+            userId: 'u-late',
+            displayName: 'Late',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: 'X',
+          },
+        },
       ],
       [
         2,
-        { user: { userId: 'u-early', displayName: 'Early', avatarUrl: null, cursor: null, selectedBrickId: 'X' } },
+        {
+          user: {
+            userId: 'u-early',
+            displayName: 'Early',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: 'X',
+          },
+        },
       ],
     ]);
     const { awareness } = makeMockAwareness(peers);
@@ -158,7 +217,15 @@ describe('usePeerPresence', () => {
     const peers = new Map<number, { user: PeerUser }>([
       [
         2,
-        { user: { userId: 'u-a', displayName: 'Alice', avatarUrl: null, cursor: null, selectedBrickId: null } },
+        {
+          user: {
+            userId: 'u-a',
+            displayName: 'Alice',
+            avatarUrl: null,
+            cursor: null,
+            selectedBrickId: null,
+          },
+        },
       ],
     ]);
     const { awareness, notify } = makeMockAwareness(peers);
@@ -166,7 +233,13 @@ describe('usePeerPresence', () => {
     expect(result.current.selectionsByBrick.size).toBe(0);
 
     peers.set(2, {
-      user: { userId: 'u-a', displayName: 'Alice', avatarUrl: null, cursor: null, selectedBrickId: 'brick-Z' },
+      user: {
+        userId: 'u-a',
+        displayName: 'Alice',
+        avatarUrl: null,
+        cursor: null,
+        selectedBrickId: 'brick-Z',
+      },
     });
     act(() => {
       notify();

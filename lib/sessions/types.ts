@@ -7,12 +7,7 @@ export type StageType =
 
 export type SessionMode = 'sync' | 'async' | 'hybrid';
 
-export type SessionStatus =
-  | 'draft'
-  | 'scheduled'
-  | 'live'
-  | 'completed'
-  | 'archived';
+export type SessionStatus = 'draft' | 'scheduled' | 'live' | 'completed' | 'archived';
 
 export const SESSION_MODES: SessionMode[] = ['sync', 'async', 'hybrid'];
 

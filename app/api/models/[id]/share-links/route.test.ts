@@ -25,7 +25,9 @@ describe('GET /api/models/[id]/share-links', () => {
 
   it('returns 401 when no user', async () => {
     mockSupabase({ user: null, rows: [] });
-    const res = await GET(new Request('http://localhost/x'), { params: Promise.resolve({ id: 'm1' }) });
+    const res = await GET(new Request('http://localhost/x'), {
+      params: Promise.resolve({ id: 'm1' }),
+    });
     expect(res.status).toBe(401);
   });
 
@@ -34,8 +36,12 @@ describe('GET /api/models/[id]/share-links', () => {
       user: { id: 'u1' },
       rows: [{ id: 'l1', token: 'tok', created_at: 'x', expires_at: null }],
     });
-    const res = await GET(new Request('http://localhost/x'), { params: Promise.resolve({ id: 'm1' }) });
+    const res = await GET(new Request('http://localhost/x'), {
+      params: Promise.resolve({ id: 'm1' }),
+    });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ links: [{ id: 'l1', token: 'tok', created_at: 'x', expires_at: null }] });
+    expect(await res.json()).toEqual({
+      links: [{ id: 'l1', token: 'tok', created_at: 'x', expires_at: null }],
+    });
   });
 });

@@ -40,9 +40,7 @@ async function dragPieceOntoCanvas(
 test.describe('persistent designs', () => {
   test('a brick survives a page refresh', async ({ signedInPage: page }) => {
     await page.goto('/app/my-designs');
-    await expect(
-      page.getByRole('heading', { name: /my designs/i, level: 1 }),
-    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: /my designs/i, level: 1 })).toBeVisible();
 
     await page.getByTestId('new-design-button').click();
     await page.getByTestId('destination-personal').click();
@@ -53,11 +51,9 @@ test.describe('persistent designs', () => {
     await dragPieceOntoCanvas(page);
 
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
-    await expect(page.getByTestId('save-status')).toHaveAttribute(
-      'data-status',
-      'saved',
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+      timeout: 15_000,
+    });
 
     const beforeUrl = page.url();
     await page.reload();
@@ -76,11 +72,9 @@ test.describe('persistent designs', () => {
     await page.getByRole('button', { name: /open pieces/i }).click();
     await dragPieceOntoCanvas(page);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
-    await expect(page.getByTestId('save-status')).toHaveAttribute(
-      'data-status',
-      'saved',
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+      timeout: 15_000,
+    });
 
     // Open the "Save version" modal from the sidebar (the trigger button is
     // also labelled "Save version", so scope the submit button to the dialog).
@@ -94,11 +88,9 @@ test.describe('persistent designs', () => {
     // independent of the Konva canvas hit-testing.
     await page.getByRole('button', { name: /^delete piece$/i }).click();
     await expect(page.getByTestId('placed-brick')).toHaveCount(0);
-    await expect(page.getByTestId('save-status')).toHaveAttribute(
-      'data-status',
-      'saved',
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+      timeout: 15_000,
+    });
 
     // Open version history. The trigger button has the accessible label
     // "Version history" (aria-label overrides its visible "History" text), so
@@ -120,10 +112,11 @@ test.describe('persistent designs', () => {
     // a role="dialog"), so locating "the dialog with the confirm heading"
     // matches both. The confirm's Restore button is rendered after the row
     // Restore in DOM order, so .last() reliably picks it.
-    await expect(
-      page.getByRole('heading', { name: /restore this version/i }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: /^restore$/i }).last().click();
+    await expect(page.getByRole('heading', { name: /restore this version/i })).toBeVisible();
+    await page
+      .getByRole('button', { name: /^restore$/i })
+      .last()
+      .click();
 
     // restoreVersionAction triggers window.location.reload(); wait for the
     // canvas to come back and the brick to re-hydrate from the snapshot.
@@ -149,11 +142,9 @@ test.describe('persistent designs', () => {
     await page.getByRole('button', { name: /open pieces/i }).click();
     await dragPieceOntoCanvas(page);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
-    await expect(page.getByTestId('save-status')).toHaveAttribute(
-      'data-status',
-      'saved',
-      { timeout: 15_000 },
-    );
+    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+      timeout: 15_000,
+    });
 
     // The thumbnail upload is fire-and-forget after the first save→saved
     // transition. Give it a moment to complete before navigating away.

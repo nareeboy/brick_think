@@ -39,10 +39,7 @@ vi.mock('@/lib/db/server', () => ({
 
 // These imports MUST appear after the vi.mock calls so the action picks up
 // the mocked next/cache and lib/db/server modules.
-import {
-  removeAvatarAction,
-  updateAvatarAction,
-} from '@/app/(authed)/app/account/actions';
+import { removeAvatarAction, updateAvatarAction } from '@/app/(authed)/app/account/actions';
 
 interface Fixture {
   owner: TestUser;
@@ -102,17 +99,11 @@ describe('updateAvatarAction', () => {
     expect(result.kind).toBe('ok');
     if (result.kind !== 'ok') return;
     expect(result.url).toMatch(
-      new RegExp(
-        `/storage/v1/object/public/avatars/${fx.owner.id}/avatar\\.png\\?v=\\d+$`,
-      ),
+      new RegExp(`/storage/v1/object/public/avatars/${fx.owner.id}/avatar\\.png\\?v=\\d+$`),
     );
 
     const admin = getAdminClient();
-    const verify = await admin
-      .from('profiles')
-      .select('avatar_url')
-      .eq('id', fx.owner.id)
-      .single();
+    const verify = await admin.from('profiles').select('avatar_url').eq('id', fx.owner.id).single();
     expect(verify.data?.avatar_url).toBe(result.url);
 
     // Confirm the object exists in storage.
@@ -123,9 +114,7 @@ describe('updateAvatarAction', () => {
 
   test('rejects a non-PNG MIME with invalid_image', async () => {
     currentClient = await signInAs(fx.owner);
-    const result = await updateAvatarAction(
-      formDataWith(fakeBlob('image/jpeg', 4096)),
-    );
+    const result = await updateAvatarAction(formDataWith(fakeBlob('image/jpeg', 4096)));
     expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
   });
 
@@ -171,11 +160,7 @@ describe('removeAvatarAction', () => {
     expect(first.kind).toBe('ok');
 
     const admin = getAdminClient();
-    const after = await admin
-      .from('profiles')
-      .select('avatar_url')
-      .eq('id', fx.owner.id)
-      .single();
+    const after = await admin.from('profiles').select('avatar_url').eq('id', fx.owner.id).single();
     expect(after.data?.avatar_url).toBeNull();
 
     const list = await admin.storage.from('avatars').list(fx.owner.id);

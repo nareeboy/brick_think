@@ -34,11 +34,7 @@ afterAll(async () => {
 describe('nav-restructure migration', () => {
   test('profiles row no longer exposes active_org_id', async () => {
     const admin = getAdminClient();
-    const res = await admin
-      .from('profiles')
-      .select('*')
-      .eq('id', probeUser.id)
-      .single();
+    const res = await admin.from('profiles').select('*').eq('id', probeUser.id).single();
 
     expect(res.error).toBeNull();
     expect(res.data).not.toBeNull();

@@ -4,11 +4,7 @@ import { useState, useTransition } from 'react';
 
 import { Avatar } from '@/components/app/Avatar';
 
-import {
-  removeAvatarAction,
-  updateProfileAction,
-  type UpdateProfileResult,
-} from './actions';
+import { removeAvatarAction, updateProfileAction, type UpdateProfileResult } from './actions';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
 
 interface Props {

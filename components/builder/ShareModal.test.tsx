@@ -20,14 +20,21 @@ function mockListResponse(rows: unknown[]) {
 }
 
 afterEach(() => cleanup());
-afterAll(() => { global.fetch = originalFetch; });
+afterAll(() => {
+  global.fetch = originalFetch;
+});
 
 describe('<ShareModal>', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('renders existing active links and lets the owner copy the URL', async () => {
     mockListResponse([
-      { id: 'l1', token: 'abcdef'.padEnd(43, 'x'), created_at: '2026-05-13T00:00:00Z', expires_at: null },
+      {
+        id: 'l1',
+        token: 'abcdef'.padEnd(43, 'x'),
+        created_at: '2026-05-13T00:00:00Z',
+        expires_at: null,
+      },
     ]);
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(writeText);
@@ -49,7 +56,9 @@ describe('<ShareModal>', () => {
     vi.spyOn(navigator.clipboard, 'writeText').mockImplementation(writeText);
 
     render(<ShareModal modelId="m1" open onClose={() => {}} />);
-    await act(async () => { await Promise.resolve(); });
+    await act(async () => {
+      await Promise.resolve();
+    });
     await userEvent.click(screen.getByRole('button', { name: /create link/i }));
     expect(createShareLink).toHaveBeenCalledWith('m1', '7d');
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining('/share/'));
@@ -57,7 +66,12 @@ describe('<ShareModal>', () => {
 
   it('revokes a link via the server action and hides the row', async () => {
     mockListResponse([
-      { id: 'l1', token: 'abcdef'.padEnd(43, 'x'), created_at: '2026-05-13T00:00:00Z', expires_at: null },
+      {
+        id: 'l1',
+        token: 'abcdef'.padEnd(43, 'x'),
+        created_at: '2026-05-13T00:00:00Z',
+        expires_at: null,
+      },
     ]);
     (revokeShareLink as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 

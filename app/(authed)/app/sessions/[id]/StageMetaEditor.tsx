@@ -68,8 +68,7 @@ export function StageMetaEditor({
 
   function commit() {
     const nextTitle = draftTitle.trim().slice(0, TITLE_MAX) || null;
-    const nextDescription =
-      draftDescription.trim().slice(0, DESCRIPTION_MAX) || null;
+    const nextDescription = draftDescription.trim().slice(0, DESCRIPTION_MAX) || null;
 
     if (
       nextTitle === (titleOverride ?? null) &&
@@ -102,12 +101,8 @@ export function StageMetaEditor({
   if (!canEdit) {
     return (
       <>
-        <h2 className="text-[16px] font-semibold tracking-tight text-zinc-950">
-          {visibleTitle}
-        </h2>
-        <p className="text-[12px] leading-snug text-zinc-500">
-          {visibleDescription}
-        </p>
+        <h2 className="text-[16px] font-semibold tracking-tight text-zinc-950">{visibleTitle}</h2>
+        <p className="text-[12px] leading-snug text-zinc-500">{visibleDescription}</p>
       </>
     );
   }
@@ -167,9 +162,7 @@ export function StageMetaEditor({
           >
             Cancel
           </button>
-          <span className="text-[11px] text-zinc-500">
-            Leave blank to use the default.
-          </span>
+          <span className="text-[11px] text-zinc-500">Leave blank to use the default.</span>
         </div>
         {error ? (
           <p className="text-[12px] text-[#c0613d]" role="alert">
@@ -197,9 +190,7 @@ export function StageMetaEditor({
         </span>
         <PencilIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-600" />
       </span>
-      <span className="text-[12px] leading-snug text-zinc-500">
-        {visibleDescription}
-      </span>
+      <span className="text-[12px] leading-snug text-zinc-500">{visibleDescription}</span>
     </button>
   );
 }

@@ -54,8 +54,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
 
-  const email =
-    typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
   if (!TEST_EMAIL_PATTERN.test(email)) {
     return NextResponse.json({ error: 'email_not_allowed' }, { status: 400 });
   }

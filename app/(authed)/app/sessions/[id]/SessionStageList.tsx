@@ -40,9 +40,7 @@ export function SessionStageList({
   participantsByStage,
   canManageSession,
 }: SessionStageListProps) {
-  const modelByStageId = new Map<string, OwnedModelRow>(
-    ownedModels.map((m) => [m.stage_id, m]),
-  );
+  const modelByStageId = new Map<string, OwnedModelRow>(ownedModels.map((m) => [m.stage_id, m]));
 
   return (
     <ol className="flex flex-col gap-3" data-testid="session-stage-list">
@@ -87,7 +85,11 @@ export function SessionStageList({
                   </Link>
                 </div>
               ) : (
-                <StartModelButton sessionId={sessionId} stageId={stage.id} stageType={stage.stage_type as StageType} />
+                <StartModelButton
+                  sessionId={sessionId}
+                  stageId={stage.id}
+                  stageType={stage.stage_type as StageType}
+                />
               )}
             </div>
 
@@ -107,9 +109,7 @@ export function SessionStageList({
                       data-testid={`participant-row-${p.id}`}
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-medium text-zinc-800">
-                          {p.title}
-                        </p>
+                        <p className="truncate text-[13px] font-medium text-zinc-800">{p.title}</p>
                         <p className="truncate text-[12px] text-zinc-500">{p.ownerLabel}</p>
                       </div>
                       <Link

@@ -28,9 +28,7 @@ describe('yjs jwt', () => {
       ttlSeconds: 60,
     });
     const tampered = `${token.slice(0, -2)}aa`;
-    await expect(
-      verifyYjsToken({ token: tampered, secret: SECRET }),
-    ).rejects.toThrow();
+    await expect(verifyYjsToken({ token: tampered, secret: SECRET })).rejects.toThrow();
   });
 
   test('rejects an expired token', async () => {
@@ -50,8 +48,6 @@ describe('yjs jwt', () => {
       secret: SECRET,
       ttlSeconds: 60,
     });
-    await expect(
-      verifyYjsToken({ token, secret: 'b'.repeat(64) }),
-    ).rejects.toThrow();
+    await expect(verifyYjsToken({ token, secret: 'b'.repeat(64) })).rejects.toThrow();
   });
 });

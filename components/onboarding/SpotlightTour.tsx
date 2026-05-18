@@ -59,10 +59,7 @@ export function SpotlightTour({ canManageSession }: Props) {
   );
 
   const active =
-    hydrated &&
-    role === 'facilitator' &&
-    !sessionTourSeen &&
-    stepIndex < visibleSteps.length;
+    hydrated && role === 'facilitator' && !sessionTourSeen && stepIndex < visibleSteps.length;
 
   const finish = useCallback(() => {
     markSessionTourSeen();

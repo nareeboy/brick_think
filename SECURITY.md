@@ -24,7 +24,7 @@ We will acknowledge your report within **5 business days** and aim to ship a fix
 **Out of scope** (please don't report these):
 
 - Vulnerabilities in third-party services we depend on (Supabase, Stripe, Resend, Railway, Google OAuth). Report those directly to the vendor.
-- Issues that require a malicious admin or owner role inside your *own* organisation.
+- Issues that require a malicious admin or owner role inside your _own_ organisation.
 - Missing rate limits on dev-only endpoints under `/api/test/*` — these are gated by a localhost host check plus an env flag and are never enabled in production.
 - Findings that depend on outdated or compromised browsers, devices, or networks.
 - Social-engineering or physical-access scenarios.

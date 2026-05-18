@@ -401,13 +401,43 @@ function FeatureCard({
 }
 
 const CANVAS_BRICKS = [
-  { src: '/bricks/flat-1-black-large-left.png', left: '6%', top: '64%', width: '32%', ratio: 300 / 190 },
-  { src: '/bricks/block-red-medium-left.png', left: '10%', top: '40%', width: '20%', ratio: 180 / 156 },
-  { src: '/bricks/block-yellow-medium.png', left: '32%', top: '38%', width: '20%', ratio: 180 / 156 },
-  { src: '/bricks/block-navy-medium-left.png', left: '54%', top: '46%', width: '20%', ratio: 180 / 156 },
+  {
+    src: '/bricks/flat-1-black-large-left.png',
+    left: '6%',
+    top: '64%',
+    width: '32%',
+    ratio: 300 / 190,
+  },
+  {
+    src: '/bricks/block-red-medium-left.png',
+    left: '10%',
+    top: '40%',
+    width: '20%',
+    ratio: 180 / 156,
+  },
+  {
+    src: '/bricks/block-yellow-medium.png',
+    left: '32%',
+    top: '38%',
+    width: '20%',
+    ratio: 180 / 156,
+  },
+  {
+    src: '/bricks/block-navy-medium-left.png',
+    left: '54%',
+    top: '46%',
+    width: '20%',
+    ratio: 180 / 156,
+  },
   { src: '/bricks/piece-head.png', left: '40%', top: '8%', width: '13%', ratio: 150 / 161 },
   { src: '/bricks/piece-body.png', left: '40%', top: '22%', width: '13%', ratio: 150 / 158 },
-  { src: '/bricks/corner-orange-small.png', left: '76%', top: '62%', width: '10%', ratio: 100 / 98 },
+  {
+    src: '/bricks/corner-orange-small.png',
+    left: '76%',
+    top: '62%',
+    width: '10%',
+    ratio: 100 / 98,
+  },
   { src: '/bricks/flower-pink-small.png', left: '74%', top: '24%', width: '10%', ratio: 100 / 94 },
 ];
 
@@ -990,12 +1020,7 @@ function ArrowRight({ className = '' }: { className?: string }) {
 
 function GitHubGlyph({ className = '' }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
       <path
         fillRule="evenodd"
         clipRule="evenodd"

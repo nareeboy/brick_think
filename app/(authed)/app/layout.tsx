@@ -36,11 +36,8 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
   const fullName = profileRes.data?.full_name?.trim() || null;
   const emailLocalPart = email?.split('@')[0]?.toLowerCase() ?? null;
   const fullNameLooksLikeEmailPrefix =
-    fullName !== null &&
-    emailLocalPart !== null &&
-    fullName.toLowerCase() === emailLocalPart;
-  const userName =
-    (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
+    fullName !== null && emailLocalPart !== null && fullName.toLowerCase() === emailLocalPart;
+  const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const userAvatarUrl = profileRes.data?.avatar_url ?? null;
 
   return (

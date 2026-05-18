@@ -102,11 +102,7 @@ function UnifiedSidebar({
         </div>
       ) : null}
 
-      <div
-        className={`flex min-h-0 flex-1 flex-col gap-4 p-5 ${
-          collapsed ? 'md:hidden' : ''
-        }`}
-      >
+      <div className={`flex min-h-0 flex-1 flex-col gap-4 p-5 ${collapsed ? 'md:hidden' : ''}`}>
         {sessionContext ? <BuilderBreadcrumb sessionContext={sessionContext} /> : null}
         <div className="flex items-start gap-2">
           <div className="min-w-0 flex-1">
@@ -356,11 +352,7 @@ function HistoryButton() {
       >
         History
       </button>
-      <VersionHistoryPanel
-        modelId={modelId}
-        open={open}
-        onClose={() => setOpen(false)}
-      />
+      <VersionHistoryPanel modelId={modelId} open={open} onClose={() => setOpen(false)} />
     </>
   );
 }

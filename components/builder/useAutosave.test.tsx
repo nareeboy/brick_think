@@ -81,8 +81,7 @@ describe('useAutosave', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
     const { rerender } = renderHook(
-      ({ payload }) =>
-        useAutosave({ modelId: null, payload, debounceMs: 1000 }),
+      ({ payload }) => useAutosave({ modelId: null, payload, debounceMs: 1000 }),
       { initialProps: { payload: { v: 1 } } },
     );
     rerender({ payload: { v: 2 } });
@@ -94,8 +93,7 @@ describe('useAutosave', () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500 });
     vi.stubGlobal('fetch', fetchMock);
     const { result, rerender } = renderHook(
-      ({ payload }) =>
-        useAutosave({ modelId: 'm1', payload, debounceMs: 1000 }),
+      ({ payload }) => useAutosave({ modelId: 'm1', payload, debounceMs: 1000 }),
       { initialProps: { payload: { v: 1 } } },
     );
 

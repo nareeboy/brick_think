@@ -60,9 +60,7 @@ describe('useOnboardingState', () => {
     expect(result.current.welcomeSeen).toBe(false);
     act(() => {
       localStorage.setItem('bt_welcome_seen', '1');
-      window.dispatchEvent(
-        new StorageEvent('storage', { key: 'bt_welcome_seen', newValue: '1' }),
-      );
+      window.dispatchEvent(new StorageEvent('storage', { key: 'bt_welcome_seen', newValue: '1' }));
     });
     expect(result.current.welcomeSeen).toBe(true);
   });

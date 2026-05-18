@@ -52,7 +52,8 @@ async function seedLink(opts: {
   const admin = getAdminClient();
   // Token must be 32–128 chars per the check constraint.
   const token =
-    opts.token ?? `${crypto.randomUUID().replace(/-/g, '')}${crypto.randomUUID().replace(/-/g, '')}`;
+    opts.token ??
+    `${crypto.randomUUID().replace(/-/g, '')}${crypto.randomUUID().replace(/-/g, '')}`;
   const res = await admin
     .from('model_share_links')
     .insert({
@@ -96,11 +97,7 @@ describe('purge_dead_share_links()', () => {
     expect(rpcRes.error).toBeNull();
 
     async function exists(id: string): Promise<boolean> {
-      const r = await admin
-        .from('model_share_links')
-        .select('id')
-        .eq('id', id)
-        .maybeSingle();
+      const r = await admin.from('model_share_links').select('id').eq('id', id).maybeSingle();
       return r.data !== null;
     }
 

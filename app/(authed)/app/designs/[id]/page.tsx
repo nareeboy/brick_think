@@ -28,11 +28,7 @@ export async function generateMetadata({
   return { title: data?.title ? `${data.title} · Builder` : 'Builder' };
 }
 
-export default async function DesignBuilderPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function DesignBuilderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!isSupabaseConfigured()) {
     redirect(`/sign-in?reason=unconfigured&next=%2Fapp%2Fdesigns%2F${id}`);
@@ -62,16 +58,8 @@ export default async function DesignBuilderPage({
   let sessionContext: SessionContext | null = null;
   if (data.session_id && data.stage_id) {
     const [sessionRes, stageRes] = await Promise.all([
-      supabase
-        .from('sessions')
-        .select('id, title')
-        .eq('id', data.session_id)
-        .maybeSingle(),
-      supabase
-        .from('stages')
-        .select('id, stage_type')
-        .eq('id', data.stage_id)
-        .maybeSingle(),
+      supabase.from('sessions').select('id, title').eq('id', data.session_id).maybeSingle(),
+      supabase.from('stages').select('id, stage_type').eq('id', data.stage_id).maybeSingle(),
     ]);
     if (sessionRes.data && stageRes.data) {
       sessionContext = {

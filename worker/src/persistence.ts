@@ -3,10 +3,7 @@ import { applyUpdate, encodeStateAsUpdate, type Doc } from 'yjs';
 
 import { projectDocToCanvas } from '@/lib/yjs/canvas-codec';
 
-export type PersistenceLogger = (
-  msg: string,
-  extra?: Record<string, unknown>,
-) => void;
+export type PersistenceLogger = (msg: string, extra?: Record<string, unknown>) => void;
 
 export interface PersistenceDeps {
   pool: Pool;
@@ -100,10 +97,7 @@ export function createPersistence(deps: PersistenceDeps): Persistence {
       const existing = pending.get(modelId);
       if (existing) {
         if (existing.debounceTimer) clearTimeout(existing.debounceTimer);
-        existing.debounceTimer = setTimeout(
-          () => fire(modelId),
-          deps.debounceMs,
-        );
+        existing.debounceTimer = setTimeout(() => fire(modelId), deps.debounceMs);
         existing.doc = doc;
         return;
       }

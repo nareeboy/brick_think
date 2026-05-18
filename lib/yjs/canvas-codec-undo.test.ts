@@ -15,11 +15,7 @@ import {
   updateBrickInDoc,
 } from './canvas-codec';
 
-function makeBrick(
-  id: string,
-  groupId: string,
-  overrides: Partial<{ x: number; y: number }> = {},
-) {
+function makeBrick(id: string, groupId: string, overrides: Partial<{ x: number; y: number }> = {}) {
   return {
     id,
     groupId,
@@ -106,11 +102,7 @@ describe('canvas-codec + Y.UndoManager', () => {
       doc,
       {
         groups: [makeGroup('g1')],
-        bricks: [
-          makeBrick('b1', 'g1'),
-          makeBrick('b2', 'g1'),
-          makeBrick('b3', 'g1'),
-        ],
+        bricks: [makeBrick('b1', 'g1'), makeBrick('b2', 'g1'), makeBrick('b3', 'g1')],
       },
       'T',
     );
@@ -208,11 +200,7 @@ describe('canvas-codec + Y.UndoManager', () => {
   test('seedDocFromCanvas does not enter the undo stack', () => {
     const doc = new Y.Doc();
     const um = makeUndoManager(doc);
-    seedDocFromCanvas(
-      doc,
-      { groups: [makeGroup('g1')], bricks: [makeBrick('b1', 'g1')] },
-      'Hello',
-    );
+    seedDocFromCanvas(doc, { groups: [makeGroup('g1')], bricks: [makeBrick('b1', 'g1')] }, 'Hello');
 
     expect(um.undoStack.length).toBe(0);
     expect(projectDocToCanvas(doc).bricks).toHaveLength(1);

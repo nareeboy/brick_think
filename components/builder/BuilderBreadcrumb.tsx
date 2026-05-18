@@ -3,11 +3,7 @@ import Link from 'next/link';
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { SessionContext } from '@/lib/sessions/types';
 
-export function BuilderBreadcrumb({
-  sessionContext,
-}: {
-  sessionContext: SessionContext;
-}) {
+export function BuilderBreadcrumb({ sessionContext }: { sessionContext: SessionContext }) {
   return (
     <div
       className="flex flex-wrap items-baseline gap-1.5 text-[12px] text-zinc-600"

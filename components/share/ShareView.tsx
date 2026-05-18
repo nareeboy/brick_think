@@ -15,22 +15,19 @@ export function ShareView({ title, canvasState }: ShareViewProps) {
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
 
-  const zoomBy = useCallback(
-    (factor: number, anchor: { x: number; y: number }) => {
-      setZoom((prev) => {
-        const { MIN_ZOOM, MAX_ZOOM } = SHARE_ZOOM_LIMITS;
-        const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev * factor));
-        if (next === prev) return prev;
-        const applied = next / prev;
-        setPan((p) => ({
-          x: anchor.x - (anchor.x - p.x) * applied,
-          y: anchor.y - (anchor.y - p.y) * applied,
-        }));
-        return next;
-      });
-    },
-    [],
-  );
+  const zoomBy = useCallback((factor: number, anchor: { x: number; y: number }) => {
+    setZoom((prev) => {
+      const { MIN_ZOOM, MAX_ZOOM } = SHARE_ZOOM_LIMITS;
+      const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, prev * factor));
+      if (next === prev) return prev;
+      const applied = next / prev;
+      setPan((p) => ({
+        x: anchor.x - (anchor.x - p.x) * applied,
+        y: anchor.y - (anchor.y - p.y) * applied,
+      }));
+      return next;
+    });
+  }, []);
 
   const panBy = useCallback((dx: number, dy: number) => {
     setPan((p) => ({ x: p.x + dx, y: p.y + dy }));

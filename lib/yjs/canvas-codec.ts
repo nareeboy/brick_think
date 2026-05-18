@@ -116,11 +116,7 @@ export function projectDocToCanvas(doc: Y.Doc): CanvasSnapshot {
   };
 }
 
-export function seedDocFromCanvas(
-  doc: Y.Doc,
-  seed: CanvasSeed,
-  title: string,
-): void {
+export function seedDocFromCanvas(doc: Y.Doc, seed: CanvasSeed, title: string): void {
   doc.transact(() => {
     const { canvas, groups, bricks } = ensureRoots(doc);
     if (groups.length > 0 || bricks.length > 0 || canvas.get('title')) return;
@@ -164,11 +160,7 @@ export function deleteBrickFromDoc(doc: Y.Doc, id: string): void {
   }, YJS_LOCAL_ORIGIN);
 }
 
-export function setBrickVisibleInDoc(
-  doc: Y.Doc,
-  id: string,
-  visible: boolean,
-): void {
+export function setBrickVisibleInDoc(doc: Y.Doc, id: string, visible: boolean): void {
   doc.transact(() => {
     const { bricks } = ensureRoots(doc);
     const idx = findBrickIndex(bricks, id);
@@ -234,11 +226,7 @@ export function deleteGroupFromDoc(doc: Y.Doc, id: string): void {
   }, YJS_LOCAL_ORIGIN);
 }
 
-export function setGroupVisibleInDoc(
-  doc: Y.Doc,
-  id: string,
-  visible: boolean,
-): void {
+export function setGroupVisibleInDoc(doc: Y.Doc, id: string, visible: boolean): void {
   doc.transact(() => {
     const { groups } = ensureRoots(doc);
     const idx = findGroupIndex(groups, id);
@@ -247,11 +235,7 @@ export function setGroupVisibleInDoc(
   }, YJS_LOCAL_ORIGIN);
 }
 
-export function setGroupCollapsedInDoc(
-  doc: Y.Doc,
-  id: string,
-  collapsed: boolean,
-): void {
+export function setGroupCollapsedInDoc(doc: Y.Doc, id: string, collapsed: boolean): void {
   doc.transact(() => {
     const { groups } = ensureRoots(doc);
     const idx = findGroupIndex(groups, id);

@@ -18,9 +18,7 @@ describe('BuilderBreadcrumb', () => {
     const link = screen.getByRole('link', {
       name: /quarterly retro/i,
     }) as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toBe(
-      '/app/sessions/11111111-2222-3333-4444-555555555555',
-    );
+    expect(link.getAttribute('href')).toBe('/app/sessions/11111111-2222-3333-4444-555555555555');
     // getByText throws if absent — its return value is the assertion.
     screen.getByText('Individual model');
   });

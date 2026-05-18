@@ -95,10 +95,7 @@ export async function emptyTrashAction(): Promise<void> {
   revalidatePath('/app/designs/trash');
 }
 
-export async function restoreVersionAction(
-  modelId: string,
-  versionId: string,
-): Promise<void> {
+export async function restoreVersionAction(modelId: string, versionId: string): Promise<void> {
   const { supabase, user } = await requireUser();
 
   // 1. Read current canvas_state and the target version in parallel.

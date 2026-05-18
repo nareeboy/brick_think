@@ -31,7 +31,8 @@ export default async function OrgsPage() {
 
   const summaries: OrgSummary[] = (data ?? [])
     .map((row): OrgSummary | null => {
-      const org = (row as { organisations: { id: string; name: string; slug: string } | null }).organisations;
+      const org = (row as { organisations: { id: string; name: string; slug: string } | null })
+        .organisations;
       if (!org) return null;
       return {
         id: org.id,

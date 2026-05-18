@@ -36,8 +36,16 @@ describe('parseCanvasState', () => {
       groups: [{ id: 'g1', name: 'A', collapsed: false, visible: true }],
       bricks: [
         {
-          id: 'b1', groupId: 'ghost', code: 'X', image: '',
-          width: 50, height: 50, x: 0, y: 0, rotation: 0, visible: true,
+          id: 'b1',
+          groupId: 'ghost',
+          code: 'X',
+          image: '',
+          width: 50,
+          height: 50,
+          x: 0,
+          y: 0,
+          rotation: 0,
+          visible: true,
         },
       ],
     };
@@ -45,8 +53,7 @@ describe('parseCanvasState', () => {
   });
 
   it('falls back to empty state when groups field is malformed', () => {
-    expect(parseCanvasState({ groups: 'not-an-array', bricks: [] }))
-      .toEqual(EMPTY_CANVAS_STATE);
+    expect(parseCanvasState({ groups: 'not-an-array', bricks: [] })).toEqual(EMPTY_CANVAS_STATE);
   });
 
   it('returns a distinct empty object per invalid call (no shared sentinel)', () => {
@@ -63,8 +70,16 @@ describe('serializeCanvasState', () => {
       groups: [{ id: 'g1', name: 'A', collapsed: false, visible: true }],
       bricks: [
         {
-          id: 'b1', groupId: 'g1', code: 'X', image: '',
-          width: 50, height: 50, x: 0, y: 0, rotation: 0, visible: true,
+          id: 'b1',
+          groupId: 'g1',
+          code: 'X',
+          image: '',
+          width: 50,
+          height: 50,
+          x: 0,
+          y: 0,
+          rotation: 0,
+          visible: true,
         },
       ],
     };

@@ -2,10 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import * as Y from 'yjs';
 
-import {
-  YJS_CANVAS_MAP_NAME,
-  addBrickToDoc,
-} from '@/lib/yjs/canvas-codec';
+import { YJS_CANVAS_MAP_NAME, addBrickToDoc } from '@/lib/yjs/canvas-codec';
 
 import { useYjsUndoManager } from './useYjsUndoManager';
 
@@ -193,9 +190,7 @@ describe('useYjsUndoManager', () => {
     const removeSpy = vi.spyOn(window, 'removeEventListener');
     const { unmount } = renderHook(() => useYjsUndoManager(doc));
     unmount();
-    const keydownRemovals = removeSpy.mock.calls.filter(
-      (c) => c[0] === 'keydown',
-    );
+    const keydownRemovals = removeSpy.mock.calls.filter((c) => c[0] === 'keydown');
     expect(keydownRemovals).toHaveLength(1);
   });
 
@@ -224,10 +219,9 @@ describe('useYjsUndoManager', () => {
     const doc2 = new Y.Doc();
     seedMinimal(doc2);
 
-    const { result, rerender } = renderHook(
-      ({ d }: { d: Y.Doc | null }) => useYjsUndoManager(d),
-      { initialProps: { d: doc1 as Y.Doc | null } },
-    );
+    const { result, rerender } = renderHook(({ d }: { d: Y.Doc | null }) => useYjsUndoManager(d), {
+      initialProps: { d: doc1 as Y.Doc | null },
+    });
     act(() => {
       addBrickToDoc(doc1, makeBrick('b1', 'g1'));
     });

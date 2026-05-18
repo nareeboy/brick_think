@@ -40,10 +40,7 @@ export function TagFilterBar({ tags, active }: Props) {
   }
 
   return (
-    <div
-      data-testid="my-designs-tag-bar"
-      className="flex flex-wrap items-center gap-2"
-    >
+    <div data-testid="my-designs-tag-bar" className="flex flex-wrap items-center gap-2">
       <span className="text-[13px] font-medium text-zinc-600">Tags:</span>
       <button
         type="button"
@@ -92,9 +89,7 @@ export function TagFilterBar({ tags, active }: Props) {
       >
         Manage
       </button>
-      {managing ? (
-        <ManageTagsDialog tags={tags} onClose={() => setManaging(false)} />
-      ) : null}
+      {managing ? <ManageTagsDialog tags={tags} onClose={() => setManaging(false)} /> : null}
     </div>
   );
 }

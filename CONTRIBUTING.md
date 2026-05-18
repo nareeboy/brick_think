@@ -29,7 +29,7 @@ pnpm dev:e2e                        # http://localhost:3000 → LOCAL Supabase
 
 `pnpm dev:e2e` points the app at the local Supabase stack, so magic-link emails land in Mailpit at `http://127.0.0.1:54324` and there are no rate limits. Use this for everyday development.
 
-`pnpm dev` (without `:e2e`) points at a *remote* Supabase project configured in `.env.local`. You only need it if you're reproducing something against production-shaped data.
+`pnpm dev` (without `:e2e`) points at a _remote_ Supabase project configured in `.env.local`. You only need it if you're reproducing something against production-shaped data.
 
 ### Yjs collaboration worker
 
@@ -39,7 +39,7 @@ If you're touching live collaboration (the `shared_model` stage, presence, the Y
 pnpm worker:dev
 ```
 
-It reads `.env.local` on boot. For local dev, `WORKER_DATABASE_URL` must point at local Postgres (`postgresql://postgres:postgres@127.0.0.1:54322/postgres`) — the README's *Worker* section has the convention for toggling between local and remote.
+It reads `.env.local` on boot. For local dev, `WORKER_DATABASE_URL` must point at local Postgres (`postgresql://postgres:postgres@127.0.0.1:54322/postgres`) — the README's _Worker_ section has the convention for toggling between local and remote.
 
 ## Pre-PR checks
 
@@ -73,7 +73,7 @@ docs(avatar): document the profile-avatar system and public-bucket gotchas
 ```
 
 - Keep the subject under ~72 characters.
-- Write the body to explain *why*, not *what* — the diff already shows the what.
+- Write the body to explain _why_, not _what_ — the diff already shows the what.
 - Never bypass git hooks (`--no-verify`) unless a maintainer explicitly asks you to.
 
 ## Branches and pull requests
@@ -96,7 +96,7 @@ Migrations live in `supabase/migrations/` and are applied in timestamp order. Wh
 1. Make the schema change in local Supabase (Studio → SQL editor, or by editing seed data and running `pnpm db:reset`).
 2. `pnpm db:diff` writes a new migration file with the delta.
 3. Regenerate types with `pnpm db:types`.
-4. Commit the migration file *and* the regenerated `lib/db/types.generated.ts` together.
+4. Commit the migration file _and_ the regenerated `lib/db/types.generated.ts` together.
 
 Maintainers apply migrations to the hosted database via `pnpm db:push`; this is never done autonomously and never as part of a PR merge.
 

@@ -12,15 +12,9 @@ import {
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 
-import {
-  useBuilderState,
-  type BrickInstance,
-  type LayerGroup,
-} from './builderState';
+import { useBuilderState, type BrickInstance, type LayerGroup } from './builderState';
 
-const NAME_BY_CODE = new Map<string, string>(
-  CANONICAL_BRICKS.map((b) => [b.code, b.name]),
-);
+const NAME_BY_CODE = new Map<string, string>(CANONICAL_BRICKS.map((b) => [b.code, b.name]));
 
 const MIME_BRICK = 'application/x-brick';
 const MIME_GROUP = 'application/x-group';
@@ -76,23 +70,16 @@ export function LayersPanel() {
     setDragKind('group');
   }
 
-  function handleBrickRowDragOver(
-    e: DragEvent<HTMLDivElement>,
-    brick: BrickInstance,
-  ) {
+  function handleBrickRowDragOver(e: DragEvent<HTMLDivElement>, brick: BrickInstance) {
     if (dragKind !== 'brick') return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     const rect = e.currentTarget.getBoundingClientRect();
-    const side: 'before' | 'after' =
-      e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
+    const side: 'before' | 'after' = e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
     setHint({ kind: 'brick-edge', brickId: brick.id, side });
   }
 
-  function handleBrickRowDrop(
-    e: DragEvent<HTMLDivElement>,
-    brick: BrickInstance,
-  ) {
+  function handleBrickRowDrop(e: DragEvent<HTMLDivElement>, brick: BrickInstance) {
     const draggedId = e.dataTransfer.getData(MIME_BRICK);
     if (!draggedId || draggedId === brick.id) {
       clearDrag();
@@ -102,16 +89,12 @@ export function LayersPanel() {
     const groupBricks = bricksByGroup.get(brick.groupId) ?? [];
     const ownIdx = groupBricks.findIndex((b) => b.id === brick.id);
     const side = hint?.kind === 'brick-edge' ? hint.side : 'before';
-    const beforeId =
-      side === 'before' ? brick.id : groupBricks[ownIdx + 1]?.id ?? null;
+    const beforeId = side === 'before' ? brick.id : (groupBricks[ownIdx + 1]?.id ?? null);
     moveBrick(draggedId, brick.groupId, beforeId);
     clearDrag();
   }
 
-  function handleGroupHeaderDragOver(
-    e: DragEvent<HTMLDivElement>,
-    group: LayerGroup,
-  ) {
+  function handleGroupHeaderDragOver(e: DragEvent<HTMLDivElement>, group: LayerGroup) {
     if (dragKind === 'brick') {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
@@ -120,16 +103,12 @@ export function LayersPanel() {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
       const rect = e.currentTarget.getBoundingClientRect();
-      const side: 'before' | 'after' =
-        e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
+      const side: 'before' | 'after' = e.clientY - rect.top < rect.height / 2 ? 'before' : 'after';
       setHint({ kind: 'group-edge', groupId: group.id, side });
     }
   }
 
-  function handleGroupHeaderDrop(
-    e: DragEvent<HTMLDivElement>,
-    group: LayerGroup,
-  ) {
+  function handleGroupHeaderDrop(e: DragEvent<HTMLDivElement>, group: LayerGroup) {
     const brickId = e.dataTransfer.getData(MIME_BRICK);
     if (brickId) {
       e.preventDefault();
@@ -165,10 +144,7 @@ export function LayersPanel() {
   }
 
   return (
-    <details
-      open
-      className="group/layers flex min-h-0 shrink-0 flex-col open:flex-1"
-    >
+    <details open className="group/layers flex min-h-0 shrink-0 flex-col open:flex-1">
       <summary className="flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
         <p className="text-[14px] font-semibold text-zinc-900">Layers</p>
         <div className="flex items-center gap-1">
@@ -241,10 +217,7 @@ interface GroupBlockProps {
   onToggleBrickVisible: (id: string) => void;
   onDeleteBrick: (id: string) => void;
   onGroupDragStart: (groupId: string, e: DragEvent<HTMLDivElement>) => void;
-  onGroupHeaderDragOver: (
-    e: DragEvent<HTMLDivElement>,
-    g: LayerGroup,
-  ) => void;
+  onGroupHeaderDragOver: (e: DragEvent<HTMLDivElement>, g: LayerGroup) => void;
   onGroupHeaderDrop: (e: DragEvent<HTMLDivElement>, g: LayerGroup) => void;
   onBrickDragStart: (id: string, e: DragEvent<HTMLDivElement>) => void;
   onBrickDragOver: (e: DragEvent<HTMLDivElement>, b: BrickInstance) => void;
@@ -294,9 +267,7 @@ function GroupBlock({
 
   return (
     <div className="mt-3 first:mt-1">
-      {hint?.kind === 'group-edge' &&
-      hint.groupId === group.id &&
-      hint.side === 'before' ? (
+      {hint?.kind === 'group-edge' && hint.groupId === group.id && hint.side === 'before' ? (
         <div className="mx-2 mb-1 h-[2px] rounded-full bg-[#c0613d]" />
       ) : null}
       <div
@@ -309,13 +280,9 @@ function GroupBlock({
         onClick={() => onSetActive(group.id)}
         onKeyDown={handleHeaderKeyDown}
         className={`flex w-full cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] transition-colors ${
-          active
-            ? 'bg-[#c0613d]/10 text-zinc-900'
-            : 'text-zinc-800 hover:bg-zinc-900/5'
+          active ? 'bg-[#c0613d]/10 text-zinc-900' : 'text-zinc-800 hover:bg-zinc-900/5'
         } ${dimmed ? 'opacity-60' : ''} ${
-          hint?.kind === 'group-top' && hint.groupId === group.id
-            ? 'ring-2 ring-[#c0613d]/50'
-            : ''
+          hint?.kind === 'group-top' && hint.groupId === group.id ? 'ring-2 ring-[#c0613d]/50' : ''
         }`}
       >
         <button
@@ -395,9 +362,7 @@ function GroupBlock({
       {!group.collapsed ? (
         <div className="mt-0.5 space-y-0.5 pl-4">
           {bricks.length === 0 ? (
-            <p className="px-2 py-1 text-[11px] text-zinc-400">
-              Drop a piece on the canvas.
-            </p>
+            <p className="px-2 py-1 text-[11px] text-zinc-400">Drop a piece on the canvas.</p>
           ) : (
             bricks.map((b) => (
               <BrickRow
@@ -418,9 +383,7 @@ function GroupBlock({
         </div>
       ) : null}
 
-      {hint?.kind === 'group-edge' &&
-      hint.groupId === group.id &&
-      hint.side === 'after' ? (
+      {hint?.kind === 'group-edge' && hint.groupId === group.id && hint.side === 'after' ? (
         <div className="mx-2 mt-1 h-[2px] rounded-full bg-[#c0613d]" />
       ) : null}
     </div>
@@ -452,20 +415,14 @@ function BrickRow({
 }) {
   const dimmed = !brick.visible || groupHidden;
   const showBefore =
-    hint?.kind === 'brick-edge' &&
-    hint.brickId === brick.id &&
-    hint.side === 'before';
+    hint?.kind === 'brick-edge' && hint.brickId === brick.id && hint.side === 'before';
   const showAfter =
-    hint?.kind === 'brick-edge' &&
-    hint.brickId === brick.id &&
-    hint.side === 'after';
+    hint?.kind === 'brick-edge' && hint.brickId === brick.id && hint.side === 'after';
   const baseName = NAME_BY_CODE.get(brick.code) ?? brick.code;
   const label = `${baseName} · ${brick.id.slice(-4)}`;
   return (
     <div>
-      {showBefore ? (
-        <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" />
-      ) : null}
+      {showBefore ? <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" /> : null}
       <div
         role="button"
         tabIndex={0}
@@ -482,9 +439,7 @@ function BrickRow({
           }
         }}
         className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors ${
-          selected
-            ? 'bg-[#c0613d]/12 text-zinc-900'
-            : 'text-zinc-700 hover:bg-zinc-900/5'
+          selected ? 'bg-[#c0613d]/12 text-zinc-900' : 'text-zinc-700 hover:bg-zinc-900/5'
         } ${dimmed ? 'opacity-50' : ''}`}
       >
         <span
@@ -523,9 +478,7 @@ function BrickRow({
           <TrashIcon className="h-3.5 w-3.5" />
         </IconButton>
       </div>
-      {showAfter ? (
-        <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" />
-      ) : null}
+      {showAfter ? <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" /> : null}
     </div>
   );
 }

@@ -9,9 +9,7 @@ test.describe('nav restructure', () => {
     await expect(nav.locator('a')).toHaveCount(2);
   });
 
-  test('New Design from My Designs creates a personal design', async ({
-    signedInPage,
-  }) => {
+  test('New Design from My Designs creates a personal design', async ({ signedInPage }) => {
     await signedInPage.goto('/app/my-designs');
     await signedInPage.getByTestId('new-design-button').click();
     await signedInPage.getByTestId('new-design-dialog').waitFor();
@@ -26,12 +24,8 @@ test.describe('nav restructure', () => {
     await signedInPage.goto('/app/my-designs');
     await signedInPage.getByTestId('new-design-button').click();
     await signedInPage.getByTestId('new-design-dialog').waitFor();
-    await signedInPage
-      .getByTestId(`destination-org-${seededSession.orgId}`)
-      .click();
-    await signedInPage
-      .getByTestId(`session-option-${seededSession.sessionId}`)
-      .click();
+    await signedInPage.getByTestId(`destination-org-${seededSession.orgId}`).click();
+    await signedInPage.getByTestId(`session-option-${seededSession.sessionId}`).click();
     await signedInPage.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
 
     // Verify the design shows up in the seeded session's detail page.
@@ -47,10 +41,7 @@ test.describe('nav restructure', () => {
     ).toBeVisible();
   });
 
-  test('Filter narrows My Designs to a single org', async ({
-    signedInPage,
-    seededSession,
-  }) => {
+  test('Filter narrows My Designs to a single org', async ({ signedInPage, seededSession }) => {
     // 1. Create a personal design via the wizard.
     await signedInPage.goto('/app/my-designs');
     await signedInPage.getByTestId('new-design-button').click();
@@ -62,12 +53,8 @@ test.describe('nav restructure', () => {
     await signedInPage.goto('/app/my-designs');
     await signedInPage.getByTestId('new-design-button').click();
     await signedInPage.getByTestId('new-design-dialog').waitFor();
-    await signedInPage
-      .getByTestId(`destination-org-${seededSession.orgId}`)
-      .click();
-    await signedInPage
-      .getByTestId(`session-option-${seededSession.sessionId}`)
-      .click();
+    await signedInPage.getByTestId(`destination-org-${seededSession.orgId}`).click();
+    await signedInPage.getByTestId(`session-option-${seededSession.sessionId}`).click();
     await signedInPage.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
 
     // 3. Back on My Designs we expect 2 cards.
@@ -86,9 +73,7 @@ test.describe('nav restructure', () => {
     await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
   });
 
-  test('old /app/sessions route redirects to /app/orgs', async ({
-    signedInPage,
-  }) => {
+  test('old /app/sessions route redirects to /app/orgs', async ({ signedInPage }) => {
     await signedInPage.goto('/app/sessions');
     await expect(signedInPage).toHaveURL(/\/app\/orgs/);
   });
@@ -104,29 +89,20 @@ test.describe('nav restructure', () => {
     await signedInPage.getByTestId('destination-personal').click();
     await signedInPage.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     const builderUrl = signedInPage.url();
-    const sourceId =
-      builderUrl.match(/\/app\/designs\/([0-9a-f-]+)/)?.[1] ?? '';
+    const sourceId = builderUrl.match(/\/app\/designs\/([0-9a-f-]+)/)?.[1] ?? '';
     expect(sourceId).not.toBe('');
 
     // 2. Navigate back to My Designs and send to the seeded session.
     await signedInPage.goto('/app/my-designs');
     await signedInPage.getByTestId(`send-${sourceId}`).click();
     await signedInPage.getByTestId('send-to-session-dialog').waitFor();
-    await signedInPage
-      .getByTestId(`send-org-${seededSession.orgId}`)
-      .click();
-    await signedInPage
-      .getByTestId(`send-session-${seededSession.sessionId}`)
-      .click();
+    await signedInPage.getByTestId(`send-org-${seededSession.orgId}`).click();
+    await signedInPage.getByTestId(`send-session-${seededSession.sessionId}`).click();
     // We expect to land on a NEW design id (not the source).
-    await signedInPage.waitForURL(
-      new RegExp(`/app/designs/(?!${sourceId})[0-9a-f-]+`),
-    );
+    await signedInPage.waitForURL(new RegExp(`/app/designs/(?!${sourceId})[0-9a-f-]+`));
 
     // 3. Source design must still be visible under the Personal filter.
     await signedInPage.goto('/app/my-designs?filter=personal');
-    await expect(
-      signedInPage.getByTestId(`design-card-${sourceId}`),
-    ).toBeVisible();
+    await expect(signedInPage.getByTestId(`design-card-${sourceId}`)).toBeVisible();
   });
 });

@@ -52,9 +52,7 @@ export function PiecesDrawer() {
 
   const pieces = useMemo(
     () =>
-      filter === 'all'
-        ? CANONICAL_BRICKS
-        : CANONICAL_BRICKS.filter((b) => b.category === filter),
+      filter === 'all' ? CANONICAL_BRICKS : CANONICAL_BRICKS.filter((b) => b.category === filter),
     [filter],
   );
 
@@ -77,7 +75,9 @@ export function PiecesDrawer() {
       <div
         aria-hidden={!open}
         className={`pointer-events-none absolute inset-y-3 right-3 z-20 w-[min(360px,calc(100%-1.5rem))] transition-[transform,opacity] duration-300 ease-out ${
-          open ? 'translate-x-0 opacity-100' : 'pointer-events-none translate-x-[calc(100%+1rem)] opacity-0'
+          open
+            ? 'translate-x-0 opacity-100'
+            : 'pointer-events-none translate-x-[calc(100%+1rem)] opacity-0'
         }`}
       >
         <div
@@ -212,4 +212,3 @@ function CloseIcon({ className = '' }: { className?: string }) {
     </svg>
   );
 }
-

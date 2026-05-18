@@ -15,11 +15,7 @@ import type * as Y from 'yjs';
 import { WebSocketServer, type WebSocket } from 'ws';
 
 import { createPersistence } from './persistence';
-import {
-  UpgradeRejected,
-  parseModelIdFromUrl,
-  verifyUpgradeRequest,
-} from './auth';
+import { UpgradeRejected, parseModelIdFromUrl, verifyUpgradeRequest } from './auth';
 
 const requireFromHere = createRequire(import.meta.url);
 const wsUtils = requireFromHere('y-websocket/bin/utils') as {
@@ -77,9 +73,7 @@ function attachPersistenceForDoc(modelId: string): void {
   tracked.add(modelId);
   void persistence
     .loadDoc(modelId, doc)
-    .catch((err: unknown) =>
-      logEvent('load_error', { modelId, err: String(err) }),
-    );
+    .catch((err: unknown) => logEvent('load_error', { modelId, err: String(err) }));
   doc.on('update', () => {
     persistence.scheduleSave(modelId, doc);
   });
@@ -122,8 +116,7 @@ httpServer.on('upgrade', (request, socket, head) => {
       });
     } catch (err) {
       const status = err instanceof UpgradeRejected ? err.status : 500;
-      const reason =
-        err instanceof UpgradeRejected ? err.reason : 'internal error';
+      const reason = err instanceof UpgradeRejected ? err.reason : 'internal error';
       logEvent('upgrade_rejected', {
         status,
         reason,
@@ -141,14 +134,11 @@ httpServer.on('upgrade', (request, socket, head) => {
   })();
 });
 
-wss.on(
-  'connection',
-  (conn: WebSocket, request: IncomingMessage, modelId: string) => {
-    logEvent('client_connected', { modelId });
-    wsUtils.setupWSConnection(conn, request, { docName: modelId, gc: true });
-    setImmediate(() => attachPersistenceForDoc(modelId));
-  },
-);
+wss.on('connection', (conn: WebSocket, request: IncomingMessage, modelId: string) => {
+  logEvent('client_connected', { modelId });
+  wsUtils.setupWSConnection(conn, request, { docName: modelId, gc: true });
+  setImmediate(() => attachPersistenceForDoc(modelId));
+});
 
 httpServer.listen(PORT, HOST, () => {
   logEvent('listening', { host: HOST, port: PORT });

@@ -99,16 +99,11 @@ async function listOwnedThumbnailPaths(userId: string): Promise<string[]> {
  * Execute the delete. Caller is responsible for refusing if
  * `preDeleteAccount` returned any `blockingOrgs`.
  */
-export async function performAccountDelete(
-  userId: string,
-  plan: PreDeleteCheck,
-): Promise<void> {
+export async function performAccountDelete(userId: string, plan: PreDeleteCheck): Promise<void> {
   const supabase = getServiceSupabaseClient();
 
   if (plan.thumbnailPaths.length > 0) {
-    const cleanup = await supabase.storage
-      .from('model-thumbnails')
-      .remove(plan.thumbnailPaths);
+    const cleanup = await supabase.storage.from('model-thumbnails').remove(plan.thumbnailPaths);
     if (cleanup.error) {
       console.warn('thumbnail cleanup failed during account delete', {
         userId,
@@ -119,9 +114,7 @@ export async function performAccountDelete(
 
   // Remove the avatar object if one exists. Idempotent — missing-object is a
   // silent no-op from storage.remove. Mirrors the thumbnail sweep above.
-  const avatarCleanup = await supabase.storage
-    .from('avatars')
-    .remove([`${userId}/avatar.png`]);
+  const avatarCleanup = await supabase.storage.from('avatars').remove([`${userId}/avatar.png`]);
   if (avatarCleanup.error) {
     console.warn('avatar cleanup failed during account delete', {
       userId,

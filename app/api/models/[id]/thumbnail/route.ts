@@ -5,10 +5,7 @@ import { isPng } from '@/lib/images/validatePng';
 
 const MAX_BYTES = 200 * 1024;
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createServerSupabaseClient();
   const {
@@ -47,13 +44,11 @@ export async function POST(
   }
 
   const path = `${user.id}/${id}.png`;
-  const { error: upErr } = await supabase.storage
-    .from('model-thumbnails')
-    .upload(path, file, {
-      contentType: 'image/png',
-      upsert: true,
-      cacheControl: '3600',
-    });
+  const { error: upErr } = await supabase.storage.from('model-thumbnails').upload(path, file, {
+    contentType: 'image/png',
+    upsert: true,
+    cacheControl: '3600',
+  });
   if (upErr) {
     return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
@@ -75,10 +70,7 @@ export async function POST(
     if (cleanup.error) {
       console.error('failed to clean up orphan thumbnail', path, cleanup.error);
     }
-    return NextResponse.json(
-      { error: updErr?.message ?? 'update failed' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: updErr?.message ?? 'update failed' }, { status: 500 });
   }
 
   return NextResponse.json({

@@ -7,10 +7,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 
 let proc: ChildProcess | null = null;
 
-export async function startWorker(opts: {
-  port: number;
-  secret: string;
-}): Promise<void> {
+export async function startWorker(opts: { port: number; secret: string }): Promise<void> {
   if (proc) throw new Error('worker already running');
   // Integration tests always run against the local Supabase stack — the
   // worker must NOT pick up a remote WORKER_DATABASE_URL from .env.local
@@ -20,21 +17,17 @@ export async function startWorker(opts: {
   // Strip the remote URL out of inherited env so the worker's loadEnv()
   // call against .env.local can't override our explicit local value.
   delete env.WORKER_DATABASE_URL;
-  proc = spawn(
-    'pnpm',
-    ['exec', 'tsx', 'worker/src/yjs-server.ts'],
-    {
-      env: {
-        ...env,
-        YJS_PORT: String(opts.port),
-        YJS_JWT_SECRET: opts.secret,
-        WORKER_DATABASE_URL: dbUrl,
-        YJS_PERSIST_DEBOUNCE_MS: '300',
-        YJS_PERSIST_CEILING_MS: '3000',
-      },
-      stdio: ['ignore', 'inherit', 'inherit'],
+  proc = spawn('pnpm', ['exec', 'tsx', 'worker/src/yjs-server.ts'], {
+    env: {
+      ...env,
+      YJS_PORT: String(opts.port),
+      YJS_JWT_SECRET: opts.secret,
+      WORKER_DATABASE_URL: dbUrl,
+      YJS_PERSIST_DEBOUNCE_MS: '300',
+      YJS_PERSIST_CEILING_MS: '3000',
     },
-  );
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
   const start = Date.now();
   while (Date.now() - start < 15_000) {
     try {
