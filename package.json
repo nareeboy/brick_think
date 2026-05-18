@@ -33,7 +33,7 @@
     "db:reset": "supabase db reset",
     "db:status": "supabase status",
     "db:diff": "supabase db diff --use-migra",
-    "db:types": "supabase gen types typescript --local > lib/db/types.generated.ts",
+    "db:types": "supabase gen types typescript --local | sed -n '/^export /,/^} as const$/p' > lib/db/types.generated.ts",
     "db:link": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase link --project-ref $(grep -E '^SUPABASE_PROJECT_REF=' .env.local | cut -d= -f2-)",
     "db:migrations": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase migration list --linked",
     "db:push": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase db push --linked"
