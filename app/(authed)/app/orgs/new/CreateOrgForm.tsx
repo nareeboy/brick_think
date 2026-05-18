@@ -69,6 +69,7 @@ export function CreateOrgForm() {
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
           maxLength={80}
+          autoComplete="off"
           className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#c0613d]"
         />
       </label>
@@ -83,6 +84,7 @@ export function CreateOrgForm() {
           onChange={(e) => onSlugChange(e.target.value)}
           maxLength={40}
           pattern="[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"
+          autoComplete="off"
           className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 font-mono text-[13px] text-zinc-900 outline-none focus:border-[#c0613d]"
         />
         <span className="text-[12px] text-zinc-500">

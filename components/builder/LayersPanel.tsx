@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
+import { moveRowFocus } from '@/lib/a11y/moveRowFocus';
 
 import { useBuilderState, type BrickInstance, type LayerGroup } from './builderState';
 
@@ -165,6 +166,7 @@ export function LayersPanel() {
       </summary>
 
       <div
+        data-testid="layers-panel"
         className="-mr-2 mt-4 min-h-0 flex-1 overflow-y-auto pr-2"
         onDragLeave={(e) => {
           const related = e.relatedTarget as Node | null;
@@ -262,6 +264,16 @@ function GroupBlock({
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onSetActive(group.id);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      onDelete(group);
+    } else if (e.key === 'F2') {
+      e.preventDefault();
+      setDraft(group.name);
+      setEditing(true);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveRowFocus(e.currentTarget, e.key === 'ArrowDown' ? 'down' : 'up');
     }
   }
 
@@ -436,6 +448,12 @@ function BrickRow({
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onSelect(brick.id);
+          } else if (e.key === 'Delete' || e.key === 'Backspace') {
+            e.preventDefault();
+            onDelete(brick.id);
+          } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            moveRowFocus(e.currentTarget, e.key === 'ArrowDown' ? 'down' : 'up');
           }
         }}
         className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors ${

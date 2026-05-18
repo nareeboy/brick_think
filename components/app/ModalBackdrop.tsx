@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
 // Shared modal backdrop. Wraps the panel children in a fixed-position layer,
 // renders a backdrop button (interactive — sidesteps the
@@ -12,8 +14,8 @@ import { useEffect, type ReactNode } from 'react';
 //   * the inner panel sizing/shape (the `<div class="w-full max-w-md rounded-2xl bg-white p-6 ...">`
 //     stays in the consumer because each dialog has its own width / colouring).
 //   * focusing the first input on mount (the consumer has the ref).
-//   * any per-dialog Tab trapping (DeleteConfirmDialog needs it; the
-//     simpler form/wizard dialogs do not).
+//   * Tab cycling is now handled universally by useFocusTrap — no per-dialog
+//     implementation needed.
 
 interface Props {
   onClose: () => void;
@@ -35,6 +37,9 @@ export function ModalBackdrop({
   panelClassName = 'w-full max-w-md',
   children,
 }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
@@ -45,6 +50,7 @@ export function ModalBackdrop({
 
   return (
     <div
+      ref={dialogRef}
       data-testid={dataTestid}
       role="dialog"
       aria-modal="true"
