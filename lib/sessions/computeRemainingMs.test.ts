@@ -52,6 +52,11 @@ describe('computeRemainingMs', () => {
     expect(computeRemainingMs(s, T0)).toBe(720_000);
   });
 
+  it('clamps to totalMs when client clock is behind server (negative elapsed)', () => {
+    // started_at is "in the future" relative to nowMs — simulates client clock skew.
+    expect(computeRemainingMs(stage(), T0 - 30_000)).toBe(600_000);
+  });
+
   it('returns null when duration_seconds is null', () => {
     const s = stage({ duration_seconds: null });
     expect(computeRemainingMs(s, T0 + 60_000)).toBeNull();
