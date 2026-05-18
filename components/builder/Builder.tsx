@@ -11,9 +11,11 @@ import { BuilderCanvasLoader } from './canvasLoader';
 import { CANVAS_DROP_TARGET, DragPieceProvider } from './dragPiece';
 import { LayersPanel } from './LayersPanel';
 import { ModelTitle } from './ModelTitle';
+import { PeopleHereStrip } from './PeopleHereStrip';
 import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
+import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
@@ -199,7 +201,8 @@ function SaveToast() {
 }
 
 function CanvasStage({ orgId }: { orgId: string | null }) {
-  const { awareness, selfClientId, view } = useBuilderState();
+  const { awareness, selfClientId, view, self } = useBuilderState();
+  const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   return (
     <DragPieceProvider>
       <section
@@ -231,6 +234,7 @@ function CanvasStage({ orgId }: { orgId: string | null }) {
           pan={view.pan}
           zoom={view.zoom}
         />
+        <PeopleHereStrip peers={presence.peers} />
 
         <ShareButton orgId={orgId} />
         <PiecesDrawer />

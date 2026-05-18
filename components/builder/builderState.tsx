@@ -157,6 +157,7 @@ export interface BuilderState {
   connectionStatus: YjsConnectionStatus | null;
   awareness: Awareness | null;
   selfClientId: number | null;
+  self: PresenceSelf | null;
   publishCursor: (worldX: number, worldY: number) => void;
   clearCursor: () => void;
   undo: () => void;
@@ -774,6 +775,7 @@ export function BuilderProvider({
       connectionStatus: liveMode ? yjs.connectionStatus : null,
       awareness: liveMode ? awareness : null,
       selfClientId: liveMode ? selfClientId : null,
+      self: liveMode ? (self ?? null) : null,
       publishCursor,
       clearCursor,
       undo: undoManager.undo,
@@ -818,6 +820,7 @@ export function BuilderProvider({
       yjs.connectionStatus,
       awareness,
       selfClientId,
+      self,
       publishCursor,
       clearCursor,
       undoManager.undo,
