@@ -38,6 +38,17 @@ interface StageWithSession {
   sessions: { id: string; facilitator_id: string | null; status: string };
 }
 
+// NOTE: Each verb performs an UPDATE (or pair of UPDATEs for advance/rollback)
+// followed by an INSERT into stage_events. These calls are NOT wrapped in a
+// Postgres transaction — supabase-js doesn't expose transactions and the
+// PostgREST API has no transaction primitive. If the stage_events INSERT
+// fails after the UPDATE landed, the audit log will be missing one entry but
+// the stage state itself is consistent. The probability is low (same pooled
+// connection, same DB, single-statement atomicity per call). A follow-up PR
+// will lift each verb into a plpgsql RPC function (`apply_stage_verb(...)`)
+// to make UPDATE + INSERT truly atomic. Until then, the trade-off is
+// accepted tech debt.
+
 // ── Shared auth + authorisation gate ─────────────────────────────────────────
 
 /**
@@ -89,6 +100,10 @@ async function requireFacilitatorForStage(stageId: string): Promise<
 // ── Path revalidation helper ──────────────────────────────────────────────────
 
 function revalidate(sessionId: string): void {
+  // Both target pages are currently force-dynamic; these calls are no-ops
+  // until those pages become incrementally static or the StageController
+  // (Task 4) routes mutations through cached server components. Keep them so
+  // the cache contract holds the day either page's dynamic flag flips.
   revalidatePath(`/app/sessions/${sessionId}`);
   revalidatePath('/app/designs/[id]', 'page');
 }

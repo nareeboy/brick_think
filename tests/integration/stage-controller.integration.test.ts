@@ -258,6 +258,7 @@ describe('stage-controller-actions (integration)', () => {
     const completedStage = await getStageRow(s0);
     expect(completedStage.status).toBe('completed');
     expect(completedStage.ended_at).not.toBeNull();
+    expect(completedStage.paused_at).toBeNull();
 
     const nextStage = await getStageRow(s1);
     expect(nextStage.status).toBe('pending');
@@ -311,6 +312,19 @@ describe('stage-controller-actions (integration)', () => {
     // Session pointer moved back to s0
     const sess = await getSessionRow(session.id);
     expect(sess.current_stage_id).toBe(s0);
+
+    // stage_events audit row written for rollback
+    const admin = getAdminClient();
+    const rollbackEvent = await admin
+      .from('stage_events')
+      .select('verb, metadata, stage_id')
+      .eq('verb', 'rollback')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    expect(rollbackEvent.data?.verb).toBe('rollback');
+    expect(rollbackEvent.data?.stage_id).toBe(s0); // the target stage we rolled into
+    expect(rollbackEvent.data?.metadata).toMatchObject({ from_stage_id: s1, into_stage_id: s0 });
   });
 
   // ── rollback on a pending stage → invalid_transition ─────────────────────
@@ -320,6 +334,34 @@ describe('stage-controller-actions (integration)', () => {
     // stages[0] is pending — not completed → should fail the state-machine gate
     const result = await rollbackStageAction(mustGet(stages, 0));
     expect(result).toMatchObject({ ok: false, code: 'invalid_transition', verb: 'rollback' });
+  });
+
+  // ── rollback when sessions.current_stage_id is null ──────────────────────
+  test('rollback when sessions.current_stage_id is null → no_previous_completed_stage', async () => {
+    const { session, stages } = await freshSession();
+    const s0 = mustGet(stages, 0);
+    currentClient = await signInAs(fx.facilitator);
+
+    await startStageAction(s0);
+    await advanceStageAction(s0); // s0 completed, next stage becomes current_stage_id
+
+    // Manually clear the pointer to simulate a previously-broken-state row.
+    const admin = getAdminClient();
+    await admin.from('sessions').update({ current_stage_id: null }).eq('id', session.id);
+
+    const result = await rollbackStageAction(s0);
+    expect(result).toMatchObject({ ok: false, code: 'no_previous_completed_stage' });
+  });
+
+  // ── extend accepts the boundary value 3600 seconds ───────────────────────
+  test('extend accepts the boundary value 3600 seconds', async () => {
+    const { stages } = await freshSession();
+    const s0 = mustGet(stages, 0);
+    currentClient = await signInAs(fx.facilitator);
+
+    await startStageAction(s0);
+    const result = await extendStageAction(s0, 3600);
+    expect(result).toEqual({ ok: true });
   });
 
   // ── not_facilitator: org member who isn't the facilitator ────────────────
