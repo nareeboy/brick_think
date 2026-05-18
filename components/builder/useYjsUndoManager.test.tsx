@@ -2,7 +2,11 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import * as Y from 'yjs';
 
-import { YJS_CANVAS_MAP_NAME, addBrickToDoc } from '@/lib/yjs/canvas-codec';
+import {
+  YJS_CANVAS_MAP_NAME,
+  addBrickToDoc,
+  deleteBrickFromDoc,
+} from '@/lib/yjs/canvas-codec';
 
 import { useYjsUndoManager } from './useYjsUndoManager';
 
@@ -211,6 +215,114 @@ describe('useYjsUndoManager', () => {
     });
     expect(result.current.canUndo).toBe(false);
     expect(result.current.canRedo).toBe(true);
+  });
+
+  test('stack is capped at 100 entries; older entries are spliced off the head', () => {
+    const doc = new Y.Doc();
+    seedMinimal(doc);
+    let manager: Y.UndoManager | null = null;
+    renderHook(() =>
+      useYjsUndoManager(doc, {
+        onManager: (m) => {
+          manager = m;
+        },
+      }),
+    );
+    if (!manager) throw new Error('manager handle not captured');
+    const m = manager as Y.UndoManager;
+
+    // Push 110 distinct stack items. stopCapturing() closes the active
+    // 500ms capture window so the next op lands as a new stack item.
+    for (let i = 0; i < 110; i++) {
+      addBrickToDoc(doc, makeBrick(`b${i}`, 'g1'));
+      m.stopCapturing();
+    }
+
+    expect(m.undoStack.length).toBe(100);
+    const bricks = doc.getMap(YJS_CANVAS_MAP_NAME).get('bricks') as Y.Array<unknown>;
+    expect(bricks.length).toBe(110);
+  });
+
+  test('selection snapshot: undo restores the brick id that was selected at op time', () => {
+    const doc = new Y.Doc();
+    seedMinimal(doc);
+    const selectionRef = { current: null as string | null };
+    const restoreSelection = vi.fn<(id: string | null) => void>();
+    let manager: Y.UndoManager | null = null;
+
+    renderHook(() =>
+      useYjsUndoManager(doc, {
+        selectionRef,
+        restoreSelection,
+        onManager: (m) => {
+          manager = m;
+        },
+      }),
+    );
+    if (!manager) throw new Error('manager handle not captured');
+    const m = manager as Y.UndoManager;
+
+    // Op 1: add the brick while nothing is selected. Snapshot = null.
+    selectionRef.current = null;
+    addBrickToDoc(doc, makeBrick('b1', 'g1'));
+    m.stopCapturing();
+
+    // Op 2: simulate the user selecting the brick and deleting it.
+    // Snapshot at this stack-item-added = 'b1'.
+    selectionRef.current = 'b1';
+    deleteBrickFromDoc(doc, 'b1');
+    m.stopCapturing();
+
+    // Undo pops the delete first; its meta carries 'b1'.
+    act(() => {
+      dispatchKey({ key: 'z', meta: true });
+    });
+    expect(restoreSelection).toHaveBeenLastCalledWith('b1');
+
+    // Undo again pops the add; its meta carries null.
+    act(() => {
+      dispatchKey({ key: 'z', meta: true });
+    });
+    expect(restoreSelection).toHaveBeenLastCalledWith(null);
+  });
+
+  test('onPopped fires with kind=undo on undo and kind=redo on redo', () => {
+    const doc = new Y.Doc();
+    seedMinimal(doc);
+    const onPopped = vi.fn<(kind: 'undo' | 'redo') => void>();
+
+    const { result } = renderHook(() => useYjsUndoManager(doc, { onPopped }));
+    addBrickToDoc(doc, makeBrick('b1', 'g1'));
+
+    act(() => {
+      result.current.undo();
+    });
+    expect(onPopped).toHaveBeenLastCalledWith('undo');
+
+    act(() => {
+      result.current.redo();
+    });
+    expect(onPopped).toHaveBeenLastCalledWith('redo');
+  });
+
+  test('telemetry: track is invoked with builder.undo / builder.redo', () => {
+    const debug = vi.spyOn(console, 'debug').mockImplementation(() => {});
+    const doc = new Y.Doc();
+    seedMinimal(doc);
+    const { result } = renderHook(() => useYjsUndoManager(doc));
+    addBrickToDoc(doc, makeBrick('b1', 'g1'));
+
+    act(() => {
+      result.current.undo();
+    });
+    const undoCalls = debug.mock.calls.filter((c) => c[1] === 'builder.undo');
+    expect(undoCalls.length).toBeGreaterThanOrEqual(1);
+
+    act(() => {
+      result.current.redo();
+    });
+    const redoCalls = debug.mock.calls.filter((c) => c[1] === 'builder.redo');
+    expect(redoCalls.length).toBeGreaterThanOrEqual(1);
   });
 
   test('changing doc identity rebuilds the UndoManager and clears the stack', () => {
