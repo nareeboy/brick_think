@@ -8,6 +8,20 @@ import AxeBuilder from '@axe-core/playwright';
 
 import { test, expect } from './fixtures';
 
+type AxeViolations = Awaited<ReturnType<AxeBuilder['analyze']>>['violations'];
+
+function logViolations(routeName: string, violations: AxeViolations) {
+  if (violations.length === 0) return;
+  console.warn(
+    `\naxe violations on ${routeName} (${violations.length}):`,
+    JSON.stringify(
+      violations.map((v) => ({ id: v.id, impact: v.impact, description: v.description, nodes: v.nodes.length })),
+      null,
+      2,
+    ),
+  );
+}
+
 // Routes that need no dynamic ID — navigate directly.
 const STATIC_ROUTES = [
   { name: 'my-designs', path: '/app/my-designs' },
@@ -17,93 +31,53 @@ const STATIC_ROUTES = [
   { name: 'designs/trash', path: '/app/designs/trash' },
 ] as const;
 
-for (const route of STATIC_ROUTES) {
-  test(`axe scan: ${route.name}`, async ({ signedInPage: page }) => {
-    await page.goto(route.path);
+test.describe('axe baseline scans', () => {
+  for (const route of STATIC_ROUTES) {
+    test(`axe scan: ${route.name}`, async ({ signedInPage: page }) => {
+      await page.goto(route.path);
+      await page.waitForLoadState('networkidle');
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
+        .analyze();
+
+      logViolations(route.name, results.violations);
+      expect.soft(results.violations, `axe violations on ${route.name}`).toEqual([]);
+    });
+  }
+
+  // Session-detail route — requires a seeded session for a valid ID.
+  test('axe scan: session-detail', async ({ signedInPage: page, seededSession }) => {
+    await page.goto(`/app/sessions/${seededSession.sessionId}`);
     await page.waitForLoadState('networkidle');
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
       .analyze();
 
-    if (results.violations.length > 0) {
-      console.warn(
-        `\naxe violations on ${route.name} (${results.violations.length}):`,
-        JSON.stringify(
-          results.violations.map((v) => ({
-            id: v.id,
-            impact: v.impact,
-            description: v.description,
-            nodes: v.nodes.length,
-          })),
-          null,
-          2,
-        ),
-      );
-    }
-    expect.soft(results.violations, `axe violations on ${route.name}`).toEqual([]);
+    logViolations('session-detail', results.violations);
+    expect.soft(results.violations, 'axe violations on session-detail').toEqual([]);
   });
-}
 
-// Session-detail route — requires a seeded session for a valid ID.
-test('axe scan: session-detail', async ({ signedInPage: page, seededSession }) => {
-  await page.goto(`/app/sessions/${seededSession.sessionId}`);
-  await page.waitForLoadState('networkidle');
+  // Design-builder route — creates a personal design via the UI, then scans the
+  // empty canvas. An empty canvas is a valid baseline target; Phase 1 will fix
+  // the "canvas has no AT exposure" violation this surfaces.
+  test('axe scan: design-builder', async ({ signedInPage: page }) => {
+    await page.goto('/app/my-designs');
+    await expect(page.getByRole('heading', { name: /my designs/i, level: 1 })).toBeVisible();
 
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
-    .analyze();
+    await page.getByTestId('new-design-button').click();
+    await page.getByTestId('destination-personal').click();
+    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+    await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
-  if (results.violations.length > 0) {
-    console.warn(
-      `\naxe violations on session-detail (${results.violations.length}):`,
-      JSON.stringify(
-        results.violations.map((v) => ({
-          id: v.id,
-          impact: v.impact,
-          description: v.description,
-          nodes: v.nodes.length,
-        })),
-        null,
-        2,
-      ),
-    );
-  }
-  expect.soft(results.violations, 'axe violations on session-detail').toEqual([]);
-});
+    await page.waitForLoadState('networkidle');
 
-// Design-builder route — creates a personal design via the UI, then scans the
-// empty canvas. An empty canvas is a valid baseline target; Phase 1 will fix
-// the "canvas has no AT exposure" violation this surfaces.
-test('axe scan: design-builder', async ({ signedInPage: page }) => {
-  await page.goto('/app/my-designs');
-  await expect(page.getByRole('heading', { name: /my designs/i, level: 1 })).toBeVisible();
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
+      .analyze();
 
-  await page.getByTestId('new-design-button').click();
-  await page.getByTestId('destination-personal').click();
-  await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-  await expect(page.getByTestId('builder-canvas')).toBeVisible();
-
-  await page.waitForLoadState('networkidle');
-
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
-    .analyze();
-
-  if (results.violations.length > 0) {
-    console.warn(
-      `\naxe violations on design-builder (${results.violations.length}):`,
-      JSON.stringify(
-        results.violations.map((v) => ({
-          id: v.id,
-          impact: v.impact,
-          description: v.description,
-          nodes: v.nodes.length,
-        })),
-        null,
-        2,
-      ),
-    );
-  }
-  expect.soft(results.violations, 'axe violations on design-builder').toEqual([]);
+    logViolations('design-builder', results.violations);
+    expect.soft(results.violations, 'axe violations on design-builder').toEqual([]);
+  });
 });
