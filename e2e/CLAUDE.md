@@ -43,3 +43,11 @@ curl -X POST http://localhost:3000/api/test/seed-session \
 The returned `sessionId` plugs straight into `/app/sessions/<id>` in the browser.
 
 Sessions and stages accumulate over time alongside the test auth users. Clean periodically via SQL: `delete from public.sessions where title like 'Test session%';` (cascades to stages, models, and any future child rows).
+
+## Accessibility baseline scans
+
+[`e2e/a11y.spec.ts`](a11y.spec.ts) runs `@axe-core/playwright` against every authed route (my-designs, orgs, orgs/new, account, designs/trash, session-detail, design-builder) with WCAG 2.0 A / AA + 2.2 AA tags. The `design-builder` route is **hard-fail** (`expect(...).toEqual([])`); every other route is **`expect.soft`** until the third-party audit confirms no additional violations. Violations on soft routes log via the file's `logViolations()` helper but don't abort the run — they're the to-do list, not regressions.
+
+Add a new authed route to the scan by appending to `STATIC_ROUTES` (no setup) or adding a dedicated `test('axe scan: name', ...)` block (with setup). New routes start soft; flip to hard once they're clean.
+
+[`lighthouserc.json`](../lighthouserc.json) + `pnpm a11y:lhci` is the companion verification — Lighthouse asserts `categories:accessibility >= 0.95` on `/`, `/sign-in`, `/privacy`, `/terms` (the unauthed surface). Authed-route Lighthouse audits would need a Puppeteer auth script; deferred per the followups doc at `docs/superpowers/followups/2026-05-18-wcag-followups.md` (local-only).

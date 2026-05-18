@@ -9,6 +9,12 @@ Scope: anything that touches `supabase/migrations/`, `supabase/config.toml`, RLS
 - Schema lives in [migrations/](migrations/); never apply DDL outside a migration on the local stack.
 - Remote pushes go via `pnpm db:link` / `db:push` (these scripts inline-load `SUPABASE_ACCESS_TOKEN` from `.env.local` because the machine's shared `supabase login` is on a different account). If a `supabase` subcommand isn't covered by an npm script, prefix it manually: `SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) pnpm exec supabase <cmd> --linked`.
 
+## Per-user accessibility preferences
+
+`profiles.a11y_preferences jsonb not null default '{}'::jsonb` (added in [migrations/20260518000000_profile_a11y_preferences.sql](migrations/20260518000000_profile_a11y_preferences.sql) for the WCAG 2.2 AA remediation) is the catch-all for per-user a11y settings. Initially carries `{ colourblindMode?: boolean }`; future a11y preferences (high-contrast palette, reduced-motion override, etc.) slot in here without further schema work.
+
+Always read via [`normaliseA11yPreferences`](../lib/a11y/preferences.ts) (defends against bad JSON / schema drift; applies `A11Y_PREFERENCES_DEFAULTS` for missing fields). Writes happen exclusively through [`updateA11yPreferencesAction`](../app/(authed)/app/account/actions.ts) — there's no direct table mutation path. The Supabase-generated `Json` type doesn't structurally satisfy the closed `A11yPreferences` interface; the action casts via `as unknown as Json` at the `.update()` call. That's expected — runtime payload is valid JSON.
+
 ## Out-of-band schema changes
 
 If a migration's SQL has already been applied to the remote by hand (Dashboard SQL editor) before the file lands in `migrations/`, two follow-up rules to keep things consistent:
