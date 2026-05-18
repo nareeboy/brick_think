@@ -41,16 +41,6 @@ export function DeleteConfirmDialog({
       if (e.key === 'Escape') {
         e.preventDefault();
         onCancel();
-        return;
-      }
-      if (e.key !== 'Tab') return;
-      const active = document.activeElement;
-      if (!e.shiftKey && active === deleteRef.current) {
-        e.preventDefault();
-        cancelRef.current?.focus();
-      } else if (e.shiftKey && active === cancelRef.current) {
-        e.preventDefault();
-        deleteRef.current?.focus();
       }
     }
     window.addEventListener('keydown', handleKey);
