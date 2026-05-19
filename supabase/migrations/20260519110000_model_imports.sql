@@ -1,4 +1,4 @@
--- supabase/migrations/20260519100000_model_imports.sql
+-- supabase/migrations/20260519110000_model_imports.sql
 -- "Bring in my previous model" audit + idempotency table.
 --
 -- One row per (target_model_id, profile_id). The unique constraint catches
