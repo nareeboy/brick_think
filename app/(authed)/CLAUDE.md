@@ -72,11 +72,12 @@ PRD §5.3 / §4 — facilitator drives the session's stage state (timer + progre
 
 Also handles reconnect: on the second-and-later `SUBSCRIBED` callback (post-`CHANNEL_ERROR`), it refetches the full session + stages to backfill anything missed.
 
-**UI surface** ([SessionStages.tsx](app/sessions/[id]/SessionStages.tsx)). One client component, three regions per stage row:
+**UI surface** ([SessionStages.tsx](app/sessions/[id]/SessionStages.tsx)). One client component, four regions per stage row:
 
 - **Right column timer/duration display.** On `pending` + `canManageSession`, renders an inline `StageDurationEditor` (clickable "15 min" chip → minutes input, Enter to save, Esc to cancel). Otherwise renders the big tabular-num countdown. The participant-side mirror lives in [components/session/StageTimer.tsx](../../components/session/StageTimer.tsx) (same variant pattern: pill + dot + digits, with critical/active/paused/completed/pending styles).
 - **`ModelAction` row.** `Delete` + `Open model` (or `Start your model` if none owned), with the dark primary `Advance` button next to it. Advance is **semantically a stage-progression verb, not a timer verb** — it lives next to the model action, not in the timer cluster. Visibility: `canManageSession && status ∈ {active, paused} && !isLastStage`.
 - **Dashed `Stage timer` cluster.** Pause / Resume / Extend +5m / Reset / Rollback to here — all timer-related controls only. Each verb is gated by `isValidTransition(status, verb)`; Extend only shows when `duration_seconds !== null`; Rollback only on the most-recently-completed stage.
+- **`ParticipantsPanel`.** Always rendered for `canManageSession` regardless of count (empty state: "No participants yet"). Header is `Participants (N)` + a small icon-only refresh button (`title="Refresh to see your participants"`, `data-testid="refresh-participants-${stageType}"`) that calls `router.refresh()` inside a `useTransition` so the spin icon stays active until the server component re-renders with fresh rows. Each participant row carries a live-dot ([emerald when `lastUpdatedAt` is within 10s](app/sessions/[id]/SessionStages.tsx), zinc otherwise) and an Open link to the participant's model. Non-facilitators never see this panel.
 
 Both timer and controller use `useNowMs()` for the 1Hz wall-clock tick; the math comes from [lib/sessions/computeRemainingMs.ts](../../lib/sessions/computeRemainingMs.ts) which clamps `Math.max(0, Math.min(totalMs, totalMs - elapsed))` to defend against client clock skew. Buttons get tactile `active:scale-[0.98]` feedback.
 
@@ -88,6 +89,32 @@ Both timer and controller use `useNowMs()` for the 1Hz wall-clock tick; the math
 - **From inside `/app/sessions/[id]`:** each stage has its own "New model" affordance that calls `createModelInStage` directly — no wizard, design lands in that stage.
 - **Send to a session:** personal designs only. The card on `/app/my-designs` shows a paper-plane button next to the trash; opens [app/my-designs/SendToSessionDialog.tsx](app/my-designs/SendToSessionDialog.tsx) which picks org → session and calls `duplicateToSessionAction`. One-way copy: source stays where it was.
 - **Import design (JSON):** [app/my-designs/ImportDesignButton.tsx](app/my-designs/ImportDesignButton.tsx) on the page header (between `Trash` and `New design`). Opens a `ModalBackdrop`-wrapped file picker, reads the `.brickthink.json` envelope (`{ format: "brickthink.design", version: 1, exportedAt, title, canvasState }`), and calls `importDesignAction` in [app/my-designs/actions.ts](app/my-designs/actions.ts). The action validates the envelope via [lib/exports/json.ts](../../lib/exports/json.ts) `parseExportEnvelope`, rejects any brick code not in [lib/bricks/manifest.ts](../../lib/bricks/manifest.ts) `KNOWN_BRICK_CODES`, then inserts a new **Personal** model (no `session_id`/`org_id`/`stage_id`). Importing always creates new — never overwrites — and lands the user on `/app/designs/{newId}`.
+
+## Bring in my previous model
+
+Per PRD §4.3 / §4.4 — when a session advances and the participant lands on a blank canvas, they can carry their previous-stage bricks forward with one click. One-shot, fully undoable on shared_model via the per-client Yjs undo stack.
+
+**Whitelist** ([lib/sessions/stage-import.ts](../../lib/sessions/stage-import.ts) `IMPORT_RULES`). Every stage except `skill_building` is a valid target. Source is per-stage:
+
+| Target              | Source             | Source scope    |
+|---------------------|--------------------|-----------------|
+| `individual_model`  | `skill_building`   | caller_own      |
+| `shared_model`      | `individual_model` | caller_own      |
+| `system_model`      | `shared_model`     | session_shared  |
+| `guiding_principles`| `system_model`     | caller_own      |
+
+`isImportTarget()` is the single guard used by the page (to know whether to render the affordance) and the server action (to refuse non-target stages). When `CANONICAL_STAGE_TYPES` gains a new stage, `IMPORT_RULES` and the exhaustive unit tests will force-fail until the new row is decided.
+
+**Server action** [bringInPreviousModel(targetModelId)](app/sessions/stage-import-actions.ts). RLS-scoped read for authz, service-role write. Branches on whether the target is Yjs-backed:
+
+- **`shared_model` (the only Yjs target):** writes `model_imports` audit row FIRST as the database-layer gate (`unique (target_model_id, profile_id)` catches double-click races as `already_imported`), then returns `{ mode: 'client_append', source }` with a remapped canvas — fresh group/brick ids and a per-user root-group rename (`"{displayName}'s {groupName}"`) so the shared Layers panel disambiguates contributors. Client appends bricks via the [appendImportedBricks](../../components/builder/builderState.tsx) slice on `BuilderState`, wrapped in a single `liveDoc.transact(..., YJS_LOCAL_ORIGIN)` so it lands as one undo step and broadcasts as one Yjs update.
+- **autosave-backed targets** (`individual_model`, `system_model`, `guiding_principles`): server re-reads the destination canvas under service-role, refuses with `destination_not_empty` if non-empty, then UPDATE-s `canvas_state` with the remapped source and INSERT-s the audit row (23505 swallowed for race-no-op). Returns `{ mode: 'server_copied' }`. Client triggers `window.location.reload()` — needed because `BuilderProvider` initialises canvas state once via `useState(() => …)` and won't re-init on prop change.
+
+**Audit table** `public.model_imports` (see [supabase/CLAUDE.md](../../supabase/CLAUDE.md)). One row per `(target_model_id, profile_id)`. `profile_id` and `source_model_id` are `on delete set null` so audit history survives author/source-model deletion; `target_model_id` cascades since the row is meaningless once the destination is gone.
+
+**UI** ([components/builder/BringInPreviousModelButton.tsx](../../components/builder/BringInPreviousModelButton.tsx)). Three exports driven by a single context — `BringInPreviousModelProvider` wraps the builder body, `BringInPreviousModelCard` renders the centered empty-state card on the canvas, `BringInPreviousModelReopenButton` sits in the sidebar above `Save version`. The card hides on three conditions: `alreadyImported` (server-rendered from the `model_imports` row count at page load), `justImported` (client-side, flipped immediately after a successful `client_append` so the card vanishes without waiting for a reload), or `dismissed` (user clicked the close X). The reopen button shows only when `dismissed && !justImported && !alreadyImported` — recoverable affordance. Both card and button gate on the shared `useAffordanceEligible()` predicate so non-eligible models (read-only, non-session, non-whitelisted stage, system_model with bricks already placed) skip them both.
+
+**Test surface.** Unit tests for the pure helpers in [lib/sessions/stage-import.test.ts](../../lib/sessions/stage-import.test.ts) cover `IMPORT_RULES`, `isImportTarget` exhaustively against `CANONICAL_STAGE_TYPES`, and `remapCanvasForImport` (id regen, orphan-brick drop, root-group rename, round-trip through `parseCanvasState`). Integration tests in [tests/integration/bringInPreviousModel.integration.test.ts](../../tests/integration/bringInPreviousModel.integration.test.ts) cover all 7 failure codes, the system_model + shared_model + individual_model + guiding_principles happy paths, and cross-session isolation. E2E spec at [e2e/bring-in-previous-model.spec.ts](../../e2e/bring-in-previous-model.spec.ts) exercises two-tab Yjs propagation on shared_model and the server-copy + reload flow on system_model.
 
 ## Exports surface — PNG / SVG / JSON
 
