@@ -93,7 +93,7 @@ Both timer and controller use `useNowMs()` for the 1Hz wall-clock tick; the math
 
 ## Stage rooms (breakout groups)
 
-Replaces the single-canvas-per-`shared_model` semantics with facilitator-partitioned rooms. Each room has exactly one `models` row (`models.room_id` set, `owner_profile_id = facilitator`); room membership is recorded in `stage_room_members` and is mutually exclusive within a stage. Downstream stages (`system_model`, `guiding_principles`) can compose new rooms from upstream rooms via `stage_room_sources` — schema is ready, UI/actions for those two stages are a follow-up; today the only room-aware stage in the UI is `shared_model`.
+Replaces single-canvas-per-stage semantics with facilitator-curated rooms on `shared_model`, `system_model`, and `guiding_principles`. Each room has exactly one `models` row (`models.room_id` set, `owner_profile_id = facilitator`). `shared_model` rooms partition participants directly via `stage_room_members` (mutually exclusive within a stage); `system_model` and `guiding_principles` rooms compose upstream rooms via `stage_room_sources` and inherit membership transitively through the recursive `public.can_edit_room` RPC.
 
 **Data model** ([migrations/20260519130000_stage_rooms.sql](../../supabase/migrations/20260519130000_stage_rooms.sql)):
 
@@ -106,19 +106,21 @@ Replaces the single-canvas-per-`shared_model` semantics with facilitator-partiti
 
 **Server actions** ([app/sessions/stage-room-actions.ts](app/sessions/stage-room-actions.ts)):
 
-- `setSharedModelRooms({ stageId, rooms[] })` — atomic re-partition: facilitator gate → wipe prior rooms (cascades to canvases + members) → for each new partition, insert a `stage_rooms` row, compose its canvas from members' `individual_model` bricks via `composeRoomCanvas`, insert the `models` row with `room_id` set, write the membership rows. `'duplicate_member' | 'unknown_member' | 'empty_partition' | 'not_facilitator' | 'unsupported_stage_type'` cover the refusal codes.
+- `setSharedModelRooms({ stageId, rooms[] })` — atomic re-partition for `shared_model`: facilitator gate → wipe prior rooms (cascades to canvases + members) → for each new partition, insert a `stage_rooms` row, compose its canvas from members' `individual_model` bricks via `composeRoomCanvas`, insert the `models` row with `room_id` set, write the membership rows. `'duplicate_member' | 'unknown_member' | 'empty_partition' | 'not_facilitator' | 'unsupported_stage_type'` cover the refusal codes.
+- `setDownstreamStageRooms({ stageId, rooms[] })` — same shape for `system_model` and `guiding_principles`. Each partition declares `sourceRoomIds[]` (upstream rooms whose canvases become lanes in the new room). The upstream stage is resolved via `IMPORT_RULES` (`shared_model` for system_model; `system_model` for guiding_principles); each `sourceRoomId` must live on that stage. Lane label per lane = the upstream room's title or `Room N`. Memberships are inherited transitively — no row in `stage_room_members` is written for downstream rooms. Refusal codes add `'empty_sources' | 'unknown_source_room' | 'upstream_stage_missing'`.
 - `deleteSharedModelRoom(roomId)` — facilitator-only single-room remove; cascades.
-- `createModelInStage` on `shared_model` now resolves the caller's assigned room and redirects to its model; there is no longer a service-role-elevated single-canvas insert on that stage.
+- `createModelInStage`: on `shared_model` it resolves the caller's assigned room and redirects (no fallback). On `system_model` / `guiding_principles` it redirects to the caller's transitive room when rooms exist, otherwise falls through to the legacy per-participant personal-canvas insert (rooms are opt-in for downstream stages so existing sessions keep working).
 
 **Lane layout** ([lib/sessions/stage-rooms.ts](../../lib/sessions/stage-rooms.ts)):
 
 `composeRoomCanvas(lanes)` lays each member's `individual_model` bricks side-by-side. Each lane: ids regenerated via `remapCanvasForImport`, root group renamed `"{displayName}'s {group}"`, bricks translated so their left edge sits at the lane's x-origin (cumulative width + `LANE_GAP_PX = 80`). Empty lanes (member with no individual_model bricks) still reserve `EMPTY_LANE_WIDTH_PX = 320` so the resulting canvas still telegraphs which participants are in the room. Y-coordinates are preserved.
 
-**UI surface** ([app/sessions/[id]/SessionStages.tsx](app/sessions/[id]/SessionStages.tsx), [RoomsPanel.tsx](app/sessions/[id]/RoomsPanel.tsx), [ManageRoomsDialog.tsx](app/sessions/[id]/ManageRoomsDialog.tsx)):
+**UI surface** ([app/sessions/[id]/SessionStages.tsx](app/sessions/[id]/SessionStages.tsx), [RoomsPanel.tsx](app/sessions/[id]/RoomsPanel.tsx), [ManageRoomsDialog.tsx](app/sessions/[id]/ManageRoomsDialog.tsx), [ManageDownstreamRoomsDialog.tsx](app/sessions/[id]/ManageDownstreamRoomsDialog.tsx)):
 
-- `SessionStages` branches on `stage_type`. For `shared_model`: the `ModelAction` row is suppressed (no "Start your model" affordance anymore) and `ParticipantsPanel` is replaced with `RoomsPanel`. Other stages are unchanged.
-- `RoomsPanel` shows the facilitator a per-room list (`Room N` / optional title + member count + `Open` link per room) plus a `Manage rooms` button that opens `ManageRoomsDialog`. Participants see one of three states: `Open my room` (assigned), `Waiting for the facilitator to assign you to a room` (not assigned but rooms exist), or `Waiting for the facilitator to set up rooms` (no rooms exist yet).
-- `ManageRoomsDialog` lists the full org roster in two columns: an "Unassigned" pool on the left and one card per draft room on the right (with an inline title input, member rows, a "+ Add room" button, and a per-room remove button). Each member row has a small `<select>` (Unassigned / Room 1 / Room 2 / …) — selection-based assignment, mobile-friendly. Save fires `setSharedModelRooms`; errors render inline.
+- `SessionStages` treats `shared_model` / `system_model` / `guiding_principles` as room-aware: the `ModelAction` row + `ParticipantsPanel` are suppressed and `RoomsPanel` takes over. Other stages keep the legacy single-model affordance.
+- `RoomsPanel` is a single shared component that dispatches on `stageType`. Facilitator view: per-room list with member count (`shared_model`) or upstream-rooms count (downstream) and an `Open` link per room, plus a `Manage rooms` button. Participant view: `Open my room` / `Waiting for the facilitator to assign you to a room` / `Waiting for the facilitator to set up rooms`. The participant's room id is computed server-side (`myRoomIdByStageId` from [page.tsx](app/sessions/[id]/page.tsx)) — direct lookup for `shared_model`, recursive `can_edit_room` fan-out for downstream stages.
+- `ManageRoomsDialog` (shared_model): "Unassigned" column + one card per draft room with a `<select>` per member to move between buckets. Save fires `setSharedModelRooms`.
+- `ManageDownstreamRoomsDialog` (system_model + guiding_principles): one card per draft room with a toggle-chip picker over the upstream stage's rooms. A single upstream room can be picked into multiple downstream rooms (this is composition, not partition). Save fires `setDownstreamStageRooms`.
 
 **liveMode gate** ([lib/yjs/canPlaceLive.ts](../../lib/yjs/canPlaceLive.ts), [app/designs/[id]/page.tsx](app/designs/[id]/page.tsx)):
 
@@ -132,8 +134,8 @@ Upgrade verification now runs a combined query: `can_read_model` (legacy gate), 
 
 **Follow-ups (deferred)**:
 
-- `system_model` and `guiding_principles` room composition (the schema is ready; UI + server actions are not). Until then, the existing `bringInPreviousModel` for `system_model` (`source_mode: 'session_shared'`) will throw on sessions with N>1 `shared_model` rows — the `.maybeSingle()` query returns the wrong cardinality. New sessions that create multi-room shared_model stages can't currently roll forward to system_model via the manual bring-in. Legacy backfilled sessions (1 room with everyone) continue to work.
 - e2e specs that exercise the old `shared_model` single-canvas flow ([yjs-shared-model.spec.ts](../../e2e/yjs-shared-model.spec.ts), `shared_model` branch of [bring-in-previous-model.spec.ts](../../e2e/bring-in-previous-model.spec.ts)) need rewriting to first call `setSharedModelRooms` before opening the canvas. Integration suite is already green against the new semantics.
+- The legacy `bringInPreviousModel` for `system_model` (`source_mode: 'session_shared'`) is unreachable on room-backed targets (the card is gated on `!data.room_id`). For sessions that still use the legacy per-participant `system_model` flow it remains broken when `shared_model` has N>1 rooms — `.maybeSingle()` on the upstream lookup fails on the wrong cardinality. The room composition flow replaces it for new sessions; this only matters for legacy sessions that mix room-based shared_model with non-room system_model.
 
 ## Bring in my previous model
 
