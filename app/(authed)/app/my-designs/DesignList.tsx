@@ -239,7 +239,7 @@ function Badge({ badge }: { badge: AggregateDesignRow['badge'] }) {
     return (
       <p
         data-testid="design-badge"
-        className="mt-2 inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600"
+        className="mt-2 inline-flex items-center rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-sky-700"
       >
         Personal
       </p>
@@ -247,7 +247,7 @@ function Badge({ badge }: { badge: AggregateDesignRow['badge'] }) {
   }
   return (
     <p data-testid="design-badge" className="mt-2 flex max-w-full items-center gap-1.5">
-      <span className="inline-block max-w-full shrink-0 truncate rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
+      <span className="inline-block max-w-full shrink-0 truncate rounded-md bg-orange-100 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-orange-900">
         {badge.orgName}
       </span>
       <span className="truncate text-[12px] text-zinc-600">{badge.sessionTitle}</span>
