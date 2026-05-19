@@ -1,9 +1,10 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 
 import { removeOrgMemberAction } from '@/app/(authed)/app/orgs/actions';
 import { Avatar } from '@/components/app/Avatar';
+import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import type { OrgMember } from '@/lib/orgs/types';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 
 export function MemberRow({ orgId, member, canRemove }: Props) {
   const [pending, start] = useTransition();
+  const [confirming, setConfirming] = useState(false);
   const displayName = member.full_name ?? member.email;
 
   return (
@@ -34,17 +36,36 @@ export function MemberRow({ orgId, member, canRemove }: Props) {
         <button
           type="button"
           disabled={pending}
-          onClick={() =>
-            start(async () => {
-              await removeOrgMemberAction(orgId, member.profile_id);
-            })
-          }
+          onClick={() => setConfirming(true)}
           aria-label={`Remove ${displayName}`}
           title="Remove member"
           className="absolute right-3 top-3 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 opacity-0 transition-all hover:bg-zinc-900/5 hover:text-zinc-700 group-hover:opacity-100 focus-visible:opacity-100 disabled:opacity-40 [@media(hover:none)]:opacity-100"
         >
           {pending ? <Spinner className="h-3.5 w-3.5" /> : <CloseIcon className="h-4 w-4" />}
         </button>
+      ) : null}
+      {confirming ? (
+        <DeleteConfirmDialog
+          title={`Remove ${displayName}?`}
+          description={
+            <>
+              They will lose access to this organisation&rsquo;s sessions and shared designs. An
+              admin can re-add them later.
+            </>
+          }
+          confirmLabel="Remove"
+          confirmPendingLabel="Removing…"
+          pending={pending}
+          onCancel={() => {
+            if (!pending) setConfirming(false);
+          }}
+          onConfirm={() =>
+            start(async () => {
+              await removeOrgMemberAction(orgId, member.profile_id);
+              setConfirming(false);
+            })
+          }
+        />
       ) : null}
     </li>
   );
