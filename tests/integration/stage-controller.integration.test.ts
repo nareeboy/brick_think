@@ -48,6 +48,8 @@ import {
   extendStageAction,
   advanceStageAction,
   rollbackStageAction,
+  resetStageAction,
+  updateStageDurationAction,
 } from '@/app/(authed)/app/sessions/stage-controller-actions';
 
 // ── Fixture types ─────────────────────────────────────────────────────────────
@@ -418,5 +420,129 @@ describe('stage-controller-actions (integration)', () => {
 
     const verbs = eventsRes.data?.map((e: { verb: string }) => e.verb) ?? [];
     expect(verbs).toEqual(['start', 'pause', 'resume', 'extend', 'advance']);
+  });
+
+  // ── reset ─────────────────────────────────────────────────────────────────
+  test('reset on an active stage gives it a fresh clock and clears counters', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { stages } = await freshSession();
+    const [s0] = stages;
+    expect(s0).toBeDefined();
+    if (!s0) throw new Error('stages[0] missing');
+
+    await startStageAction(s0);
+    await extendStageAction(s0, 120);
+    await pauseStageAction(s0);
+    await new Promise((r) => setTimeout(r, 50));
+    await resumeStageAction(s0);
+
+    const result = await resetStageAction(s0);
+    expect(result).toEqual({ ok: true });
+
+    const admin = getAdminClient();
+    const reset = await admin
+      .from('stages')
+      .select('status, started_at, paused_at, total_paused_ms, extended_seconds, ended_at')
+      .eq('id', s0)
+      .single();
+    expect(reset.data?.status).toBe('active');
+    expect(reset.data?.started_at).not.toBeNull();
+    expect(reset.data?.paused_at).toBeNull();
+    expect(reset.data?.total_paused_ms).toBe(0);
+    expect(reset.data?.extended_seconds).toBe(0);
+    expect(reset.data?.ended_at).toBeNull();
+
+    const ev = await admin
+      .from('stage_events')
+      .select('verb, metadata')
+      .eq('stage_id', s0)
+      .eq('verb', 'reset')
+      .maybeSingle();
+    expect(ev.data?.verb).toBe('reset');
+    expect(ev.data?.metadata).toMatchObject({
+      previous_extended_seconds: 120,
+      previous_status: 'active',
+    });
+  });
+
+  test('reset on a paused stage promotes back to active', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { stages } = await freshSession();
+    const [s0] = stages;
+    if (!s0) throw new Error('stages[0] missing');
+
+    await startStageAction(s0);
+    await pauseStageAction(s0);
+
+    expect(await resetStageAction(s0)).toEqual({ ok: true });
+
+    const admin = getAdminClient();
+    const row = await admin.from('stages').select('status').eq('id', s0).single();
+    expect(row.data?.status).toBe('active');
+  });
+
+  test('reset rejects a pending stage', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { stages } = await freshSession();
+    const [s0] = stages;
+    if (!s0) throw new Error('stages[0] missing');
+
+    const result = await resetStageAction(s0);
+    expect(result).toMatchObject({ ok: false, code: 'invalid_transition', from: 'pending' });
+  });
+
+  // ── updateStageDuration ───────────────────────────────────────────────────
+  test('updateStageDuration sets duration on a pending stage', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { stages } = await freshSession();
+    const [s0] = stages;
+    if (!s0) throw new Error('stages[0] missing');
+
+    expect(await updateStageDurationAction(s0, 1800)).toEqual({ ok: true });
+
+    const admin = getAdminClient();
+    const row = await admin.from('stages').select('duration_seconds').eq('id', s0).single();
+    expect(row.data?.duration_seconds).toBe(1800);
+  });
+
+  test('updateStageDuration rejects out-of-range values', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { stages } = await freshSession();
+    const [s0] = stages;
+    if (!s0) throw new Error('stages[0] missing');
+
+    expect(await updateStageDurationAction(s0, 59)).toMatchObject({
+      ok: false,
+      code: 'invalid_duration_amount',
+    });
+    expect(await updateStageDurationAction(s0, 7201)).toMatchObject({
+      ok: false,
+      code: 'invalid_duration_amount',
+    });
+    expect(await updateStageDurationAction(s0, 30.5)).toMatchObject({
+      ok: false,
+      code: 'invalid_duration_amount',
+    });
+  });
+
+  test('updateStageDuration accepts the 60s and 7200s boundary values', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { stages } = await freshSession();
+    const [s0] = stages;
+    if (!s0) throw new Error('stages[0] missing');
+
+    expect(await updateStageDurationAction(s0, 60)).toEqual({ ok: true });
+    expect(await updateStageDurationAction(s0, 7200)).toEqual({ ok: true });
+  });
+
+  test('updateStageDuration rejects a stage that is not pending', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { stages } = await freshSession();
+    const [s0] = stages;
+    if (!s0) throw new Error('stages[0] missing');
+
+    await startStageAction(s0);
+    const result = await updateStageDurationAction(s0, 1200);
+    expect(result).toMatchObject({ ok: false, code: 'invalid_transition', from: 'active' });
   });
 });
