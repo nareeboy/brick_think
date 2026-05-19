@@ -15,6 +15,16 @@ Scope: anything that touches `supabase/migrations/`, `supabase/config.toml`, RLS
 
 Always read via [`normaliseA11yPreferences`](../lib/a11y/preferences.ts) (defends against bad JSON / schema drift; applies `A11Y_PREFERENCES_DEFAULTS` for missing fields). Writes happen exclusively through [`updateA11yPreferencesAction`](../app/(authed)/app/account/actions.ts) — there's no direct table mutation path. The Supabase-generated `Json` type doesn't structurally satisfy the closed `A11yPreferences` interface; the action casts via `as unknown as Json` at the `.update()` call. That's expected — runtime payload is valid JSON.
 
+## Stage controller runtime state
+
+Four migrations (`20260518120000_stage_runtime_state`, `20260518130000_stages_realtime_identity`, `20260518140000_backfill_stage_durations`, `20260519000000_stage_events_reset_verb`) shape the live session surface:
+
+- `public.stage_status` enum + runtime columns on `public.stages` (`status`, `paused_at`, `total_paused_ms`, `extended_seconds`) — every facilitator verb mutates these via the service-role client after an RLS-scoped authz read; participants observe via Realtime.
+- `public.sessions.current_stage_id uuid` pointer with `ON DELETE SET NULL`.
+- `public.stage_events` append-only audit table — `verb` CHECK accepts `start | pause | resume | extend | advance | rollback | reset`. INSERT policy requires `actor_profile_id = auth.uid()` AND the actor be the session's facilitator; SELECT for any org member; no UPDATE/DELETE policies (append-only at the RLS layer). Adding a new verb requires both a state-machine update (see [(authed)/CLAUDE.md "Stage controller + timer"](<../app/(authed)/CLAUDE.md>)) and a migration that drops + re-adds the CHECK with the expanded list (the pattern in `20260519000000_stage_events_reset_verb.sql`).
+- `stages` + `sessions` are added to the `supabase_realtime` publication with `REPLICA IDENTITY FULL` so `postgres_changes` UPDATE payloads carry the full row through the participant's RLS filter. **Anything new that needs Realtime row-filtering on UPDATE must also set REPLICA IDENTITY FULL** — without it the OLD record is PK-only and RLS gates can't evaluate.
+- Default per-stage durations come from `STAGE_DEFAULT_DURATIONS_SECONDS` in [lib/sessions/stage-labels.ts](../lib/sessions/stage-labels.ts), applied at `createSession` and `/api/test/seed-session` insert time. The backfill migration patched any pre-existing NULL rows once.
+
 ## Out-of-band schema changes
 
 If a migration's SQL has already been applied to the remote by hand (Dashboard SQL editor) before the file lands in `migrations/`, two follow-up rules to keep things consistent:
