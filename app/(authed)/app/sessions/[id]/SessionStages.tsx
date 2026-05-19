@@ -897,10 +897,10 @@ function Timer({ remainingMs, variant }: { remainingMs: number; variant: TimerVa
 }
 
 const STATUS_PILL_CLASSES: Record<string, string> = {
-  pending: 'bg-zinc-100 text-zinc-600 ring-zinc-900/10',
+  pending: 'bg-yellow-50 text-yellow-700 ring-yellow-200/70',
   active: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  paused: 'bg-amber-50 text-amber-800 ring-amber-200',
-  completed: 'bg-zinc-900/5 text-zinc-700 ring-zinc-900/10',
+  paused: 'bg-amber-100 text-amber-900 ring-amber-300',
+  completed: 'bg-sky-50 text-sky-800 ring-sky-200',
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -916,10 +916,10 @@ function StatusPill({ status }: { status: string }) {
 }
 
 const STATUS_DOT_COLOURS: Record<string, string> = {
-  pending: 'bg-zinc-400',
+  pending: 'bg-yellow-500',
   active: 'bg-emerald-500',
-  paused: 'bg-amber-500',
-  completed: 'bg-zinc-600',
+  paused: 'bg-amber-600',
+  completed: 'bg-sky-600',
 };
 
 function StatusDot({ status }: { status: string }) {

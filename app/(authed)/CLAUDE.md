@@ -133,6 +133,26 @@ Header actions for low-frequency destructive operations (leave/delete an org, fu
 
 Status-style metadata on cards uses a consistent pill: `inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600`. Used for the `Personal` / `{Org}` badge on design cards ([app/my-designs/DesignList.tsx](app/my-designs/DesignList.tsx)) and the role chip on member cards ([app/orgs/[id]/MemberRow.tsx](app/orgs/[id]/MemberRow.tsx)). When a card carries two related metadata points (org name + session title), put the categorical one (org name) in the pill and leave the human-readable one (session title) as plain `text-[12px] text-zinc-600` next to it.
 
+## Stage status pill palette
+
+Distinct from the categorical badge above: the **runtime** status pill on session stage cards uses a per-status colour family so a facilitator can scan a long stage list and pick out the live stage, the paused stage, and the run-up at a glance. The palette is duplicated in two places that must stay in sync — [SessionStages.tsx](app/sessions/[id]/SessionStages.tsx) (`STATUS_PILL_CLASSES` / `STATUS_DOT_COLOURS`, facilitator view) and [components/session/StageTimer.tsx](../../components/session/StageTimer.tsx) (`PILL_CLASSES` / `DOT_COLOURS`, participant-sidebar mirror). When you change one, change both.
+
+| Status      | Background    | Text          | Ring             | Dot            | Meaning                                  |
+| ----------- | ------------- | ------------- | ---------------- | -------------- | ---------------------------------------- |
+| `pending`   | `yellow-50`   | `yellow-700`  | `yellow-200/70`  | `yellow-500`   | Waiting to start — warm but quiet        |
+| `active`    | `emerald-50`  | `emerald-800` | `emerald-200`    | `emerald-500`  | Live — the "now" signal                  |
+| `paused`    | `amber-100`   | `amber-900`   | `amber-300`      | `amber-600`    | Needs facilitator attention — hotter     |
+| `completed` | `sky-50`      | `sky-800`     | `sky-200`        | `sky-600`      | Finished — cool counterpoint to warm     |
+| `critical`  | `red-50`      | `red-800`     | `red-200`        | `red-500`      | `StageTimer.tsx` only — < 30 s remaining |
+
+Design notes:
+
+- **Pending and paused share the warm-yellow family on purpose.** They're semantically related ("stage is not progressing"), but `paused` is one shade hotter on every channel (50 → 100, 200 → 300, 500 → 600) so the "needs attention" pill still pops over the calmer "not started yet" pill.
+- **No two greys.** The previous palette used zinc for both `pending` and `completed`, which made it impossible to tell at a glance which stages were upcoming vs done. Both lanes now carry colour.
+- **Contrast floor (WCAG 2.2 AA).** All text-on-background combinations clear 4.5:1: `yellow-700` on `yellow-50` ≈ 6.4:1, `amber-900` on `amber-100` ≈ 10:1, `sky-800` on `sky-50` ≈ 9:1, `emerald-800` on `emerald-50` ≈ 7:1. Don't soften any of these (e.g. dropping pending to `yellow-500` text) without re-measuring.
+- **Card border still glows only for `active`.** The pill is the per-row signal; the wrapper border (`border-emerald-300/70 ring-1 ring-emerald-200/60` in [SessionStages.tsx](app/sessions/[id]/SessionStages.tsx)) is the page-level "where is the live stage" signal. Don't tint the border for every status — it makes the list feel like a Christmas tree.
+- **Timer digit colour (`StageTimer.tsx` `TIMER_CLASSES`) is intentionally NOT in the palette table.** Large digits stay `text-zinc-500` for `pending` / `completed` (timer isn't the primary signal then), `text-zinc-900` for `active`, `text-amber-700` for `paused`, `text-red-700` for `critical`. The pill carries the hue; the digits carry the weight.
+
 ## Hover-revealed row actions
 
 Destructive or secondary card actions (trash, send, remove member) sit absolutely-positioned in the card's top-right, `opacity-0 group-hover:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100`. The `[@media(hover:none)]` query keeps them visible on touch where there's no hover. The parent card needs `group relative`.
