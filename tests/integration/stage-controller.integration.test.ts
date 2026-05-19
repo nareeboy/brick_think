@@ -615,4 +615,43 @@ describe('stage-controller-actions (integration)', () => {
     const result = await endSessionAction('00000000-0000-0000-0000-000000000000');
     expect(result).toMatchObject({ ok: false, code: 'session_not_found' });
   });
+
+  // ── start after stop (resume workshop) ────────────────────────────────────
+  test('startStage on a pending stage after endSession promotes session back to live', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { session, stages } = await freshSession();
+    const [s0, s1] = stages;
+    if (!s0 || !s1) throw new Error('stages[0..1] missing');
+
+    // Run the workshop, then stop early — session.status becomes 'completed'.
+    await startStageAction(s0);
+    await endSessionAction(session.id);
+
+    const admin = getAdminClient();
+    const stoppedSession = await admin
+      .from('sessions')
+      .select('status')
+      .eq('id', session.id)
+      .single();
+    expect(stoppedSession.data?.status).toBe('completed');
+
+    // Facilitator clicks Start on the next pending stage to resume.
+    expect(await startStageAction(s1)).toEqual({ ok: true });
+
+    const resumedSession = await admin
+      .from('sessions')
+      .select('status, current_stage_id')
+      .eq('id', session.id)
+      .single();
+    expect(resumedSession.data?.status).toBe('live');
+    expect(resumedSession.data?.current_stage_id).toBe(s1);
+
+    const resumedStage = await admin
+      .from('stages')
+      .select('status, started_at')
+      .eq('id', s1)
+      .single();
+    expect(resumedStage.data?.status).toBe('active');
+    expect(resumedStage.data?.started_at).not.toBeNull();
+  });
 });

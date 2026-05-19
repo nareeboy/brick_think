@@ -39,7 +39,7 @@ interface StageWithSession {
   paused_at: string | null;
   total_paused_ms: number;
   extended_seconds: number;
-  sessions: { id: string; facilitator_id: string | null; status: string };
+  sessions: { id: string; facilitator_id: string | null; status: string; org_id: string };
 }
 
 // NOTE: Each verb performs an UPDATE (or pair of UPDATEs for advance/rollback)
@@ -116,7 +116,9 @@ function revalidate(sessionId: string): void {
 
 /**
  * Start a pending stage: sets it to active, records started_at, promotes the
- * session to live if it was still in draft/scheduled, and moves the session's
+ * session to live (whether it was draft, scheduled, or completed — the last
+ * case happens when a facilitator hits Stop and then clicks Start again on
+ * a pending stage to resume the workshop), and moves the session's
  * current_stage_id pointer.
  */
 export async function startStageAction(stageId: string): Promise<StageActionResult> {
@@ -137,10 +139,11 @@ export async function startStageAction(stageId: string): Promise<StageActionResu
     .eq('id', stage.id);
   if (upd.error) throw new Error(`startStage update failed: ${upd.error.message}`);
 
-  const newSessionStatus =
-    stage.sessions.status === 'draft' || stage.sessions.status === 'scheduled'
-      ? 'live'
-      : stage.sessions.status;
+  // A stage going active should always have a live session behind it. If the
+  // session was draft / scheduled / completed (i.e. anything but live or
+  // archived), promote it to live. Archived sessions never reach this branch
+  // because RLS hides the stage row at the read step earlier.
+  const newSessionStatus = stage.sessions.status === 'archived' ? 'archived' : 'live';
 
   const sessUpd = await svc
     .from('sessions')
