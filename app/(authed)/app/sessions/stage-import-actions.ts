@@ -7,11 +7,7 @@ import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { CanvasState } from '@/lib/models/types';
-import {
-  IMPORT_RULES,
-  isImportTarget,
-  remapCanvasForImport,
-} from '@/lib/sessions/stage-import';
+import { IMPORT_RULES, isImportTarget, remapCanvasForImport } from '@/lib/sessions/stage-import';
 import type { StageType } from '@/lib/sessions/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

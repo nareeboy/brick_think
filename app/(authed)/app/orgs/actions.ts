@@ -6,10 +6,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import {
-  dispatchOrgAddedNotification,
-  resolveActorDisplay,
-} from '@/lib/notifications/dispatch';
+import { dispatchOrgAddedNotification, resolveActorDisplay } from '@/lib/notifications/dispatch';
 import { isValidSlug } from '@/lib/orgs/slug';
 
 async function requireUser() {

@@ -7,10 +7,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
-import {
-  STAGE_DEFAULT_DURATIONS_SECONDS,
-  defaultModelTitle,
-} from '@/lib/sessions/stage-labels';
+import { STAGE_DEFAULT_DURATIONS_SECONDS, defaultModelTitle } from '@/lib/sessions/stage-labels';
 import {
   CANONICAL_STAGE_TYPES,
   SESSION_MODES,

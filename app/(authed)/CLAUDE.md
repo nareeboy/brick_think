@@ -52,12 +52,12 @@ PRD §5.3 / §4 — facilitator drives the session's stage state (timer + progre
 
 **State machine** ([lib/sessions/stage-state-machine.ts](../../lib/sessions/stage-state-machine.ts)). Allowed transitions:
 
-| From | Allowed verbs |
-|---|---|
-| `pending` | `start` |
-| `active` | `pause`, `extend`, `advance`, `reset` |
-| `paused` | `resume`, `extend`, `advance`, `reset` |
-| `completed` | `rollback` |
+| From        | Allowed verbs                          |
+| ----------- | -------------------------------------- |
+| `pending`   | `start`                                |
+| `active`    | `pause`, `extend`, `advance`, `reset`  |
+| `paused`    | `resume`, `extend`, `advance`, `reset` |
+| `completed` | `rollback`                             |
 
 `isValidTransition(from, verb)` is the single guard used by every server action AND by the UI to gate button visibility. **Add new verbs in two places (the union + the ALLOWED record) and update the `stage_events.verb` CHECK constraint via a new migration.**
 

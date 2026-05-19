@@ -4,10 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionStages } from './useSessionStages';
 
 const STAGE_A = {
-  id: 'a', session_id: 's', stage_type: 'skill_building', position: 0,
-  title: null, description: null, duration_seconds: 600,
-  started_at: null, ended_at: null, status: 'pending',
-  paused_at: null, total_paused_ms: 0, extended_seconds: 0,
+  id: 'a',
+  session_id: 's',
+  stage_type: 'skill_building',
+  position: 0,
+  title: null,
+  description: null,
+  duration_seconds: 600,
+  started_at: null,
+  ended_at: null,
+  status: 'pending',
+  paused_at: null,
+  total_paused_ms: 0,
+  extended_seconds: 0,
 };
 const STAGE_B = { ...STAGE_A, id: 'b', position: 1 };
 
@@ -66,7 +75,10 @@ beforeEach(() => {
       return {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue({ data: { id: 's', current_stage_id: null, status: 'draft' }, error: null }),
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { id: 's', current_stage_id: null, status: 'draft' },
+              error: null,
+            }),
           }),
         }),
       };

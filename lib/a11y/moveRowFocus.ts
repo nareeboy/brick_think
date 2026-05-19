@@ -11,9 +11,7 @@ export function moveRowFocus(current: HTMLElement, dir: 'up' | 'down'): void {
     current.closest<HTMLElement>('section');
   if (!panel) return;
 
-  const rows = Array.from(
-    panel.querySelectorAll<HTMLElement>('[role="button"][tabindex="0"]'),
-  );
+  const rows = Array.from(panel.querySelectorAll<HTMLElement>('[role="button"][tabindex="0"]'));
   const idx = rows.indexOf(current);
   if (idx === -1) return;
 

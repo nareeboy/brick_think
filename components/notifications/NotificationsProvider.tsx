@@ -175,11 +175,7 @@ export function NotificationsProvider({ profileId, initial, children }: Props) {
         .subscribe((status, err) => {
           if (status === 'SUBSCRIBED' && !cancelled) {
             setReady(true);
-          } else if (
-            status === 'CHANNEL_ERROR' ||
-            status === 'TIMED_OUT' ||
-            status === 'CLOSED'
-          ) {
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
             // Log but don't fail loudly — the bell + missed-while-offline
             // fallback both keep the user informed even if realtime is down.
             console.warn('[notifications] channel status', status, err);

@@ -309,9 +309,7 @@ export async function importDesignAction(rawEnvelope: unknown): Promise<ImportDe
   const { value: env } = parsed;
   const unknown = env.canvasState.bricks.find((b) => !isKnownBrickCode(b.code));
   if (unknown) {
-    throw new Error(
-      `This design uses brick "${unknown.code}" which is no longer supported.`,
-    );
+    throw new Error(`This design uses brick "${unknown.code}" which is no longer supported.`);
   }
   const { supabase, user } = await requireUser();
   const modelId = await createPersonalModelFromCanvasState(supabase, user.id, {

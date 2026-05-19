@@ -27,7 +27,8 @@ type Props = {
 export function StageController({ stages, session, canManage, actions }: Props) {
   const sorted = [...stages].sort((a, b) => a.position - b.position);
   const completed = sorted.filter((s) => s.status === 'completed');
-  const lastCompletedId = completed.length > 0 ? (completed[completed.length - 1]?.id ?? null) : null;
+  const lastCompletedId =
+    completed.length > 0 ? (completed[completed.length - 1]?.id ?? null) : null;
 
   return (
     <ol className="flex flex-col gap-3">
@@ -112,28 +113,50 @@ function StageRowCard({
           <h3 className="text-base font-medium">{label}</h3>
         </div>
         {remaining !== null ? (
-          <span className="font-mono text-sm tabular-nums text-zinc-600">{formatRemaining(remaining)}</span>
+          <span className="font-mono text-sm tabular-nums text-zinc-600">
+            {formatRemaining(remaining)}
+          </span>
         ) : null}
       </div>
       {canManage ? (
         <div className="mt-3 flex flex-wrap gap-2">
           {stage.status === 'pending' && (
-            <button type="button" onClick={wrap(() => actions.start(stage.id))} disabled={pending} className={btn('primary')}>
+            <button
+              type="button"
+              onClick={wrap(() => actions.start(stage.id))}
+              disabled={pending}
+              className={btn('primary')}
+            >
               Start
             </button>
           )}
           {stage.status === 'active' && (
             <>
-              <button type="button" onClick={wrap(() => actions.pause(stage.id))} disabled={pending} className={btn('secondary')}>
+              <button
+                type="button"
+                onClick={wrap(() => actions.pause(stage.id))}
+                disabled={pending}
+                className={btn('secondary')}
+              >
                 Pause
               </button>
               {stage.duration_seconds !== null && (
-                <button type="button" onClick={wrap(() => actions.extend(stage.id, 300))} disabled={pending} className={btn('secondary')}>
+                <button
+                  type="button"
+                  onClick={wrap(() => actions.extend(stage.id, 300))}
+                  disabled={pending}
+                  className={btn('secondary')}
+                >
                   Extend +5m
                 </button>
               )}
               {!isLastStage && (
-                <button type="button" onClick={wrap(() => actions.advance(stage.id))} disabled={pending} className={btn('primary')}>
+                <button
+                  type="button"
+                  onClick={wrap(() => actions.advance(stage.id))}
+                  disabled={pending}
+                  className={btn('primary')}
+                >
                   Advance
                 </button>
               )}
@@ -141,23 +164,43 @@ function StageRowCard({
           )}
           {stage.status === 'paused' && (
             <>
-              <button type="button" onClick={wrap(() => actions.resume(stage.id))} disabled={pending} className={btn('primary')}>
+              <button
+                type="button"
+                onClick={wrap(() => actions.resume(stage.id))}
+                disabled={pending}
+                className={btn('primary')}
+              >
                 Resume
               </button>
               {stage.duration_seconds !== null && (
-                <button type="button" onClick={wrap(() => actions.extend(stage.id, 300))} disabled={pending} className={btn('secondary')}>
+                <button
+                  type="button"
+                  onClick={wrap(() => actions.extend(stage.id, 300))}
+                  disabled={pending}
+                  className={btn('secondary')}
+                >
                   Extend +5m
                 </button>
               )}
               {!isLastStage && (
-                <button type="button" onClick={wrap(() => actions.advance(stage.id))} disabled={pending} className={btn('secondary')}>
+                <button
+                  type="button"
+                  onClick={wrap(() => actions.advance(stage.id))}
+                  disabled={pending}
+                  className={btn('secondary')}
+                >
                   Advance
                 </button>
               )}
             </>
           )}
           {stage.status === 'completed' && isLastCompleted && (
-            <button type="button" onClick={wrap(() => actions.rollback(stage.id))} disabled={pending} className={btn('secondary')}>
+            <button
+              type="button"
+              onClick={wrap(() => actions.rollback(stage.id))}
+              disabled={pending}
+              className={btn('secondary')}
+            >
               Rollback to here
             </button>
           )}
@@ -173,7 +216,8 @@ function StageRowCard({
 }
 
 function btn(variant: 'primary' | 'secondary'): string {
-  const base = 'inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium transition-colors disabled:opacity-50';
+  const base =
+    'inline-flex h-9 items-center rounded-lg px-3 text-sm font-medium transition-colors disabled:opacity-50';
   return variant === 'primary'
     ? `${base} bg-zinc-900 text-white hover:bg-zinc-800`
     : `${base} border border-zinc-200 bg-white hover:bg-zinc-50`;

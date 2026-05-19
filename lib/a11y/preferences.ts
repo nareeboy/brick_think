@@ -16,9 +16,7 @@ export const A11Y_PREFERENCES_DEFAULTS = {
  * types as `Json | null` and may be `{}`) into a fully-populated
  * A11yPreferences object backed by A11Y_PREFERENCES_DEFAULTS.
  */
-export function normaliseA11yPreferences(
-  raw: unknown,
-): Required<A11yPreferences> {
+export function normaliseA11yPreferences(raw: unknown): Required<A11yPreferences> {
   if (raw === null || typeof raw !== 'object') return { ...A11Y_PREFERENCES_DEFAULTS };
   const obj = raw as Record<string, unknown>;
   return {
