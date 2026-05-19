@@ -123,8 +123,6 @@ export function SessionStages({
 
   const sorted = [...stages].sort((a, b) => a.position - b.position);
   const completed = sorted.filter((s) => s.status === 'completed');
-  const lastCompletedId =
-    completed.length > 0 ? (completed[completed.length - 1]?.id ?? null) : null;
   const modelByStageId = new Map(ownedModels.map((m) => [m.stage_id, m]));
 
   const activeStage = sorted.find((s) => s.status === 'active') ?? null;
@@ -175,7 +173,6 @@ export function SessionStages({
             stage={stage}
             isFirst={index === 0}
             isLastStage={index === sorted.length - 1}
-            isLastCompleted={stage.id === lastCompletedId}
             nowMs={nowMs}
             ownedModel={modelByStageId.get(stage.id) ?? null}
             participants={participantsByStage[stage.id] ?? []}
@@ -194,7 +191,6 @@ function StageRow({
   stage,
   isFirst,
   isLastStage,
-  isLastCompleted,
   nowMs,
   ownedModel,
   participants,
@@ -206,7 +202,6 @@ function StageRow({
   stage: LiveStageRow;
   isFirst: boolean;
   isLastStage: boolean;
-  isLastCompleted: boolean;
   nowMs: number;
   ownedModel: OwnedModelRow | null;
   participants: ParticipantModel[];
@@ -292,7 +287,6 @@ function StageRow({
       {canManageSession ? (
         <StageTimerControls
           stage={stage}
-          isLastCompleted={isLastCompleted}
           sessionId={sessionId}
           sessionTitle={sessionTitle}
           sessionStatus={sessionStatus}
@@ -407,13 +401,11 @@ function AdvanceStageButton({ stageId }: { stageId: string }) {
 
 function StageTimerControls({
   stage,
-  isLastCompleted,
   sessionId,
   sessionTitle,
   sessionStatus,
 }: {
   stage: LiveStageRow;
-  isLastCompleted: boolean;
   sessionId: string;
   sessionTitle: string;
   sessionStatus: string;
@@ -438,11 +430,7 @@ function StageTimerControls({
   };
 
   const status = stage.status;
-  const hasActions =
-    status === 'pending' ||
-    status === 'active' ||
-    status === 'paused' ||
-    (status === 'completed' && isLastCompleted);
+  const hasActions = status === 'pending' || status === 'active' || status === 'paused';
   if (!hasActions) return null;
 
   return (
@@ -509,16 +497,6 @@ function StageTimerControls({
               />
             ) : null}
           </>
-        )}
-        {status === 'completed' && isLastCompleted && (
-          <button
-            type="button"
-            onClick={wrap(() => STAGE_ACTIONS.rollback(stage.id))}
-            disabled={pending}
-            className={btn('secondary')}
-          >
-            Rollback to here
-          </button>
         )}
       </div>
       {errorMessage ? (
