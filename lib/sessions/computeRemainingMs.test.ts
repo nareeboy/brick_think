@@ -10,6 +10,7 @@ function stage(partial: Partial<StageRuntime> = {}): StageRuntime {
     duration_seconds: 600,
     started_at: new Date(T0).toISOString(),
     paused_at: null,
+    ended_at: null,
     total_paused_ms: 0,
     extended_seconds: 0,
     ...partial,
@@ -55,6 +56,27 @@ describe('computeRemainingMs', () => {
   it('clamps to totalMs when client clock is behind server (negative elapsed)', () => {
     // started_at is "in the future" relative to nowMs — simulates client clock skew.
     expect(computeRemainingMs(stage(), T0 - 30_000)).toBe(600_000);
+  });
+
+  it('freezes while completed (uses ended_at, not now)', () => {
+    // Stage was running, then ended early (e.g. facilitator Stop) at 4 min in.
+    const s = stage({
+      status: 'completed',
+      ended_at: new Date(T0 + 240_000).toISOString(),
+    });
+    // now=8 min in vs ended_at=4 min in — remaining must show the value at completion (6 min),
+    // not what it would be if the clock had kept ticking (2 min).
+    expect(computeRemainingMs(s, T0 + 480_000)).toBe(360_000);
+    // Far-future now: still frozen at 6 min remaining.
+    expect(computeRemainingMs(s, T0 + 999_999_000)).toBe(360_000);
+  });
+
+  it('completed without ended_at falls back to live now (degenerate)', () => {
+    // No ended_at set on a completed stage shouldn't happen via the server
+    // actions, but if it did, the math should still produce a sensible value
+    // rather than NaN — use nowMs.
+    const s = stage({ status: 'completed', ended_at: null });
+    expect(computeRemainingMs(s, T0 + 60_000)).toBe(540_000);
   });
 
   it('returns null when duration_seconds is null', () => {
