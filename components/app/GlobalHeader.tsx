@@ -30,21 +30,22 @@ export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
           <HeaderNav />
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2" data-testid="header-user-block">
+        <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2 pr-2" data-testid="header-user-block">
             <Avatar url={userAvatarUrl} name={userName} size="sm" />
             <span className="hidden max-w-[140px] truncate text-[13px] text-zinc-800 sm:inline">
               {userName}
             </span>
           </div>
+          <div aria-hidden="true" className="h-6 w-px bg-zinc-900/10" />
           <a
             href="https://github.com/nareeboy/brick_think/issues"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Help — opens GitHub Issues in a new tab"
-            className="text-[13px] text-zinc-600 hover:text-zinc-900"
+            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
           >
-            Help
+            <HelpIcon />
           </a>
           <NotificationsBell />
           <Link
@@ -52,23 +53,44 @@ export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
             aria-label="Account settings"
             title={userEmail ?? userName}
             data-testid="account-link"
-            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white text-zinc-700 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+            className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
           >
             <CogIcon />
           </Link>
           <form action="/auth/sign-out" method="post">
             <button
               type="submit"
+              aria-label="Sign out"
               data-testid="sign-out-button"
-              className="inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-900/10 bg-white px-3 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+              className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
             >
               <SignOutIcon />
-              <span className="hidden sm:inline">Sign out</span>
             </button>
           </form>
         </div>
       </HeaderInner>
     </header>
+  );
+}
+
+function HelpIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="9" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M12 17h.01" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 

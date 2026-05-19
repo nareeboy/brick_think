@@ -72,7 +72,7 @@ export function NotificationsBell() {
         aria-haspopup="dialog"
         aria-expanded={open}
         data-testid="notifications-bell"
-        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white text-zinc-700 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+        className="relative inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-md text-zinc-600 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
       >
         <BellIcon className="h-4 w-4" />
         {badge ? (
