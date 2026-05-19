@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  isValidTransition,
-  type StageStatus,
-  type StageVerb,
-} from './stage-state-machine';
+import { isValidTransition, type StageStatus, type StageVerb } from './stage-state-machine';
 
 describe('isValidTransition', () => {
   const cases: Array<[StageStatus, StageVerb, boolean]> = [

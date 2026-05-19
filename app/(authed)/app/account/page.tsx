@@ -70,7 +70,9 @@ export default async function AccountPage() {
         <ReplayWalkthroughCard />
 
         <A11yPreferencesCard
-          initialColourblindMode={normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode}
+          initialColourblindMode={
+            normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
+          }
         />
 
         <ContributionCard />

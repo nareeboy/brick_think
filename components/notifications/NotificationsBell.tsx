@@ -68,9 +68,7 @@ export function NotificationsBell() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={
-          unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'
-        }
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
         aria-haspopup="dialog"
         aria-expanded={open}
         data-testid="notifications-bell"

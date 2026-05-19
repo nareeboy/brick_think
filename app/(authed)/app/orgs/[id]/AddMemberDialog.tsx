@@ -32,7 +32,10 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
       const result: AddMemberResult = await addOrgMemberAction(orgId, trimmed);
       if (result.kind === 'ok') {
         setEmail('');
-        setFeedback({ kind: 'ok', text: `${result.recipientDisplay} was added to ${result.orgName}.` });
+        setFeedback({
+          kind: 'ok',
+          text: `${result.recipientDisplay} was added to ${result.orgName}.`,
+        });
         // Admin-side confirmation toast — surfaces a top-level toast in
         // addition to the inline dialog feedback, mirroring the recipient
         // experience. id/created_at are synthesised since this is a UI-only

@@ -2,11 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import * as Y from 'yjs';
 
-import {
-  YJS_CANVAS_MAP_NAME,
-  addBrickToDoc,
-  deleteBrickFromDoc,
-} from '@/lib/yjs/canvas-codec';
+import { YJS_CANVAS_MAP_NAME, addBrickToDoc, deleteBrickFromDoc } from '@/lib/yjs/canvas-codec';
 
 import { useYjsUndoManager } from './useYjsUndoManager';
 

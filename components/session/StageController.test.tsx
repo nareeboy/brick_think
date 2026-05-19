@@ -45,7 +45,9 @@ function mockActions() {
 
 describe('StageController', () => {
   it('shows Start button on pending stage', () => {
-    render(<StageController stages={[stage()]} session={sessionRow} canManage actions={mockActions()} />);
+    render(
+      <StageController stages={[stage()]} session={sessionRow} canManage actions={mockActions()} />,
+    );
     // getByRole throws if absent — its return value is the assertion
     screen.getByRole('button', { name: /^start$/i });
   });
@@ -53,7 +55,10 @@ describe('StageController', () => {
   it('shows Pause, Extend, Advance on active stage', () => {
     render(
       <StageController
-        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
+        stages={[
+          stage({ status: 'active', started_at: new Date().toISOString() }),
+          pendingNextStage(),
+        ]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={mockActions()}
@@ -67,7 +72,14 @@ describe('StageController', () => {
   it('shows Resume, Extend, Advance on paused stage', () => {
     render(
       <StageController
-        stages={[stage({ status: 'paused', started_at: new Date().toISOString(), paused_at: new Date().toISOString() }), pendingNextStage()]}
+        stages={[
+          stage({
+            status: 'paused',
+            started_at: new Date().toISOString(),
+            paused_at: new Date().toISOString(),
+          }),
+          pendingNextStage(),
+        ]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={mockActions()}
@@ -84,7 +96,14 @@ describe('StageController', () => {
       stage({ id: 'b', position: 1, status: 'completed' }),
       stage({ id: 'c', position: 2, status: 'active', started_at: new Date().toISOString() }),
     ];
-    render(<StageController stages={stages} session={{ ...sessionRow, current_stage_id: 'c' }} canManage actions={mockActions()} />);
+    render(
+      <StageController
+        stages={stages}
+        session={{ ...sessionRow, current_stage_id: 'c' }}
+        canManage
+        actions={mockActions()}
+      />,
+    );
     const rollbackButtons = screen.getAllByRole('button', { name: /^rollback/i });
     expect(rollbackButtons).toHaveLength(1);
   });
@@ -98,14 +117,19 @@ describe('StageController', () => {
         actions={mockActions()}
       />,
     );
-    expect(screen.queryAllByRole('button', { name: /pause|resume|advance|start|rollback/i })).toHaveLength(0);
+    expect(
+      screen.queryAllByRole('button', { name: /pause|resume|advance|start|rollback/i }),
+    ).toHaveLength(0);
   });
 
   it('calls advance when Advance clicked', async () => {
     const actions = mockActions();
     render(
       <StageController
-        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
+        stages={[
+          stage({ status: 'active', started_at: new Date().toISOString() }),
+          pendingNextStage(),
+        ]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={actions}
@@ -134,7 +158,14 @@ describe('StageController', () => {
       stage({ id: 'a', status: 'completed' }),
       stage({ id: 'b', position: 1, status: 'active', started_at: new Date().toISOString() }),
     ];
-    render(<StageController stages={stages} session={{ ...sessionRow, current_stage_id: 'b' }} canManage actions={mockActions()} />);
+    render(
+      <StageController
+        stages={stages}
+        session={{ ...sessionRow, current_stage_id: 'b' }}
+        canManage
+        actions={mockActions()}
+      />,
+    );
     expect(screen.queryByRole('button', { name: /^advance$/i })).toBeNull();
   });
 
@@ -145,7 +176,10 @@ describe('StageController', () => {
     };
     render(
       <StageController
-        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
+        stages={[
+          stage({ status: 'active', started_at: new Date().toISOString() }),
+          pendingNextStage(),
+        ]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={actions}
@@ -167,7 +201,10 @@ describe('StageController', () => {
     };
     render(
       <StageController
-        stages={[stage({ status: 'active', started_at: new Date().toISOString() }), pendingNextStage()]}
+        stages={[
+          stage({ status: 'active', started_at: new Date().toISOString() }),
+          pendingNextStage(),
+        ]}
         session={{ ...sessionRow, current_stage_id: 'a' }}
         canManage
         actions={actions}

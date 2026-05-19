@@ -36,9 +36,12 @@ export function BringInPreviousModelButton({ sourceStageLabel, alreadyImported }
     startTransition(async () => {
       const res = await bringInPreviousModel(modelId);
       if (!res.ok) {
-        const templateKey = res.code === 'source_not_found' ? 'source_not_found_template' : res.code;
-        const message = (FAILURE_COPY[templateKey] ?? FAILURE_COPY.invalid_uuid!)
-          .replace('{sourceStageLabel}', sourceStageLabel);
+        const templateKey =
+          res.code === 'source_not_found' ? 'source_not_found_template' : res.code;
+        const message = (FAILURE_COPY[templateKey] ?? FAILURE_COPY.invalid_uuid!).replace(
+          '{sourceStageLabel}',
+          sourceStageLabel,
+        );
         setError(message);
         return;
       }

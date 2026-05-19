@@ -5,7 +5,5 @@
  */
 export function isCanvasGridFocused(): boolean {
   if (typeof document === 'undefined') return false;
-  return Boolean(
-    document.activeElement?.closest('[role="grid"][aria-label="Builder canvas"]'),
-  );
+  return Boolean(document.activeElement?.closest('[role="grid"][aria-label="Builder canvas"]'));
 }

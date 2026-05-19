@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseCanvasState } from '@/lib/models/canvasState';
-import {
-  IMPORT_RULES,
-  isImportTarget,
-  remapCanvasForImport,
-} from '@/lib/sessions/stage-import';
+import { IMPORT_RULES, isImportTarget, remapCanvasForImport } from '@/lib/sessions/stage-import';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 
 const sampleCanvas = {

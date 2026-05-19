@@ -69,8 +69,8 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           Import design
         </h2>
         <p className="mt-2 text-[13px] text-zinc-600">
-          Choose a <code>.brickthink.json</code> file exported from BrickThink. The imported
-          design lands as a new Personal design.
+          Choose a <code>.brickthink.json</code> file exported from BrickThink. The imported design
+          lands as a new Personal design.
         </p>
         <label htmlFor={inputId} className="sr-only">
           Design file

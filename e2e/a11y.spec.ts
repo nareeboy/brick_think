@@ -15,7 +15,12 @@ function logViolations(routeName: string, violations: AxeViolations) {
   console.warn(
     `\naxe violations on ${routeName} (${violations.length}):`,
     JSON.stringify(
-      violations.map((v) => ({ id: v.id, impact: v.impact, description: v.description, nodes: v.nodes.length })),
+      violations.map((v) => ({
+        id: v.id,
+        impact: v.impact,
+        description: v.description,
+        nodes: v.nodes.length,
+      })),
       null,
       2,
     ),

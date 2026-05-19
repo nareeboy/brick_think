@@ -128,7 +128,7 @@ export function SessionStages({
   const activeStage = sorted.find((s) => s.status === 'active') ?? null;
   const activeRemaining = activeStage ? computeRemainingMs(activeStage, nowMs) : null;
   const activeLabel = activeStage
-    ? activeStage.title ?? stageLabel(activeStage.stage_type as StageType)
+    ? (activeStage.title ?? stageLabel(activeStage.stage_type as StageType))
     : null;
 
   return (
@@ -434,7 +434,8 @@ function StageTimerControls({
   // the workshop. Naturally-completed stages during a live session stay clean
   // (rollback owns that path when its UI returns).
   const showRevive = status === 'completed' && sessionStatus === 'completed';
-  const hasActions = status === 'pending' || status === 'active' || status === 'paused' || showRevive;
+  const hasActions =
+    status === 'pending' || status === 'active' || status === 'paused' || showRevive;
   if (!hasActions) return null;
 
   return (
@@ -494,11 +495,7 @@ function StageTimerControls({
               Reset
             </button>
             {sessionStatus !== 'completed' ? (
-              <EndSessionButton
-                sessionId={sessionId}
-                sessionTitle={sessionTitle}
-                variant="text"
-              />
+              <EndSessionButton sessionId={sessionId} sessionTitle={sessionTitle} variant="text" />
             ) : null}
           </>
         )}
@@ -513,7 +510,8 @@ function StageTimerControls({
 }
 
 function StageDurationEditor({ stage }: { stage: LiveStageRow }) {
-  const initialMinutes = stage.duration_seconds !== null ? Math.round(stage.duration_seconds / 60) : 15;
+  const initialMinutes =
+    stage.duration_seconds !== null ? Math.round(stage.duration_seconds / 60) : 15;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string>(String(initialMinutes));
   const [pending, setPending] = useState(false);
@@ -689,12 +687,7 @@ function XIcon({ className }: { className?: string }) {
 
 function StopIcon({ className }: { className?: string }) {
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 16 16"
-      fill="currentColor"
-      className={className}
-    >
+    <svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor" className={className}>
       <rect x="4" y="4" width="8" height="8" rx="1.5" />
     </svg>
   );
@@ -772,12 +765,12 @@ function EndSessionButton({
             <div className="flex flex-col gap-2">
               <p>
                 The current stage timer stops immediately and the session moves to{' '}
-                <span className="font-mono text-[12px] uppercase tracking-[0.12em]">completed</span>.
-                Participants keep access to their models in read-only mode.
+                <span className="font-mono text-[12px] uppercase tracking-[0.12em]">completed</span>
+                . Participants keep access to their models in read-only mode.
               </p>
               <p className="text-zinc-500">
-                The stage history (events, durations, narrations) stays intact for the
-                post-session report. You can&apos;t un-end a session from the UI yet.
+                The stage history (events, durations, narrations) stays intact for the post-session
+                report. You can&apos;t un-end a session from the UI yet.
               </p>
               {errorMessage ? (
                 <p role="alert" className="text-[12px] text-red-700">

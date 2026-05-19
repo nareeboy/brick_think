@@ -105,7 +105,8 @@ afterAll(async () => {
  */
 function mustGet<T>(arr: readonly T[], idx: number, label?: string): T {
   const v = arr[idx];
-  if (v === undefined) throw new Error(`mustGet: index ${idx} out of bounds${label ? ` (${label})` : ''}`);
+  if (v === undefined)
+    throw new Error(`mustGet: index ${idx} out of bounds${label ? ` (${label})` : ''}`);
   return v;
 }
 
@@ -242,10 +243,22 @@ describe('stage-controller-actions (integration)', () => {
     const s0 = mustGet(stages, 0);
     await startStageAction(s0);
 
-    expect(await extendStageAction(s0, 0)).toMatchObject({ ok: false, code: 'invalid_extend_amount' });
-    expect(await extendStageAction(s0, -1)).toMatchObject({ ok: false, code: 'invalid_extend_amount' });
-    expect(await extendStageAction(s0, 3_601)).toMatchObject({ ok: false, code: 'invalid_extend_amount' });
-    expect(await extendStageAction(s0, 1.5)).toMatchObject({ ok: false, code: 'invalid_extend_amount' });
+    expect(await extendStageAction(s0, 0)).toMatchObject({
+      ok: false,
+      code: 'invalid_extend_amount',
+    });
+    expect(await extendStageAction(s0, -1)).toMatchObject({
+      ok: false,
+      code: 'invalid_extend_amount',
+    });
+    expect(await extendStageAction(s0, 3_601)).toMatchObject({
+      ok: false,
+      code: 'invalid_extend_amount',
+    });
+    expect(await extendStageAction(s0, 1.5)).toMatchObject({
+      ok: false,
+      code: 'invalid_extend_amount',
+    });
   });
 
   // ── advance moves pointer + completes current ─────────────────────────────
@@ -290,7 +303,7 @@ describe('stage-controller-actions (integration)', () => {
     // Drive: s0 → active → completed, pointer moves to s1, s1 → active
     await startStageAction(s0);
     await advanceStageAction(s0); // s0 → completed; pointer → s1
-    await startStageAction(s1);  // s1 → active
+    await startStageAction(s1); // s1 → active
 
     expect(await rollbackStageAction(s0)).toEqual({ ok: true });
 
@@ -585,11 +598,7 @@ describe('stage-controller-actions (integration)', () => {
     expect(await endSessionAction(session.id)).toEqual({ ok: true });
 
     const admin = getAdminClient();
-    const sessionRow = await admin
-      .from('sessions')
-      .select('status')
-      .eq('id', session.id)
-      .single();
+    const sessionRow = await admin.from('sessions').select('status').eq('id', session.id).single();
     expect(sessionRow.data?.status).toBe('completed');
   });
 

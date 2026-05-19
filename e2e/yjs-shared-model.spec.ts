@@ -135,7 +135,10 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
     const modelUrl = page.url();
@@ -166,7 +169,10 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
     const modelUrl = page.url();
@@ -200,7 +206,10 @@ test.describe('yjs shared_model collaboration', () => {
 
   test('Cmd+Shift+Z redoes the undone op', async ({ signedInPage: page, seededSession }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -223,7 +232,10 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -249,7 +261,10 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
     const modelUrl = page.url();
@@ -279,7 +294,10 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByTestId('stage-card-shared_model').getByTestId('start-model-shared_model').click();
+    await page
+      .getByTestId('stage-card-shared_model')
+      .getByTestId('start-model-shared_model')
+      .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -300,7 +318,10 @@ test.describe('yjs shared_model collaboration', () => {
     seededSession,
   }) => {
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByTestId('stage-card-individual_model').getByTestId('start-model-individual_model').click();
+    await page
+      .getByTestId('stage-card-individual_model')
+      .getByTestId('start-model-individual_model')
+      .click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
