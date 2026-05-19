@@ -205,7 +205,7 @@ The seed response contains a `sessionId` → open `http://localhost:3000/app/ses
 
 ## Worker (Yjs collab backend)
 
-Drives real-time collaboration on `shared_model` session designs: brick/group propagation, presence cursors with avatars + names, and per-client `Cmd+Z` / `Cmd+Shift+Z` undo. Other stages and personal designs still use the autosave path; the worker is only consulted in live mode. Auth via 60s HS256 JWT from `/api/yjs/token`, verified worker-side before WS upgrade.
+Drives real-time collaboration on every room-backed canvas (`shared_model`, plus `system_model` / `guiding_principles` when the facilitator has created rooms): brick/group propagation, presence cursors with avatars + names, and per-client `Cmd+Z` / `Cmd+Shift+Z` undo. Personal stages (`individual_model`, `skill_building`) and any non-room canvas still use the autosave path; the worker is only consulted in live mode. Auth via 60s HS256 JWT from `/api/yjs/token`, verified worker-side before WS upgrade — room canvases additionally pass `can_edit_room` for transitive membership.
 
 Required env (web and worker share `YJS_JWT_SECRET`):
 
