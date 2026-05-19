@@ -205,7 +205,14 @@ Header actions for low-frequency destructive operations (leave/delete an org, fu
 
 ## Badge pill convention
 
-Status-style metadata on cards uses a consistent pill: `inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600`. Used for the `Personal` / `{Org}` badge on design cards ([app/my-designs/DesignList.tsx](app/my-designs/DesignList.tsx)) and the role chip on member cards ([app/orgs/[id]/MemberRow.tsx](app/orgs/[id]/MemberRow.tsx)). When a card carries two related metadata points (org name + session title), put the categorical one (org name) in the pill and leave the human-readable one (session title) as plain `text-[12px] text-zinc-600` next to it.
+Status-style metadata on cards uses a shared pill shape: `inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em]`. The colour tells you what kind of metadata it is.
+
+- **Neutral chips** — `bg-zinc-900/5 text-zinc-600`. Default for non-categorical labels (e.g. the role chip on member cards, [app/orgs/[id]/MemberRow.tsx](app/orgs/[id]/MemberRow.tsx)).
+- **Design-card scope chips** ([app/my-designs/DesignList.tsx](app/my-designs/DesignList.tsx)) — context-coloured so the My Designs grid is scannable at a glance:
+  - `Personal` → `bg-sky-50 text-sky-700` (cool tone — your own quiet space).
+  - `{Org}` → `bg-orange-100 text-orange-900` (warm brand-aligned tone — signals a shared/team-scoped design). Both clear WCAG 2.2 AA (≥7:1 contrast).
+
+When a card carries two related metadata points (org name + session title), put the categorical one (org name) in the coloured pill and leave the human-readable one (session title) as plain `text-[12px] text-zinc-600` next to it. Don't reach for additional pill colours without an equally strong scannability reason — most card metadata stays in the neutral chip family.
 
 ## Stage status pill palette
 
