@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { computeRemainingMs } from '@/lib/sessions/computeRemainingMs';
 import { stageLabel } from '@/lib/sessions/stage-labels';
@@ -298,50 +299,117 @@ function StageRow({
         />
       ) : null}
 
-      {participants.length > 0 ? (
-        <div
-          className="border-t border-zinc-900/5 pt-3"
-          data-testid={`stage-participants-${stageType}`}
-        >
-          <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Participants ({participants.length})
-          </p>
-          <ul className="flex flex-col gap-2">
-            {participants.map((p) => {
-              const t = lastUpdatedAt.get(p.id);
-              const isLive = t != null && nowMs - t < 10_000;
-              return (
-                <li
-                  key={p.id}
-                  className="flex items-center justify-between gap-3"
-                  data-testid={`participant-row-${p.id}`}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span
-                      role="img"
-                      aria-label={isLive ? 'Live' : 'Idle'}
-                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${
-                        isLive ? 'bg-emerald-500' : 'bg-zinc-300'
-                      }`}
-                      data-testid={isLive ? `participant-live-${p.id}` : undefined}
-                    />
-                    <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-zinc-800">
-                      {p.ownerLabel}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/app/designs/${p.id}`}
-                    className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
-                  >
-                    Open
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+      {canManageSession ? (
+        <ParticipantsPanel
+          stageType={stageType}
+          participants={participants}
+          lastUpdatedAt={lastUpdatedAt}
+          nowMs={nowMs}
+        />
       ) : null}
     </li>
+  );
+}
+
+function ParticipantsPanel({
+  stageType,
+  participants,
+  lastUpdatedAt,
+  nowMs,
+}: {
+  stageType: StageType;
+  participants: ParticipantModel[];
+  lastUpdatedAt: Map<string, number>;
+  nowMs: number;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+
+  const handleRefresh = () => {
+    startTransition(() => {
+      router.refresh();
+    });
+  };
+
+  return (
+    <div
+      className="border-t border-zinc-900/5 pt-3"
+      data-testid={`stage-participants-${stageType}`}
+    >
+      <div className="mb-2 flex items-center gap-1.5">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+          Participants ({participants.length})
+        </p>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={pending}
+          aria-label="Refresh participants"
+          title="Refresh to see your participants"
+          data-testid={`refresh-participants-${stageType}`}
+          className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <RefreshIcon className={`h-3.5 w-3.5 ${pending ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+      {participants.length === 0 ? (
+        <p className="text-[12px] text-zinc-500">No participants yet</p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {participants.map((p) => {
+            const t = lastUpdatedAt.get(p.id);
+            const isLive = t != null && nowMs - t < 10_000;
+            return (
+              <li
+                key={p.id}
+                className="flex items-center justify-between gap-3"
+                data-testid={`participant-row-${p.id}`}
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <span
+                    role="img"
+                    aria-label={isLive ? 'Live' : 'Idle'}
+                    className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                      isLive ? 'bg-emerald-500' : 'bg-zinc-300'
+                    }`}
+                    data-testid={isLive ? `participant-live-${p.id}` : undefined}
+                  />
+                  <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-zinc-800">
+                    {p.ownerLabel}
+                  </p>
+                </div>
+                <Link
+                  href={`/app/designs/${p.id}`}
+                  className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
+                >
+                  Open
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function RefreshIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 12a9 9 0 0 1 15.5-6.36L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-15.5 6.36L3 16" />
+      <path d="M3 21v-5h5" />
+    </svg>
   );
 }
 
