@@ -9,10 +9,7 @@ import { useEffect, type RefObject } from 'react';
  * Caller owns initial focus (focus the first input / close button via
  * its own useRef + useEffect). This hook only handles cycling.
  */
-export function useFocusTrap(
-  containerRef: RefObject<HTMLElement | null>,
-  active: boolean,
-): void {
+export function useFocusTrap(containerRef: RefObject<HTMLElement | null>, active: boolean): void {
   useEffect(() => {
     if (!active) return;
     const container = containerRef.current;

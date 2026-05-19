@@ -16,9 +16,7 @@ export function resolveActorDisplay({ fullName, email }: ResolveActorDisplayArgs
   const trimmedName = fullName?.trim() || null;
   const emailLocalPart = email?.split('@')[0]?.toLowerCase() ?? null;
   const looksLikePrefix =
-    trimmedName !== null &&
-    emailLocalPart !== null &&
-    trimmedName.toLowerCase() === emailLocalPart;
+    trimmedName !== null && emailLocalPart !== null && trimmedName.toLowerCase() === emailLocalPart;
   const candidate = looksLikePrefix ? null : trimmedName;
   return candidate || email || 'Someone';
 }

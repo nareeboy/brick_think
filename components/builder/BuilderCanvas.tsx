@@ -478,7 +478,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
   const overlay = selectedBrick && !interacting ? selectionOverlay(selectedBrick, pan, zoom) : null;
 
   const focusedBrick = focusedBrickId
-    ? visibleBricks.find((b) => b.id === focusedBrickId) ?? null
+    ? (visibleBricks.find((b) => b.id === focusedBrickId) ?? null)
     : null;
 
   return (

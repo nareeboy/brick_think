@@ -78,9 +78,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
     .select('a11y_preferences')
     .eq('id', user.id)
     .single();
-  const colourblindMode = normaliseA11yPreferences(
-    prefsRes.data?.a11y_preferences,
-  ).colourblindMode;
+  const colourblindMode = normaliseA11yPreferences(prefsRes.data?.a11y_preferences).colourblindMode;
 
   const liveMode = canPlaceLive({
     sessionContext,

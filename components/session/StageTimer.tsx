@@ -46,13 +46,14 @@ export function StageTimer({ stage }: Props) {
       <span
         className={`inline-flex w-fit items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] ring-1 ${PILL_CLASSES[variant]}`}
       >
-        <span aria-hidden="true" className={`inline-block size-1.5 rounded-full ${DOT_COLOURS[variant]}`} />
+        <span
+          aria-hidden="true"
+          className={`inline-block size-1.5 rounded-full ${DOT_COLOURS[variant]}`}
+        />
         {labelText}
       </span>
       {showDigits ? (
-        <span
-          className={`font-mono tabular-nums text-2xl leading-none ${TIMER_CLASSES[variant]}`}
-        >
+        <span className={`font-mono tabular-nums text-2xl leading-none ${TIMER_CLASSES[variant]}`}>
           {formatRemaining(remaining)}
         </span>
       ) : null}
@@ -93,7 +94,6 @@ const TIMER_CLASSES: Record<Variant, string> = {
   completed: 'text-zinc-500',
   critical: 'text-red-700',
 };
-
 
 function formatRemaining(ms: number): string {
   const total = Math.ceil(ms / 1000);
