@@ -214,6 +214,129 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_profile_id: string | null
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          link_url: string | null
+          org_id: string | null
+          read_at: string | null
+          recipient_profile_id: string
+          session_id: string | null
+          title: string
+        }
+        Insert: {
+          actor_profile_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          link_url?: string | null
+          org_id?: string | null
+          read_at?: string | null
+          recipient_profile_id: string
+          session_id?: string | null
+          title: string
+        }
+        Update: {
+          actor_profile_id?: string | null
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          link_url?: string | null
+          org_id?: string | null
+          read_at?: string | null
+          recipient_profile_id?: string
+          session_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_actor_profile_id_fkey"
+            columns: ["actor_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_recipient_profile_id_fkey"
+            columns: ["recipient_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_invitations: {
+        Row: {
+          claimed_at: string | null
+          claimed_by_profile_id: string | null
+          email: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          org_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by_profile_id?: string | null
+          email: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          org_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by_profile_id?: string | null
+          email?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_invitations_claimed_by_profile_id_fkey"
+            columns: ["claimed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_invitations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_memberships: {
         Row: {
           created_at: string

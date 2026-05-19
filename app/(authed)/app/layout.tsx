@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 
+import { fetchRecentNotifications } from '@/app/(authed)/app/notifications/actions';
 import { GlobalHeader } from '@/components/app/GlobalHeader';
+import { NotificationToast } from '@/components/notifications/NotificationToast';
+import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
@@ -39,11 +42,15 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
     fullName !== null && emailLocalPart !== null && fullName.toLowerCase() === emailLocalPart;
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const userAvatarUrl = profileRes.data?.avatar_url ?? null;
+  const initialNotifications = await fetchRecentNotifications();
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
-      <GlobalHeader userName={userName} userEmail={email} userAvatarUrl={userAvatarUrl} />
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-    </div>
+    <NotificationsProvider profileId={user.id} initial={initialNotifications}>
+      <div className="flex min-h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
+        <GlobalHeader userName={userName} userEmail={email} userAvatarUrl={userAvatarUrl} />
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <NotificationToast />
+      </div>
+    </NotificationsProvider>
   );
 }
