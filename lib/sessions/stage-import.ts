@@ -1,20 +1,34 @@
 import type { CanvasState } from '@/lib/models/types';
 import type { StageType } from '@/lib/sessions/types';
 
-export type ImportTargetStage = 'shared_model' | 'system_model';
+export type ImportTargetStage =
+  | 'individual_model'
+  | 'shared_model'
+  | 'system_model'
+  | 'guiding_principles';
 
 export interface SourceSelector {
   sourceMode: 'caller_own' | 'session_shared';
   sourceStageType: StageType;
 }
 
+// Every stage except skill_building has a "bring in my previous model" entry.
+// `shared_model` is the only session-shared target — sourced by session-wide
+// row; the rest are per-participant and sourced by caller_own.
 export const IMPORT_RULES: Record<ImportTargetStage, SourceSelector> = {
+  individual_model: { sourceMode: 'caller_own', sourceStageType: 'skill_building' },
   shared_model: { sourceMode: 'caller_own', sourceStageType: 'individual_model' },
   system_model: { sourceMode: 'session_shared', sourceStageType: 'shared_model' },
+  guiding_principles: { sourceMode: 'caller_own', sourceStageType: 'system_model' },
 };
 
 export function isImportTarget(stageType: StageType): stageType is ImportTargetStage {
-  return stageType === 'shared_model' || stageType === 'system_model';
+  return (
+    stageType === 'individual_model' ||
+    stageType === 'shared_model' ||
+    stageType === 'system_model' ||
+    stageType === 'guiding_principles'
+  );
 }
 
 function makeId(prefix: string): string {

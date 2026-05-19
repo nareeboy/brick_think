@@ -181,11 +181,55 @@ describe('bringInPreviousModel (integration)', () => {
     expect(await countImports(sharedId, fx.participant.id)).toBe(1);
   });
 
-  test('rejects unsupported target stage (individual_model)', async () => {
+  test('individual_model: copies caller_own skill_building canvas (server_copied)', async () => {
     await cleanupModels();
+    await insertSessionModel({
+      ownerProfileId: fx.participant.id,
+      stageId: fx.session.stageIds.skill_building,
+      canvas: POPULATED_CANVAS,
+    });
     const targetId = await insertSessionModel({
       ownerProfileId: fx.participant.id,
       stageId: fx.session.stageIds.individual_model,
+      canvas: EMPTY_CANVAS_STATE,
+    });
+    currentClient = await signInAs(fx.participant);
+
+    const res = await bringInPreviousModel(targetId);
+
+    expect(res).toMatchObject({ ok: true, mode: 'server_copied' });
+    const canvas = await readCanvas(targetId);
+    expect(canvas.bricks).toHaveLength(1);
+    expect(await countImports(targetId, fx.participant.id)).toBe(1);
+  });
+
+  test('guiding_principles: copies caller_own system_model canvas (server_copied)', async () => {
+    await cleanupModels();
+    await insertSessionModel({
+      ownerProfileId: fx.participant.id,
+      stageId: fx.session.stageIds.system_model,
+      canvas: POPULATED_CANVAS,
+    });
+    const targetId = await insertSessionModel({
+      ownerProfileId: fx.participant.id,
+      stageId: fx.session.stageIds.guiding_principles,
+      canvas: EMPTY_CANVAS_STATE,
+    });
+    currentClient = await signInAs(fx.participant);
+
+    const res = await bringInPreviousModel(targetId);
+
+    expect(res).toMatchObject({ ok: true, mode: 'server_copied' });
+    const canvas = await readCanvas(targetId);
+    expect(canvas.bricks).toHaveLength(1);
+    expect(await countImports(targetId, fx.participant.id)).toBe(1);
+  });
+
+  test('rejects unsupported target stage (skill_building)', async () => {
+    await cleanupModels();
+    const targetId = await insertSessionModel({
+      ownerProfileId: fx.participant.id,
+      stageId: fx.session.stageIds.skill_building,
       canvas: EMPTY_CANVAS_STATE,
     });
     currentClient = await signInAs(fx.participant);

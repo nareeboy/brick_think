@@ -6,7 +6,11 @@ import { SaveVersionModal } from './SaveVersionModal';
 import { ShareModal } from './ShareModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 
-import { BringInPreviousModelButton } from './BringInPreviousModelButton';
+import {
+  BringInPreviousModelCard,
+  BringInPreviousModelProvider,
+  BringInPreviousModelReopenButton,
+} from './BringInPreviousModelButton';
 import { BuilderProvider, useBuilderState } from './builderState';
 import { BuilderCanvasLoader } from './canvasLoader';
 import { CANVAS_DROP_TARGET, DragPieceProvider } from './dragPiece';
@@ -64,25 +68,25 @@ export function Builder({
           : undefined
       }
     >
-      <div className="flex min-h-0 flex-1 flex-col bg-[#FAF7F1] text-zinc-900 md:overflow-hidden">
-        <LiveReadOnlyBanner ownerLabel={ownerLabel} sessionContext={sessionContext} />
-        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
-          <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
-            <UnifiedSidebar
-              readOnly={readOnly}
-              ownerLabel={ownerLabel}
-              sessionContext={sessionContext}
-            />
-            <CanvasStage
-              orgId={orgId}
-              colourblindMode={colourblindMode}
-              sourceStageLabel={sourceStageLabel}
-              alreadyImported={alreadyImported}
-            />
+      <BringInPreviousModelProvider
+        sourceStageLabel={sourceStageLabel}
+        alreadyImported={alreadyImported}
+      >
+        <div className="flex min-h-0 flex-1 flex-col bg-[#FAF7F1] text-zinc-900 md:overflow-hidden">
+          <LiveReadOnlyBanner ownerLabel={ownerLabel} sessionContext={sessionContext} />
+          <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
+            <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
+              <UnifiedSidebar
+                readOnly={readOnly}
+                ownerLabel={ownerLabel}
+                sessionContext={sessionContext}
+              />
+              <CanvasStage orgId={orgId} colourblindMode={colourblindMode} />
+            </div>
           </div>
         </div>
-      </div>
-      <SaveToast />
+        <SaveToast />
+      </BringInPreviousModelProvider>
     </BuilderProvider>
   );
 }
@@ -147,6 +151,7 @@ function UnifiedSidebar({
           </div>
         </div>
         <LayersPanel />
+        <BringInPreviousModelReopenButton />
         <SaveBuildButton />
       </div>
     </aside>
@@ -243,13 +248,9 @@ function SaveToast() {
 function CanvasStage({
   orgId,
   colourblindMode = false,
-  sourceStageLabel,
-  alreadyImported,
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
-  sourceStageLabel: string | null;
-  alreadyImported: boolean;
 }) {
   const { awareness, selfClientId, view, self } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
@@ -289,10 +290,7 @@ function CanvasStage({
         <ShareButton orgId={orgId} />
         <ExportButton />
         <PiecesDrawer />
-        <BringInPreviousModelButton
-          sourceStageLabel={sourceStageLabel}
-          alreadyImported={alreadyImported}
-        />
+        <BringInPreviousModelCard />
       </section>
     </DragPieceProvider>
   );
