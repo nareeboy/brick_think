@@ -1,12 +1,5 @@
 export type StageStatus = 'pending' | 'active' | 'paused' | 'completed';
-export type StageVerb =
-  | 'start'
-  | 'pause'
-  | 'resume'
-  | 'extend'
-  | 'advance'
-  | 'rollback'
-  | 'reset';
+export type StageVerb = 'start' | 'pause' | 'resume' | 'extend' | 'advance' | 'rollback' | 'reset';
 
 const ALLOWED: Record<StageStatus, ReadonlySet<StageVerb>> = {
   pending: new Set(['start']),

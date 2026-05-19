@@ -4,18 +4,18 @@ import { resolveActorDisplay } from './actorDisplay';
 
 describe('resolveActorDisplay', () => {
   it('prefers full_name when distinct from email local part', () => {
-    expect(
-      resolveActorDisplay({ fullName: 'Naresh Shan', email: 'naresh@brickthink.io' }),
-    ).toBe('Naresh Shan');
+    expect(resolveActorDisplay({ fullName: 'Naresh Shan', email: 'naresh@brickthink.io' })).toBe(
+      'Naresh Shan',
+    );
   });
 
   it('falls back to email when full_name matches the local part (case-insensitive)', () => {
-    expect(
-      resolveActorDisplay({ fullName: 'Naresh', email: 'naresh@brickthink.io' }),
-    ).toBe('naresh@brickthink.io');
-    expect(
-      resolveActorDisplay({ fullName: 'NARESH', email: 'naresh@brickthink.io' }),
-    ).toBe('naresh@brickthink.io');
+    expect(resolveActorDisplay({ fullName: 'Naresh', email: 'naresh@brickthink.io' })).toBe(
+      'naresh@brickthink.io',
+    );
+    expect(resolveActorDisplay({ fullName: 'NARESH', email: 'naresh@brickthink.io' })).toBe(
+      'naresh@brickthink.io',
+    );
   });
 
   it('falls back to email when full_name is null/empty/whitespace', () => {

@@ -33,7 +33,10 @@ test.describe('stage controller realtime propagation', () => {
     });
 
     // Tab A clicks Pause.
-    await page.getByRole('button', { name: /^pause$/i }).first().click();
+    await page
+      .getByRole('button', { name: /^pause$/i })
+      .first()
+      .click();
 
     // Tab B should now show Resume.
     await expect(pageB.getByRole('button', { name: /^resume$/i }).first()).toBeVisible({
@@ -41,11 +44,17 @@ test.describe('stage controller realtime propagation', () => {
     });
 
     // Tab A clicks Resume, then Advance.
-    await page.getByRole('button', { name: /^resume$/i }).first().click();
+    await page
+      .getByRole('button', { name: /^resume$/i })
+      .first()
+      .click();
     await expect(page.getByRole('button', { name: /^pause$/i }).first()).toBeVisible({
       timeout: 3000,
     });
-    await page.getByRole('button', { name: /^advance$/i }).first().click();
+    await page
+      .getByRole('button', { name: /^advance$/i })
+      .first()
+      .click();
 
     // Tab B: previously-active stage now completed (Rollback button visible),
     // and the next stage shows Start.
@@ -77,7 +86,10 @@ test.describe('stage controller realtime propagation', () => {
 
     // Tab A: go back to the session page and click Start on stage 1.
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page.getByRole('button', { name: /^start$/i }).first().click();
+    await page
+      .getByRole('button', { name: /^start$/i })
+      .first()
+      .click();
 
     // Tab A should show Pause (confirms the action landed).
     await expect(page.getByRole('button', { name: /^pause$/i }).first()).toBeVisible({

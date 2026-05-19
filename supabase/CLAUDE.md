@@ -13,7 +13,7 @@ Scope: anything that touches `supabase/migrations/`, `supabase/config.toml`, RLS
 
 `profiles.a11y_preferences jsonb not null default '{}'::jsonb` (added in [migrations/20260518000000_profile_a11y_preferences.sql](migrations/20260518000000_profile_a11y_preferences.sql) for the WCAG 2.2 AA remediation) is the catch-all for per-user a11y settings. Initially carries `{ colourblindMode?: boolean }`; future a11y preferences (high-contrast palette, reduced-motion override, etc.) slot in here without further schema work.
 
-Always read via [`normaliseA11yPreferences`](../lib/a11y/preferences.ts) (defends against bad JSON / schema drift; applies `A11Y_PREFERENCES_DEFAULTS` for missing fields). Writes happen exclusively through [`updateA11yPreferencesAction`](../app/(authed)/app/account/actions.ts) — there's no direct table mutation path. The Supabase-generated `Json` type doesn't structurally satisfy the closed `A11yPreferences` interface; the action casts via `as unknown as Json` at the `.update()` call. That's expected — runtime payload is valid JSON.
+Always read via [`normaliseA11yPreferences`](../lib/a11y/preferences.ts) (defends against bad JSON / schema drift; applies `A11Y_PREFERENCES_DEFAULTS` for missing fields). Writes happen exclusively through [`updateA11yPreferencesAction`](<../app/(authed)/app/account/actions.ts>) — there's no direct table mutation path. The Supabase-generated `Json` type doesn't structurally satisfy the closed `A11yPreferences` interface; the action casts via `as unknown as Json` at the `.update()` call. That's expected — runtime payload is valid JSON.
 
 ## Stage controller runtime state
 

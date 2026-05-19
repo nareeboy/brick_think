@@ -67,9 +67,10 @@ interface StageWithSession {
  *
  * No mutations happen here — read-only.
  */
-async function requireFacilitatorForStage(stageId: string): Promise<
-  | { error: StageActionFailure }
-  | { stage: StageWithSession; sessionId: string; userId: string }
+async function requireFacilitatorForStage(
+  stageId: string,
+): Promise<
+  { error: StageActionFailure } | { stage: StageWithSession; sessionId: string; userId: string }
 > {
   if (!UUID_RE.test(stageId)) {
     return { error: { ok: false, code: 'invalid_uuid' } };
@@ -179,8 +180,7 @@ export async function startStageAction(stageId: string): Promise<StageActionResu
   // Session-started fan-out: only on the *first* time a session goes live.
   // Restarting a stopped session (status was `completed`, now back to `live`)
   // does NOT re-fire — org members were already notified once.
-  const wasFirstStart =
-    stage.sessions.status === 'draft' || stage.sessions.status === 'scheduled';
+  const wasFirstStart = stage.sessions.status === 'draft' || stage.sessions.status === 'scheduled';
   if (wasFirstStart) {
     const facilitatorRes = await svc
       .from('profiles')
@@ -453,10 +453,7 @@ export async function rollbackStageAction(targetStageId: string): Promise<StageA
   if (u2.error) throw new Error(`rollbackStage target update failed: ${u2.error.message}`);
 
   // Move the session pointer to the target (rollback) stage.
-  const u3 = await svc
-    .from('sessions')
-    .update({ current_stage_id: target.id })
-    .eq('id', sessionId);
+  const u3 = await svc.from('sessions').update({ current_stage_id: target.id }).eq('id', sessionId);
   if (u3.error) throw new Error(`rollbackStage session update failed: ${u3.error.message}`);
 
   const ev = await svc.from('stage_events').insert({
@@ -622,10 +619,7 @@ export async function endSessionAction(sessionId: string): Promise<StageActionRe
     }
   }
 
-  const sUpd = await svc
-    .from('sessions')
-    .update({ status: 'completed' })
-    .eq('id', sessionId);
+  const sUpd = await svc.from('sessions').update({ status: 'completed' }).eq('id', sessionId);
   if (sUpd.error) {
     throw new Error(`endSession session update failed: ${sUpd.error.message}`);
   }

@@ -40,9 +40,9 @@ export function A11yPreferencesCard({ initialColourblindMode }: Props) {
         Pattern overlays on bricks
       </h2>
       <p className="mt-1 text-[13px] text-zinc-600">
-        Show distinct visual patterns on top of each brick (diagonal stripes, dots,
-        cross-hatch, and so on) so bricks are distinguishable by pattern as well as
-        colour. Useful for participants with colour vision differences.
+        Show distinct visual patterns on top of each brick (diagonal stripes, dots, cross-hatch, and
+        so on) so bricks are distinguishable by pattern as well as colour. Useful for participants
+        with colour vision differences.
       </p>
       <div className="mt-4 flex items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 text-[13px] text-zinc-800">

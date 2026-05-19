@@ -35,7 +35,9 @@ describe('StageTimer', () => {
   });
 
   it('shows pause indicator when paused', () => {
-    render(<StageTimer stage={{ ...baseStage, status: 'paused', paused_at: '2026-05-18T12:00:30Z' }} />);
+    render(
+      <StageTimer stage={{ ...baseStage, status: 'paused', paused_at: '2026-05-18T12:00:30Z' }} />,
+    );
     expect(screen.getByText(/paused/i)).toBeTruthy();
   });
 

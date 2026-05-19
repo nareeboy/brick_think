@@ -52,7 +52,8 @@ export function useSessionStages(sessionId: string): {
       ]);
       if (cancelled) return;
       if (stagesRes.error) console.error('useSessionStages: stages fetch failed', stagesRes.error);
-      if (sessionRes.error) console.error('useSessionStages: session fetch failed', sessionRes.error);
+      if (sessionRes.error)
+        console.error('useSessionStages: session fetch failed', sessionRes.error);
       if (stagesRes.data) setStages(stagesRes.data as unknown as StageRow[]);
       if (sessionRes.data) setSession(sessionRes.data as unknown as SessionRow);
       setReady(true);

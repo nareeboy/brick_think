@@ -79,11 +79,7 @@ export async function renderCanvasToPngBlob(opts: PngExportOptions): Promise<Blo
   return renderOffscreen(opts.canvasState, padding, pixelRatio);
 }
 
-function renderFromStage(
-  stage: Konva.Stage,
-  padding: number,
-  pixelRatio: number,
-): Blob {
+function renderFromStage(stage: Konva.Stage, padding: number, pixelRatio: number): Blob {
   const layer = stage.getLayers()[0];
   if (!layer) throw new Error('Stage has no layers');
   const rects = layer
