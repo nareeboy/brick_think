@@ -23,7 +23,7 @@ function bboxOf(bricks: BrickInstance[]): BBox {
     const right = b.x + b.width;
     if (right > maxX) maxX = right;
   }
-  return { minX, maxX, width: Math.max(maxX - minX, EMPTY_LANE_WIDTH_PX) };
+  return { minX, maxX, width: maxX - minX };
 }
 
 export interface RoomLaneInput {
