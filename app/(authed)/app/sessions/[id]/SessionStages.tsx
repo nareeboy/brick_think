@@ -181,6 +181,8 @@ export function SessionStages({
             participants={participantsByStage[stage.id] ?? []}
             canManageSession={canManageSession}
             sessionId={sessionId}
+            sessionTitle={sessionTitle}
+            sessionStatus={session.status}
           />
         ))}
       </ol>
@@ -198,6 +200,8 @@ function StageRow({
   participants,
   canManageSession,
   sessionId,
+  sessionTitle,
+  sessionStatus,
 }: {
   stage: LiveStageRow;
   isFirst: boolean;
@@ -208,6 +212,8 @@ function StageRow({
   participants: ParticipantModel[];
   canManageSession: boolean;
   sessionId: string;
+  sessionTitle: string;
+  sessionStatus: string;
 }) {
   const stageType = stage.stage_type as StageType;
   const remaining = computeRemainingMs(stage, nowMs);
@@ -284,7 +290,13 @@ function StageRow({
       </div>
 
       {canManageSession ? (
-        <StageTimerControls stage={stage} isLastCompleted={isLastCompleted} />
+        <StageTimerControls
+          stage={stage}
+          isLastCompleted={isLastCompleted}
+          sessionId={sessionId}
+          sessionTitle={sessionTitle}
+          sessionStatus={sessionStatus}
+        />
       ) : null}
 
       {participants.length > 0 ? (
@@ -396,9 +408,15 @@ function AdvanceStageButton({ stageId }: { stageId: string }) {
 function StageTimerControls({
   stage,
   isLastCompleted,
+  sessionId,
+  sessionTitle,
+  sessionStatus,
 }: {
   stage: LiveStageRow;
   isLastCompleted: boolean;
+  sessionId: string;
+  sessionTitle: string;
+  sessionStatus: string;
 }) {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -483,6 +501,13 @@ function StageTimerControls({
             >
               Reset
             </button>
+            {sessionStatus !== 'completed' ? (
+              <EndSessionButton
+                sessionId={sessionId}
+                sessionTitle={sessionTitle}
+                variant="text"
+              />
+            ) : null}
           </>
         )}
         {status === 'completed' && isLastCompleted && (
@@ -696,9 +721,13 @@ function StopIcon({ className }: { className?: string }) {
 function EndSessionButton({
   sessionId,
   sessionTitle,
+  variant = 'icon',
 }: {
   sessionId: string;
   sessionTitle: string;
+  /** `icon` is the small square button for the page header. `text` is a labeled
+   *  destructive button that sits inline next to other timer controls. */
+  variant?: 'icon' | 'text';
 }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, setPending] = useState(false);
@@ -722,22 +751,38 @@ function EndSessionButton({
     }
   }
 
+  const onTriggerClick = () => {
+    setErrorMessage(null);
+    setConfirming(true);
+  };
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setErrorMessage(null);
-          setConfirming(true);
-        }}
-        disabled={pending}
-        aria-label="End session"
-        title="End session"
-        data-testid="end-session-button"
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors transition-transform duration-150 ease-out hover:bg-red-50 active:scale-[0.96] disabled:cursor-default disabled:opacity-50"
-      >
-        <StopIcon className="h-3.5 w-3.5" />
-      </button>
+      {variant === 'icon' ? (
+        <button
+          type="button"
+          onClick={onTriggerClick}
+          disabled={pending}
+          aria-label="End session"
+          title="End session"
+          data-testid="end-session-button"
+          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors transition-transform duration-150 ease-out hover:bg-red-50 active:scale-[0.96] disabled:cursor-default disabled:opacity-50"
+        >
+          <StopIcon className="h-3.5 w-3.5" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onTriggerClick}
+          disabled={pending}
+          data-testid="end-session-inline-button"
+          title="End the entire session — same as the Stop button in the page header."
+          className={btn('destructive')}
+        >
+          <StopIcon className="mr-1.5 h-3 w-3" />
+          Stop session
+        </button>
+      )}
       {confirming ? (
         <DeleteConfirmDialog
           title={`End "${sessionTitle}"?`}
@@ -820,11 +865,13 @@ function StatusDot({ status }: { status: string }) {
   return <span aria-hidden="true" className={`inline-block size-1.5 rounded-full ${colour}`} />;
 }
 
-function btn(variant: 'primary' | 'secondary' | 'warning'): string {
+function btn(variant: 'primary' | 'secondary' | 'warning' | 'destructive'): string {
   const base =
     'inline-flex h-9 cursor-pointer items-center rounded-lg px-3 text-[13px] font-medium transition-colors transition-transform duration-150 ease-out active:scale-[0.98] disabled:cursor-default disabled:opacity-50';
   if (variant === 'primary') return `${base} bg-zinc-900 text-white hover:bg-zinc-800`;
   if (variant === 'warning')
     return `${base} border border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-50`;
+  if (variant === 'destructive')
+    return `${base} border border-red-200 bg-white text-red-700 hover:bg-red-50`;
   return `${base} border border-zinc-900/15 bg-white text-zinc-800 hover:bg-zinc-900/5`;
 }
