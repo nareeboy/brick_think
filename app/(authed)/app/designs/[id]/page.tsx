@@ -4,6 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { Builder } from '@/components/builder/Builder';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { getServiceSupabaseClient } from '@/lib/db/service';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
@@ -44,7 +45,9 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
 
   const { data, error } = await supabase
     .from('models')
-    .select('id, title, canvas_state, updated_at, owner_profile_id, org_id, session_id, stage_id')
+    .select(
+      'id, title, canvas_state, updated_at, owner_profile_id, org_id, session_id, stage_id, room_id',
+    )
     .eq('id', id)
     .is('deleted_at', null)
     .single();
@@ -80,9 +83,23 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
     .single();
   const colourblindMode = normaliseA11yPreferences(prefsRes.data?.a11y_preferences).colourblindMode;
 
+  // For room-backed canvases, compute transitive room membership via the
+  // service-role-only RPC. Non-members on a room canvas drop to read-only
+  // even if they would otherwise be co-editors on a non-room shared_model.
+  let isRoomMember: boolean | null = null;
+  if (data.room_id) {
+    const svc = getServiceSupabaseClient();
+    const rpc = await svc.rpc('can_edit_room', { p_profile_id: user.id, p_model_id: data.id });
+    if (rpc.error) {
+      throw new Error(`can_edit_room failed: ${rpc.error.message}`);
+    }
+    isRoomMember = Boolean(rpc.data);
+  }
+
   const liveMode = canPlaceLive({
     sessionContext,
     flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
+    isRoomMember,
   });
   // In live mode every session-org member is a co-editor of the same Y.Doc;
   // ownership only determines the canonical `models.canvas_state` row, not
@@ -94,7 +111,10 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
 
   let sourceStageLabel: string | null = null;
   let alreadyImported = false;
-  if (sessionContext && isImportTarget(sessionContext.stageType)) {
+  // Room-backed canvases auto-import on creation via the room composer
+  // (see lib/sessions/stage-rooms.ts), so the manual "Bring in" affordance
+  // is suppressed for them.
+  if (sessionContext && isImportTarget(sessionContext.stageType) && !data.room_id) {
     sourceStageLabel = stageLabel(IMPORT_RULES[sessionContext.stageType].sourceStageType);
     const { count } = await supabase
       .from('model_imports')

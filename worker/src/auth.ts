@@ -58,11 +58,24 @@ export async function verifyUpgradeRequest(
     throw new UpgradeRejected(401, 'token modelId mismatch');
   }
 
-  const { rows } = await deps.pool.query<{ ok: boolean }>(
-    'select public.can_read_model($1::uuid, $2::uuid) as ok',
+  const { rows } = await deps.pool.query<{
+    read_ok: boolean;
+    room_id: string | null;
+    edit_ok: boolean;
+  }>(
+    `select
+       public.can_read_model($1::uuid, $2::uuid) as read_ok,
+       (select room_id from public.models where id = $2::uuid) as room_id,
+       public.can_edit_room($1::uuid, $2::uuid) as edit_ok`,
     [claims.profileId, claims.modelId],
   );
-  if (!rows[0]?.ok) throw new UpgradeRejected(403, 'not a member');
+  const row = rows[0];
+  if (!row?.read_ok) throw new UpgradeRejected(403, 'not a member');
+  // Room-backed canvases require transitive room membership. Non-room
+  // canvases (legacy / pre-rooms) pass through on the read gate alone.
+  if (row.room_id !== null && !row.edit_ok) {
+    throw new UpgradeRejected(403, 'not a room member');
+  }
 
   return { profileId: claims.profileId, modelId: claims.modelId };
 }

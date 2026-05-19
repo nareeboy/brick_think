@@ -8,6 +8,8 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { DeleteSessionButton } from './DeleteSessionButton';
 import { SessionStages, type ParticipantModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
+import type { OrgMemberSummary } from './ManageRoomsDialog';
+import type { StageRoomSummary } from './RoomsPanel';
 import type { SessionMode, SessionStatus } from '@/lib/sessions/types';
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
@@ -150,6 +152,85 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     }
   }
 
+  // Fetch room layout. Rooms only exist on shared_model stages today; we still
+  // pull across every stage_id so future room-bearing stages slot in without a
+  // page-level change.
+  const stageIds = stages.map((s) => s.id);
+  const roomsByStageId: Record<string, StageRoomSummary[]> = {};
+  let orgMembers: OrgMemberSummary[] = [];
+  if (stageIds.length > 0) {
+    const roomsRes = await supabase
+      .from('stage_rooms')
+      .select('id, stage_id, position, title')
+      .in('stage_id', stageIds)
+      .order('position', { ascending: true });
+    if (roomsRes.error) {
+      throw new Error(`Failed to load rooms: ${roomsRes.error.message}`);
+    }
+    const rooms = roomsRes.data ?? [];
+    const roomIds = rooms.map((r) => r.id);
+    let roomModels: { id: string; room_id: string | null }[] = [];
+    let roomMembers: { room_id: string; profile_id: string }[] = [];
+    if (roomIds.length > 0) {
+      const [modelsForRooms, membersForRooms] = await Promise.all([
+        supabase
+          .from('models')
+          .select('id, room_id')
+          .in('room_id', roomIds)
+          .is('deleted_at', null),
+        supabase.from('stage_room_members').select('room_id, profile_id').in('room_id', roomIds),
+      ]);
+      if (modelsForRooms.error) {
+        throw new Error(`Failed to load room canvases: ${modelsForRooms.error.message}`);
+      }
+      if (membersForRooms.error) {
+        throw new Error(`Failed to load room members: ${membersForRooms.error.message}`);
+      }
+      roomModels = (modelsForRooms.data ?? []).filter(
+        (r): r is { id: string; room_id: string } => r.room_id !== null,
+      );
+      roomMembers = (membersForRooms.data ?? []) as { room_id: string; profile_id: string }[];
+    }
+    const modelByRoomId = new Map(roomModels.map((m) => [m.room_id as string, m.id]));
+    const membersByRoomId = new Map<string, string[]>();
+    for (const m of roomMembers) {
+      const list = membersByRoomId.get(m.room_id) ?? [];
+      list.push(m.profile_id);
+      membersByRoomId.set(m.room_id, list);
+    }
+    for (const r of rooms) {
+      const modelId = modelByRoomId.get(r.id);
+      if (!modelId) continue;
+      const list = roomsByStageId[r.stage_id] ?? [];
+      list.push({
+        id: r.id,
+        position: r.position,
+        title: r.title,
+        modelId,
+        memberIds: membersByRoomId.get(r.id) ?? [],
+      });
+      roomsByStageId[r.stage_id] = list;
+    }
+  }
+
+  // Org members power the room-assignment modal. Always fetched (RLS already
+  // limits to fellow members), so we can render the picker without a
+  // round-trip when the facilitator opens it.
+  const orgMembersRes = await supabase
+    .from('org_memberships')
+    .select('profile_id, profiles:profile_id ( email, full_name )')
+    .eq('org_id', session.org_id);
+  if (orgMembersRes.error) {
+    throw new Error(`Failed to load org members: ${orgMembersRes.error.message}`);
+  }
+  orgMembers = ((orgMembersRes.data ?? []) as unknown as {
+    profile_id: string;
+    profiles: { email: string; full_name: string | null } | null;
+  }[]).map((row) => ({
+    id: row.profile_id,
+    label: row.profiles?.full_name?.trim() || row.profiles?.email || 'Unknown',
+  }));
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
@@ -195,6 +276,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           ownedModels={ownedModels}
           participantsByStage={participantsByStage}
           canManageSession={canManageSession}
+          roomsByStageId={roomsByStageId}
+          orgMembers={orgMembers}
+          currentUserId={user.id}
         />
         <SpotlightTour canManageSession={canManageSession} />
         <ParticipantCoachMark />
