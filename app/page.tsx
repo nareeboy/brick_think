@@ -1,7 +1,16 @@
-// marketing landing — root route. cache-bust marker: bt-marketing-2026-05-11
+// marketing landing — root route. cache-bust marker: bt-marketing-2026-05-19
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+
+import {
+  ArrowRight,
+  CtaBricks,
+  Footer,
+  GITHUB_URL,
+  GitHubGlyph,
+  NavBar,
+} from '@/components/marketing/MarketingChrome';
 
 export const metadata: Metadata = { title: 'BrickThink' };
 
@@ -56,8 +65,6 @@ const PERSONAS = [
   },
 ];
 
-const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
-
 interface HomePageProps {
   searchParams: Promise<{ code?: string; error_description?: string }>;
 }
@@ -86,48 +93,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </main>
       <Footer />
     </div>
-  );
-}
-
-function NavBar() {
-  return (
-    <header className="sticky top-0 z-30 border-b border-zinc-900/5 bg-[#FAF7F1]/80 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2 text-zinc-900">
-          <BrickGlyph />
-          <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
-        </Link>
-        <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
-          <a href="#methodology" className="text-sm text-zinc-600 hover:text-zinc-900">
-            Methodology
-          </a>
-          <a href="#features" className="text-sm text-zinc-600 hover:text-zinc-900">
-            Features
-          </a>
-          <a href="#open-source" className="text-sm text-zinc-600 hover:text-zinc-900">
-            Open source
-          </a>
-        </nav>
-        <div className="flex items-center gap-2">
-          <a
-            href={GITHUB_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="BrickThink on GitHub"
-            className="hidden h-8 w-8 items-center justify-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 md:inline-flex"
-          >
-            <GitHubGlyph className="h-4 w-4" />
-          </a>
-          <Link
-            href="/sign-in"
-            className="inline-flex items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-          >
-            Sign in
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -481,43 +446,6 @@ function CanvasFeatureVisual() {
   );
 }
 
-function Tile({
-  className = '',
-  w,
-  h,
-  color,
-  studs,
-}: {
-  className?: string;
-  w: string;
-  h: string;
-  color: string;
-  studs: number;
-}) {
-  return (
-    <div
-      className={`absolute rounded-[5px] ${className}`}
-      style={{
-        width: w,
-        height: h,
-        background: color,
-        boxShadow:
-          'inset 0 0 0 1px rgba(0,0,0,0.22), 0 1px 0 rgba(255,255,255,0.35) inset, 0 6px 12px -8px rgba(60,30,15,0.4)',
-      }}
-    >
-      <div className="flex h-full items-center justify-evenly px-[6%]">
-        {Array.from({ length: studs }).map((_, i) => (
-          <span
-            key={i}
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ background: 'rgba(0,0,0,0.18)' }}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function PromptVisual() {
   return (
     <div className="space-y-2.5" aria-hidden="true">
@@ -850,28 +778,22 @@ function CtaBand() {
           </div>
           <div className="relative max-w-xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              Phase 0 in build · early access open
+              Open source · always free
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[52px]">
               Run your first session free.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              Two sessions a month, up to eight participants, all five stages. No card. We will tell
-              you when Pro is ready, not before.
+              Every stage, every feature, no caps, no card. BrickThink is Apache 2.0 open source —
+              we will never charge for it.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
                 href="/sign-in"
-                className="inline-flex items-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.4)] transition-colors hover:bg-zinc-800 active:translate-y-[1px]"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-zinc-900 px-5 py-3 text-sm font-medium text-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.4)] transition-colors hover:bg-zinc-800 active:translate-y-[1px]"
               >
                 Create a facilitator account
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/app/my-designs"
-                className="inline-flex items-center gap-2 rounded-full border border-zinc-900/15 bg-white px-5 py-3 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
-              >
-                Open the app
               </Link>
             </div>
           </div>
@@ -881,157 +803,10 @@ function CtaBand() {
   );
 }
 
-function CtaBricks() {
-  return (
-    <div className="absolute inset-0" aria-hidden="true">
-      <Tile className="left-[10%] top-[18%]" w="36%" h="14%" color="#c0613d" studs={6} />
-      <Tile className="left-[26%] top-[44%]" w="22%" h="14%" color="#d8a85d" studs={4} />
-      <Tile className="left-[58%] top-[28%]" w="20%" h="14%" color="#3b6f8a" studs={2} />
-      <Tile className="left-[44%] top-[68%]" w="32%" h="14%" color="#1f1f1f" studs={4} />
-      <Tile className="left-[16%] top-[72%]" w="22%" h="14%" color="#8a9a78" studs={4} />
-    </div>
-  );
-}
-
-function Footer() {
-  return (
-    <footer className="border-t border-zinc-900/10">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-12 md:grid-cols-12">
-        <div className="md:col-span-5">
-          <Link href="/" className="flex items-center gap-2 text-zinc-900">
-            <BrickGlyph />
-            <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
-          </Link>
-          <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-zinc-600">
-            A remote-native platform for the five-stage Serious Play methodology. Built on Next.js,
-            Supabase and Claude.
-          </p>
-        </div>
-        <div className="md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Product</p>
-          <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
-            <li>
-              <a href="#methodology" className="hover:text-zinc-950">
-                Methodology
-              </a>
-            </li>
-            <li>
-              <a href="#features" className="hover:text-zinc-950">
-                Features
-              </a>
-            </li>
-            <li>
-              <a href="#open-source" className="hover:text-zinc-950">
-                Open source
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div className="md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Get in</p>
-          <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
-            <li>
-              <Link href="/sign-in" className="hover:text-zinc-950">
-                Sign in
-              </Link>
-            </li>
-            <li>
-              <Link href="/app/my-designs" className="hover:text-zinc-950">
-                Open the app
-              </Link>
-            </li>
-            <li>
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 hover:text-zinc-950"
-              >
-                <GitHubGlyph className="h-3.5 w-3.5" />
-                GitHub
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div className="md:col-span-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Status</p>
-          <p className="mt-3 inline-flex items-center gap-2 text-[13px] text-zinc-700">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Phase 0 — Foundations · v0.1
-          </p>
-          <p className="mt-2 text-[13px] text-zinc-600">
-            WCAG 2.2 AA. GDPR-aligned. EU residency on Pro and above.
-          </p>
-        </div>
-      </div>
-      <div className="border-t border-zinc-900/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-6 py-5 text-[12px] text-zinc-500 md:flex-row md:items-center">
-          <div className="max-w-3xl space-y-1">
-            <p>© BrickThink. The Serious Play methodology is referenced under CC BY-SA 3.0.</p>
-            <p>
-              LEGO, SERIOUS PLAY, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations
-              are trademarks of the LEGO Group, which does not sponsor, authorize or endorse this
-              product.
-            </p>
-          </div>
-          <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5 gap-y-1">
-            <Link href="/terms" className="hover:text-zinc-800">
-              Terms
-            </Link>
-            <Link href="/privacy" className="hover:text-zinc-800">
-              Privacy
-            </Link>
-            <span className="font-mono uppercase tracking-[0.16em]">v0.1 · 8 May 2026</span>
-          </nav>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
 /* ---------------- primitives ---------------- */
 
 function Dot({ className = '' }: { className?: string }) {
   return <span className={`inline-block rounded-full ${className}`} />;
-}
-
-function BrickGlyph() {
-  return (
-    <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#c0613d] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18),0_2px_0_rgba(255,255,255,0.4)_inset]">
-      <span className="absolute left-1/2 top-1.5 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-black/20" />
-      <span className="absolute right-1/4 top-1.5 h-1.5 w-1.5 translate-x-1/2 rounded-full bg-black/20" />
-    </span>
-  );
-}
-
-function ArrowRight({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M5 12h14" />
-      <path d="m13 6 6 6-6 6" />
-    </svg>
-  );
-}
-
-function GitHubGlyph({ className = '' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M12 0C5.37 0 0 5.373 0 12c0 5.303 3.438 9.8 8.207 11.387.6.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.236 1.839 1.236 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.605-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.523.117-3.176 0 0 1.008-.322 3.301 1.23A11.51 11.51 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.873.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.103.823 2.222v3.293c0 .319.192.694.801.576C20.565 21.796 24 17.3 24 12c0-6.627-5.373-12-12-12z"
-      />
-    </svg>
-  );
 }
 
 function ArrowDown({ className = '' }: { className?: string }) {
