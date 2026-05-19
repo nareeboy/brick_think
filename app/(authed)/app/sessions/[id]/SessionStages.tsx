@@ -32,6 +32,8 @@ import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import { DeleteSessionModelButton } from './DeleteSessionModelButton';
 import { StageMetaEditor } from './StageMetaEditor';
 import { StartModelButton } from './StartModelButton';
+import { RoomsPanel, type StageRoomSummary } from './RoomsPanel';
+import type { OrgMemberSummary } from './ManageRoomsDialog';
 
 export interface ParticipantModel {
   id: string;
@@ -54,6 +56,9 @@ interface SessionStagesProps {
   ownedModels: OwnedModelRow[];
   participantsByStage: Record<string, ParticipantModel[]>;
   canManageSession: boolean;
+  roomsByStageId: Record<string, StageRoomSummary[]>;
+  orgMembers: OrgMemberSummary[];
+  currentUserId: string;
 }
 
 const STAGE_ACTIONS = {
@@ -118,6 +123,9 @@ export function SessionStages({
   ownedModels,
   participantsByStage,
   canManageSession,
+  roomsByStageId,
+  orgMembers,
+  currentUserId,
 }: SessionStagesProps) {
   const { stages: liveStages, session: liveSession, ready } = useSessionStages(sessionId);
   const stages = ready ? liveStages : initialStages;
@@ -185,6 +193,9 @@ export function SessionStages({
             sessionTitle={sessionTitle}
             sessionStatus={session.status}
             lastUpdatedAt={lastUpdatedAt}
+            rooms={roomsByStageId[stage.id] ?? []}
+            orgMembers={orgMembers}
+            currentUserId={currentUserId}
           />
         ))}
       </ol>
@@ -204,6 +215,9 @@ function StageRow({
   sessionTitle,
   sessionStatus,
   lastUpdatedAt,
+  rooms,
+  orgMembers,
+  currentUserId,
 }: {
   stage: LiveStageRow;
   isFirst: boolean;
@@ -216,6 +230,9 @@ function StageRow({
   sessionTitle: string;
   sessionStatus: string;
   lastUpdatedAt: Map<string, number>;
+  rooms: StageRoomSummary[];
+  orgMembers: OrgMemberSummary[];
+  currentUserId: string;
 }) {
   const stageType = stage.stage_type as StageType;
   const remaining = computeRemainingMs(stage, nowMs);
@@ -259,7 +276,7 @@ function StageRow({
               isTourTarget={isFirst}
             />
           </div>
-          {ownedModel ? (
+          {stageType === 'shared_model' ? null : ownedModel ? (
             <p className="mt-2 truncate text-[12px] text-zinc-600">
               <span className="font-mono uppercase tracking-[0.18em] text-[9px] text-zinc-500">
                 Your model ·{' '}
@@ -277,12 +294,14 @@ function StageRow({
           ) : remaining !== null ? (
             <Timer remainingMs={remaining} variant={timerVariant} />
           ) : null}
-          <ModelAction
-            ownedModel={ownedModel}
-            sessionId={sessionId}
-            stageId={stage.id}
-            stageType={stageType}
-          />
+          {stageType === 'shared_model' ? null : (
+            <ModelAction
+              ownedModel={ownedModel}
+              sessionId={sessionId}
+              stageId={stage.id}
+              stageType={stageType}
+            />
+          )}
         </div>
       </div>
 
@@ -306,7 +325,15 @@ function StageRow({
         />
       ) : null}
 
-      {canManageSession ? (
+      {stageType === 'shared_model' ? (
+        <RoomsPanel
+          stageId={stage.id}
+          rooms={rooms}
+          orgMembers={orgMembers}
+          canManageSession={canManageSession}
+          currentUserId={currentUserId}
+        />
+      ) : canManageSession ? (
         <ParticipantsPanel
           stageType={stageType}
           participants={participants}
