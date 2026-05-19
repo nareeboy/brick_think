@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { computeRemainingMs } from '@/lib/sessions/computeRemainingMs';
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
+import { StageExpiryBanner } from '@/components/session/StageExpiryBanner';
 import {
   useSessionStages,
   type SessionRow,
@@ -281,18 +282,24 @@ function StageRow({
             sessionId={sessionId}
             stageId={stage.id}
             stageType={stageType}
-            advanceProps={
-              canManageSession && !isLastStage && (status === 'active' || status === 'paused')
-                ? { stageId: stage.id }
-                : null
-            }
           />
         </div>
       </div>
 
+      {canManageSession && status === 'active' && remaining !== null && remaining <= 0 ? (
+        <StageExpiryBanner
+          stageId={stage.id}
+          isLastStage={isLastStage}
+          actions={STAGE_ACTIONS}
+          messageForCode={messageForCode}
+        />
+      ) : null}
+
       {canManageSession ? (
         <StageTimerControls
           stage={stage}
+          isLastStage={isLastStage}
+          remainingMs={remaining}
           sessionId={sessionId}
           sessionTitle={sessionTitle}
           sessionStatus={sessionStatus}
@@ -418,14 +425,11 @@ function ModelAction({
   sessionId,
   stageId,
   stageType,
-  advanceProps,
 }: {
   ownedModel: OwnedModelRow | null;
   sessionId: string;
   stageId: string;
   stageType: StageType;
-  /** When non-null, render the Advance button alongside the model action. */
-  advanceProps: { stageId: string } | null;
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -443,56 +447,24 @@ function ModelAction({
       ) : (
         <StartModelButton sessionId={sessionId} stageId={stageId} stageType={stageType} />
       )}
-      {advanceProps ? <AdvanceStageButton stageId={advanceProps.stageId} /> : null}
-    </div>
-  );
-}
-
-function AdvanceStageButton({ stageId }: { stageId: string }) {
-  const [pending, setPending] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const onClick = async () => {
-    setPending(true);
-    setErrorMessage(null);
-    try {
-      const result = await STAGE_ACTIONS.advance(stageId);
-      if (!result.ok) {
-        setErrorMessage(messageForCode((result as { code?: string }).code ?? 'unknown'));
-      }
-    } catch (err) {
-      setErrorMessage('Unexpected error. Refresh to recover.');
-      console.error('advance failed', err);
-    } finally {
-      setPending(false);
-    }
-  };
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={pending}
-        data-testid="advance-stage-button"
-        className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-zinc-900 px-4 text-[13px] font-semibold text-white transition-colors transition-transform duration-150 ease-out hover:bg-zinc-800 disabled:cursor-default disabled:opacity-60 active:scale-[0.98]"
-      >
-        Advance
-      </button>
-      {errorMessage ? (
-        <p role="alert" className="text-[11px] text-red-700">
-          {errorMessage}
-        </p>
-      ) : null}
     </div>
   );
 }
 
 function StageTimerControls({
   stage,
+  isLastStage,
+  remainingMs,
   sessionId,
   sessionTitle,
   sessionStatus,
 }: {
   stage: LiveStageRow;
+  isLastStage: boolean;
+  /** Live remaining ms for this stage, or `null` if no duration. Used to
+   *  suppress the cluster's Advance button when the expiry banner is showing
+   *  the same action more prominently. */
+  remainingMs: number | null;
   sessionId: string;
   sessionTitle: string;
   sessionStatus: string;
@@ -581,6 +553,23 @@ function StageTimerControls({
             >
               Reset
             </button>
+            {/* Advance is the natural end-of-stage action. Live in the cluster so a
+             *  facilitator can cut a stage short. Hidden when the expiry banner
+             *  above is already promoting the same action, and on the last stage
+             *  (no next stage to advance into). */}
+            {!isLastStage &&
+            !(status === 'active' && remainingMs !== null && remainingMs <= 0) ? (
+              <button
+                type="button"
+                onClick={wrap(() => STAGE_ACTIONS.advance(stage.id))}
+                disabled={pending}
+                data-testid="advance-stage-button"
+                className={btn('secondary')}
+                title="End this stage and move the session to the next stage."
+              >
+                Advance
+              </button>
+            ) : null}
             {sessionStatus !== 'completed' ? (
               <EndSessionButton sessionId={sessionId} sessionTitle={sessionTitle} variant="text" />
             ) : null}
