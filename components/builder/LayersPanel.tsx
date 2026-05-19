@@ -46,6 +46,7 @@ export function LayersPanel() {
 
   const [hint, setHint] = useState<DropHint | null>(null);
   const [dragKind, setDragKind] = useState<'brick' | 'group' | null>(null);
+  const [open, setOpen] = useState(true);
 
   const bricksByGroup = useMemo(() => {
     const m = new Map<string, BrickInstance[]>();
@@ -145,9 +146,19 @@ export function LayersPanel() {
   }
 
   return (
-    <details open className="group/layers flex min-h-0 shrink-0 flex-col open:flex-1">
-      <summary className="flex cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden">
-        <p className="text-[14px] font-semibold text-zinc-900">Layers</p>
+    <section
+      className={`flex min-h-0 flex-col ${open ? 'flex-1' : 'shrink-0'}`}
+      aria-label="Layers"
+    >
+      <div className="flex shrink-0 items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex flex-1 cursor-pointer items-center gap-2 text-left"
+        >
+          <span className="text-[14px] font-semibold text-zinc-900">Layers</span>
+        </button>
         <div className="flex items-center gap-1">
           <button
             type="button"
@@ -161,46 +172,57 @@ export function LayersPanel() {
           >
             <PlusIcon className="h-3.5 w-3.5" />
           </button>
-          <ChevronDown className="h-3.5 w-3.5 -rotate-90 text-zinc-500 transition-transform group-open/layers:rotate-0" />
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={open ? 'Collapse layers' : 'Expand layers'}
+            className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+          >
+            <ChevronDown
+              className={`h-3.5 w-3.5 transition-transform ${open ? '' : '-rotate-90'}`}
+            />
+          </button>
         </div>
-      </summary>
-
-      <div
-        data-testid="layers-panel"
-        className="-mr-2 mt-4 min-h-0 flex-1 overflow-y-auto pr-2"
-        onDragLeave={(e) => {
-          const related = e.relatedTarget as Node | null;
-          if (!related || !e.currentTarget.contains(related)) setHint(null);
-        }}
-        onDrop={() => clearDrag()}
-        onDragEnd={() => clearDrag()}
-      >
-        {groups.map((g) => (
-          <GroupBlock
-            key={g.id}
-            group={g}
-            bricks={bricksByGroup.get(g.id) ?? []}
-            active={g.id === activeGroupId}
-            selectedId={selectedId}
-            hint={hint}
-            onSetActive={setActiveGroup}
-            onToggleCollapsed={toggleGroupCollapsed}
-            onToggleVisible={toggleGroupVisible}
-            onRename={renameGroup}
-            onDelete={handleConfirmDeleteGroup}
-            onSelectBrick={selectBrick}
-            onToggleBrickVisible={toggleBrickVisible}
-            onDeleteBrick={deleteBrick}
-            onGroupDragStart={handleGroupDragStart}
-            onGroupHeaderDragOver={handleGroupHeaderDragOver}
-            onGroupHeaderDrop={handleGroupHeaderDrop}
-            onBrickDragStart={handleBrickDragStart}
-            onBrickDragOver={handleBrickRowDragOver}
-            onBrickDrop={handleBrickRowDrop}
-          />
-        ))}
       </div>
-    </details>
+
+      {open ? (
+        <div
+          data-testid="layers-panel"
+          className="-mr-2 mt-4 min-h-0 flex-1 overflow-y-auto pr-2"
+          onDragLeave={(e) => {
+            const related = e.relatedTarget as Node | null;
+            if (!related || !e.currentTarget.contains(related)) setHint(null);
+          }}
+          onDrop={() => clearDrag()}
+          onDragEnd={() => clearDrag()}
+        >
+          {groups.map((g) => (
+            <GroupBlock
+              key={g.id}
+              group={g}
+              bricks={bricksByGroup.get(g.id) ?? []}
+              active={g.id === activeGroupId}
+              selectedId={selectedId}
+              hint={hint}
+              onSetActive={setActiveGroup}
+              onToggleCollapsed={toggleGroupCollapsed}
+              onToggleVisible={toggleGroupVisible}
+              onRename={renameGroup}
+              onDelete={handleConfirmDeleteGroup}
+              onSelectBrick={selectBrick}
+              onToggleBrickVisible={toggleBrickVisible}
+              onDeleteBrick={deleteBrick}
+              onGroupDragStart={handleGroupDragStart}
+              onGroupHeaderDragOver={handleGroupHeaderDragOver}
+              onGroupHeaderDrop={handleGroupHeaderDrop}
+              onBrickDragStart={handleBrickDragStart}
+              onBrickDragOver={handleBrickRowDragOver}
+              onBrickDrop={handleBrickRowDrop}
+            />
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
