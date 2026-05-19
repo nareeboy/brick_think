@@ -20,7 +20,7 @@ describe('isValidTransition', () => {
     ['paused', 'extend', true],
     ['paused', 'advance', true],
     ['completed', 'rollback', true],
-    ['completed', 'start', false],
+    ['completed', 'start', true],
     ['completed', 'pause', false],
     ['active', 'reset', true],
     ['paused', 'reset', true],

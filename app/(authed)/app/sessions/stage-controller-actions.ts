@@ -119,11 +119,16 @@ function revalidate(sessionId: string): void {
 // ── Verb implementations ──────────────────────────────────────────────────────
 
 /**
- * Start a pending stage: sets it to active, records started_at, promotes the
+ * Start a stage: sets it to active, records started_at, promotes the
  * session to live (whether it was draft, scheduled, or completed — the last
- * case happens when a facilitator hits Stop and then clicks Start again on
- * a pending stage to resume the workshop), and moves the session's
- * current_stage_id pointer.
+ * case happens when a facilitator hits Stop and then clicks Start again to
+ * resume the workshop, either on the next pending stage or on the just-
+ * stopped completed stage), and moves the session's current_stage_id
+ * pointer.
+ *
+ * Reviving a completed stage clears ended_at and zeros total_paused_ms /
+ * extended_seconds — the stage gets a fresh clock, equivalent to a Reset
+ * applied at the same instant Start fires.
  */
 export async function startStageAction(stageId: string): Promise<StageActionResult> {
   const ctx = await requireFacilitatorForStage(stageId);
@@ -139,7 +144,14 @@ export async function startStageAction(stageId: string): Promise<StageActionResu
 
   const upd = await svc
     .from('stages')
-    .update({ status: 'active', started_at: nowIso, paused_at: null })
+    .update({
+      status: 'active',
+      started_at: nowIso,
+      paused_at: null,
+      ended_at: null,
+      total_paused_ms: 0,
+      extended_seconds: 0,
+    })
     .eq('id', stage.id);
   if (upd.error) throw new Error(`startStage update failed: ${upd.error.message}`);
 
