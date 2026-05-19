@@ -7,6 +7,8 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
+import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
+import { stageLabel } from '@/lib/sessions/stage-labels';
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 import { canPlaceLive } from '@/lib/yjs/canPlaceLive';
 
@@ -92,6 +94,18 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
   const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
   const self = liveMode ? await loadSelfPresence(supabase, user.id) : null;
 
+  let sourceStageLabel: string | null = null;
+  let alreadyImported = false;
+  if (sessionContext && isImportTarget(sessionContext.stageType)) {
+    sourceStageLabel = stageLabel(IMPORT_RULES[sessionContext.stageType].sourceStageType);
+    const { count } = await supabase
+      .from('model_imports')
+      .select('id', { count: 'exact', head: true })
+      .eq('target_model_id', data.id)
+      .eq('profile_id', user.id);
+    alreadyImported = (count ?? 0) > 0;
+  }
+
   return (
     <Builder
       initialModel={initialModel}
@@ -102,6 +116,8 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
       liveMode={liveMode}
       self={self}
       colourblindMode={colourblindMode}
+      sourceStageLabel={sourceStageLabel}
+      alreadyImported={alreadyImported}
     />
   );
 }
