@@ -38,22 +38,22 @@ export type Database = {
         Row: {
           id: string
           imported_at: string
-          profile_id: string
-          source_model_id: string
+          profile_id: string | null
+          source_model_id: string | null
           target_model_id: string
         }
         Insert: {
           id?: string
           imported_at?: string
-          profile_id: string
-          source_model_id: string
+          profile_id?: string | null
+          source_model_id?: string | null
           target_model_id: string
         }
         Update: {
           id?: string
           imported_at?: string
-          profile_id?: string
-          source_model_id?: string
+          profile_id?: string | null
+          source_model_id?: string | null
           target_model_id?: string
         }
         Relationships: [
