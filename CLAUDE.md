@@ -82,6 +82,7 @@ dotenv resolves duplicate keys with last-wins within a single file, so keeping t
 
 ## Process
 
+- **Every change request runs in a git worktree.** Before touching code for a new feature, fix, or refactor, create an isolated worktree (e.g. via the `superpowers:using-git-worktrees` skill or `git worktree add ../brick_think-<slug> -b <branch>`). Do not edit files on `main` in the primary checkout. Recent history follows this convention — see the `worktree-feat-…` merge commits. Worktrees that produce no changes should be cleaned up; merged ones are removed after the integration commit lands on `main`.
 - Specs, plans, brainstorming output → `docs/superpowers/<specs|plans|followups>/`. **Do not commit them.**
 - One logical unit per commit. Conventional-style messages (`feat(scope): …`, `fix(scope): …`, `refactor(scope): …`). Recent history is the style guide.
 - Never push to `origin/main` without explicit user authorisation.
