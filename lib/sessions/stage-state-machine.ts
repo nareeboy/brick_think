@@ -12,7 +12,7 @@ const ALLOWED: Record<StageStatus, ReadonlySet<StageVerb>> = {
   pending: new Set(['start']),
   active: new Set(['pause', 'extend', 'advance', 'reset']),
   paused: new Set(['resume', 'extend', 'advance', 'reset']),
-  completed: new Set(['rollback']),
+  completed: new Set(['start', 'rollback']),
 };
 
 export function isValidTransition(from: StageStatus, verb: StageVerb): boolean {
