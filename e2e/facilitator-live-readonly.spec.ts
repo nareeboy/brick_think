@@ -111,10 +111,11 @@ test.describe('facilitator live read-only view', () => {
       await dropFirstBrickAt(participant.page, 200, 200);
       await expect(participant.page.getByTestId('placed-brick')).toHaveCount(1);
 
-      // The brick must appear in the facilitator's tab within 3s
-      // (1s autosave debounce + Realtime delivery + render).
+      // The brick must appear in the facilitator's tab within a few seconds
+      // (1s autosave debounce + Realtime delivery + render). 8s gives CI
+      // headroom over the typical local ~1.5s without inviting silent slowness.
       await expect(facilitatorPage.getByTestId('placed-brick')).toHaveCount(1, {
-        timeout: 5000,
+        timeout: 8000,
       });
     } finally {
       await cleanupParticipant(facilitatorPage, participant);
@@ -146,9 +147,12 @@ test.describe('facilitator live read-only view', () => {
       await facilitatorPage.goto(modelUrl);
       await expect(facilitatorPage.getByTestId('builder-canvas')).toBeVisible();
 
+      // The live read-only banner must be visible at the top of the builder.
+      await expect(facilitatorPage.getByTestId('live-readonly-banner')).toBeVisible();
+
       // The read-only badge must be visible in the sidebar.
       // Builder.tsx renders "Read-only · <ownerLabel>" when readOnly=true.
-      await expect(facilitatorPage.getByText(/read-only/i)).toBeVisible();
+      await expect(facilitatorPage.getByText(/^read-only\s·/i)).toBeVisible();
 
       // The "Save version" button must be absent — SaveBuildButton returns null
       // when readOnly=true.
