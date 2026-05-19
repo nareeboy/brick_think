@@ -6,7 +6,7 @@ import {
   isImportTarget,
   remapCanvasForImport,
 } from '@/lib/sessions/stage-import';
-import type { StageType } from '@/lib/sessions/types';
+import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 
 const sampleCanvas = {
   groups: [
@@ -42,10 +42,6 @@ const sampleCanvas = {
 };
 
 describe('IMPORT_RULES', () => {
-  it('covers exactly the two whitelisted target stages', () => {
-    expect(Object.keys(IMPORT_RULES).sort()).toEqual(['shared_model', 'system_model']);
-  });
-
   it('shared_model pulls caller_own individual_model', () => {
     expect(IMPORT_RULES.shared_model).toEqual({
       sourceMode: 'caller_own',
@@ -62,14 +58,21 @@ describe('IMPORT_RULES', () => {
 });
 
 describe('isImportTarget', () => {
-  it.each<[StageType, boolean]>([
-    ['skill_building', false],
-    ['individual_model', false],
-    ['shared_model', true],
-    ['system_model', true],
-    ['guiding_principles', false],
-  ])('returns %s for %s', (stageType, expected) => {
-    expect(isImportTarget(stageType)).toBe(expected);
+  const expectedTargets = new Set<StageType>(['shared_model', 'system_model']);
+
+  it.each(CANONICAL_STAGE_TYPES)(
+    'returns %s correctly for every canonical stage type',
+    (stageType) => {
+      expect(isImportTarget(stageType)).toBe(expectedTargets.has(stageType));
+    },
+  );
+
+  it('IMPORT_RULES has an entry for every target identified by isImportTarget', () => {
+    for (const stageType of CANONICAL_STAGE_TYPES) {
+      if (isImportTarget(stageType)) {
+        expect(IMPORT_RULES[stageType]).toBeDefined();
+      }
+    }
   });
 });
 
@@ -124,5 +127,41 @@ describe('remapCanvasForImport', () => {
   it('output round-trips through parseCanvasState unchanged', () => {
     const out = remapCanvasForImport(sampleCanvas, {});
     expect(parseCanvasState(out)).toEqual(out);
+  });
+
+  it('drops bricks whose groupId is missing from source groups', () => {
+    const sourceWithOrphan = {
+      groups: [{ id: 'g1', name: 'Bricks', collapsed: false, visible: true }],
+      bricks: [
+        {
+          id: 'b1',
+          groupId: 'g1',
+          code: 'red-2x2',
+          image: '/bricks/red-2x2.png',
+          width: 64,
+          height: 64,
+          x: 0,
+          y: 0,
+          rotation: 0,
+          visible: true,
+        },
+        {
+          // orphan: references a group that doesn't exist
+          id: 'b_orphan',
+          groupId: 'g_missing',
+          code: 'blue-1x4',
+          image: '/bricks/blue-1x4.png',
+          width: 128,
+          height: 32,
+          x: 50,
+          y: 50,
+          rotation: 0,
+          visible: true,
+        },
+      ],
+    };
+    const out = remapCanvasForImport(sourceWithOrphan, {});
+    expect(out.groups).toHaveLength(1);
+    expect(out.bricks).toHaveLength(1);
   });
 });
