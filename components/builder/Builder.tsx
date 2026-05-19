@@ -65,6 +65,7 @@ export function Builder({
       }
     >
       <div className="flex min-h-0 flex-1 flex-col bg-[#FAF7F1] text-zinc-900 md:overflow-hidden">
+        <LiveReadOnlyBanner ownerLabel={ownerLabel} sessionContext={sessionContext} />
         <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
           <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
             <UnifiedSidebar
@@ -182,6 +183,33 @@ function SaveBuildButton() {
         />
       ) : null}
     </>
+  );
+}
+
+function LiveReadOnlyBanner({
+  ownerLabel,
+  sessionContext,
+}: {
+  ownerLabel: string | null;
+  sessionContext: SessionContext | null;
+}) {
+  const { readOnly, liveMode } = useBuilderState();
+  if (!readOnly || liveMode || !sessionContext) return null;
+  return (
+    <div
+      role="status"
+      data-testid="live-readonly-banner"
+      className="flex items-center gap-2 border-b border-zinc-200 bg-emerald-50 px-4 py-1.5 text-[12px] text-zinc-700"
+    >
+      <span
+        role="img"
+        aria-label="Live"
+        className="inline-block h-2 w-2 rounded-full bg-emerald-500"
+      />
+      <span>
+        Live — viewing {ownerLabel ? `${ownerLabel}'s` : "participant's"} model · read-only
+      </span>
+    </div>
   );
 }
 
