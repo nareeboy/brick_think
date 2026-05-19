@@ -289,10 +289,9 @@ function StageRow({
                 className="flex items-center justify-between gap-3"
                 data-testid={`participant-row-${p.id}`}
               >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[13px] font-medium text-zinc-800">{p.title}</p>
-                  <p className="truncate text-[12px] text-zinc-500">{p.ownerLabel}</p>
-                </div>
+                <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-zinc-800">
+                  {p.ownerLabel}
+                </p>
                 <Link
                   href={`/app/designs/${p.id}`}
                   className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"

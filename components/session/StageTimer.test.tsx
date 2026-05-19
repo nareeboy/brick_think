@@ -54,6 +54,6 @@ describe('StageTimer', () => {
     // 600s duration, advance system time to 11:30 → 30s remaining
     vi.setSystemTime(new Date('2026-05-18T12:09:31Z')); // 571s elapsed → 29s remaining
     const { container } = render(<StageTimer stage={baseStage} />);
-    expect((container.firstChild as Element)?.className).toContain('border-red-500');
+    expect((container.firstChild as Element)?.className).toContain('border-red-300');
   });
 });

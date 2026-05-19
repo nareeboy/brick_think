@@ -30,9 +30,11 @@ export function DeleteSessionButton({
         disabled={pending}
         data-testid="delete-session-button"
         onClick={() => setConfirming(true)}
-        className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-3 text-[13px] font-medium text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-800 disabled:cursor-default disabled:opacity-60"
+        aria-label="Delete session"
+        title="Delete session"
+        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors hover:bg-red-50 disabled:cursor-default disabled:opacity-60"
       >
-        {pending ? 'Deleting…' : 'Delete session'}
+        <TrashIcon className="h-4 w-4" />
       </button>
       {confirming ? (
         <DeleteConfirmDialog
@@ -54,5 +56,24 @@ export function DeleteSessionButton({
         />
       ) : null}
     </>
+  );
+}
+
+function TrashIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3 6h18" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+      <path d="M19 6 17.5 20a2 2 0 0 1-2 1.7h-7a2 2 0 0 1-2-1.7L5 6" />
+    </svg>
   );
 }
