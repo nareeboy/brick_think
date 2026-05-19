@@ -4,13 +4,16 @@ import Link from 'next/link';
 
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { getServiceSupabaseClient } from '@/lib/db/service';
+import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
 import { SessionStages, type ParticipantModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
+import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
 import type { StageRoomSummary } from './RoomsPanel';
-import type { SessionMode, SessionStatus } from '@/lib/sessions/types';
+import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types';
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
@@ -152,11 +155,13 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     }
   }
 
-  // Fetch room layout. Rooms only exist on shared_model stages today; we still
-  // pull across every stage_id so future room-bearing stages slot in without a
-  // page-level change.
+  // Fetch room layout across every stage_id. Each room carries its members
+  // (shared_model) and its upstream source rooms (system_model / guiding_principles).
   const stageIds = stages.map((s) => s.id);
   const roomsByStageId: Record<string, StageRoomSummary[]> = {};
+  const upstreamRoomsByStageId: Record<string, UpstreamRoomSummary[]> = {};
+  const upstreamStageTypeByStageId: Record<string, StageType> = {};
+  const myRoomIdByStageId: Record<string, string | null> = {};
   let orgMembers: OrgMemberSummary[] = [];
   if (stageIds.length > 0) {
     const roomsRes = await supabase
@@ -171,14 +176,19 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     const roomIds = rooms.map((r) => r.id);
     let roomModels: { id: string; room_id: string | null }[] = [];
     let roomMembers: { room_id: string; profile_id: string }[] = [];
+    let roomSources: { room_id: string; source_room_id: string }[] = [];
     if (roomIds.length > 0) {
-      const [modelsForRooms, membersForRooms] = await Promise.all([
+      const [modelsForRooms, membersForRooms, sourcesForRooms] = await Promise.all([
         supabase
           .from('models')
           .select('id, room_id')
           .in('room_id', roomIds)
           .is('deleted_at', null),
         supabase.from('stage_room_members').select('room_id, profile_id').in('room_id', roomIds),
+        supabase
+          .from('stage_room_sources')
+          .select('room_id, source_room_id')
+          .in('room_id', roomIds),
       ]);
       if (modelsForRooms.error) {
         throw new Error(`Failed to load room canvases: ${modelsForRooms.error.message}`);
@@ -186,10 +196,14 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       if (membersForRooms.error) {
         throw new Error(`Failed to load room members: ${membersForRooms.error.message}`);
       }
+      if (sourcesForRooms.error) {
+        throw new Error(`Failed to load room sources: ${sourcesForRooms.error.message}`);
+      }
       roomModels = (modelsForRooms.data ?? []).filter(
         (r): r is { id: string; room_id: string } => r.room_id !== null,
       );
       roomMembers = (membersForRooms.data ?? []) as { room_id: string; profile_id: string }[];
+      roomSources = (sourcesForRooms.data ?? []) as { room_id: string; source_room_id: string }[];
     }
     const modelByRoomId = new Map(roomModels.map((m) => [m.room_id as string, m.id]));
     const membersByRoomId = new Map<string, string[]>();
@@ -197,6 +211,12 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       const list = membersByRoomId.get(m.room_id) ?? [];
       list.push(m.profile_id);
       membersByRoomId.set(m.room_id, list);
+    }
+    const sourcesByRoomId = new Map<string, string[]>();
+    for (const s of roomSources) {
+      const list = sourcesByRoomId.get(s.room_id) ?? [];
+      list.push(s.source_room_id);
+      sourcesByRoomId.set(s.room_id, list);
     }
     for (const r of rooms) {
       const modelId = modelByRoomId.get(r.id);
@@ -208,8 +228,69 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         title: r.title,
         modelId,
         memberIds: membersByRoomId.get(r.id) ?? [],
+        sourceRoomIds: sourcesByRoomId.get(r.id) ?? [],
       });
       roomsByStageId[r.stage_id] = list;
+    }
+
+    // For each downstream stage (system_model, guiding_principles): expose
+    // the upstream stage's rooms so the modal can populate the picker.
+    const stageById = new Map(stages.map((s) => [s.id, s] as const));
+    for (const stage of stages) {
+      const stageType = stage.stage_type as StageType;
+      if (stageType !== 'system_model' && stageType !== 'guiding_principles') continue;
+      if (!isImportTarget(stageType)) continue;
+      const upstreamType = IMPORT_RULES[stageType].sourceStageType;
+      const upstreamStage = stages.find((s) => s.stage_type === upstreamType);
+      if (!upstreamStage) continue;
+      upstreamStageTypeByStageId[stage.id] = upstreamType;
+      const upstreamSummaries = (roomsByStageId[upstreamStage.id] ?? []).map((r) => ({
+        id: r.id,
+        position: r.position,
+        title: r.title,
+      }));
+      upstreamRoomsByStageId[stage.id] = upstreamSummaries;
+    }
+    // Silence "unused" without dropping the lookup: stageById is reserved
+    // for future cross-stage validation in this block.
+    void stageById;
+
+    // Compute the current user's room id per stage. shared_model is direct
+    // membership lookup; downstream stages use public.can_edit_room (service
+    // role) on each room's model id. With workshop-scale N (<10 rooms/stage)
+    // the per-room RPC fan-out is cheap.
+    const svc = getServiceSupabaseClient();
+    for (const stage of stages) {
+      const stageType = stage.stage_type as StageType;
+      const stageRooms = roomsByStageId[stage.id] ?? [];
+      if (stageRooms.length === 0) {
+        myRoomIdByStageId[stage.id] = null;
+        continue;
+      }
+      if (stageType === 'shared_model') {
+        const found = stageRooms.find((r) => r.memberIds.includes(user.id)) ?? null;
+        myRoomIdByStageId[stage.id] = found?.id ?? null;
+        continue;
+      }
+      if (stageType === 'system_model' || stageType === 'guiding_principles') {
+        let assigned: string | null = null;
+        for (const room of stageRooms) {
+          const rpc = await svc.rpc('can_edit_room', {
+            p_profile_id: user.id,
+            p_model_id: room.modelId,
+          });
+          if (rpc.error) {
+            throw new Error(`can_edit_room failed: ${rpc.error.message}`);
+          }
+          if (rpc.data) {
+            assigned = room.id;
+            break;
+          }
+        }
+        myRoomIdByStageId[stage.id] = assigned;
+        continue;
+      }
+      myRoomIdByStageId[stage.id] = null;
     }
   }
 
@@ -278,6 +359,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           canManageSession={canManageSession}
           roomsByStageId={roomsByStageId}
           orgMembers={orgMembers}
+          upstreamRoomsByStageId={upstreamRoomsByStageId}
+          upstreamStageTypeByStageId={upstreamStageTypeByStageId}
+          myRoomIdByStageId={myRoomIdByStageId}
           currentUserId={user.id}
         />
         <SpotlightTour canManageSession={canManageSession} />
