@@ -8,6 +8,8 @@ import type { Json } from '@/lib/db/types.generated';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
 import { composeRoomCanvas, type RoomLaneInput } from '@/lib/sessions/stage-rooms';
+import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
+import type { StageType } from '@/lib/sessions/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -19,7 +21,10 @@ export type StageRoomError =
   | 'not_facilitator'
   | 'duplicate_member'
   | 'empty_partition'
-  | 'unknown_member';
+  | 'unknown_member'
+  | 'empty_sources'
+  | 'unknown_source_room'
+  | 'upstream_stage_missing';
 
 export type StageRoomResult<T> = { ok: true; data: T } | { ok: false; code: StageRoomError };
 
@@ -213,6 +218,192 @@ export async function setSharedModelRooms(input: {
       if (memberRes.error) {
         throw new Error(`setSharedModelRooms: members insert failed: ${memberRes.error.message}`);
       }
+    }
+    i++;
+  }
+
+  revalidatePath(`/app/sessions/${sessionId}`);
+  return { ok: true, data: { roomIds } };
+}
+
+interface DownstreamRoomInput {
+  /** Optional facilitator-supplied label. Defaults to "Room N". */
+  title?: string | null;
+  /** Upstream room ids whose canvases compose this room (one lane per source). */
+  sourceRoomIds: string[];
+}
+
+/**
+ * Replace the room layout on a `system_model` or `guiding_principles` stage.
+ * Mirrors {@link setSharedModelRooms} but the partition is over upstream
+ * rooms instead of profiles:
+ *
+ *   1. Validates caller is the facilitator and the stage is downstream
+ *      (system_model | guiding_principles).
+ *   2. Resolves the upstream stage from IMPORT_RULES (`shared_model` for
+ *      system_model; `system_model` for guiding_principles) and confirms
+ *      every supplied sourceRoomId lives on that upstream stage.
+ *   3. Wipes existing rooms on this stage (cascades to canvases + sources).
+ *   4. For each partition: inserts a stage_rooms row, composes the canvas
+ *      from each upstream room's canvas as a lane (lane label = upstream
+ *      room's title or "Room N"), inserts the models row with room_id set,
+ *      writes the stage_room_sources edges. Membership is *not* re-declared:
+ *      participants gain edit access transitively via can_edit_room.
+ *
+ * Upstream rooms may be reused across multiple downstream rooms — this isn't
+ * a partition over upstream rooms, it's a many-to-many composition.
+ */
+export async function setDownstreamStageRooms(input: {
+  stageId: string;
+  rooms: DownstreamRoomInput[];
+}): Promise<StageRoomResult<{ roomIds: string[] }>> {
+  if (!UUID_RE.test(input.stageId)) return { ok: false, code: 'invalid_uuid' };
+  if (input.rooms.length === 0) return { ok: false, code: 'empty_partition' };
+
+  const sourceIds = new Set<string>();
+  for (const room of input.rooms) {
+    if (room.sourceRoomIds.length === 0) return { ok: false, code: 'empty_sources' };
+    for (const id of room.sourceRoomIds) {
+      if (!UUID_RE.test(id)) return { ok: false, code: 'invalid_uuid' };
+      sourceIds.add(id);
+    }
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, code: 'unauthenticated' };
+
+  const stageRes = await supabase
+    .from('stages')
+    .select('id, stage_type, session_id')
+    .eq('id', input.stageId)
+    .maybeSingle();
+  if (stageRes.error || !stageRes.data) return { ok: false, code: 'stage_not_found' };
+  const stageType = stageRes.data.stage_type as StageType;
+  if (stageType !== 'system_model' && stageType !== 'guiding_principles') {
+    return { ok: false, code: 'unsupported_stage_type' };
+  }
+  const sessionId = stageRes.data.session_id as string;
+
+  const sessionRes = await supabase
+    .from('sessions')
+    .select('id, facilitator_id')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (sessionRes.error || !sessionRes.data) return { ok: false, code: 'stage_not_found' };
+  if (sessionRes.data.facilitator_id !== user.id) {
+    return { ok: false, code: 'not_facilitator' };
+  }
+
+  // Resolve the upstream stage_id via IMPORT_RULES. system_model ← shared_model;
+  // guiding_principles ← system_model. isImportTarget already excludes
+  // skill_building so the cast is safe.
+  if (!isImportTarget(stageType)) return { ok: false, code: 'unsupported_stage_type' };
+  const upstreamStageType = IMPORT_RULES[stageType].sourceStageType;
+  const upstreamStageRes = await supabase
+    .from('stages')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('stage_type', upstreamStageType)
+    .maybeSingle();
+  if (upstreamStageRes.error || !upstreamStageRes.data) {
+    return { ok: false, code: 'upstream_stage_missing' };
+  }
+  const upstreamStageId = upstreamStageRes.data.id as string;
+
+  // Verify each source room belongs to the upstream stage in this session.
+  const srcRoomsRes = await supabase
+    .from('stage_rooms')
+    .select('id, position, title')
+    .in('id', Array.from(sourceIds))
+    .eq('stage_id', upstreamStageId);
+  if (srcRoomsRes.error) {
+    throw new Error(`setDownstreamStageRooms: source rooms check failed: ${srcRoomsRes.error.message}`);
+  }
+  const srcRoomById = new Map(
+    (srcRoomsRes.data ?? []).map((r) => [r.id as string, { position: r.position as number, title: (r.title as string | null) ?? null }]),
+  );
+  for (const id of sourceIds) {
+    if (!srcRoomById.has(id)) return { ok: false, code: 'unknown_source_room' };
+  }
+
+  const svc = getServiceSupabaseClient();
+
+  // Pre-fetch each source room's canvas.
+  const srcModelsRes = await svc
+    .from('models')
+    .select('room_id, canvas_state')
+    .in('room_id', Array.from(sourceIds))
+    .is('deleted_at', null);
+  if (srcModelsRes.error) {
+    throw new Error(`setDownstreamStageRooms: source models fetch failed: ${srcModelsRes.error.message}`);
+  }
+  const canvasByRoomId = new Map<string, ReturnType<typeof parseCanvasState>>();
+  for (const row of srcModelsRes.data ?? []) {
+    if (row.room_id) {
+      canvasByRoomId.set(row.room_id as string, parseCanvasState(row.canvas_state));
+    }
+  }
+
+  // Wipe prior rooms on this stage. Cascades to canvases (models.room_id) and
+  // stage_room_sources (FK on stage_rooms.id).
+  const wipeRes = await svc.from('stage_rooms').delete().eq('stage_id', input.stageId);
+  if (wipeRes.error) {
+    throw new Error(`setDownstreamStageRooms: wipe failed: ${wipeRes.error.message}`);
+  }
+
+  const roomIds: string[] = [];
+  let i = 0;
+  for (const partition of input.rooms) {
+    const trimmed = partition.title?.trim();
+    const title = trimmed && trimmed.length > 0 ? trimmed.slice(0, 80) : null;
+
+    const roomInsert = await svc
+      .from('stage_rooms')
+      .insert({ stage_id: input.stageId, position: i, title })
+      .select('id')
+      .single();
+    if (roomInsert.error || !roomInsert.data) {
+      throw new Error(`setDownstreamStageRooms: room insert failed: ${roomInsert.error?.message}`);
+    }
+    const roomId = roomInsert.data.id as string;
+    roomIds.push(roomId);
+
+    // Compose lanes from the picked upstream rooms. Lane label = upstream
+    // room title or "Room N" so the downstream Layers panel disambiguates
+    // contributors at the room granularity (mirrors the per-member rename
+    // composeRoomCanvas does for shared_model).
+    const lanes: RoomLaneInput[] = partition.sourceRoomIds.map((srcId) => {
+      const src = srcRoomById.get(srcId);
+      const label = src?.title?.trim() || `Room ${(src?.position ?? 0) + 1}`;
+      return {
+        displayName: label,
+        source: canvasByRoomId.get(srcId) ?? { groups: [], bricks: [] },
+      };
+    });
+    const composed = composeRoomCanvas(lanes);
+
+    const modelInsert = await svc.from('models').insert({
+      owner_profile_id: sessionRes.data.facilitator_id,
+      title: defaultModelTitle(stageType),
+      canvas_state: composed as unknown as Json,
+      session_id: sessionId,
+      stage_id: input.stageId,
+      room_id: roomId,
+    });
+    if (modelInsert.error) {
+      throw new Error(`setDownstreamStageRooms: model insert failed: ${modelInsert.error.message}`);
+    }
+
+    const sourceRows = partition.sourceRoomIds.map((srcId) => ({
+      room_id: roomId,
+      source_room_id: srcId,
+    }));
+    const sourcesRes = await svc.from('stage_room_sources').insert(sourceRows);
+    if (sourcesRes.error) {
+      throw new Error(`setDownstreamStageRooms: sources insert failed: ${sourcesRes.error.message}`);
     }
     i++;
   }
