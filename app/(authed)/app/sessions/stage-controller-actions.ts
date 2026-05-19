@@ -4,6 +4,10 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import {
+  dispatchSessionStartedNotifications,
+  resolveActorDisplay,
+} from '@/lib/notifications/dispatch';
 import { isValidTransition, type StageVerb } from '@/lib/sessions/stage-state-machine';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -80,7 +84,7 @@ async function requireFacilitatorForStage(stageId: string): Promise<
   const stageRes = await supabase
     .from('stages')
     .select(
-      'id, session_id, status, position, duration_seconds, started_at, paused_at, total_paused_ms, extended_seconds, sessions!stages_session_id_fkey ( id, facilitator_id, status )',
+      'id, session_id, status, position, duration_seconds, started_at, paused_at, total_paused_ms, extended_seconds, sessions!stages_session_id_fkey ( id, facilitator_id, status, org_id )',
     )
     .eq('id', stageId)
     .maybeSingle();
@@ -159,6 +163,29 @@ export async function startStageAction(stageId: string): Promise<StageActionResu
     metadata: {},
   });
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
+
+  // Session-started fan-out: only on the *first* time a session goes live.
+  // Restarting a stopped session (status was `completed`, now back to `live`)
+  // does NOT re-fire — org members were already notified once.
+  const wasFirstStart =
+    stage.sessions.status === 'draft' || stage.sessions.status === 'scheduled';
+  if (wasFirstStart) {
+    const facilitatorRes = await svc
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', userId)
+      .maybeSingle();
+    const facilitatorDisplay = resolveActorDisplay({
+      fullName: facilitatorRes.data?.full_name,
+      email: facilitatorRes.data?.email,
+    });
+    await dispatchSessionStartedNotifications({
+      sessionId,
+      orgId: stage.sessions.org_id,
+      facilitatorProfileId: userId,
+      facilitatorDisplay,
+    });
+  }
 
   revalidate(sessionId);
   return { ok: true };
