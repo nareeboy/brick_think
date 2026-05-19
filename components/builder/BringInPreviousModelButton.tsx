@@ -9,7 +9,7 @@ import { useBuilderState } from './builderState';
 interface Props {
   /** null when the button must never mount (non-session, non-whitelisted, read-only, etc.). */
   sourceStageLabel: string | null;
-  /** shared_model only — server-rendered at page load. */
+  /** True if a model_imports row exists for this (target, caller). Server-rendered at page load. */
   alreadyImported: boolean;
 }
 
