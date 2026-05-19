@@ -24,6 +24,7 @@ import {
   setGroupVisibleInDoc,
   setTitleInDoc,
   updateBrickInDoc,
+  YJS_LOCAL_ORIGIN,
 } from '@/lib/yjs/canvas-codec';
 
 import { useAutosave, type SaveStatus } from './useAutosave';
@@ -130,6 +131,7 @@ export interface BuilderState {
   moveGroup: (id: string, toIndex: number) => void;
 
   addBrick: (brick: BrickInstance) => void;
+  appendImportedBricks: (canvas: { groups: LayerGroup[]; bricks: BrickInstance[] }) => void;
   updateBrick: (id: string, partial: Partial<Omit<BrickInstance, 'id' | 'groupId'>>) => void;
   deleteBrick: (id: string) => void;
   toggleBrickVisible: (id: string) => void;
@@ -683,6 +685,31 @@ export function BuilderProvider({
     [liveMode, liveDoc, effectiveGroups],
   );
 
+  const appendImportedBricks = useCallback(
+    (canvas: { groups: LayerGroup[]; bricks: BrickInstance[] }) => {
+      if (canvas.groups.length === 0 && canvas.bricks.length === 0) return;
+      if (liveMode && liveDoc) {
+        liveDoc.transact(() => {
+          for (const g of canvas.groups) addGroupToDoc(liveDoc, g);
+          for (const b of canvas.bricks) addBrickToDoc(liveDoc, b);
+        }, YJS_LOCAL_ORIGIN);
+        const firstGroupId = canvas.groups[0]?.id;
+        if (firstGroupId) setData((d) => ({ ...d, activeGroupId: firstGroupId }));
+        return;
+      }
+      setData((d) => {
+        const firstGroupId = canvas.groups[0]?.id ?? d.activeGroupId;
+        return {
+          ...d,
+          groups: [...canvas.groups, ...d.groups],
+          bricks: [...d.bricks, ...canvas.bricks],
+          activeGroupId: firstGroupId,
+        };
+      });
+    },
+    [liveMode, liveDoc],
+  );
+
   const updateBrick = useCallback(
     (id: string, partial: Partial<Omit<BrickInstance, 'id' | 'groupId'>>) => {
       if (liveMode && liveDoc) {
@@ -785,6 +812,7 @@ export function BuilderProvider({
       toggleGroupCollapsed: guard(toggleGroupCollapsed, undefined),
       moveGroup: guard(moveGroup, undefined),
       addBrick: guard(addBrick, undefined),
+      appendImportedBricks: guard(appendImportedBricks, undefined),
       updateBrick: guard(updateBrick, undefined),
       deleteBrick: guard(deleteBrick, undefined),
       toggleBrickVisible: guard(toggleBrickVisible, undefined),
@@ -832,6 +860,7 @@ export function BuilderProvider({
       toggleGroupCollapsed,
       moveGroup,
       addBrick,
+      appendImportedBricks,
       updateBrick,
       deleteBrick,
       toggleBrickVisible,

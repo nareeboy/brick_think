@@ -6,6 +6,7 @@ import { SaveVersionModal } from './SaveVersionModal';
 import { ShareModal } from './ShareModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 
+import { BringInPreviousModelButton } from './BringInPreviousModelButton';
 import { BuilderProvider, useBuilderState } from './builderState';
 import { BuilderCanvasLoader } from './canvasLoader';
 import { CANVAS_DROP_TARGET, DragPieceProvider } from './dragPiece';
@@ -31,6 +32,8 @@ interface BuilderProps {
   liveMode?: boolean;
   self?: { userId: string; displayName: string; avatarUrl: string | null } | null;
   colourblindMode?: boolean;
+  sourceStageLabel?: string | null;
+  alreadyImported?: boolean;
 }
 
 export function Builder({
@@ -42,6 +45,8 @@ export function Builder({
   liveMode = false,
   self = null,
   colourblindMode = false,
+  sourceStageLabel = null,
+  alreadyImported = false,
 }: BuilderProps) {
   return (
     <BuilderProvider
@@ -66,7 +71,12 @@ export function Builder({
               ownerLabel={ownerLabel}
               sessionContext={sessionContext}
             />
-            <CanvasStage orgId={orgId} colourblindMode={colourblindMode} />
+            <CanvasStage
+              orgId={orgId}
+              colourblindMode={colourblindMode}
+              sourceStageLabel={sourceStageLabel}
+              alreadyImported={alreadyImported}
+            />
           </div>
         </div>
       </div>
@@ -201,7 +211,17 @@ function SaveToast() {
   );
 }
 
-function CanvasStage({ orgId, colourblindMode = false }: { orgId: string | null; colourblindMode?: boolean }) {
+function CanvasStage({
+  orgId,
+  colourblindMode = false,
+  sourceStageLabel,
+  alreadyImported,
+}: {
+  orgId: string | null;
+  colourblindMode?: boolean;
+  sourceStageLabel: string | null;
+  alreadyImported: boolean;
+}) {
   const { awareness, selfClientId, view, self } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   return (
@@ -240,6 +260,10 @@ function CanvasStage({ orgId, colourblindMode = false }: { orgId: string | null;
         <ShareButton orgId={orgId} />
         <ExportButton />
         <PiecesDrawer />
+        <BringInPreviousModelButton
+          sourceStageLabel={sourceStageLabel}
+          alreadyImported={alreadyImported}
+        />
       </section>
     </DragPieceProvider>
   );
