@@ -34,6 +34,52 @@ export type Database = {
   }
   public: {
     Tables: {
+      model_imports: {
+        Row: {
+          id: string
+          imported_at: string
+          profile_id: string
+          source_model_id: string
+          target_model_id: string
+        }
+        Insert: {
+          id?: string
+          imported_at?: string
+          profile_id: string
+          source_model_id: string
+          target_model_id: string
+        }
+        Update: {
+          id?: string
+          imported_at?: string
+          profile_id?: string
+          source_model_id?: string
+          target_model_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_imports_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_imports_source_model_id_fkey"
+            columns: ["source_model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_imports_target_model_id_fkey"
+            columns: ["target_model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       model_share_links: {
         Row: {
           created_at: string
