@@ -1,10 +1,15 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import {
+  dispatchOrgAddedNotification,
+  resolveActorDisplay,
+} from '@/lib/notifications/dispatch';
 import { isValidSlug } from '@/lib/orgs/slug';
 
 async function requireUser() {
@@ -57,53 +62,134 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
 }
 
 export type AddMemberResult =
-  | { kind: 'ok' }
+  | { kind: 'ok'; recipientDisplay: string; orgName: string }
+  | { kind: 'invited'; email: string; orgName: string }
+  | { kind: 'invite_pending'; email: string }
   | { kind: 'invalid_input' }
-  | { kind: 'unknown_email' }
   | { kind: 'already_member' }
-  | { kind: 'forbidden' };
+  | { kind: 'forbidden' }
+  | { kind: 'invite_failed'; message: string };
 
 export async function addOrgMemberAction(orgId: string, email: string): Promise<AddMemberResult> {
-  const { supabase } = await requireUser();
+  const { supabase, user } = await requireUser();
   const trimmed = email.trim();
   if (trimmed.length === 0) return { kind: 'invalid_input' };
 
+  // The caller must be an org admin/owner to add anyone. We hand-roll this
+  // check up front so the unknown-email invite path doesn't leak the
+  // existence of pending invites (or accept invites silently) for someone
+  // who couldn't add a member in the first place.
+  const { data: adminProbe, error: adminProbeError } = await supabase
+    .from('org_memberships')
+    .select('role')
+    .eq('org_id', orgId)
+    .eq('profile_id', user.id)
+    .maybeSingle();
+  if (adminProbeError) throw new Error(`Auth check failed: ${adminProbeError.message}`);
+  if (!adminProbe || (adminProbe.role !== 'owner' && adminProbe.role !== 'admin')) {
+    return { kind: 'forbidden' };
+  }
+
+  const service = getServiceSupabaseClient();
+
+  // Resolve the org name + caller identity once — both the existing-user
+  // notification and the admin-side confirmation toast want them.
+  const [orgRes, actorRes] = await Promise.all([
+    service.from('organisations').select('name').eq('id', orgId).maybeSingle(),
+    service.from('profiles').select('full_name, email').eq('id', user.id).maybeSingle(),
+  ]);
+  const orgName = orgRes.data?.name ?? 'an organisation';
+  const actorDisplay = resolveActorDisplay({
+    fullName: actorRes.data?.full_name,
+    email: actorRes.data?.email ?? user.email ?? null,
+  });
+
   // citext column => case-insensitive match.
-  // Use service-role for the lookup: the user-scoped client cannot SELECT
+  // Service-role for the lookup: the user-scoped client cannot SELECT
   // profile rows of users they don't already share an org with, which makes
   // the add-by-email flow impossible without a privileged read here. Only
-  // returns the matched profile id (no other PII) — application-level safe.
-  const service = getServiceSupabaseClient();
+  // returns the matched profile id, email, and name — application-level safe.
   const { data: profile, error: profileError } = await service
     .from('profiles')
-    .select('id')
+    .select('id, email, full_name')
     .eq('email', trimmed)
     .maybeSingle();
   if (profileError) throw new Error(`Lookup failed: ${profileError.message}`);
-  if (!profile) return { kind: 'unknown_email' };
 
-  // Eagerly check for an existing membership to surface a clear UI error
-  // before hitting the unique constraint. The 23505 fallback on insert
-  // handles the race between two simultaneous adds.
-  const { count, error: countError } = await supabase
-    .from('org_memberships')
-    .select('profile_id', { count: 'exact', head: true })
-    .eq('org_id', orgId)
-    .eq('profile_id', profile.id);
-  if (countError) throw new Error(`Membership check failed: ${countError.message}`);
-  if ((count ?? 0) > 0) return { kind: 'already_member' };
+  // Existing user → straight membership insert + in-app notification.
+  if (profile) {
+    const { count, error: countError } = await supabase
+      .from('org_memberships')
+      .select('profile_id', { count: 'exact', head: true })
+      .eq('org_id', orgId)
+      .eq('profile_id', profile.id);
+    if (countError) throw new Error(`Membership check failed: ${countError.message}`);
+    if ((count ?? 0) > 0) return { kind: 'already_member' };
 
-  const { error: insertError } = await supabase
-    .from('org_memberships')
-    .insert({ org_id: orgId, profile_id: profile.id, role: 'member' });
-  if (insertError) {
-    if (insertError.code === '42501') return { kind: 'forbidden' };
-    if (insertError.code === '23505') return { kind: 'already_member' };
-    throw new Error(`Add member failed: ${insertError.message}`);
+    const { error: insertError } = await supabase
+      .from('org_memberships')
+      .insert({ org_id: orgId, profile_id: profile.id, role: 'member' });
+    if (insertError) {
+      if (insertError.code === '42501') return { kind: 'forbidden' };
+      if (insertError.code === '23505') return { kind: 'already_member' };
+      throw new Error(`Add member failed: ${insertError.message}`);
+    }
+
+    const recipientDisplay = resolveActorDisplay({
+      fullName: profile.full_name,
+      email: profile.email,
+    });
+
+    await dispatchOrgAddedNotification({
+      recipientProfileId: profile.id,
+      orgId,
+      orgName,
+      actorProfileId: user.id,
+      actorDisplay,
+    });
+
+    revalidatePath(`/app/orgs/${orgId}`);
+    return { kind: 'ok', recipientDisplay, orgName };
+  }
+
+  // No profile → send an invite. Idempotent on the (org_id, email) unique
+  // index (partial WHERE claimed_at is null) — surfacing the already-pending
+  // case to the UI so we don't fire a duplicate magic link.
+  const { error: inviteInsertError } = await service.from('org_invitations').insert({
+    org_id: orgId,
+    email: trimmed,
+    invited_by: user.id,
+  });
+  if (inviteInsertError) {
+    if (inviteInsertError.code === '23505') return { kind: 'invite_pending', email: trimmed };
+    throw new Error(`Invite create failed: ${inviteInsertError.message}`);
+  }
+
+  // Resolve site origin the same way the sign-in actions do so the magic
+  // link in the email lands on the same host the inviter is on (the PKCE
+  // gotcha in supabase/CLAUDE.md applies here too).
+  const h = await headers();
+  const proto = h.get('x-forwarded-proto') ?? 'http';
+  const host = h.get('host') ?? 'localhost:3000';
+  const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(
+    `/app/orgs/${orgId}`,
+  )}`;
+
+  const inviteRes = await service.auth.admin.inviteUserByEmail(trimmed, { redirectTo });
+  if (inviteRes.error) {
+    // The auth API failed but we already wrote an org_invitations row. Best
+    // effort: clean it up so a retry behaves like the first attempt.
+    await service
+      .from('org_invitations')
+      .delete()
+      .eq('org_id', orgId)
+      .eq('email', trimmed)
+      .is('claimed_at', null);
+    return { kind: 'invite_failed', message: inviteRes.error.message };
   }
 
   revalidatePath(`/app/orgs/${orgId}`);
-  return { kind: 'ok' };
+  return { kind: 'invited', email: trimmed, orgName };
 }
 
 export async function removeOrgMemberAction(orgId: string, profileId: string): Promise<void> {
