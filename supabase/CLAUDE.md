@@ -25,6 +25,18 @@ Four migrations (`20260518120000_stage_runtime_state`, `20260518130000_stages_re
 - `stages` + `sessions` are added to the `supabase_realtime` publication with `REPLICA IDENTITY FULL` so `postgres_changes` UPDATE payloads carry the full row through the participant's RLS filter. **Anything new that needs Realtime row-filtering on UPDATE must also set REPLICA IDENTITY FULL** — without it the OLD record is PK-only and RLS gates can't evaluate.
 - Default per-stage durations come from `STAGE_DEFAULT_DURATIONS_SECONDS` in [lib/sessions/stage-labels.ts](../lib/sessions/stage-labels.ts), applied at `createSession` and `/api/test/seed-session` insert time. The backfill migration patched any pre-existing NULL rows once.
 
+## Stage rooms data model
+
+[migrations/20260519130000_stage_rooms.sql](migrations/20260519130000_stage_rooms.sql) introduces breakout-group rooms on `shared_model`, `system_model`, and `guiding_principles`. The full UI / server-action surface is documented in [(authed)/CLAUDE.md "Stage rooms (breakout groups)"](<../app/(authed)/CLAUDE.md>); this section covers the schema invariants only.
+
+- `public.stage_rooms` — `(id, stage_id, position, title, created_at)`. Unique on `(stage_id, position)` AND composite-unique on `(id, stage_id)` so child FKs can pin a room's stage at the constraint layer (used by `stage_room_members` to enforce mutual-exclusion-per-stage through the `(stage_id, profile_id)` unique index).
+- `public.stage_room_members` — `(room_id, stage_id, profile_id)`. `shared_model` rooms only — populated by `setSharedModelRooms` via service role.
+- `public.stage_room_sources` — `(room_id, source_room_id)`. `system_model` and `guiding_principles` rooms only — populated by `setDownstreamStageRooms`. The "source room must live on the immediately-preceding stage in `IMPORT_RULES`" rule is enforced by the server action, not the DB.
+- `public.models.room_id` — nullable FK to `stage_rooms` (`on delete cascade`). The 1-1 between rooms and canvases is enforced by `models_room_uniq` (partial unique on `room_id is not null`). The legacy `models_session_stage_owner_active_idx` was rebuilt with `room_id is null` in its predicate so per-owner uniqueness on personal canvases survives alongside the new "facilitator can own many room canvases per stage" reality.
+- `public.can_edit_room(p_profile_id uuid, p_model_id uuid) → boolean` — service-role-only recursive SQL function. Walks `stage_room_sources` from the room linked to the model, back to whatever `shared_model` room the chain bottoms out at, then checks membership against `stage_room_members`. This is the single source of truth for "is this user a transitive member of that room?"; both the design page (liveMode gate) and the Yjs worker (WS upgrade gate) call it. Returns `false` for non-room models.
+- All three tables are added to `supabase_realtime` with `REPLICA IDENTITY FULL` so participants see facilitator partitioning land live without a refresh. No INSERT / UPDATE / DELETE RLS policies — writes flow through service-role server actions only (defence-in-depth pattern mirroring `model_imports`, `yjs_documents`, `model_versions`). SELECT is open to any session-org member.
+- Backfill: every pre-existing `shared_model` model becomes Room 1 on its stage with every session-org member enrolled. The migration is idempotent — re-running `pnpm db:reset` or applying out-of-band against an already-migrated remote is a no-op past the first apply.
+
 ## Stage-import audit table (`model_imports`)
 
 [migrations/20260519110000_model_imports.sql](migrations/20260519110000_model_imports.sql) backs the "Bring in my previous model" affordance (see [(authed)/CLAUDE.md "Bring in my previous model"](<../app/(authed)/CLAUDE.md>) for the full surface).
