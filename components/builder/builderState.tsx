@@ -203,12 +203,14 @@ export function BuilderProvider({
   initial,
   readOnly = false,
   liveMode = false,
+  sessionId: _sessionId = null,
   self = null,
   children,
 }: {
   initial?: InitialBuilderState;
   readOnly?: boolean;
   liveMode?: boolean;
+  sessionId?: string | null;
   self?: PresenceSelf | null;
   children: ReactNode;
 }) {
