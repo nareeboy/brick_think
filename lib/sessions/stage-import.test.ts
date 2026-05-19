@@ -38,6 +38,13 @@ const sampleCanvas = {
 };
 
 describe('IMPORT_RULES', () => {
+  it('individual_model pulls caller_own skill_building', () => {
+    expect(IMPORT_RULES.individual_model).toEqual({
+      sourceMode: 'caller_own',
+      sourceStageType: 'skill_building',
+    });
+  });
+
   it('shared_model pulls caller_own individual_model', () => {
     expect(IMPORT_RULES.shared_model).toEqual({
       sourceMode: 'caller_own',
@@ -51,10 +58,22 @@ describe('IMPORT_RULES', () => {
       sourceStageType: 'shared_model',
     });
   });
+
+  it('guiding_principles pulls caller_own system_model', () => {
+    expect(IMPORT_RULES.guiding_principles).toEqual({
+      sourceMode: 'caller_own',
+      sourceStageType: 'system_model',
+    });
+  });
 });
 
 describe('isImportTarget', () => {
-  const expectedTargets = new Set<StageType>(['shared_model', 'system_model']);
+  const expectedTargets = new Set<StageType>([
+    'individual_model',
+    'shared_model',
+    'system_model',
+    'guiding_principles',
+  ]);
 
   it.each(CANONICAL_STAGE_TYPES)(
     'returns %s correctly for every canonical stage type',

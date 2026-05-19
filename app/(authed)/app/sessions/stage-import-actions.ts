@@ -111,63 +111,69 @@ export async function bringInPreviousModel(targetModelId: string): Promise<Bring
 
   const svc = getServiceSupabaseClient();
 
-  if (stageType === 'system_model') {
-    // Re-read target canvas under service-role; assert emptiness.
-    const recheck = await svc
-      .from('models')
-      .select('canvas_state')
-      .eq('id', targetModelId)
-      .single();
-    if (recheck.error || !recheck.data) {
-      throw new Error(`bringInPreviousModel: target recheck failed: ${recheck.error?.message}`);
-    }
-    const currentCanvas = parseCanvasState(recheck.data.canvas_state);
-    if (currentCanvas.bricks.length > 0) {
-      return { ok: false, code: 'destination_not_empty' };
-    }
-    const remapped = remapCanvasForImport(sourceCanvas, {});
-    const upd = await svc
-      .from('models')
-      .update({ canvas_state: remapped as unknown as Json })
-      .eq('id', targetModelId);
-    if (upd.error) {
-      throw new Error(`bringInPreviousModel: target update failed: ${upd.error.message}`);
-    }
+  // shared_model is the only Yjs-backed target — the worker is sole writer to
+  // canvas_state, so the action writes the audit row first as the gate and
+  // returns the remapped source for the client to apply via the Y.Doc.
+  // Every other target (individual_model, system_model, guiding_principles) is
+  // autosave-backed and per-participant: server copies canvas directly.
+  if (stageType === 'shared_model') {
     const ins = await svc.from('model_imports').insert({
       target_model_id: targetModelId,
       source_model_id: sourceModelId,
       profile_id: user.id,
     });
-    if (ins.error && ins.error.code !== '23505') {
+    if (ins.error) {
+      if (ins.error.code === '23505') {
+        return { ok: false, code: 'already_imported' };
+      }
       throw new Error(`bringInPreviousModel: audit insert failed: ${ins.error.message}`);
     }
-    revalidatePath(`/app/sessions/${target.session_id}`);
-    revalidatePath('/app/designs/[id]', 'page');
-    return { ok: true, mode: 'server_copied' };
+
+    // Display-name lookup for the per-user root-group rename — only meaningful
+    // when other participants will see the bricks (shared_model).
+    const profileRes = await svc
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', user.id)
+      .maybeSingle();
+    const displayName =
+      profileRes.data?.full_name?.trim() || profileRes.data?.email?.split('@')[0] || 'Guest';
+
+    const remapped = remapCanvasForImport(sourceCanvas, { renameRootGroupTo: displayName });
+    return { ok: true, mode: 'client_append', source: remapped };
   }
 
-  // shared_model branch: write the audit row first as the gate.
+  // Autosave-backed branch (individual_model | system_model | guiding_principles).
+  // Re-read target canvas under service-role; assert emptiness.
+  const recheck = await svc
+    .from('models')
+    .select('canvas_state')
+    .eq('id', targetModelId)
+    .single();
+  if (recheck.error || !recheck.data) {
+    throw new Error(`bringInPreviousModel: target recheck failed: ${recheck.error?.message}`);
+  }
+  const currentCanvas = parseCanvasState(recheck.data.canvas_state);
+  if (currentCanvas.bricks.length > 0) {
+    return { ok: false, code: 'destination_not_empty' };
+  }
+  const remapped = remapCanvasForImport(sourceCanvas, {});
+  const upd = await svc
+    .from('models')
+    .update({ canvas_state: remapped as unknown as Json })
+    .eq('id', targetModelId);
+  if (upd.error) {
+    throw new Error(`bringInPreviousModel: target update failed: ${upd.error.message}`);
+  }
   const ins = await svc.from('model_imports').insert({
     target_model_id: targetModelId,
     source_model_id: sourceModelId,
     profile_id: user.id,
   });
-  if (ins.error) {
-    if (ins.error.code === '23505') {
-      return { ok: false, code: 'already_imported' };
-    }
+  if (ins.error && ins.error.code !== '23505') {
     throw new Error(`bringInPreviousModel: audit insert failed: ${ins.error.message}`);
   }
-
-  // Display-name lookup for the per-user root-group rename.
-  const profileRes = await svc
-    .from('profiles')
-    .select('email, full_name')
-    .eq('id', user.id)
-    .maybeSingle();
-  const displayName =
-    profileRes.data?.full_name?.trim() || profileRes.data?.email?.split('@')[0] || 'Guest';
-
-  const remapped = remapCanvasForImport(sourceCanvas, { renameRootGroupTo: displayName });
-  return { ok: true, mode: 'client_append', source: remapped };
+  revalidatePath(`/app/sessions/${target.session_id}`);
+  revalidatePath('/app/designs/[id]', 'page');
+  return { ok: true, mode: 'server_copied' };
 }
