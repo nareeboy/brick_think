@@ -25,6 +25,15 @@ Four migrations (`20260518120000_stage_runtime_state`, `20260518130000_stages_re
 - `stages` + `sessions` are added to the `supabase_realtime` publication with `REPLICA IDENTITY FULL` so `postgres_changes` UPDATE payloads carry the full row through the participant's RLS filter. **Anything new that needs Realtime row-filtering on UPDATE must also set REPLICA IDENTITY FULL** — without it the OLD record is PK-only and RLS gates can't evaluate.
 - Default per-stage durations come from `STAGE_DEFAULT_DURATIONS_SECONDS` in [lib/sessions/stage-labels.ts](../lib/sessions/stage-labels.ts), applied at `createSession` and `/api/test/seed-session` insert time. The backfill migration patched any pre-existing NULL rows once.
 
+## Stage-import audit table (`model_imports`)
+
+[migrations/20260519110000_model_imports.sql](migrations/20260519110000_model_imports.sql) backs the "Bring in my previous model" affordance (see [(authed)/CLAUDE.md "Bring in my previous model"](<../app/(authed)/CLAUDE.md>) for the full surface).
+
+- One row per `(target_model_id, profile_id)` — the `model_imports_unique_target_profile` UNIQUE constraint is the database-layer gate against double-click races; the action surfaces a 23505 violation on shared_model as `already_imported`.
+- FK choices follow the [collaborative-history pattern set in 20260516120000_profile_fk_set_null.sql](migrations/20260516120000_profile_fk_set_null.sql): `profile_id` and `source_model_id` are `on delete set null` so the audit trail survives author/source-model deletion; `target_model_id` cascades since the row is meaningless once the destination is gone. Both `set null` columns are therefore nullable.
+- SELECT RLS via `is_org_member(s.org_id)` joined through `models → sessions` — any session-org member can read. No INSERT/UPDATE/DELETE policies — writes go through the service-role client in [bringInPreviousModel](<../app/(authed)/app/sessions/stage-import-actions.ts>) only, same defence-in-depth as `yjs_documents` and `model_versions`.
+- Indexes: the unique constraint's composite btree on `(target_model_id, profile_id)` serves target-only queries via leftmost prefix; `model_imports_profile_idx` exists for "what did this user import across all targets" reverse lookups (not used yet, kept since adding it later requires a CONCURRENTLY index build).
+
 ## Out-of-band schema changes
 
 If a migration's SQL has already been applied to the remote by hand (Dashboard SQL editor) before the file lands in `migrations/`, two follow-up rules to keep things consistent:
