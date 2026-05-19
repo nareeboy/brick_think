@@ -430,7 +430,11 @@ function StageTimerControls({
   };
 
   const status = stage.status;
-  const hasActions = status === 'pending' || status === 'active' || status === 'paused';
+  // Stopped session: keep the cluster on completed stages so Start can revive
+  // the workshop. Naturally-completed stages during a live session stay clean
+  // (rollback owns that path when its UI returns).
+  const showRevive = status === 'completed' && sessionStatus === 'completed';
+  const hasActions = status === 'pending' || status === 'active' || status === 'paused' || showRevive;
   if (!hasActions) return null;
 
   return (
@@ -439,7 +443,7 @@ function StageTimerControls({
         <p className="mr-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Stage timer
         </p>
-        {status === 'pending' && (
+        {(status === 'pending' || showRevive) && (
           <button
             type="button"
             onClick={wrap(() => STAGE_ACTIONS.start(stage.id))}
