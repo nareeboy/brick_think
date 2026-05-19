@@ -22,6 +22,10 @@ describe('isValidTransition', () => {
     ['completed', 'rollback', true],
     ['completed', 'start', false],
     ['completed', 'pause', false],
+    ['active', 'reset', true],
+    ['paused', 'reset', true],
+    ['pending', 'reset', false],
+    ['completed', 'reset', false],
   ];
   it.each(cases)('from %s with verb %s → %s', (from, verb, expected) => {
     expect(isValidTransition(from, verb)).toBe(expected);

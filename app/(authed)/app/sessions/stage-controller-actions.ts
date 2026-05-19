@@ -8,6 +8,8 @@ import { isValidTransition, type StageVerb } from '@/lib/sessions/stage-state-ma
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EXTEND_MAX_SECONDS = 60 * 60; // 1 hour cap
+const STAGE_DURATION_MIN_SECONDS = 60; // 1 minute floor
+const STAGE_DURATION_MAX_SECONDS = 2 * 60 * 60; // 2 hour ceiling
 
 // ── Return types ──────────────────────────────────────────────────────────────
 
@@ -19,7 +21,8 @@ export type StageActionFailure =
   | { ok: false; code: 'invalid_transition'; from: string; verb: StageVerb }
   | { ok: false; code: 'no_next_stage' }
   | { ok: false; code: 'no_previous_completed_stage' }
-  | { ok: false; code: 'invalid_extend_amount' };
+  | { ok: false; code: 'invalid_extend_amount' }
+  | { ok: false; code: 'invalid_duration_amount' };
 
 export type StageActionResult = { ok: true } | StageActionFailure;
 
@@ -421,6 +424,96 @@ export async function rollbackStageAction(targetStageId: string): Promise<StageA
     metadata: { from_stage_id: fromStageId, into_stage_id: target.id },
   });
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
+
+  revalidate(sessionId);
+  return { ok: true };
+}
+
+/**
+ * Reset an active or paused stage: fresh clock, zeroed pause and extend
+ * counters. Status stays 'active' so the facilitator doesn't have to click
+ * Start again — the next second of countdown starts immediately. The
+ * pre-reset runtime is preserved in the audit row for the post-session
+ * report (original started_at, extended_seconds, accumulated paused ms).
+ */
+export async function resetStageAction(stageId: string): Promise<StageActionResult> {
+  const ctx = await requireFacilitatorForStage(stageId);
+  if ('error' in ctx) return ctx.error;
+  const { stage, sessionId, userId } = ctx;
+
+  if (!isValidTransition(stage.status, 'reset')) {
+    return { ok: false, code: 'invalid_transition', from: stage.status, verb: 'reset' };
+  }
+
+  const svc = getServiceSupabaseClient();
+  const nowIso = new Date().toISOString();
+
+  const upd = await svc
+    .from('stages')
+    .update({
+      status: 'active',
+      started_at: nowIso,
+      paused_at: null,
+      total_paused_ms: 0,
+      extended_seconds: 0,
+    })
+    .eq('id', stage.id);
+  if (upd.error) throw new Error(`resetStage update failed: ${upd.error.message}`);
+
+  const ev = await svc.from('stage_events').insert({
+    session_id: sessionId,
+    stage_id: stage.id,
+    verb: 'reset',
+    actor_profile_id: userId,
+    metadata: {
+      previous_started_at: stage.started_at,
+      previous_extended_seconds: stage.extended_seconds,
+      previous_total_paused_ms: stage.total_paused_ms,
+      previous_status: stage.status,
+    },
+  });
+  if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
+
+  revalidate(sessionId);
+  return { ok: true };
+}
+
+/**
+ * Set a stage's `duration_seconds` before it starts. Allowed ONLY while
+ * `status === 'pending'` — once a stage has started, use `extendStageAction`
+ * for runtime additions. This is a configuration edit (not a state
+ * transition), so it writes to `stages.duration_seconds` directly without
+ * appending to `stage_events`. Mirrors the pattern of `updateStageMeta`
+ * (which edits title/description with no audit row).
+ *
+ * Range: 60s ≤ N ≤ 7200s (1 minute to 2 hours).
+ */
+export async function updateStageDurationAction(
+  stageId: string,
+  durationSeconds: number,
+): Promise<StageActionResult> {
+  if (
+    !Number.isInteger(durationSeconds) ||
+    durationSeconds < STAGE_DURATION_MIN_SECONDS ||
+    durationSeconds > STAGE_DURATION_MAX_SECONDS
+  ) {
+    return { ok: false, code: 'invalid_duration_amount' };
+  }
+
+  const ctx = await requireFacilitatorForStage(stageId);
+  if ('error' in ctx) return ctx.error;
+  const { stage, sessionId } = ctx;
+
+  if (stage.status !== 'pending') {
+    return { ok: false, code: 'invalid_transition', from: stage.status, verb: 'extend' };
+  }
+
+  const svc = getServiceSupabaseClient();
+  const upd = await svc
+    .from('stages')
+    .update({ duration_seconds: durationSeconds })
+    .eq('id', stage.id);
+  if (upd.error) throw new Error(`updateStageDuration update failed: ${upd.error.message}`);
 
   revalidate(sessionId);
   return { ok: true };

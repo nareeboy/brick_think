@@ -4,15 +4,14 @@ import Link from 'next/link';
 
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import type { StageRow } from '@/lib/sessions/types';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
-import { SessionStageList, type ParticipantModel } from './SessionStageList';
+import { SessionStages, type ParticipantModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
 import type { SessionMode, SessionStatus } from '@/lib/sessions/types';
+import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
-import { StageControllerContainer } from '@/components/session/StageControllerContainer';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +41,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const sessionRes = await supabase
     .from('sessions')
     .select(
-      'id, title, org_id, facilitator_id, status, mode, scheduled_for, organisations:org_id ( id, name )',
+      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, organisations:org_id ( id, name )',
     )
     .eq('id', id)
     .maybeSingle();
@@ -57,18 +56,29 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     status: SessionStatus;
     mode: SessionMode;
     scheduled_for: string | null;
+    current_stage_id: string | null;
     organisations: { id: string; name: string } | null;
   };
 
+  // Pull runtime fields alongside metadata so the unified SessionStages
+  // component can render status pills and timers on first paint. Once
+  // hydrated, `useSessionStages` takes over via Realtime.
   const stagesRes = await supabase
     .from('stages')
-    .select('id, session_id, stage_type, position, title, description')
+    .select(
+      'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds',
+    )
     .eq('session_id', id)
     .order('position', { ascending: true });
   if (stagesRes.error) {
     throw new Error(`Failed to load stages: ${stagesRes.error.message}`);
   }
-  const stages = (stagesRes.data ?? []) as StageRow[];
+  const stages = (stagesRes.data ?? []) as unknown as LiveStageRow[];
+  const initialSession: SessionRow = {
+    id: session.id,
+    current_stage_id: session.current_stage_id,
+    status: session.status,
+  };
 
   // Manage permission mirrors the sessions UPDATE/DELETE RLS: facilitator OR
   // org admin. Drives rename, delete, edit-meta, and the participants view —
@@ -177,17 +187,10 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
           ) : null}
         </header>
-        <section className="rounded-2xl border border-zinc-200 bg-white p-4">
-          <h2 className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Stage controller
-          </h2>
-          <div className="mt-3">
-            <StageControllerContainer sessionId={session.id} canManage={canManageSession} />
-          </div>
-        </section>
-        <SessionStageList
+        <SessionStages
           sessionId={session.id}
-          stages={stages}
+          initialStages={stages}
+          initialSession={initialSession}
           ownedModels={ownedModels}
           participantsByStage={participantsByStage}
           canManageSession={canManageSession}
