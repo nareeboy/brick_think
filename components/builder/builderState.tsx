@@ -28,6 +28,7 @@ import {
 } from '@/lib/yjs/canvas-codec';
 
 import { useAutosave, type SaveStatus } from './useAutosave';
+import { useModelRealtime, type ModelRealtimePayload } from './useModelRealtime';
 import { useYjsBinding, type PresenceSelf, type YjsConnectionStatus } from './useYjsBinding';
 import { useYjsToken } from './useYjsToken';
 import { useYjsUndoManager } from './useYjsUndoManager';
@@ -203,7 +204,7 @@ export function BuilderProvider({
   initial,
   readOnly = false,
   liveMode = false,
-  sessionId: _sessionId = null,
+  sessionId = null,
   self = null,
   children,
 }: {
@@ -309,6 +310,30 @@ export function BuilderProvider({
 
   const liveSnapshot = liveMode ? yjs.snapshot : null;
   const liveDoc = liveMode ? yjs.doc : null;
+
+  const liveReadOnly = readOnly && !liveMode && sessionId !== null && modelId !== null;
+
+  const applyRemotePayload = useCallback((payload: ModelRealtimePayload) => {
+    // Replace local state from the remote canonical row. Selection is cleared
+    // because the brick it pointed at may have moved or vanished.
+    const cs =
+      (payload.canvas_state as { groups?: LayerGroup[]; bricks?: BrickInstance[] } | null) ?? null;
+    const nextGroups = cs?.groups ?? [];
+    const nextBricks = cs?.bricks ?? [];
+    setTitleLocal(payload.title);
+    setData((d) => {
+      const stillExists = nextGroups.some((g) => g.id === d.activeGroupId);
+      const fallback = nextGroups[0]?.id ?? d.activeGroupId;
+      return {
+        groups: nextGroups,
+        bricks: nextBricks,
+        activeGroupId: stillExists ? d.activeGroupId : fallback,
+        selectedId: null,
+      };
+    });
+  }, []);
+
+  useModelRealtime(modelId, liveReadOnly, applyRemotePayload);
 
   // Mirror the latest selection into a ref so useYjsUndoManager can
   // snapshot it onto each stack item without re-binding when selection

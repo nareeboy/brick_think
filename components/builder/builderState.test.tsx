@@ -1,11 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, test, vi } from 'vitest';
+import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 
 import { BuilderProvider, useBuilderState } from './builderState';
+import { useModelRealtime } from './useModelRealtime';
 
 vi.mock('./useYjsToken', () => ({
   useYjsToken: () => ({ token: 'fake-token', refresh: vi.fn() }),
+}));
+
+vi.mock('./useModelRealtime', () => ({
+  useModelRealtime: vi.fn(),
 }));
 
 vi.mock('y-websocket', () => {
@@ -349,5 +354,139 @@ describe('BuilderProvider awareness publishing', () => {
     const self42 = states.get(42)!;
     expect(self42.user.cursor).toEqual({ x: 10, y: 20 });
     expect(self42.user.selectedBrickId).toBe('b1');
+  });
+});
+
+describe('BuilderProvider live read-only', () => {
+  beforeEach(() => {
+    vi.mocked(useModelRealtime).mockReset();
+  });
+
+  test('mounts useModelRealtime when readOnly && !liveMode && sessionId set', () => {
+    render(
+      <BuilderProvider
+        readOnly
+        liveMode={false}
+        sessionId="session-1"
+        initial={{
+          modelId: 'model-1',
+          title: 'hi',
+          canvasState: { groups: [], bricks: [] },
+        }}
+      >
+        <div />
+      </BuilderProvider>,
+    );
+    expect(useModelRealtime).toHaveBeenCalledWith(
+      'model-1',
+      true, // enabled
+      expect.any(Function),
+    );
+  });
+
+  test('does NOT enable useModelRealtime for owner (readOnly=false)', () => {
+    render(
+      <BuilderProvider
+        readOnly={false}
+        sessionId="session-1"
+        initial={{
+          modelId: 'model-1',
+          title: 'hi',
+          canvasState: { groups: [], bricks: [] },
+        }}
+      >
+        <div />
+      </BuilderProvider>,
+    );
+    const lastCall = vi.mocked(useModelRealtime).mock.calls.at(-1);
+    expect(lastCall?.[1]).toBe(false); // enabled=false
+  });
+
+  test('does NOT enable useModelRealtime for personal designs (sessionId=null)', () => {
+    render(
+      <BuilderProvider
+        readOnly
+        sessionId={null}
+        initial={{
+          modelId: 'model-1',
+          title: 'hi',
+          canvasState: { groups: [], bricks: [] },
+        }}
+      >
+        <div />
+      </BuilderProvider>,
+    );
+    const lastCall = vi.mocked(useModelRealtime).mock.calls.at(-1);
+    expect(lastCall?.[1]).toBe(false); // enabled=false
+  });
+
+  test('does NOT enable useModelRealtime in Yjs liveMode (non-owner of shared_model)', () => {
+    render(
+      <BuilderProvider
+        readOnly
+        liveMode
+        sessionId="session-1"
+        initial={{
+          modelId: 'model-1',
+          title: 'hi',
+          canvasState: { groups: [], bricks: [] },
+        }}
+      >
+        <div />
+      </BuilderProvider>,
+    );
+    const lastCall = vi.mocked(useModelRealtime).mock.calls.at(-1);
+    expect(lastCall?.[1]).toBe(false); // enabled=false in Yjs mode
+  });
+
+  test('applies remote payload — title and bricks update in render', () => {
+    let capturedOnUpdate: ((p: { title: string; canvas_state: unknown }) => void) | null = null;
+    vi.mocked(useModelRealtime).mockImplementation((_modelId, _enabled, onUpdate) => {
+      capturedOnUpdate = onUpdate;
+    });
+
+    function Probe(): ReactNode {
+      const state = useBuilderState();
+      return (
+        <div>
+          <span data-testid="title">{state.title}</span>
+          <span data-testid="brick-count">{state.bricks.length}</span>
+        </div>
+      );
+    }
+
+    render(
+      <BuilderProvider
+        readOnly
+        sessionId="session-1"
+        initial={{
+          modelId: 'model-1',
+          title: 'before',
+          canvasState: {
+            groups: [{ id: 'g', name: 'g', collapsed: false, visible: true }],
+            bricks: [],
+          },
+        }}
+      >
+        <Probe />
+      </BuilderProvider>,
+    );
+    expect(screen.getByTestId('title').textContent).toBe('before');
+    expect(screen.getByTestId('brick-count').textContent).toBe('0');
+
+    act(() => {
+      capturedOnUpdate!({
+        title: 'after',
+        canvas_state: {
+          groups: [{ id: 'g', name: 'g', collapsed: false, visible: true }],
+          bricks: [
+            { id: 'b1', groupId: 'g', code: 'b1x1', image: '', width: 1, height: 1, x: 0, y: 0, rotation: 0, visible: true },
+          ],
+        },
+      });
+    });
+
+    expect(screen.getByTestId('title').textContent).toBe('after');
+    expect(screen.getByTestId('brick-count').textContent).toBe('1');
   });
 });
