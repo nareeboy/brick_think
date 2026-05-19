@@ -14,6 +14,7 @@ import {
 
 import {
   advanceStageAction,
+  endSessionAction,
   extendStageAction,
   pauseStageAction,
   resetStageAction,
@@ -22,6 +23,8 @@ import {
   startStageAction,
   updateStageDurationAction,
 } from '../stage-controller-actions';
+
+import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 
 import { DeleteSessionModelButton } from './DeleteSessionModelButton';
 import { StageMetaEditor } from './StageMetaEditor';
@@ -42,6 +45,7 @@ interface OwnedModelRow {
 
 interface SessionStagesProps {
   sessionId: string;
+  sessionTitle: string;
   initialStages: LiveStageRow[];
   initialSession: SessionRow;
   ownedModels: OwnedModelRow[];
@@ -58,6 +62,7 @@ const STAGE_ACTIONS = {
   rollback: rollbackStageAction,
   reset: resetStageAction,
   updateDuration: updateStageDurationAction,
+  endSession: endSessionAction,
 } as const;
 
 // 1Hz wall-clock tick. Live stages mutate their `computeRemainingMs` reading
@@ -95,6 +100,8 @@ function messageForCode(code: string): string {
       return 'Only the session facilitator can do that.';
     case 'stage_not_found':
       return 'Stage not found. Refresh the page.';
+    case 'session_not_found':
+      return 'Session not found. Refresh the page.';
     default:
       return 'Something went wrong. Refresh to recover.';
   }
@@ -102,6 +109,7 @@ function messageForCode(code: string): string {
 
 export function SessionStages({
   sessionId,
+  sessionTitle,
   initialStages,
   initialSession,
   ownedModels,
@@ -136,23 +144,28 @@ export function SessionStages({
             {sorted.length} stages · {completed.length} done
           </p>
         </div>
-        {activeStage ? (
-          <div className="flex items-center gap-2">
-            <StatusDot status="active" />
-            <span className="text-[12px] text-zinc-700">
-              Now · Stage {activeStage.position + 1} · {activeLabel}
-            </span>
-            {activeRemaining !== null ? (
-              <span className="font-mono tabular-nums text-[12px] font-medium text-zinc-900">
-                {formatRemaining(activeRemaining)}
+        <div className="flex items-center gap-3">
+          {activeStage ? (
+            <div className="flex items-center gap-2">
+              <StatusDot status="active" />
+              <span className="text-[12px] text-zinc-700">
+                Now · Stage {activeStage.position + 1} · {activeLabel}
               </span>
-            ) : null}
-          </div>
-        ) : session.status === 'completed' ? (
-          <p className="text-[12px] text-zinc-500">Session complete</p>
-        ) : (
-          <p className="text-[12px] text-zinc-500">Awaiting start</p>
-        )}
+              {activeRemaining !== null ? (
+                <span className="font-mono tabular-nums text-[12px] font-medium text-zinc-900">
+                  {formatRemaining(activeRemaining)}
+                </span>
+              ) : null}
+            </div>
+          ) : session.status === 'completed' ? (
+            <p className="text-[12px] text-zinc-500">Session complete</p>
+          ) : (
+            <p className="text-[12px] text-zinc-500">Awaiting start</p>
+          )}
+          {canManageSession && session.status !== 'completed' ? (
+            <EndSessionButton sessionId={sessionId} sessionTitle={sessionTitle} />
+          ) : null}
+        </div>
       </header>
 
       <ol className="flex flex-col gap-4">
@@ -664,6 +677,96 @@ function XIcon({ className }: { className?: string }) {
     >
       <path d="M4 4l8 8M12 4l-8 8" />
     </svg>
+  );
+}
+
+function StopIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className={className}
+    >
+      <rect x="4" y="4" width="8" height="8" rx="1.5" />
+    </svg>
+  );
+}
+
+function EndSessionButton({
+  sessionId,
+  sessionTitle,
+}: {
+  sessionId: string;
+  sessionTitle: string;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function onConfirm() {
+    setPending(true);
+    setErrorMessage(null);
+    try {
+      const result = await STAGE_ACTIONS.endSession(sessionId);
+      if (!result.ok) {
+        setErrorMessage(messageForCode((result as { code?: string }).code ?? 'unknown'));
+        return;
+      }
+      setConfirming(false);
+    } catch (err) {
+      setErrorMessage('Unexpected error. Refresh to recover.');
+      console.error('endSession failed', err);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setErrorMessage(null);
+          setConfirming(true);
+        }}
+        disabled={pending}
+        aria-label="End session"
+        title="End session"
+        data-testid="end-session-button"
+        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors transition-transform duration-150 ease-out hover:bg-red-50 active:scale-[0.96] disabled:cursor-default disabled:opacity-50"
+      >
+        <StopIcon className="h-3.5 w-3.5" />
+      </button>
+      {confirming ? (
+        <DeleteConfirmDialog
+          title={`End "${sessionTitle}"?`}
+          description={
+            <div className="flex flex-col gap-2">
+              <p>
+                The current stage timer stops immediately and the session moves to{' '}
+                <span className="font-mono text-[12px] uppercase tracking-[0.12em]">completed</span>.
+                Participants keep access to their models in read-only mode.
+              </p>
+              <p className="text-zinc-500">
+                The stage history (events, durations, narrations) stays intact for the
+                post-session report. You can&apos;t un-end a session from the UI yet.
+              </p>
+              {errorMessage ? (
+                <p role="alert" className="text-[12px] text-red-700">
+                  {errorMessage}
+                </p>
+              ) : null}
+            </div>
+          }
+          confirmLabel="End session"
+          confirmPendingLabel="Ending…"
+          pending={pending}
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => void onConfirm()}
+        />
+      ) : null}
+    </>
   );
 }
 

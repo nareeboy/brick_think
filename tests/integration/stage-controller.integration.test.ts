@@ -50,6 +50,7 @@ import {
   rollbackStageAction,
   resetStageAction,
   updateStageDurationAction,
+  endSessionAction,
 } from '@/app/(authed)/app/sessions/stage-controller-actions';
 
 // ── Fixture types ─────────────────────────────────────────────────────────────
@@ -544,5 +545,74 @@ describe('stage-controller-actions (integration)', () => {
     await startStageAction(s0);
     const result = await updateStageDurationAction(s0, 1200);
     expect(result).toMatchObject({ ok: false, code: 'invalid_transition', from: 'active' });
+  });
+
+  // ── endSession ────────────────────────────────────────────────────────────
+  test('endSession on a live session marks it + the current stage completed', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { session, stages } = await freshSession();
+    const [s0] = stages;
+    if (!s0) throw new Error('stages[0] missing');
+
+    await startStageAction(s0);
+    expect(await endSessionAction(session.id)).toEqual({ ok: true });
+
+    const admin = getAdminClient();
+    const sessionRow = await admin
+      .from('sessions')
+      .select('status, current_stage_id')
+      .eq('id', session.id)
+      .single();
+    expect(sessionRow.data?.status).toBe('completed');
+    // current_stage_id is left pointing at the last-active stage for the
+    // post-session report; clearing it is not required.
+    expect(sessionRow.data?.current_stage_id).toBe(s0);
+
+    const stageRow = await admin
+      .from('stages')
+      .select('status, ended_at, paused_at')
+      .eq('id', s0)
+      .single();
+    expect(stageRow.data?.status).toBe('completed');
+    expect(stageRow.data?.ended_at).not.toBeNull();
+    expect(stageRow.data?.paused_at).toBeNull();
+  });
+
+  test('endSession with no active stage still completes the session', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { session } = await freshSession();
+
+    expect(await endSessionAction(session.id)).toEqual({ ok: true });
+
+    const admin = getAdminClient();
+    const sessionRow = await admin
+      .from('sessions')
+      .select('status')
+      .eq('id', session.id)
+      .single();
+    expect(sessionRow.data?.status).toBe('completed');
+  });
+
+  test('endSession is idempotent on an already-completed session', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { session } = await freshSession();
+
+    await endSessionAction(session.id);
+    expect(await endSessionAction(session.id)).toEqual({ ok: true });
+  });
+
+  test('endSession rejects a non-facilitator', async () => {
+    const { session } = await freshSession();
+    currentClient = await signInAs(fx.participant);
+    expect(await endSessionAction(session.id)).toMatchObject({
+      ok: false,
+      code: 'not_facilitator',
+    });
+  });
+
+  test('endSession returns session_not_found for a non-existent uuid', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const result = await endSessionAction('00000000-0000-0000-0000-000000000000');
+    expect(result).toMatchObject({ ok: false, code: 'session_not_found' });
   });
 });
