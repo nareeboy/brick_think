@@ -34,6 +34,9 @@ import { StageMetaEditor } from './StageMetaEditor';
 import { StartModelButton } from './StartModelButton';
 import { RoomsPanel, type StageRoomSummary } from './RoomsPanel';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
+import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
+
+const ROOM_AWARE_STAGES: Set<StageType> = new Set(['shared_model', 'system_model', 'guiding_principles']);
 
 export interface ParticipantModel {
   id: string;
@@ -58,6 +61,12 @@ interface SessionStagesProps {
   canManageSession: boolean;
   roomsByStageId: Record<string, StageRoomSummary[]>;
   orgMembers: OrgMemberSummary[];
+  /** Per-downstream-stage list of the upstream stage's rooms (for the picker). */
+  upstreamRoomsByStageId: Record<string, UpstreamRoomSummary[]>;
+  /** Per-downstream-stage type of its upstream stage (so the panel can label it). */
+  upstreamStageTypeByStageId: Record<string, StageType>;
+  /** Per-stage: the room id the current user belongs to (transitive for downstream). */
+  myRoomIdByStageId: Record<string, string | null>;
   currentUserId: string;
 }
 
@@ -125,6 +134,9 @@ export function SessionStages({
   canManageSession,
   roomsByStageId,
   orgMembers,
+  upstreamRoomsByStageId,
+  upstreamStageTypeByStageId,
+  myRoomIdByStageId,
   currentUserId,
 }: SessionStagesProps) {
   const { stages: liveStages, session: liveSession, ready } = useSessionStages(sessionId);
@@ -195,6 +207,9 @@ export function SessionStages({
             lastUpdatedAt={lastUpdatedAt}
             rooms={roomsByStageId[stage.id] ?? []}
             orgMembers={orgMembers}
+            upstreamRooms={upstreamRoomsByStageId[stage.id] ?? []}
+            upstreamStageType={upstreamStageTypeByStageId[stage.id] ?? null}
+            myRoomId={myRoomIdByStageId[stage.id] ?? null}
             currentUserId={currentUserId}
           />
         ))}
@@ -217,6 +232,9 @@ function StageRow({
   lastUpdatedAt,
   rooms,
   orgMembers,
+  upstreamRooms,
+  upstreamStageType,
+  myRoomId,
   currentUserId,
 }: {
   stage: LiveStageRow;
@@ -232,6 +250,9 @@ function StageRow({
   lastUpdatedAt: Map<string, number>;
   rooms: StageRoomSummary[];
   orgMembers: OrgMemberSummary[];
+  upstreamRooms: UpstreamRoomSummary[];
+  upstreamStageType: StageType | null;
+  myRoomId: string | null;
   currentUserId: string;
 }) {
   const stageType = stage.stage_type as StageType;
@@ -276,7 +297,7 @@ function StageRow({
               isTourTarget={isFirst}
             />
           </div>
-          {stageType === 'shared_model' ? null : ownedModel ? (
+          {ROOM_AWARE_STAGES.has(stageType) ? null : ownedModel ? (
             <p className="mt-2 truncate text-[12px] text-zinc-600">
               <span className="font-mono uppercase tracking-[0.18em] text-[9px] text-zinc-500">
                 Your model ·{' '}
@@ -294,7 +315,7 @@ function StageRow({
           ) : remaining !== null ? (
             <Timer remainingMs={remaining} variant={timerVariant} />
           ) : null}
-          {stageType === 'shared_model' ? null : (
+          {ROOM_AWARE_STAGES.has(stageType) ? null : (
             <ModelAction
               ownedModel={ownedModel}
               sessionId={sessionId}
@@ -325,13 +346,17 @@ function StageRow({
         />
       ) : null}
 
-      {stageType === 'shared_model' ? (
+      {ROOM_AWARE_STAGES.has(stageType) ? (
         <RoomsPanel
           stageId={stage.id}
+          stageType={stageType}
           rooms={rooms}
           orgMembers={orgMembers}
+          upstreamRooms={upstreamRooms}
+          upstreamStageType={upstreamStageType}
           canManageSession={canManageSession}
           currentUserId={currentUserId}
+          myRoomId={myRoomId}
         />
       ) : canManageSession ? (
         <ParticipantsPanel

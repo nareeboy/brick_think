@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { STAGE_DEFAULT_DURATIONS_SECONDS, defaultModelTitle } from '@/lib/sessions/stage-labels';
@@ -205,6 +206,56 @@ export async function createModelInStage(formData: FormData): Promise<void> {
     }
     revalidatePath(`/app/sessions/${sessionId}`);
     redirect(`/app/designs/${modelRes.data.id}`);
+  }
+
+  // 4. system_model / guiding_principles: rooms are opt-in. If rooms exist on
+  //    this stage, route to the caller's transitively-assigned room (via
+  //    public.can_edit_room). If no rooms exist, fall through to the legacy
+  //    per-participant personal-canvas flow.
+  if (stageType === 'system_model' || stageType === 'guiding_principles') {
+    const stageRoomsRes = await supabase
+      .from('stage_rooms')
+      .select('id')
+      .eq('stage_id', stageId);
+    if (stageRoomsRes.error) {
+      throw new Error(`Room lookup failed: ${stageRoomsRes.error.message}`);
+    }
+    const stageRooms = stageRoomsRes.data ?? [];
+    if (stageRooms.length > 0) {
+      const roomIds = stageRooms.map((r) => r.id);
+      const roomModelsRes = await supabase
+        .from('models')
+        .select('id, room_id')
+        .in('room_id', roomIds)
+        .is('deleted_at', null);
+      if (roomModelsRes.error) {
+        throw new Error(`Room canvas lookup failed: ${roomModelsRes.error.message}`);
+      }
+      const svc = getServiceSupabaseClient();
+      let targetModelId: string | null = null;
+      for (const row of roomModelsRes.data ?? []) {
+        if (!row.room_id || !row.id) continue;
+        const rpc = await svc.rpc('can_edit_room', {
+          p_profile_id: user.id,
+          p_model_id: row.id,
+        });
+        if (rpc.error) {
+          throw new Error(`can_edit_room failed: ${rpc.error.message}`);
+        }
+        if (rpc.data) {
+          targetModelId = row.id;
+          break;
+        }
+      }
+      if (!targetModelId) {
+        throw new Error(
+          'No room assigned yet — the facilitator needs to add you to one of this stage\'s rooms.',
+        );
+      }
+      revalidatePath(`/app/sessions/${sessionId}`);
+      redirect(`/app/designs/${targetModelId}`);
+    }
+    // No rooms → fall through to legacy personal-canvas flow.
   }
 
   // 4. Non-room stages: idempotent caller-owned create.
