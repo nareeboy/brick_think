@@ -29,7 +29,7 @@ export function BringInPreviousModelButton({ sourceStageLabel, alreadyImported }
   const [error, setError] = useState<string | null>(null);
 
   if (!modelId || readOnly || sourceStageLabel === null) return null;
-  if (liveMode ? alreadyImported : bricks.length > 0) return null;
+  if (alreadyImported || (!liveMode && bricks.length > 0)) return null;
 
   const handleClick = () => {
     setError(null);
