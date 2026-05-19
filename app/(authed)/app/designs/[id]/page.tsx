@@ -98,14 +98,12 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
   let alreadyImported = false;
   if (sessionContext && isImportTarget(sessionContext.stageType)) {
     sourceStageLabel = stageLabel(IMPORT_RULES[sessionContext.stageType].sourceStageType);
-    if (sessionContext.stageType === 'shared_model') {
-      const { count } = await supabase
-        .from('model_imports')
-        .select('id', { count: 'exact', head: true })
-        .eq('target_model_id', data.id)
-        .eq('profile_id', user.id);
-      alreadyImported = (count ?? 0) > 0;
-    }
+    const { count } = await supabase
+      .from('model_imports')
+      .select('id', { count: 'exact', head: true })
+      .eq('target_model_id', data.id)
+      .eq('profile_id', user.id);
+    alreadyImported = (count ?? 0) > 0;
   }
 
   return (
