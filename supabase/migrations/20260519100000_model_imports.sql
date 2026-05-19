@@ -6,13 +6,20 @@
 -- gate (the destination canvas is shared so the "is canvas empty?" check is
 -- not authoritative). For system_model the empty-canvas check is the gate
 -- and this row is informational, kept for an audit trail.
+--
+-- FK choices: profile_id and source_model_id use `on delete set null` (and
+-- are therefore nullable) so the audit row survives author or source-model
+-- deletion. Matches the collaborative-history direction set in
+-- 20260516120000_profile_fk_set_null.sql for model_versions.created_by and
+-- sessions.facilitator_id. target_model_id stays `on delete cascade` —
+-- once the destination is gone, the audit row has no meaning.
 -- Idempotent — re-running via `pnpm db:reset` is a no-op past the first apply.
 
 create table if not exists public.model_imports (
   id uuid primary key default gen_random_uuid(),
   target_model_id uuid not null references public.models(id) on delete cascade,
-  source_model_id uuid not null references public.models(id) on delete cascade,
-  profile_id      uuid not null references public.profiles(id) on delete cascade,
+  source_model_id uuid references public.models(id) on delete set null,
+  profile_id      uuid references public.profiles(id) on delete set null,
   imported_at     timestamptz not null default now()
 );
 
@@ -22,8 +29,6 @@ alter table public.model_imports
   add constraint model_imports_unique_target_profile
   unique (target_model_id, profile_id);
 
-create index if not exists model_imports_target_idx
-  on public.model_imports (target_model_id);
 create index if not exists model_imports_profile_idx
   on public.model_imports (profile_id);
 
