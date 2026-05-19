@@ -654,4 +654,52 @@ describe('stage-controller-actions (integration)', () => {
     expect(resumedStage.data?.status).toBe('active');
     expect(resumedStage.data?.started_at).not.toBeNull();
   });
+
+  test('startStage on the just-stopped completed stage revives it with a fresh clock', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const { session, stages } = await freshSession();
+    const s0 = mustGet(stages, 0, 'stage 0');
+
+    // Start, pause to accumulate paused time + extend, then stop the session.
+    await startStageAction(s0);
+    await pauseStageAction(s0);
+    await new Promise((r) => setTimeout(r, 50));
+    await resumeStageAction(s0);
+    await extendStageAction(s0, 60);
+    await endSessionAction(session.id);
+
+    const admin = getAdminClient();
+    const stopped = await admin
+      .from('stages')
+      .select('status, ended_at, total_paused_ms, extended_seconds')
+      .eq('id', s0)
+      .single();
+    expect(stopped.data?.status).toBe('completed');
+    expect(stopped.data?.ended_at).not.toBeNull();
+    expect(stopped.data?.total_paused_ms).toBeGreaterThan(0);
+    expect(stopped.data?.extended_seconds).toBe(60);
+
+    // Facilitator clicks Start on the same just-stopped stage to revive it.
+    expect(await startStageAction(s0)).toEqual({ ok: true });
+
+    const revivedStage = await admin
+      .from('stages')
+      .select('status, started_at, ended_at, paused_at, total_paused_ms, extended_seconds')
+      .eq('id', s0)
+      .single();
+    expect(revivedStage.data?.status).toBe('active');
+    expect(revivedStage.data?.started_at).not.toBeNull();
+    expect(revivedStage.data?.ended_at).toBeNull();
+    expect(revivedStage.data?.paused_at).toBeNull();
+    expect(revivedStage.data?.total_paused_ms).toBe(0);
+    expect(revivedStage.data?.extended_seconds).toBe(0);
+
+    const revivedSession = await admin
+      .from('sessions')
+      .select('status, current_stage_id')
+      .eq('id', session.id)
+      .single();
+    expect(revivedSession.data?.status).toBe('live');
+    expect(revivedSession.data?.current_stage_id).toBe(s0);
+  });
 });
