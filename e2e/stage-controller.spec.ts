@@ -56,13 +56,14 @@ test.describe('stage controller realtime propagation', () => {
       .first()
       .click();
 
-    // Tab B: previously-active stage now completed (Rollback button visible),
-    // and the next stage shows Start.
-    await expect(pageB.getByRole('button', { name: /^rollback/i })).toBeVisible({
+    // Tab B: after advance the previously-active stage flips to completed (its
+    // Pause / Advance / Reset cluster disappears) and the next stage shows
+    // Start. Rollback was deliberately removed in ce1aa60 — don't assert it.
+    await expect(pageB.getByRole('button', { name: /^start$/i }).first()).toBeVisible({
       timeout: 3000,
     });
-    // The completed stage shows Rollback; the remaining pending stages show Start.
-    await expect(pageB.getByRole('button', { name: /^start$/i }).first()).toBeVisible();
+    // The just-completed stage no longer surfaces Pause anywhere on Tab B.
+    await expect(pageB.getByRole('button', { name: /^pause$/i })).toHaveCount(0);
   });
 
   test('design page Builder shows timer chip when stage starts', async ({
