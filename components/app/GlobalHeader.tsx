@@ -4,6 +4,7 @@ import { Avatar } from '@/components/app/Avatar';
 import { BrickGlyph } from '@/components/app/BrickGlyph';
 import { HeaderInner } from '@/components/app/HeaderInner';
 import { HeaderNav } from '@/components/app/HeaderNav';
+import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 
 interface Props {
   userName: string;
@@ -45,6 +46,7 @@ export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
           >
             Help
           </a>
+          <NotificationsBell />
           <Link
             href="/app/account"
             aria-label="Account settings"
