@@ -201,6 +201,7 @@ export type Database = {
           id: string
           org_id: string | null
           owner_profile_id: string
+          room_id: string | null
           session_id: string | null
           stage_id: string | null
           thumbnail_path: string | null
@@ -215,6 +216,7 @@ export type Database = {
           id?: string
           org_id?: string | null
           owner_profile_id: string
+          room_id?: string | null
           session_id?: string | null
           stage_id?: string | null
           thumbnail_path?: string | null
@@ -229,6 +231,7 @@ export type Database = {
           id?: string
           org_id?: string | null
           owner_profile_id?: string
+          room_id?: string | null
           session_id?: string | null
           stage_id?: string | null
           thumbnail_path?: string | null
@@ -249,6 +252,13 @@ export type Database = {
             columns: ["owner_profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "models_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "stage_rooms"
             referencedColumns: ["id"]
           },
           {
@@ -603,6 +613,107 @@ export type Database = {
           },
         ]
       }
+      stage_room_members: {
+        Row: {
+          created_at: string
+          profile_id: string
+          room_id: string
+          stage_id: string
+        }
+        Insert: {
+          created_at?: string
+          profile_id: string
+          room_id: string
+          stage_id: string
+        }
+        Update: {
+          created_at?: string
+          profile_id?: string
+          room_id?: string
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_room_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_room_members_room_id_stage_id_fkey"
+            columns: ["room_id", "stage_id"]
+            isOneToOne: false
+            referencedRelation: "stage_rooms"
+            referencedColumns: ["id", "stage_id"]
+          },
+        ]
+      }
+      stage_room_sources: {
+        Row: {
+          created_at: string
+          room_id: string
+          source_room_id: string
+        }
+        Insert: {
+          created_at?: string
+          room_id: string
+          source_room_id: string
+        }
+        Update: {
+          created_at?: string
+          room_id?: string
+          source_room_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_room_sources_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "stage_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stage_room_sources_source_room_id_fkey"
+            columns: ["source_room_id"]
+            isOneToOne: false
+            referencedRelation: "stage_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stage_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          stage_id: string
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position: number
+          stage_id: string
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          stage_id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stage_rooms_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stages: {
         Row: {
           created_at: string
@@ -688,6 +799,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_edit_room: {
+        Args: { p_model_id: string; p_profile_id: string }
+        Returns: boolean
+      }
       can_read_model: {
         Args: { p_model_id: string; p_profile_id: string }
         Returns: boolean
