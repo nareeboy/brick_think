@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { addOrgMemberAction, type AddMemberResult } from '@/app/(authed)/app/orgs/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
+import { useNotifications } from '@/components/notifications/NotificationsProvider';
 
 interface Props {
   orgId: string;
@@ -16,6 +17,7 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
   const [pending, start] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
+  const { pushToast } = useNotifications();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -30,18 +32,64 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
       const result: AddMemberResult = await addOrgMemberAction(orgId, trimmed);
       if (result.kind === 'ok') {
         setEmail('');
-        setFeedback({ kind: 'ok', text: 'Member added.' });
+        setFeedback({ kind: 'ok', text: `${result.recipientDisplay} was added to ${result.orgName}.` });
+        // Admin-side confirmation toast — surfaces a top-level toast in
+        // addition to the inline dialog feedback, mirroring the recipient
+        // experience. id/created_at are synthesised since this is a UI-only
+        // ephemeral toast (no row in the notifications table — that's the
+        // recipient's row).
+        pushToast({
+          id: `local-org-add-${Date.now()}`,
+          recipient_profile_id: '',
+          kind: 'org_added',
+          title: `${result.recipientDisplay} was added to ${result.orgName}`,
+          body: 'They have been notified.',
+          link_url: `/app/orgs/${orgId}`,
+          actor_profile_id: null,
+          org_id: orgId,
+          session_id: null,
+          read_at: null,
+          created_at: new Date().toISOString(),
+        });
+        return;
+      }
+      if (result.kind === 'invited') {
+        setEmail('');
+        setFeedback({
+          kind: 'ok',
+          text: `Invitation emailed to ${result.email}. They'll join ${result.orgName} when they sign up.`,
+        });
+        pushToast({
+          id: `local-org-invite-${Date.now()}`,
+          recipient_profile_id: '',
+          kind: 'org_added',
+          title: `Invite sent to ${result.email}`,
+          body: `They'll join ${result.orgName} after signing up.`,
+          link_url: null,
+          actor_profile_id: null,
+          org_id: orgId,
+          session_id: null,
+          read_at: null,
+          created_at: new Date().toISOString(),
+        });
+        return;
+      }
+      if (result.kind === 'invite_pending') {
+        setFeedback({
+          kind: 'error',
+          text: `An invitation is already pending for ${result.email}.`,
+        });
+        return;
+      }
+      if (result.kind === 'invite_failed') {
+        setFeedback({
+          kind: 'error',
+          text: `Could not send invite email: ${result.message}`,
+        });
         return;
       }
       if (result.kind === 'invalid_input') {
         setFeedback({ kind: 'error', text: 'Please enter an email address.' });
-        return;
-      }
-      if (result.kind === 'unknown_email') {
-        setFeedback({
-          kind: 'error',
-          text: 'No account for that email yet. Ask them to sign in once first.',
-        });
         return;
       }
       if (result.kind === 'already_member') {
@@ -64,7 +112,7 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
           Add a member
         </h2>
         <p className="mt-1 text-[13px] text-zinc-600">
-          They must have signed in once before they can be added.
+          If they don&apos;t have an account yet, we&apos;ll email them an invite.
         </p>
 
         <label className="mt-4 flex flex-col gap-1.5">
