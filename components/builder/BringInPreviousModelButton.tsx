@@ -1,16 +1,87 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  useTransition,
+  type ReactNode,
+} from 'react';
 
 import { bringInPreviousModel } from '@/app/(authed)/app/sessions/stage-import-actions';
 
 import { useBuilderState } from './builderState';
 
-interface Props {
-  /** null when the button must never mount (non-session, non-whitelisted, read-only, etc.). */
-  sourceStageLabel: string | null;
-  /** True if a model_imports row exists for this (target, caller). Server-rendered at page load. */
+interface BringInContextValue {
+  /** Server-rendered: a model_imports row already exists at page load. */
   alreadyImported: boolean;
+  /** Set true after a successful client_append in this page session, so the
+   *  shared_model card can hide itself without waiting for a reload. */
+  justImported: boolean;
+  markJustImported: () => void;
+  /** User clicked the close button without importing. */
+  dismissed: boolean;
+  setDismissed: (d: boolean) => void;
+  /** Resolved label for the source stage; null when the affordance must not mount at all. */
+  sourceStageLabel: string | null;
+}
+
+const BringInContext = createContext<BringInContextValue | null>(null);
+
+export function BringInPreviousModelProvider({
+  sourceStageLabel,
+  alreadyImported,
+  children,
+}: {
+  sourceStageLabel: string | null;
+  alreadyImported: boolean;
+  children: ReactNode;
+}) {
+  const [justImported, setJustImported] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  const markJustImported = useCallback(() => setJustImported(true), []);
+
+  return (
+    <BringInContext.Provider
+      value={{
+        alreadyImported,
+        justImported,
+        markJustImported,
+        dismissed,
+        setDismissed,
+        sourceStageLabel,
+      }}
+    >
+      {children}
+    </BringInContext.Provider>
+  );
+}
+
+function useBringInState(): BringInContextValue {
+  const ctx = useContext(BringInContext);
+  if (!ctx) {
+    throw new Error(
+      'BringIn components must be wrapped in <BringInPreviousModelProvider>',
+    );
+  }
+  return ctx;
+}
+
+/**
+ * Returns true when the affordance is meaningful for this model + caller —
+ * the model is session-scoped to a whitelisted target stage, the caller is
+ * not read-only, no import has happened yet, and (for system_model) the
+ * canvas is still empty. Card and reopen-button both gate on this.
+ */
+function useAffordanceEligible(): boolean {
+  const { modelId, readOnly, bricks, liveMode } = useBuilderState();
+  const { alreadyImported, justImported, sourceStageLabel } = useBringInState();
+  if (!modelId || readOnly || sourceStageLabel === null) return false;
+  if (alreadyImported || justImported) return false;
+  if (!liveMode && bricks.length > 0) return false;
+  return true;
 }
 
 const FAILURE_COPY: Record<string, string> = {
@@ -23,13 +94,15 @@ const FAILURE_COPY: Record<string, string> = {
   unauthenticated: 'Please sign in again.',
 };
 
-export function BringInPreviousModelButton({ sourceStageLabel, alreadyImported }: Props) {
-  const { modelId, readOnly, bricks, liveMode, appendImportedBricks } = useBuilderState();
+export function BringInPreviousModelCard() {
+  const { modelId, appendImportedBricks } = useBuilderState();
+  const { sourceStageLabel, markJustImported, dismissed, setDismissed } = useBringInState();
+  const eligible = useAffordanceEligible();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  if (!modelId || readOnly || sourceStageLabel === null) return null;
-  if (alreadyImported || (!liveMode && bricks.length > 0)) return null;
+  if (!eligible || dismissed) return null;
+  if (!modelId || sourceStageLabel === null) return null;
 
   const handleClick = () => {
     setError(null);
@@ -51,14 +124,27 @@ export function BringInPreviousModelButton({ sourceStageLabel, alreadyImported }
         window.location.reload();
         return;
       }
-      // client_append (shared_model)
+      // client_append (shared_model) — bricks land via Yjs in the local doc.
+      // Mark imported so the card hides immediately without waiting for the
+      // server-rendered alreadyImported prop to refresh on next navigation.
       appendImportedBricks(res.source);
+      markJustImported();
     });
   };
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-      <div className="pointer-events-auto rounded-2xl border border-zinc-900/10 bg-white/95 px-6 py-5 text-center shadow-[0_20px_40px_-20px_rgba(0,0,0,0.25)] backdrop-blur">
+      <div className="pointer-events-auto relative rounded-2xl border border-zinc-900/10 bg-white/95 px-6 py-5 text-center shadow-[0_20px_40px_-20px_rgba(0,0,0,0.25)] backdrop-blur">
+        <button
+          type="button"
+          onClick={() => setDismissed(true)}
+          aria-label="Dismiss"
+          title="Dismiss"
+          data-testid="bring-in-previous-model-dismiss"
+          className="absolute right-2 top-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-900/5 hover:text-zinc-700"
+        >
+          <CloseIcon className="h-3.5 w-3.5" />
+        </button>
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Continue your work
         </p>
@@ -82,5 +168,41 @@ export function BringInPreviousModelButton({ sourceStageLabel, alreadyImported }
         ) : null}
       </div>
     </div>
+  );
+}
+
+export function BringInPreviousModelReopenButton() {
+  const { dismissed, setDismissed } = useBringInState();
+  const eligible = useAffordanceEligible();
+
+  if (!eligible || !dismissed) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => setDismissed(false)}
+      data-testid="bring-in-previous-model-reopen"
+      className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#c0613d]/30 bg-[#c0613d]/5 px-3 py-2.5 text-[13px] font-medium text-[#c0613d] transition-colors hover:bg-[#c0613d]/10"
+    >
+      Bring in my previous model
+    </button>
+  );
+}
+
+function CloseIcon({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 6 18 18" />
+      <path d="M18 6 6 18" />
+    </svg>
   );
 }
