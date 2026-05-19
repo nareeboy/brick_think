@@ -43,6 +43,12 @@ function errorMessage(code: StageRoomError): string {
       return 'A selected participant is no longer a member of this org.';
     case 'unauthenticated':
       return 'You have been signed out. Refresh to sign in again.';
+    case 'empty_sources':
+    case 'unknown_source_room':
+    case 'upstream_stage_missing':
+      // Downstream-rooms codes — never raised by this dialog (shared_model
+      // only), kept here for exhaustiveness.
+      return 'Something went wrong. Refresh and try again.';
   }
 }
 
