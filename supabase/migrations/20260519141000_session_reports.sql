@@ -12,7 +12,7 @@ create table public.session_reports (
   error_message text,
   included_artifacts jsonb not null default '{}'::jsonb,
   generated_at timestamptz not null default now(),
-  generated_by uuid not null references public.profiles(id) on delete set null
+  generated_by uuid references public.profiles(id) on delete set null
 );
 
 create index session_reports_generated_at_idx on public.session_reports (generated_at desc);
