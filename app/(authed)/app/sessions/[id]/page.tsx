@@ -189,6 +189,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         </header>
         <SessionStages
           sessionId={session.id}
+          sessionTitle={session.title}
           initialStages={stages}
           initialSession={initialSession}
           ownedModels={ownedModels}

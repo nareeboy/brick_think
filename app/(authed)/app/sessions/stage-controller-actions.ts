@@ -17,6 +17,7 @@ export type StageActionFailure =
   | { ok: false; code: 'unauthenticated' }
   | { ok: false; code: 'invalid_uuid' }
   | { ok: false; code: 'stage_not_found' }
+  | { ok: false; code: 'session_not_found' }
   | { ok: false; code: 'not_facilitator' }
   | { ok: false; code: 'invalid_transition'; from: string; verb: StageVerb }
   | { ok: false; code: 'no_next_stage' }
@@ -514,6 +515,78 @@ export async function updateStageDurationAction(
     .update({ duration_seconds: durationSeconds })
     .eq('id', stage.id);
   if (upd.error) throw new Error(`updateStageDuration update failed: ${upd.error.message}`);
+
+  revalidate(sessionId);
+  return { ok: true };
+}
+
+/**
+ * End a session early. Facilitator-only. Flips `sessions.status` to
+ * `'completed'`, and if there's a `current_stage_id` pointing at an active
+ * or paused stage, marks that stage `'completed'` too with `ended_at = now()`.
+ *
+ * Idempotent: if the session is already completed, returns ok without
+ * writing anything. No `stage_events` row — this is a session-level action,
+ * not a per-stage transition, and the audit trail lives on
+ * `sessions.status` itself (visible in any backup / history view).
+ *
+ * Reversibility: not currently exposed in the UI. A future "Reopen
+ * session" affordance would flip `sessions.status` back to `'live'` and
+ * leave the per-stage rows alone (facilitator can then click `Start` on
+ * whichever stage they want to resume).
+ */
+export async function endSessionAction(sessionId: string): Promise<StageActionResult> {
+  if (!UUID_RE.test(sessionId)) {
+    return { ok: false, code: 'invalid_uuid' };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, code: 'unauthenticated' };
+
+  const sessRes = await supabase
+    .from('sessions')
+    .select('id, facilitator_id, current_stage_id, status')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (sessRes.error) {
+    throw new Error(`endSession lookup failed: ${sessRes.error.message}`);
+  }
+  if (!sessRes.data) {
+    return { ok: false, code: 'session_not_found' };
+  }
+  if (sessRes.data.facilitator_id !== user.id) {
+    return { ok: false, code: 'not_facilitator' };
+  }
+  if (sessRes.data.status === 'completed') {
+    return { ok: true }; // idempotent — already ended
+  }
+
+  const svc = getServiceSupabaseClient();
+  const nowIso = new Date().toISOString();
+
+  // If a live stage is running, complete it. Filter on the current status so
+  // we don't accidentally mark a `pending` or already-`completed` row.
+  if (sessRes.data.current_stage_id) {
+    const stageUpd = await svc
+      .from('stages')
+      .update({ status: 'completed', ended_at: nowIso, paused_at: null })
+      .eq('id', sessRes.data.current_stage_id)
+      .in('status', ['active', 'paused']);
+    if (stageUpd.error) {
+      throw new Error(`endSession stage update failed: ${stageUpd.error.message}`);
+    }
+  }
+
+  const sUpd = await svc
+    .from('sessions')
+    .update({ status: 'completed' })
+    .eq('id', sessionId);
+  if (sUpd.error) {
+    throw new Error(`endSession session update failed: ${sUpd.error.message}`);
+  }
 
   revalidate(sessionId);
   return { ok: true };
