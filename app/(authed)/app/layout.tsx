@@ -46,9 +46,9 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   return (
     <NotificationsProvider profileId={user.id} initial={initialNotifications}>
-      <div className="flex min-h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
+      <div className="flex h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
         <GlobalHeader userName={userName} userEmail={email} userAvatarUrl={userAvatarUrl} />
-        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
         <NotificationToast />
       </div>
     </NotificationsProvider>
