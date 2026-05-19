@@ -52,6 +52,7 @@ export function Builder({
     <BuilderProvider
       readOnly={readOnly}
       liveMode={liveMode}
+      sessionId={sessionContext?.sessionId ?? null}
       self={self}
       initial={
         initialModel
