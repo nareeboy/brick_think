@@ -91,6 +91,50 @@ Both timer and controller use `useNowMs()` for the 1Hz wall-clock tick; the math
 - **Send to a session:** personal designs only. The card on `/app/my-designs` shows a paper-plane button next to the trash; opens [app/my-designs/SendToSessionDialog.tsx](app/my-designs/SendToSessionDialog.tsx) which picks org → session and calls `duplicateToSessionAction`. One-way copy: source stays where it was.
 - **Import design (JSON):** [app/my-designs/ImportDesignButton.tsx](app/my-designs/ImportDesignButton.tsx) on the page header (between `Trash` and `New design`). Opens a `ModalBackdrop`-wrapped file picker, reads the `.brickthink.json` envelope (`{ format: "brickthink.design", version: 1, exportedAt, title, canvasState }`), and calls `importDesignAction` in [app/my-designs/actions.ts](app/my-designs/actions.ts). The action validates the envelope via [lib/exports/json.ts](../../lib/exports/json.ts) `parseExportEnvelope`, rejects any brick code not in [lib/bricks/manifest.ts](../../lib/bricks/manifest.ts) `KNOWN_BRICK_CODES`, then inserts a new **Personal** model (no `session_id`/`org_id`/`stage_id`). Importing always creates new — never overwrites — and lands the user on `/app/designs/{newId}`.
 
+## Stage rooms (breakout groups)
+
+Replaces the single-canvas-per-`shared_model` semantics with facilitator-partitioned rooms. Each room has exactly one `models` row (`models.room_id` set, `owner_profile_id = facilitator`); room membership is recorded in `stage_room_members` and is mutually exclusive within a stage. Downstream stages (`system_model`, `guiding_principles`) can compose new rooms from upstream rooms via `stage_room_sources` — schema is ready, UI/actions for those two stages are a follow-up; today the only room-aware stage in the UI is `shared_model`.
+
+**Data model** ([migrations/20260519130000_stage_rooms.sql](../../supabase/migrations/20260519130000_stage_rooms.sql)):
+
+- `public.stage_rooms` — `(id, stage_id, position, title)`. Unique on `(stage_id, position)` and composite-unique on `(id, stage_id)` so `stage_room_members` can FK on that pair (which is what gives us the mutual-exclusion-per-stage guarantee through the `unique (stage_id, profile_id)` index).
+- `public.stage_room_members` — `(room_id, stage_id, profile_id)`, denormalised stage_id only exists for the unique index. Shared_model rooms only.
+- `public.stage_room_sources` — `(room_id, source_room_id)`. Server action validates that source rooms are on the immediately-preceding stage in `IMPORT_RULES`; not yet enforced at the DB level.
+- `public.models.room_id` — nullable FK to `stage_rooms` with `on delete cascade`. `models_room_uniq` enforces the 1-1; the existing `models_session_stage_owner_active_idx` was rebuilt with `room_id is null` in its predicate so personal-per-stage uniqueness still applies for non-room canvases while the facilitator can own many room canvases per stage.
+- `public.can_edit_room(p_profile_id, p_model_id)` — service-role-only recursive SQL function. Walks `stage_room_sources` back to the root `shared_model` room and checks membership. Used by the worker pre-upgrade and by the design [id] page for the liveMode gate.
+- Backfill: every pre-existing `shared_model` model becomes Room 1 on its stage with every session-org member enrolled, so legacy sessions keep working.
+
+**Server actions** ([app/sessions/stage-room-actions.ts](app/sessions/stage-room-actions.ts)):
+
+- `setSharedModelRooms({ stageId, rooms[] })` — atomic re-partition: facilitator gate → wipe prior rooms (cascades to canvases + members) → for each new partition, insert a `stage_rooms` row, compose its canvas from members' `individual_model` bricks via `composeRoomCanvas`, insert the `models` row with `room_id` set, write the membership rows. `'duplicate_member' | 'unknown_member' | 'empty_partition' | 'not_facilitator' | 'unsupported_stage_type'` cover the refusal codes.
+- `deleteSharedModelRoom(roomId)` — facilitator-only single-room remove; cascades.
+- `createModelInStage` on `shared_model` now resolves the caller's assigned room and redirects to its model; there is no longer a service-role-elevated single-canvas insert on that stage.
+
+**Lane layout** ([lib/sessions/stage-rooms.ts](../../lib/sessions/stage-rooms.ts)):
+
+`composeRoomCanvas(lanes)` lays each member's `individual_model` bricks side-by-side. Each lane: ids regenerated via `remapCanvasForImport`, root group renamed `"{displayName}'s {group}"`, bricks translated so their left edge sits at the lane's x-origin (cumulative width + `LANE_GAP_PX = 80`). Empty lanes (member with no individual_model bricks) still reserve `EMPTY_LANE_WIDTH_PX = 320` so the resulting canvas still telegraphs which participants are in the room. Y-coordinates are preserved.
+
+**UI surface** ([app/sessions/[id]/SessionStages.tsx](app/sessions/[id]/SessionStages.tsx), [RoomsPanel.tsx](app/sessions/[id]/RoomsPanel.tsx), [ManageRoomsDialog.tsx](app/sessions/[id]/ManageRoomsDialog.tsx)):
+
+- `SessionStages` branches on `stage_type`. For `shared_model`: the `ModelAction` row is suppressed (no "Start your model" affordance anymore) and `ParticipantsPanel` is replaced with `RoomsPanel`. Other stages are unchanged.
+- `RoomsPanel` shows the facilitator a per-room list (`Room N` / optional title + member count + `Open` link per room) plus a `Manage rooms` button that opens `ManageRoomsDialog`. Participants see one of three states: `Open my room` (assigned), `Waiting for the facilitator to assign you to a room` (not assigned but rooms exist), or `Waiting for the facilitator to set up rooms` (no rooms exist yet).
+- `ManageRoomsDialog` lists the full org roster in two columns: an "Unassigned" pool on the left and one card per draft room on the right (with an inline title input, member rows, a "+ Add room" button, and a per-room remove button). Each member row has a small `<select>` (Unassigned / Room 1 / Room 2 / …) — selection-based assignment, mobile-friendly. Save fires `setSharedModelRooms`; errors render inline.
+
+**liveMode gate** ([lib/yjs/canPlaceLive.ts](../../lib/yjs/canPlaceLive.ts), [app/designs/[id]/page.tsx](app/designs/[id]/page.tsx)):
+
+- `canPlaceLive({ sessionContext, flagEnabled, isRoomMember })` — `isRoomMember` is `boolean` for room-backed canvases and `null` for non-room canvases (legacy fallback keeps the prior "every session-org member co-edits" behaviour).
+- The design [id] page calls `public.can_edit_room` via the service-role RPC when `data.room_id` is set and passes the result through. Non-room-members on a room canvas drop to read-only.
+- The "Bring in my previous model" affordance is suppressed for room-backed canvases — auto-import already ran at room creation, the manual card is redundant.
+
+**Yjs worker** ([worker/src/auth.ts](../../worker/src/auth.ts)):
+
+Upgrade verification now runs a combined query: `can_read_model` (legacy gate), the model's `room_id`, and `can_edit_room`. Room-backed canvases require both; non-room canvases keep the read-only gate. Non-members get a `403 not a room member` WS rejection — distinct from the existing `not a member` reason so logs disambiguate.
+
+**Follow-ups (deferred)**:
+
+- `system_model` and `guiding_principles` room composition (the schema is ready; UI + server actions are not). Until then, the existing `bringInPreviousModel` for `system_model` (`source_mode: 'session_shared'`) will throw on sessions with N>1 `shared_model` rows — the `.maybeSingle()` query returns the wrong cardinality. New sessions that create multi-room shared_model stages can't currently roll forward to system_model via the manual bring-in. Legacy backfilled sessions (1 room with everyone) continue to work.
+- e2e specs that exercise the old `shared_model` single-canvas flow ([yjs-shared-model.spec.ts](../../e2e/yjs-shared-model.spec.ts), `shared_model` branch of [bring-in-previous-model.spec.ts](../../e2e/bring-in-previous-model.spec.ts)) need rewriting to first call `setSharedModelRooms` before opening the canvas. Integration suite is already green against the new semantics.
+
 ## Bring in my previous model
 
 Per PRD §4.3 / §4.4 — when a session advances and the participant lands on a blank canvas, they can carry their previous-stage bricks forward with one click. One-shot, fully undoable on shared_model via the per-client Yjs undo stack.
