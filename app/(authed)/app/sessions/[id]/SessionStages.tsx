@@ -11,6 +11,7 @@ import {
   type SessionRow,
   type StageRow as LiveStageRow,
 } from '@/components/session/useSessionStages';
+import { useSessionModelsRealtime } from '@/components/session/useSessionModelsRealtime';
 
 import {
   advanceStageAction,
@@ -120,6 +121,7 @@ export function SessionStages({
   const stages = ready ? liveStages : initialStages;
   const session = ready && liveSession ? liveSession : initialSession;
   const nowMs = useNowMs();
+  const { lastUpdatedAt } = useSessionModelsRealtime(sessionId);
 
   const sorted = [...stages].sort((a, b) => a.position - b.position);
   const completed = sorted.filter((s) => s.status === 'completed');
@@ -180,6 +182,7 @@ export function SessionStages({
             sessionId={sessionId}
             sessionTitle={sessionTitle}
             sessionStatus={session.status}
+            lastUpdatedAt={lastUpdatedAt}
           />
         ))}
       </ol>
@@ -198,6 +201,7 @@ function StageRow({
   sessionId,
   sessionTitle,
   sessionStatus,
+  lastUpdatedAt,
 }: {
   stage: LiveStageRow;
   isFirst: boolean;
@@ -209,6 +213,7 @@ function StageRow({
   sessionId: string;
   sessionTitle: string;
   sessionStatus: string;
+  lastUpdatedAt: Map<string, number>;
 }) {
   const stageType = stage.stage_type as StageType;
   const remaining = computeRemainingMs(stage, nowMs);
@@ -302,23 +307,37 @@ function StageRow({
             Participants ({participants.length})
           </p>
           <ul className="flex flex-col gap-2">
-            {participants.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center justify-between gap-3"
-                data-testid={`participant-row-${p.id}`}
-              >
-                <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-zinc-800">
-                  {p.ownerLabel}
-                </p>
-                <Link
-                  href={`/app/designs/${p.id}`}
-                  className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
+            {participants.map((p) => {
+              const t = lastUpdatedAt.get(p.id);
+              const isLive = t != null && nowMs - t < 10_000;
+              return (
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between gap-3"
+                  data-testid={`participant-row-${p.id}`}
                 >
-                  Open
-                </Link>
-              </li>
-            ))}
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span
+                      role="img"
+                      aria-label={isLive ? 'Live' : 'Idle'}
+                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                        isLive ? 'bg-emerald-500' : 'bg-zinc-300'
+                      }`}
+                      data-testid={isLive ? `participant-live-${p.id}` : undefined}
+                    />
+                    <p className="min-w-0 flex-1 truncate text-[13px] font-medium text-zinc-800">
+                      {p.ownerLabel}
+                    </p>
+                  </div>
+                  <Link
+                    href={`/app/designs/${p.id}`}
+                    className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
+                  >
+                    Open
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ) : null}
