@@ -3,6 +3,11 @@ import { notFound, redirect } from 'next/navigation';
 
 import { Builder } from '@/components/builder/Builder';
 import { SpotlightBanner } from '@/components/session/SpotlightBanner';
+import {
+  loadInitialBrickFeedback,
+  type CommentRow,
+  type ReactionRow,
+} from '@/lib/brickFeedback/loadInitial';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
@@ -124,6 +129,18 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
   const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
   const self = liveMode ? await loadSelfPresence(supabase, user.id) : null;
 
+  // Reactions + comments are scoped to room-backed canvases (the
+  // brick-feedback feature is collaborative-only). Non-room designs skip the
+  // seed + Builder doesn't mount the overlay. Same call returns both —
+  // hydrate together so we only round-trip once.
+  let initialReactions: ReactionRow[] | null = null;
+  let initialComments: CommentRow[] | null = null;
+  if (data.room_id) {
+    const feedback = await loadInitialBrickFeedback(data.id);
+    initialReactions = feedback.reactions;
+    initialComments = feedback.comments;
+  }
+
   let sourceStageLabel: string | null = null;
   let alreadyImported = false;
   // Room-backed canvases auto-import on creation via the room composer
@@ -155,6 +172,9 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         alreadyImported={alreadyImported}
         isSessionFacilitator={isSessionFacilitator}
         facilitatorNotes={facilitatorNotes}
+        initialReactions={initialReactions}
+        initialComments={initialComments}
+        myProfileId={user.id}
       />
     </>
   );

@@ -34,6 +34,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      brick_comments: {
+        Row: {
+          body: string
+          brick_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          model_id: string
+          profile_id: string | null
+        }
+        Insert: {
+          body: string
+          brick_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          model_id: string
+          profile_id?: string | null
+        }
+        Update: {
+          body?: string
+          brick_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          model_id?: string
+          profile_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brick_comments_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brick_comments_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      brick_reactions: {
+        Row: {
+          brick_id: string
+          created_at: string
+          emoji: string
+          model_id: string
+          profile_id: string
+        }
+        Insert: {
+          brick_id: string
+          created_at?: string
+          emoji: string
+          model_id: string
+          profile_id: string
+        }
+        Update: {
+          brick_id?: string
+          created_at?: string
+          emoji?: string
+          model_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brick_reactions_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "brick_reactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       model_imports: {
         Row: {
           id: string
