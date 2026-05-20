@@ -25,6 +25,22 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
   const menuRef = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Initial load + realtime subscription
+  //
+  // FOLLOW-UP (deferred): this channel — and every other Realtime channel
+  // on the roster surface (RosterButton, RosterRemovedList,
+  // RosterPendingInvitesList, SpotlightBanner) — subscribes WITHOUT first
+  // calling `supabase.realtime.setAuth(token)`. That means the WS join
+  // frame carries no JWT, the channel connects as anonymous, and the
+  // RLS row-filter on `session_participants` / `sessions` (added in
+  // 20260520200000_session_join_and_roster.sql) drops every payload —
+  // so the live count / live roster / live spotlight UI never updates
+  // without a manual page refresh. The same pattern + fix is documented
+  // in [app/(authed)/CLAUDE.md "Stage controller + timer" → "JWT for
+  // Realtime"] and implemented for stages in
+  // [components/session/useSessionStages.ts] — eagerly pull the session
+  // token and `setAuth(token)` BEFORE creating the channel. Wire this up
+  // across all five roster surfaces before launch; tracked in
+  // docs/superpowers/followups/2026-05-20-join-roster-launch-checklist.md.
   useEffect(() => {
     const supabase = getBrowserSupabaseClient();
     let active = true;
