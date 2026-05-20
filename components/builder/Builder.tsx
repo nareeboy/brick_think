@@ -1,11 +1,13 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { SaveVersionModal } from './SaveVersionModal';
 import { ShareModal } from './ShareModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 
+import { BrickCommentIndicator } from './BrickCommentIndicator';
+import { BrickReactionChips } from './BrickReactionChips';
 import {
   BringInPreviousModelCard,
   BringInPreviousModelProvider,
@@ -20,8 +22,11 @@ import { PeopleHereStrip } from './PeopleHereStrip';
 import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
+import { useBrickComments } from './useBrickComments';
+import { useBrickReactions } from './useBrickReactions';
 import { ExportMenu } from '@/components/exports/ExportMenu';
 import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
+import type { CommentRow, ReactionRow } from '@/lib/brickFeedback/loadInitial';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
@@ -43,6 +48,19 @@ interface BuilderProps {
   isSessionFacilitator?: boolean;
   /** Pre-fetched facilitator notes (server-side); null for everyone else. */
   facilitatorNotes?: string | null;
+  /**
+   * Pre-fetched reactions for the brick-feedback overlay. Non-null only when
+   * the model is room-backed (the affordance is room-scoped). Empty array on
+   * a fresh room canvas.
+   */
+  initialReactions?: ReactionRow[] | null;
+  /**
+   * Pre-fetched comments for the brick-feedback overlay. Same room-scoping
+   * rule as `initialReactions` — non-null only on room-backed canvases.
+   */
+  initialComments?: CommentRow[] | null;
+  /** Caller's profile id; needed to tag "mine" pills. */
+  myProfileId?: string | null;
 }
 
 export function Builder({
@@ -58,7 +76,12 @@ export function Builder({
   alreadyImported = false,
   isSessionFacilitator = false,
   facilitatorNotes = null,
+  initialReactions = null,
+  initialComments = null,
+  myProfileId = null,
 }: BuilderProps) {
+  const reactionsEnabled = initialReactions !== null && myProfileId !== null && !!initialModel;
+  const commentsEnabled = initialComments !== null && myProfileId !== null && !!initialModel;
   return (
     <BuilderProvider
       readOnly={readOnly}
@@ -94,6 +117,12 @@ export function Builder({
                 sessionContext={sessionContext}
                 isSessionFacilitator={isSessionFacilitator}
                 facilitatorNotes={facilitatorNotes}
+                reactionsEnabled={reactionsEnabled}
+                initialReactions={initialReactions ?? []}
+                commentsEnabled={commentsEnabled}
+                initialComments={initialComments ?? []}
+                myProfileId={myProfileId}
+                readOnly={readOnly}
               />
             </div>
           </div>
@@ -264,12 +293,24 @@ function CanvasStage({
   sessionContext = null,
   isSessionFacilitator = false,
   facilitatorNotes = null,
+  reactionsEnabled = false,
+  initialReactions = [],
+  commentsEnabled = false,
+  initialComments = [],
+  myProfileId = null,
+  readOnly = false,
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
   sessionContext?: SessionContext | null;
   isSessionFacilitator?: boolean;
   facilitatorNotes?: string | null;
+  reactionsEnabled?: boolean;
+  initialReactions?: ReactionRow[];
+  commentsEnabled?: boolean;
+  initialComments?: CommentRow[];
+  myProfileId?: string | null;
+  readOnly?: boolean;
 }) {
   const { awareness, selfClientId, view, self } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
@@ -306,6 +347,22 @@ function CanvasStage({
         />
         <PeopleHereStrip peers={presence.peers} />
 
+        {reactionsEnabled && myProfileId ? (
+          <BrickReactionsLayer
+            initialReactions={initialReactions}
+            myProfileId={myProfileId}
+            disabled={readOnly}
+          />
+        ) : null}
+
+        {commentsEnabled && myProfileId ? (
+          <BrickCommentsLayer
+            initialComments={initialComments}
+            myProfileId={myProfileId}
+            disabled={readOnly}
+          />
+        ) : null}
+
         <ShareButton orgId={orgId} />
         <ExportButton />
         {isSessionFacilitator && sessionContext ? (
@@ -334,6 +391,104 @@ function NotesHeaderButton({
   return (
     <div className="absolute right-[176px] top-5 z-30">
       <FacilitatorNotesButton sessionId={sessionId} initialValue={initialValue} />
+    </div>
+  );
+}
+
+function BrickReactionsLayer({
+  initialReactions,
+  myProfileId,
+  disabled,
+}: {
+  initialReactions: ReactionRow[];
+  myProfileId: string;
+  disabled: boolean;
+}) {
+  const { modelId, bricks, groups, view } = useBuilderState();
+  // Hook is mounted unconditionally; when modelId is null (transient on
+  // first render) it bails out internally.
+  const reactionsByBrick = useBrickReactions(modelId ?? '', initialReactions);
+
+  const groupVisible = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const g of groups) m.set(g.id, g.visible);
+    return m;
+  }, [groups]);
+
+  if (!modelId) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20">
+      {bricks.map((b) => {
+        if (!b.visible) return null;
+        if (groupVisible.get(b.groupId) === false) return null;
+        // Anchor screen position to the brick's bottom-center in world space,
+        // then offset down a few pixels so the chips sit just below the brick.
+        // The chip wrapper applies -translate-x-1/2 to center horizontally on
+        // this point. Pan/zoom mirror the canvas math used elsewhere
+        // (PresenceCursors, selectionOverlay).
+        const left = b.x * view.zoom + view.pan.x;
+        const top = (b.y + b.height / 2) * view.zoom + view.pan.y + 4;
+        return (
+          <BrickReactionChips
+            key={b.id}
+            modelId={modelId}
+            brickId={b.id}
+            position={{ left, top }}
+            reactions={reactionsByBrick[b.id]}
+            myProfileId={myProfileId}
+            disabled={disabled}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function BrickCommentsLayer({
+  initialComments,
+  myProfileId,
+  disabled,
+}: {
+  initialComments: CommentRow[];
+  myProfileId: string;
+  disabled: boolean;
+}) {
+  const { modelId, bricks, groups, view } = useBuilderState();
+  const commentsByBrick = useBrickComments(modelId ?? '', initialComments);
+
+  const groupVisible = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const g of groups) m.set(g.id, g.visible);
+    return m;
+  }, [groups]);
+
+  if (!modelId) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20">
+      {bricks.map((b) => {
+        if (!b.visible) return null;
+        if (groupVisible.get(b.groupId) === false) return null;
+        // Indicator is anchored to the brick's top-right corner in screen
+        // space — same pan/zoom math the reaction-chip layer uses, just at a
+        // different corner of the brick bounding box.
+        const x = b.x * view.zoom + view.pan.x;
+        const y = b.y * view.zoom + view.pan.y;
+        const width = b.width * view.zoom;
+        const height = b.height * view.zoom;
+        return (
+          <BrickCommentIndicator
+            key={b.id}
+            modelId={modelId}
+            brickId={b.id}
+            bounds={{ x, y, width, height }}
+            comments={commentsByBrick[b.id]}
+            myProfileId={myProfileId}
+            disabled={disabled}
+          />
+        );
+      })}
     </div>
   );
 }
