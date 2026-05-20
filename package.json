@@ -40,9 +40,12 @@
     "db:push": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase db push --linked"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.97.1",
+    "@react-pdf/renderer": "^4.5.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.3",
     "dotenv": "^17.4.2",
+    "geist": "^1.7.0",
     "jose": "^5.10.0",
     "konva": "^10.0.0",
     "next": "^15.1.6",
@@ -52,6 +55,7 @@
     "react-dom": "^19.0.0",
     "react-easy-crop": "^5.4.1",
     "react-konva": "^19.0.0",
+    "sharp": "^0.34.5",
     "ws": "^8.20.0",
     "y-protocols": "^1.0.7",
     "y-websocket": "^1.5.4",

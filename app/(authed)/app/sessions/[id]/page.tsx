@@ -7,7 +7,10 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
+import { getLatestSessionReport } from '../report-actions';
+
 import { DeleteSessionButton } from './DeleteSessionButton';
+import GenerateReportButton from './GenerateReportButton';
 import { PreSessionChecklist } from './PreSessionChecklist';
 import { SessionStages, type ParticipantModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
@@ -344,6 +347,14 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       : null;
   }
 
+  // Hydrate the Generate report button's initial state from the most recent
+  // session_reports row. Only fetch for facilitators on completed sessions —
+  // those are the only users who'll see the button.
+  const reportLatest =
+    canManageSession && session.status === 'completed'
+      ? await getLatestSessionReport(session.id)
+      : null;
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
@@ -378,7 +389,26 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             />
           </div>
           {canManageSession ? (
-            <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
+            <div className="flex items-start gap-3">
+              {session.status === 'completed' ? (
+                <GenerateReportButton
+                  sessionId={session.id}
+                  orgId={session.org_id}
+                  initialPdfUrl={
+                    reportLatest && reportLatest.ok ? reportLatest.pdfUrl : null
+                  }
+                  initialGeneratedAt={
+                    reportLatest && reportLatest.ok ? reportLatest.generatedAt : null
+                  }
+                  initialError={
+                    reportLatest && reportLatest.ok && reportLatest.status === 'failed'
+                      ? reportLatest.errorMessage
+                      : undefined
+                  }
+                />
+              ) : null}
+              <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
+            </div>
           ) : null}
         </header>
         <PreSessionChecklist
