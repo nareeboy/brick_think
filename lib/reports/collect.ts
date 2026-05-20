@@ -33,7 +33,7 @@ export async function collectSession(
     .select(`
       id, title, org_id, created_at,
       org:organisations!sessions_org_id_fkey ( name ),
-      facilitator:profiles!sessions_facilitator_id_fkey ( display_name )
+      facilitator:profiles!sessions_facilitator_id_fkey ( full_name )
     `)
     .eq('id', sessionId)
     .single();
@@ -52,14 +52,36 @@ export async function collectSession(
   const { data: models, error: mErr } = await svc
     .from('models')
     .select(`
-      id, title, canvas_state, thumbnail_url, stage_id, room_id, owner_profile_id,
-      profile:profiles!models_owner_profile_id_fkey ( display_name ),
+      id, title, canvas_state, thumbnail_path, stage_id, room_id, owner_profile_id,
+      profile:profiles!models_owner_profile_id_fkey ( full_name ),
       room:stage_rooms ( id, title,
-        members:stage_room_members ( profile:profiles ( display_name ) )
+        members:stage_room_members ( profile:profiles ( full_name ) )
       )
     `)
     .eq('session_id', sessionId);
   if (mErr) throw new Error(mErr.message);
+
+  // Resolve thumbnail signed URLs for any models that have one. The PDF
+  // pipeline can fall back to an SVG render when the thumbnail is missing,
+  // so this is best-effort — if signing fails we just leave the URL null.
+  const THUMBNAIL_BUCKET = 'model-thumbnails';
+  const THUMBNAIL_TTL_SECONDS = 60 * 60;
+  const paths = (models ?? [])
+    .map((m: { thumbnail_path: string | null }) => m.thumbnail_path)
+    .filter((p: string | null): p is string => Boolean(p));
+  const urlByPath = new Map<string, string>();
+  if (paths.length > 0) {
+    const signed = await svc.storage
+      .from(THUMBNAIL_BUCKET)
+      .createSignedUrls(paths, THUMBNAIL_TTL_SECONDS);
+    if (signed.data) {
+      for (const entry of signed.data) {
+        if (entry.path && entry.signedUrl) {
+          urlByPath.set(entry.path, entry.signedUrl);
+        }
+      }
+    }
+  }
 
   const participantIds = new Set<string>();
   const modelsByStage = new Map<StageType, CollectedModel[]>();
@@ -73,18 +95,18 @@ export async function collectSession(
     if (m.room_id && m.room) {
       const room = m.room as unknown as {
         title: string | null;
-        members?: Array<{ profile: { display_name: string } | null }>;
+        members?: Array<{ profile: { full_name: string | null } | null }>;
       };
       const names = (room.members ?? [])
-        .map((mem) => mem.profile?.display_name)
+        .map((mem) => mem.profile?.full_name)
         .filter(Boolean) as string[];
       ownerLabel =
         names.length <= 3
           ? `Room: ${names.join(', ')}`
           : `Room: ${names.slice(0, 2).join(', ')} + ${names.length - 2} more`;
     } else {
-      const profile = m.profile as unknown as { display_name: string } | null;
-      ownerLabel = profile?.display_name ?? 'Unknown participant';
+      const profile = m.profile as unknown as { full_name: string | null } | null;
+      ownerLabel = profile?.full_name ?? 'Unknown participant';
       if (m.owner_profile_id) participantIds.add(m.owner_profile_id);
     }
 
@@ -96,7 +118,7 @@ export async function collectSession(
       stageType,
       title: m.title ?? 'Untitled',
       canvasState,
-      thumbnailUrl: m.thumbnail_url,
+      thumbnailUrl: m.thumbnail_path ? urlByPath.get(m.thumbnail_path) ?? null : null,
       ownerLabel,
       extractedText,
     });
@@ -110,7 +132,7 @@ export async function collectSession(
 
   const orgName = (session.org as unknown as { name: string } | null)?.name ?? 'Unknown org';
   const facilitatorName =
-    (session.facilitator as unknown as { display_name: string } | null)?.display_name ?? 'Facilitator';
+    (session.facilitator as unknown as { full_name: string | null } | null)?.full_name ?? 'Facilitator';
 
   return {
     sessionId: session.id,
