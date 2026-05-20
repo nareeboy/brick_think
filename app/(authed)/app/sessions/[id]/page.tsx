@@ -75,7 +75,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const stagesRes = await supabase
     .from('stages')
     .select(
-      'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds, scenario_id, scenario_body_override',
+      'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds, scenario_id, scenario_body_override, scenario_title_override',
     )
     .eq('session_id', id)
     .order('position', { ascending: true });

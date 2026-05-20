@@ -314,6 +314,7 @@ function StageRow({
             stageType={stageType}
             canManage={canManageSession}
             pickedScenario={pickedScenario}
+            titleOverride={stage.scenario_title_override ?? null}
             bodyOverride={stage.scenario_body_override ?? null}
           />
           {ROOM_AWARE_STAGES.has(stageType) ? null : ownedModel ? (
