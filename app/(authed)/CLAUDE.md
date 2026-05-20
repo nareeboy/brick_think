@@ -282,13 +282,30 @@ Reuses the badge pill shape (`rounded-md px-1.5 py-0.5 font-mono text-[9px] uppe
 
 ## Pre-session checklist
 
-PRD §5.3 — four facilitator-only items rendered as a `<section>` above the stage list on [/app/sessions/[id]/page.tsx](app/sessions/[id]/page.tsx). Component: [PreSessionChecklist.tsx](app/sessions/[id]/PreSessionChecklist.tsx).
+PRD §5.3 — facilitator-only `<section>` rendered above the stage list on [/app/sessions/[id]/page.tsx](app/sessions/[id]/page.tsx). Component: [PreSessionChecklist.tsx](app/sessions/[id]/PreSessionChecklist.tsx). Three visible items in Phase 1; a fourth (recording consent) is wired up in the data model but **hidden** until story capture ships.
 
 - **Brief (`sessions.brief_text`)** — textarea, plain text in Phase 1 (markdown allowed but rendered as plain). Saved on blur via `updateSessionBriefAction` ([scenario-actions.ts](app/sessions/scenario-actions.ts)). Auto-ticks at trimmed length ≥ 40 chars; max 4000.
-- **Scenarios loaded (`stages.scenario_id`)** — read-only summary of each stage's pick. Auto-ticks when every stage has `scenario_id IS NOT NULL`. Pick affordance lives inline on the stage row ([StageScenarioRow.tsx](app/sessions/[id]/StageScenarioRow.tsx)) → opens [ScenarioPickerDialog.tsx](app/sessions/[id]/ScenarioPickerDialog.tsx).
-- **Recording consent** — disabled checkbox; placeholder for the Phase 2 story capture flow.
+- **Scenarios loaded (`stages.scenario_id`)** — when expanded, the body lists each stage with a per-row `Pick a scenario` / `Change` button on the right. Clicking opens [ScenarioPickerDialog.tsx](app/sessions/[id]/ScenarioPickerDialog.tsx) mounted **inside the checklist** (not on the stage row). Auto-ticks when every stage has `scenario_id IS NOT NULL`. The picker is stage_type-scoped and shows the 4 matching seeds with no filter row — duration/search are redundant at that scale.
 - **Accessibility reviewed (`sessions.pre_session_check.a11y_reviewed`)** — manual boolean toggle. Saved via `updatePreSessionCheckAction` with a key whitelist (only `a11y_reviewed` in Phase 1).
 
-Visibility: section returns null when `sessions.status` is `live`, `completed`, or `archived`; the stage controller below becomes the primary surface from there. "Ready to start" pill renders in the section header when items 1 + 2 + 4 are all ticked (consent excluded — Phase 2 placeholder).
+Visibility: section returns null when `sessions.status` is `live`, `completed`, or `archived`; the stage controller below becomes the primary surface from there. "Ready to start" pill renders in the section header when all three visible items are ticked.
 
 When adding a new whitelist key, update **both** [`ALLOWED_PRE_SESSION_KEYS`](../../lib/sessions/preSessionCheck.ts) and the schema doc in [../supabase/CLAUDE.md](../../supabase/CLAUDE.md). The constant lives outside `scenario-actions.ts` because Next.js disallows non-async exports from `'use server'` files.
+
+## Stage card scenario panel
+
+Once a stage has a `scenario_id` set, [StageScenarioRow.tsx](app/sessions/[id]/StageScenarioRow.tsx) renders an inset block inside the stage card with:
+
+- Stage chip + duration chip + `customised` chip (when either override below is set);
+- Picked scenario **title** (Fraunces, 15px) — read-only by default;
+- Picked scenario **body** as a paragraph — read-only by default;
+- An `Edit` button (facilitator-only) that swaps the display for a two-field editor: a single-line title input (Fraunces, 120 cap) and a textarea for the body (4000 cap, auto-grows up to 12 rows).
+
+Both fields persist via `updateStageScenarioOverridesAction({ stageId, title, body })` ([scenario-actions.ts](app/sessions/scenario-actions.ts)). Either field equalling the canonical (or going empty) clears the corresponding override server-side so the row falls back to the seed and the `customised` chip drops away. The two columns are written atomically in one UPDATE.
+
+Schema:
+
+- `stages.scenario_title_override text` (≤120 CHECK) — added [migrations/20260520140000_stage_scenario_title_override.sql](../../supabase/migrations/20260520140000_stage_scenario_title_override.sql).
+- `stages.scenario_body_override text` (≤4000 CHECK) — added [migrations/20260520120000_stage_scenario_body_override.sql](../../supabase/migrations/20260520120000_stage_scenario_body_override.sql).
+
+This row is the **only** affordance for changing a scenario's prompt; there's no inline pick / change button on the stage card itself — that lives in the pre-session checklist row above. Participants see the title and body as read-only text.
