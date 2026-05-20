@@ -497,6 +497,50 @@ export type Database = {
         }
         Relationships: []
       }
+      scenarios: {
+        Row: {
+          body: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          is_template: boolean
+          org_id: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          is_template?: boolean
+          org_id?: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          is_template?: boolean
+          org_id?: string | null
+          stage_type?: Database["public"]["Enums"]["stage_type"]
+          tags?: string[]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenarios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           created_at: string
