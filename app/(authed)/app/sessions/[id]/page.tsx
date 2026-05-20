@@ -11,8 +11,10 @@ import { getLatestSessionReport } from '../report-actions';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
 import GenerateReportButton from './GenerateReportButton';
+import { GoToMyCanvasButton } from './GoToMyCanvasButton';
 import { PreSessionChecklist } from './PreSessionChecklist';
 import { RosterButton } from '@/components/session/RosterButton';
+import { SessionRoleChip } from './SessionRoleChip';
 import { SessionStages, type ParticipantModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
@@ -384,36 +386,42 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
               </span>
               Session · {session.status}
             </p>
-            <SessionTitle
-              sessionId={session.id}
-              initialTitle={session.title}
-              canRename={canManageSession}
-            />
-          </div>
-          {canManageSession && session.join_code ? (
-            <RosterButton sessionId={session.id} joinCode={session.join_code} />
-          ) : null}
-          {canManageSession ? (
-            <div className="flex items-start gap-3">
-              {session.status === 'completed' ? (
-                <GenerateReportButton
-                  sessionId={session.id}
-                  initialPdfUrl={
-                    reportLatest && reportLatest.ok ? reportLatest.pdfUrl : null
-                  }
-                  initialGeneratedAt={
-                    reportLatest && reportLatest.ok ? reportLatest.generatedAt : null
-                  }
-                  initialError={
-                    reportLatest && reportLatest.ok && reportLatest.status === 'failed'
-                      ? reportLatest.errorMessage
-                      : undefined
-                  }
-                />
-              ) : null}
-              <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
+            <div className="flex flex-wrap items-center gap-2">
+              <SessionTitle
+                sessionId={session.id}
+                initialTitle={session.title}
+                canRename={canManageSession}
+              />
+              <SessionRoleChip isFacilitator={session.facilitator_id === user.id} />
             </div>
-          ) : null}
+          </div>
+          <div className="flex items-start gap-3">
+            <GoToMyCanvasButton sessionId={session.id} currentStageId={session.current_stage_id} />
+            {canManageSession ? (
+              <>
+                {session.join_code ? (
+                  <RosterButton sessionId={session.id} joinCode={session.join_code} />
+                ) : null}
+                {session.status === 'completed' ? (
+                  <GenerateReportButton
+                    sessionId={session.id}
+                    initialPdfUrl={
+                      reportLatest && reportLatest.ok ? reportLatest.pdfUrl : null
+                    }
+                    initialGeneratedAt={
+                      reportLatest && reportLatest.ok ? reportLatest.generatedAt : null
+                    }
+                    initialError={
+                      reportLatest && reportLatest.ok && reportLatest.status === 'failed'
+                        ? reportLatest.errorMessage
+                        : undefined
+                    }
+                  />
+                ) : null}
+                <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
+              </>
+            ) : null}
+          </div>
         </header>
         <PreSessionChecklist
           sessionId={session.id}
