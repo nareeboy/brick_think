@@ -1,0 +1,92 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+
+import { createServerSupabaseClient } from '@/lib/db/server';
+import { getServiceSupabaseClient } from '@/lib/db/service';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export type ScenarioActionFailure =
+  | { ok: false; code: 'unauthenticated' }
+  | { ok: false; code: 'invalid_uuid' }
+  | { ok: false; code: 'stage_not_found' }
+  | { ok: false; code: 'session_not_found' }
+  | { ok: false; code: 'not_facilitator' }
+  | { ok: false; code: 'scenario_not_found' }
+  | { ok: false; code: 'scenario_stage_mismatch' }
+  | { ok: false; code: 'brief_too_long' }
+  | { ok: false; code: 'invalid_check_key' }
+  | { ok: false; code: 'invalid_check_value' };
+
+export type ScenarioActionResult = { ok: true } | ScenarioActionFailure;
+
+export const ALLOWED_PRE_SESSION_KEYS = ['a11y_reviewed'] as const;
+export type PreSessionCheckKey = (typeof ALLOWED_PRE_SESSION_KEYS)[number];
+
+/**
+ * Pick a template / org-scoped scenario for a stage, or clear the pick with
+ * `scenarioId = null`. Facilitator-gated. No `stage_events` row — this is
+ * config, not runtime; mirrors `updateStageMeta`.
+ */
+export async function setStageScenarioAction(
+  stageId: string,
+  scenarioId: string | null,
+): Promise<ScenarioActionResult> {
+  if (!UUID_RE.test(stageId)) return { ok: false, code: 'invalid_uuid' };
+  if (scenarioId !== null && !UUID_RE.test(scenarioId)) {
+    return { ok: false, code: 'invalid_uuid' };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, code: 'unauthenticated' };
+
+  // RLS-scoped read; org outsiders see no row → stage_not_found.
+  const stageRes = await supabase
+    .from('stages')
+    .select(
+      'id, session_id, stage_type, sessions!stages_session_id_fkey ( id, facilitator_id )',
+    )
+    .eq('id', stageId)
+    .maybeSingle();
+  if (stageRes.error) {
+    throw new Error(`Failed to load stage: ${stageRes.error.message}`);
+  }
+  if (!stageRes.data) return { ok: false, code: 'stage_not_found' };
+
+  const stage = stageRes.data as unknown as {
+    id: string;
+    session_id: string;
+    stage_type: string;
+    sessions: { id: string; facilitator_id: string | null };
+  };
+
+  if (stage.sessions.facilitator_id !== user.id) {
+    return { ok: false, code: 'not_facilitator' };
+  }
+
+  if (scenarioId !== null) {
+    const scenarioRes = await supabase
+      .from('scenarios')
+      .select('id, stage_type')
+      .eq('id', scenarioId)
+      .maybeSingle();
+    if (scenarioRes.error) {
+      throw new Error(`Failed to load scenario: ${scenarioRes.error.message}`);
+    }
+    if (!scenarioRes.data) return { ok: false, code: 'scenario_not_found' };
+    if (scenarioRes.data.stage_type !== stage.stage_type) {
+      return { ok: false, code: 'scenario_stage_mismatch' };
+    }
+  }
+
+  const svc = getServiceSupabaseClient();
+  const upd = await svc.from('stages').update({ scenario_id: scenarioId }).eq('id', stage.id);
+  if (upd.error) throw new Error(`setStageScenario update failed: ${upd.error.message}`);
+
+  revalidatePath(`/app/sessions/${stage.session_id}`);
+  return { ok: true };
+}
