@@ -31,10 +31,12 @@ import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 
 import { DeleteSessionModelButton } from './DeleteSessionModelButton';
 import { StageMetaEditor } from './StageMetaEditor';
+import { StageScenarioRow } from './StageScenarioRow';
 import { StartModelButton } from './StartModelButton';
 import { RoomsPanel, type StageRoomSummary } from './RoomsPanel';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
 import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
+import type { Scenario } from '@/lib/scenarios/types';
 
 const ROOM_AWARE_STAGES: Set<StageType> = new Set(['shared_model', 'system_model', 'guiding_principles']);
 
@@ -68,6 +70,15 @@ interface SessionStagesProps {
   /** Per-stage: the room id the current user belongs to (transitive for downstream). */
   myRoomIdByStageId: Record<string, string | null>;
   currentUserId: string;
+  /** Per-stage_type list of pickable scenarios (templates + caller-org). Optional
+   * — until the session detail page wires the real data through, the picker
+   * row renders an empty grid in the dialog (still a valid affordance).
+   */
+  scenariosByStageType?: Partial<Record<StageType, Scenario[]>>;
+  /** Per-stage_id: the scenario the facilitator picked (if any). Optional for
+   * the same reason as above.
+   */
+  pickedScenarioByStageId?: Record<string, Scenario | null>;
 }
 
 const STAGE_ACTIONS = {
@@ -138,6 +149,8 @@ export function SessionStages({
   upstreamStageTypeByStageId,
   myRoomIdByStageId,
   currentUserId,
+  scenariosByStageType = {},
+  pickedScenarioByStageId = {},
 }: SessionStagesProps) {
   const { stages: liveStages, session: liveSession, ready } = useSessionStages(sessionId);
   const stages = ready ? liveStages : initialStages;
@@ -211,6 +224,8 @@ export function SessionStages({
             upstreamStageType={upstreamStageTypeByStageId[stage.id] ?? null}
             myRoomId={myRoomIdByStageId[stage.id] ?? null}
             currentUserId={currentUserId}
+            stageScenarios={scenariosByStageType[stage.stage_type as StageType] ?? []}
+            pickedScenario={pickedScenarioByStageId[stage.id] ?? null}
           />
         ))}
       </ol>
@@ -236,6 +251,8 @@ function StageRow({
   upstreamStageType,
   myRoomId,
   currentUserId,
+  stageScenarios,
+  pickedScenario,
 }: {
   stage: LiveStageRow;
   isFirst: boolean;
@@ -254,6 +271,8 @@ function StageRow({
   upstreamStageType: StageType | null;
   myRoomId: string | null;
   currentUserId: string;
+  stageScenarios: Scenario[];
+  pickedScenario: Scenario | null;
 }) {
   const stageType = stage.stage_type as StageType;
   const remaining = computeRemainingMs(stage, nowMs);
@@ -297,6 +316,13 @@ function StageRow({
               isTourTarget={isFirst}
             />
           </div>
+          <StageScenarioRow
+            stageId={stage.id}
+            stageType={stageType}
+            canManage={canManageSession}
+            scenarios={stageScenarios}
+            pickedScenario={pickedScenario}
+          />
           {ROOM_AWARE_STAGES.has(stageType) ? null : ownedModel ? (
             <p className="mt-2 truncate text-[12px] text-zinc-600">
               <span className="font-mono uppercase tracking-[0.18em] text-[9px] text-zinc-500">
