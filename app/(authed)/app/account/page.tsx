@@ -9,6 +9,7 @@ import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
+import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
 import { IntegrationsCard } from './IntegrationsCard';
@@ -92,6 +93,8 @@ export default async function AccountPage() {
         />
 
         <ContributionCard />
+
+        <BuyMeACoffeeCard />
 
         <DangerZone email={email} />
       </div>
