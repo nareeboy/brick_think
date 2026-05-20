@@ -26,6 +26,7 @@ export type ScenarioActionFailure =
   | { ok: false; code: 'scenario_stage_mismatch' }
   | { ok: false; code: 'brief_too_long' }
   | { ok: false; code: 'body_too_long' }
+  | { ok: false; code: 'title_too_long' }
   | { ok: false; code: 'invalid_check_key' }
   | { ok: false; code: 'invalid_check_value' };
 
@@ -195,25 +196,38 @@ export async function updatePreSessionCheckAction(
 }
 
 const BODY_OVERRIDE_MAX_CHARS = 4000;
+const TITLE_OVERRIDE_MAX_CHARS = 120;
+
+interface ScenarioOverrides {
+  title: string | null;
+  body: string | null;
+}
 
 /**
- * Per-stage scenario body override. Lets a facilitator tweak the canonical
- * scenario prompt for their session without forking the seed row. Null or
- * whitespace-only clears the override → stage card falls back to the
- * canonical scenarios.body. Facilitator-gated, mirrors the
- * updateSessionBriefAction pattern.
+ * Per-stage scenario title + body overrides. Lets a facilitator tweak the
+ * canonical prompt for their session without forking the seed row. Null or
+ * whitespace-only clears the matching override → stage card falls back to
+ * the canonical scenarios.title / scenarios.body. Facilitator-gated, both
+ * columns saved atomically in one UPDATE.
  */
-export async function updateStageScenarioBodyAction(
+export async function updateStageScenarioOverridesAction(
   stageId: string,
-  bodyText: string | null,
+  overrides: ScenarioOverrides,
 ): Promise<ScenarioActionResult> {
   if (!UUID_RE.test(stageId)) return { ok: false, code: 'invalid_uuid' };
 
-  let normalised: string | null = null;
-  if (bodyText !== null) {
-    const trimmed = bodyText.trim();
+  let normalisedTitle: string | null = null;
+  if (overrides.title !== null) {
+    const trimmed = overrides.title.trim();
+    if (trimmed.length > TITLE_OVERRIDE_MAX_CHARS) return { ok: false, code: 'title_too_long' };
+    normalisedTitle = trimmed === '' ? null : trimmed;
+  }
+
+  let normalisedBody: string | null = null;
+  if (overrides.body !== null) {
+    const trimmed = overrides.body.trim();
     if (trimmed.length > BODY_OVERRIDE_MAX_CHARS) return { ok: false, code: 'body_too_long' };
-    normalised = trimmed === '' ? null : trimmed;
+    normalisedBody = trimmed === '' ? null : trimmed;
   }
 
   const supabase = await createServerSupabaseClient();
@@ -244,9 +258,14 @@ export async function updateStageScenarioBodyAction(
   const svc = getServiceSupabaseClient();
   const upd = await svc
     .from('stages')
-    .update({ scenario_body_override: normalised })
+    .update({
+      scenario_title_override: normalisedTitle,
+      scenario_body_override: normalisedBody,
+    })
     .eq('id', stage.id);
-  if (upd.error) throw new Error(`updateStageScenarioBody update failed: ${upd.error.message}`);
+  if (upd.error) {
+    throw new Error(`updateStageScenarioOverrides update failed: ${upd.error.message}`);
+  }
 
   revalidatePath(`/app/sessions/${stage.session_id}`);
   return { ok: true };
