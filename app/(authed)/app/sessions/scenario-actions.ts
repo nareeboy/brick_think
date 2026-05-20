@@ -24,6 +24,8 @@ export type ScenarioActionResult = { ok: true } | ScenarioActionFailure;
 export const ALLOWED_PRE_SESSION_KEYS = ['a11y_reviewed'] as const;
 export type PreSessionCheckKey = (typeof ALLOWED_PRE_SESSION_KEYS)[number];
 
+const BRIEF_MAX_CHARS = 4000;
+
 /**
  * Pick a template / org-scoped scenario for a stage, or clear the pick with
  * `scenarioId = null`. Facilitator-gated. No `stage_events` row — this is
@@ -88,5 +90,46 @@ export async function setStageScenarioAction(
   if (upd.error) throw new Error(`setStageScenario update failed: ${upd.error.message}`);
 
   revalidatePath(`/app/sessions/${stage.session_id}`);
+  return { ok: true };
+}
+
+/**
+ * Set the facilitator's pre-session brief. Pass `null` (or whitespace-only)
+ * to clear. Facilitator-gated. Trimmed; max 4000 chars (matches the DB
+ * CHECK constraint).
+ */
+export async function updateSessionBriefAction(
+  sessionId: string,
+  briefText: string | null,
+): Promise<ScenarioActionResult> {
+  if (!UUID_RE.test(sessionId)) return { ok: false, code: 'invalid_uuid' };
+
+  let normalised: string | null = null;
+  if (briefText !== null) {
+    const trimmed = briefText.trim();
+    if (trimmed.length > BRIEF_MAX_CHARS) return { ok: false, code: 'brief_too_long' };
+    normalised = trimmed === '' ? null : trimmed;
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, code: 'unauthenticated' };
+
+  const sessRes = await supabase
+    .from('sessions')
+    .select('id, facilitator_id')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (sessRes.error) throw new Error(`Failed to load session: ${sessRes.error.message}`);
+  if (!sessRes.data) return { ok: false, code: 'session_not_found' };
+  if (sessRes.data.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
+
+  const svc = getServiceSupabaseClient();
+  const upd = await svc.from('sessions').update({ brief_text: normalised }).eq('id', sessionId);
+  if (upd.error) throw new Error(`updateSessionBrief update failed: ${upd.error.message}`);
+
+  revalidatePath(`/app/sessions/${sessionId}`);
   return { ok: true };
 }
