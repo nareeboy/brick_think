@@ -134,3 +134,54 @@ export async function redeemJoinCodeAction(code: string): Promise<RedeemJoinCode
   revalidatePath(`/app/sessions/${sessionId}`);
   return { ok: true, sessionId };
 }
+
+// Rotate the session's join code — facilitator-only, generates a fresh code and
+// updates the sessions row.
+//
+// Failure-code vocabulary follows redeemJoinCodeAction above:
+//   * `unauthenticated`  — caller has no auth session
+//   * `not_facilitator`  — caller is not the session facilitator
+//   * `session_not_found`— session id is unknown
+
+export type RotateJoinCodeResult =
+  | { ok: true; code: string }
+  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'session_not_found' };
+
+export async function rotateJoinCodeAction(sessionId: string): Promise<RotateJoinCodeResult> {
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, code: 'unauthenticated' };
+
+  const svc = getServiceSupabaseClient();
+
+  // Load the session and verify the caller is the facilitator.
+  const sessionRes = await svc
+    .from('sessions')
+    .select('facilitator_id')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (sessionRes.error) {
+    throw new Error(`sessions select failed: ${sessionRes.error.message}`);
+  }
+  const session = sessionRes.data;
+  if (!session) return { ok: false, code: 'session_not_found' };
+  if (session.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
+
+  // Generate a fresh join code via the SQL RPC.
+  const codeRes = await svc.rpc('generate_join_code');
+  if (codeRes.error || !codeRes.data) {
+    throw new Error(`generate_join_code rpc failed: ${codeRes.error?.message}`);
+  }
+  const newCode = codeRes.data as string;
+
+  // Update the session with the new code.
+  const upd = await svc.from('sessions').update({ join_code: newCode }).eq('id', sessionId);
+  if (upd.error) {
+    throw new Error(`sessions update failed: ${upd.error.message}`);
+  }
+
+  revalidatePath(`/app/sessions/${sessionId}`);
+  return { ok: true, code: newCode };
+}
