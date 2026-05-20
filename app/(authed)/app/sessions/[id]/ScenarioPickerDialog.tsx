@@ -1,20 +1,12 @@
 'use client';
 
-import { useId, useMemo, useState, useTransition } from 'react';
+import { useId, useState, useTransition } from 'react';
 
 import { setStageScenarioAction } from '@/app/(authed)/app/sessions/scenario-actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
-import { DURATION_BUCKETS, filterScenarios } from '@/lib/scenarios/filter';
 import { STAGE_CHIP_LABEL, stageChipClasses } from '@/lib/scenarios/stageChip';
-import type { DurationBucket, Scenario } from '@/lib/scenarios/types';
+import type { Scenario } from '@/lib/scenarios/types';
 import type { StageType } from '@/lib/sessions/types';
-
-const DURATION_LABELS: Record<DurationBucket, string> = {
-  any: 'Any',
-  short: '≤10 min',
-  medium: '10–30 min',
-  long: '30+ min',
-};
 
 const NEUTRAL_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-zinc-900/5 text-zinc-600';
@@ -35,15 +27,8 @@ export function ScenarioPickerDialog({
   onClose,
 }: Props) {
   const titleId = useId();
-  const [duration, setDuration] = useState<DurationBucket>('any');
-  const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const filtered = useMemo(
-    () => filterScenarios(scenarios, { stage: stageType, duration, search }),
-    [scenarios, stageType, duration, search],
-  );
 
   function pick(scenarioId: string | null) {
     setError(null);
@@ -74,48 +59,14 @@ export function ScenarioPickerDialog({
           </button>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <div role="radiogroup" aria-label="Filter by duration" className="flex flex-wrap gap-1">
-            {DURATION_BUCKETS.map((d) => {
-              const active = d === duration;
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => setDuration(d)}
-                  className={`inline-flex h-9 items-center rounded-full px-3 text-[12px] font-medium transition-colors ${
-                    active
-                      ? 'bg-[#c0613d] text-white'
-                      : 'bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-900/5'
-                  }`}
-                >
-                  {DURATION_LABELS[d]}
-                </button>
-              );
-            })}
-          </div>
-          <label className="ml-auto flex items-center gap-2 text-[13px] text-zinc-600">
-            <span className="sr-only">Search scenarios</span>
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search…"
-              className="h-9 w-48 rounded-xl border border-zinc-200 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-500"
-            />
-          </label>
-        </div>
-
         <div className="mt-4 flex-1 overflow-y-auto pr-1" data-scroll-target="">
-          {filtered.length === 0 ? (
+          {scenarios.length === 0 ? (
             <p className="py-10 text-center text-[13px] text-zinc-500">
-              No scenarios match your filters.
+              No scenarios available for this stage.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {filtered.map((s) => (
+              {scenarios.map((s) => (
                 <li
                   key={s.id}
                   className={`rounded-2xl border p-4 ${
