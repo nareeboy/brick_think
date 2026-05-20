@@ -599,6 +599,7 @@ export type Database = {
           current_stage: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id: string | null
           facilitator_id: string | null
+          facilitator_notes: string | null
           id: string
           mode: Database["public"]["Enums"]["session_mode"]
           org_id: string
@@ -614,6 +615,7 @@ export type Database = {
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id?: string | null
           facilitator_id?: string | null
+          facilitator_notes?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id: string
@@ -629,6 +631,7 @@ export type Database = {
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id?: string | null
           facilitator_id?: string | null
+          facilitator_notes?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id?: string
@@ -1120,3 +1123,4 @@ export const Constants = {
     },
   },
 } as const
+
