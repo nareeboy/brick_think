@@ -1,12 +1,16 @@
 import { test, expect } from './fixtures';
 
 test.describe('nav restructure', () => {
-  test('header has exactly two links', async ({ signedInPage }) => {
+  test('header has three links in canonical order', async ({ signedInPage }) => {
     await signedInPage.goto('/app/my-designs');
     const nav = signedInPage.getByRole('navigation', { name: 'Primary' });
     await expect(nav.getByRole('link', { name: 'Organisations' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Scenarios' })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'My Designs' })).toBeVisible();
-    await expect(nav.locator('a')).toHaveCount(2);
+    await expect(nav.locator('a')).toHaveCount(3);
+    // Order matters: Organisations · Scenarios · My Designs.
+    const labels = await nav.locator('a').allTextContents();
+    expect(labels).toEqual(['Organisations', 'Scenarios', 'My Designs']);
   });
 
   test('New Design from My Designs creates a personal design', async ({ signedInPage }) => {
