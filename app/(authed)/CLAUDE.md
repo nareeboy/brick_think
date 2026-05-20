@@ -292,6 +292,21 @@ Visibility: section returns null when `sessions.status` is `live`, `completed`, 
 
 When adding a new whitelist key, update **both** [`ALLOWED_PRE_SESSION_KEYS`](../../lib/sessions/preSessionCheck.ts) and the schema doc in [../supabase/CLAUDE.md](../../supabase/CLAUDE.md). The constant lives outside `scenario-actions.ts` because Next.js disallows non-async exports from `'use server'` files.
 
+## Facilitator notes
+
+Private free-text notes the facilitator can scribble against a session and reach from anywhere they touch it during the workshop. **Facilitator-only — not visible to org admins, co-organisers, or any other org member.** Org-admin visibility is intentionally _not_ granted; these are the facilitator's own working memory, not session metadata. Schema and the data-layer privacy invariant live in [../supabase/CLAUDE.md "`sessions.facilitator_notes` privacy"](../../supabase/CLAUDE.md).
+
+Two surfaces, one column, one server action ([`updateFacilitatorNotesAction`](app/sessions/notes-actions.ts)):
+
+- **Session-page card** — [FacilitatorNotesCard.tsx](app/sessions/[id]/FacilitatorNotesCard.tsx) renders under the pre-session checklist on [/app/sessions/[id]/page.tsx](app/sessions/[id]/page.tsx). Page gates on `isFacilitator = session.facilitator_id === user.id` before mounting (NOT `canManageSession`, which also lets org admins through). Collapsible header (`▾` / `▴`); collapsed state is per-session in `localStorage` under `bt:facilitator-notes-collapsed:${sessionId}` so a facilitator can fold it between visits without bouncing the cursor into a textarea on every page load.
+- **Design-page drawer** — [FacilitatorNotesButton.tsx](app/designs/[id]/FacilitatorNotesButton.tsx) is a square chrome trigger (44×44, `data-testid="facilitator-notes-button"`) slotted into the canvas top-right rhythm at `right-[176px]` in [Builder.tsx](../../components/builder/Builder.tsx) — to the left of Export, so the four chrome buttons (Pieces / Share / Export / Notes) line up at 52px intervals. Opens a right-edge slide-out drawer ([FacilitatorNotesDrawer.tsx](../../components/session/FacilitatorNotesDrawer.tsx), `role="dialog"` + `aria-label="Facilitator notes"`) that reuses `useFocusTrap` + `usePrefersReducedMotion` from [lib/a11y/](../../lib/a11y/). `Escape` closes; focus restores to the trigger. The trigger only mounts when `isSessionFacilitator && sessionContext` — gated server-side in [app/designs/[id]/page.tsx](app/designs/[id]/page.tsx) by `session.facilitator_id === user.id`, so a non-facilitator org member co-viewing the facilitator's canvas never sees the button (read-only canvas view).
+
+**Shared editor.** Both surfaces delegate to [NotesEditor.tsx](../../components/session/NotesEditor.tsx) — a debounced (1000ms) autosave textarea with a character counter + `aria-live="polite"` "Saved …" indicator. `FACILITATOR_NOTES_MAX = 8000` (see [lib/sessions/facilitatorNotesConstants.ts](../../lib/sessions/facilitatorNotesConstants.ts)) caps both the client `maxLength` and the server-side CHECK in the migration. Empty value → server stores `NULL`.
+
+**Read path.** The single projection point is [`getFacilitatorNotes(sessionId)`](../../lib/sessions/facilitatorNotes.ts). It re-asserts the facilitator gate (returns `null` for any non-facilitator caller) and is the **only** function in the codebase that selects `facilitator_notes` from `sessions`. The Vitest suite at [tests/integration/facilitator-notes-isolation.integration.test.ts](../../tests/integration/facilitator-notes-isolation.integration.test.ts) source-greps the tree and fails CI if any non-allowlisted file references the column literal; behaviour-level coverage of the helper + action lives in [tests/integration/facilitatorNotes.integration.test.ts](../../tests/integration/facilitatorNotes.integration.test.ts). If you need a new read path, route it through the helper rather than reintroducing the column on a generic `.select()` call.
+
+E2E coverage: [e2e/facilitator-notes.spec.ts](../../e2e/facilitator-notes.spec.ts) exercises card → autosave → reload → drawer → Escape → cross-page sync → non-facilitator card-absence in a single spec.
+
 ## Stage card scenario panel
 
 Once a stage has a `scenario_id` set, [StageScenarioRow.tsx](app/sessions/[id]/StageScenarioRow.tsx) renders an inset block inside the stage card with:
