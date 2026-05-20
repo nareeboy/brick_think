@@ -31,7 +31,10 @@ vi.mock('@/lib/db/server', () => ({
   }),
 }));
 
-import { setStageScenarioAction } from '@/app/(authed)/app/sessions/scenario-actions';
+import {
+  setStageScenarioAction,
+  updateSessionBriefAction,
+} from '@/app/(authed)/app/sessions/scenario-actions';
 
 interface Fixture {
   facilitator: TestUser;
@@ -156,6 +159,61 @@ describe('setStageScenarioAction', () => {
     expect(wrong.data?.id).toBeTruthy();
     const result = await setStageScenarioAction(fx.skillBuildingStageId, wrong.data!.id);
     expect(result).toEqual({ ok: false, code: 'scenario_stage_mismatch' });
+  });
+});
+
+describe('updateSessionBriefAction', () => {
+  test('facilitator writes a brief', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const result = await updateSessionBriefAction(fx.session.id, 'Workshop brief goes here.');
+    expect(result).toEqual({ ok: true });
+    const admin = getAdminClient();
+    const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
+    expect(sess.data?.brief_text).toBe('Workshop brief goes here.');
+  });
+
+  test('null clears the brief', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    expect(await updateSessionBriefAction(fx.session.id, null)).toEqual({ ok: true });
+    const admin = getAdminClient();
+    const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
+    expect(sess.data?.brief_text).toBeNull();
+  });
+
+  test('empty string after trim clears the brief', async () => {
+    // Seed something non-null first so we can observe the clear.
+    const admin = getAdminClient();
+    await admin.from('sessions').update({ brief_text: 'prior' }).eq('id', fx.session.id);
+
+    currentClient = await signInAs(fx.facilitator);
+    expect(await updateSessionBriefAction(fx.session.id, '   ')).toEqual({ ok: true });
+    const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
+    expect(sess.data?.brief_text).toBeNull();
+  });
+
+  test('rejects briefs over 4000 chars', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const long = 'a'.repeat(4001);
+    expect(await updateSessionBriefAction(fx.session.id, long)).toEqual({
+      ok: false,
+      code: 'brief_too_long',
+    });
+  });
+
+  test('non-facilitator is refused', async () => {
+    currentClient = await signInAs(fx.participant);
+    expect(await updateSessionBriefAction(fx.session.id, 'sneaky')).toEqual({
+      ok: false,
+      code: 'not_facilitator',
+    });
+  });
+
+  test('invalid uuid', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    expect(await updateSessionBriefAction('not-a-uuid', 'x')).toEqual({
+      ok: false,
+      code: 'invalid_uuid',
+    });
   });
 });
 
