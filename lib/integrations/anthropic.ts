@@ -12,22 +12,22 @@ export type AnthropicLookupResult =
   | AnthropicLookupFailure;
 
 /**
- * Look up the org's encrypted Anthropic key, decrypt it, and return a
+ * Look up the profile's encrypted Anthropic key, decrypt it, and return a
  * configured Anthropic client. Decryption runs only here — the plaintext key
  * never leaves the server boundary and is never logged.
  */
-export async function getAnthropicClientForOrg(
-  orgId: string,
+export async function getAnthropicClientForProfile(
+  profileId: string,
 ): Promise<AnthropicLookupResult> {
   const svc = getServiceSupabaseClient();
   const { data, error } = await svc
-    .from('org_integrations')
+    .from('user_integrations')
     .select('anthropic_api_key_ciphertext, anthropic_api_key_nonce')
-    .eq('org_id', orgId)
+    .eq('profile_id', profileId)
     .maybeSingle();
 
   if (error) {
-    throw new Error(`org_integrations lookup failed: ${error.message}`);
+    throw new Error(`user_integrations lookup failed: ${error.message}`);
   }
   if (!data?.anthropic_api_key_ciphertext || !data.anthropic_api_key_nonce) {
     return { ok: false, code: 'no_claude_key' };
@@ -51,7 +51,7 @@ export async function getAnthropicClientForOrg(
 }
 
 /**
- * Quick live-test of a raw key — used by the admin UI to validate before
+ * Quick live-test of a raw key — used by the account UI to validate before
  * persisting. Sends a 1-token Haiku call (cheapest possible round-trip).
  */
 export async function testAnthropicKey(apiKey: string): Promise<

@@ -42,14 +42,14 @@ vi.mock('@/lib/integrations/anthropic', async (orig) => {
   const actual = (await orig()) as typeof AnthropicModule;
   return {
     ...actual,
-    getAnthropicClientForOrg: vi.fn(),
+    getAnthropicClientForProfile: vi.fn(),
   };
 });
 
 // Import AFTER mocks are registered (Vitest hoists `vi.mock` but ergonomic
 // to keep the convention consistent with the other integration suites).
 import { generateSessionReport } from '@/app/(authed)/app/sessions/report-actions';
-import { getAnthropicClientForOrg } from '@/lib/integrations/anthropic';
+import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
 
 // --- Helpers ------------------------------------------------------------
 
@@ -90,10 +90,10 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  // Required by `encryptApiKey` when seeding org_integrations rows. 64 hex
+  // Required by `encryptApiKey` when seeding user_integrations rows. 64 hex
   // chars = 32-byte key (AES-256-GCM).
   process.env.BRICKTHINK_ENCRYPTION_KEY = '00'.repeat(32);
-  vi.mocked(getAnthropicClientForOrg).mockReset();
+  vi.mocked(getAnthropicClientForProfile).mockReset();
   currentClient = await signInAs(fx.facilitator);
 });
 
@@ -132,26 +132,25 @@ async function insertModel(args: {
   return res.data.id as string;
 }
 
-async function seedOrgIntegration(): Promise<void> {
+async function seedUserIntegration(): Promise<void> {
   const { ciphertext, nonce, last4 } = encryptApiKey('sk-ant-test-key-not-a-secret');
   const admin = getAdminClient();
-  const res = await admin.from('org_integrations').upsert(
+  const res = await admin.from('user_integrations').upsert(
     {
-      org_id: fx.org.id,
+      profile_id: fx.facilitator.id,
       anthropic_api_key_ciphertext: ciphertext,
       anthropic_api_key_nonce: nonce,
       anthropic_api_key_last4: last4,
-      updated_by: fx.facilitator.id,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'org_id' },
+    { onConflict: 'profile_id' },
   );
-  if (res.error) throw new Error(`seedOrgIntegration failed: ${res.error.message}`);
+  if (res.error) throw new Error(`seedUserIntegration failed: ${res.error.message}`);
 }
 
-async function clearOrgIntegration(): Promise<void> {
+async function clearUserIntegration(): Promise<void> {
   const admin = getAdminClient();
-  await admin.from('org_integrations').delete().eq('org_id', fx.org.id);
+  await admin.from('user_integrations').delete().eq('profile_id', fx.facilitator.id);
 }
 
 async function clearStorageForOrg(): Promise<void> {
@@ -211,7 +210,7 @@ describe('generateSessionReport (integration)', () => {
     const session = await makeSession({ status: 'live' });
     await insertModel({ session, stageType: 'individual_model', title: 'M1' });
     // Anthropic mock is irrelevant — the status guard runs first.
-    vi.mocked(getAnthropicClientForOrg).mockResolvedValue({
+    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
       ok: true,
       client: stubAnthropicClient(),
     });
@@ -220,11 +219,11 @@ describe('generateSessionReport (integration)', () => {
     expect(res).toEqual({ ok: false, code: 'session_not_completed' });
   });
 
-  it('refuses when org has no Claude key', async () => {
-    await clearOrgIntegration();
+  it('refuses when facilitator has no Claude key', async () => {
+    await clearUserIntegration();
     const session = await makeSession({ status: 'completed' });
     await insertModel({ session, stageType: 'individual_model', title: 'M1' });
-    vi.mocked(getAnthropicClientForOrg).mockResolvedValue({
+    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
       ok: false,
       code: 'no_claude_key',
     });
@@ -235,8 +234,8 @@ describe('generateSessionReport (integration)', () => {
 
   it('refuses when the completed session has no models', async () => {
     const session = await makeSession({ status: 'completed' });
-    await seedOrgIntegration();
-    vi.mocked(getAnthropicClientForOrg).mockResolvedValue({
+    await seedUserIntegration();
+    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
       ok: true,
       client: stubAnthropicClient(),
     });
@@ -260,8 +259,8 @@ describe('generateSessionReport (integration)', () => {
       stageType: 'shared_model',
       title: 'Bob model',
     });
-    await seedOrgIntegration();
-    vi.mocked(getAnthropicClientForOrg).mockResolvedValue({
+    await seedUserIntegration();
+    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
       ok: true,
       client: stubAnthropicClient(),
     });
