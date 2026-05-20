@@ -45,7 +45,7 @@ export default function GenerateReportButton({
             href={pdfUrl}
             target="_blank"
             rel="noreferrer"
-            className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand/90"
+            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
           >
             Download PDF
           </a>
@@ -63,7 +63,7 @@ export default function GenerateReportButton({
           type="button"
           onClick={run}
           disabled={pending}
-          className="rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-50"
+          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
         >
           {pending ? 'Generating…' : 'Generate report'}
         </button>
