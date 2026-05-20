@@ -1,8 +1,11 @@
 import { StyleSheet } from '@react-pdf/renderer';
 
+// BrickThink palette in the report. We deliberately use only the dark
+// neutral as accent — no chromatic primary — so the report reads as
+// editorial print rather than a branded marketing surface.
 export const brand = {
-  primary: '#5050B8',
-  ink: '#0F172A',
+  primary: '#1f1f1f',
+  ink: '#1f1f1f',
   mutedInk: '#475569',
   hairline: '#E2E8F0',
   page: '#FFFFFF',
