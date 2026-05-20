@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, test, expect } from 'vitest';
 
 import { CANONICAL_SCENARIOS } from './canonical';
@@ -62,5 +65,19 @@ describe('CANONICAL_SCENARIOS', () => {
   test('titles are unique', () => {
     const set = new Set(CANONICAL_SCENARIOS.map((s) => s.title));
     expect(set.size).toBe(CANONICAL_SCENARIOS.length);
+  });
+});
+
+describe('canonical seed ↔ migration parity', () => {
+  test('seed migration row count matches CANONICAL_SCENARIOS', () => {
+    const sql = readFileSync(
+      resolve(__dirname, '../../supabase/migrations/20260519160000_scenarios_seed.sql'),
+      'utf-8',
+    );
+    // Count VALUES tuples — each row starts with ('<stage_type>', ...
+    const rowMatches = sql.match(
+      /\(\s*'(?:skill_building|individual_model|shared_model|system_model|guiding_principles)'\s*,/g,
+    );
+    expect(rowMatches?.length ?? 0).toBe(CANONICAL_SCENARIOS.length);
   });
 });
