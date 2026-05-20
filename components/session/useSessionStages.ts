@@ -16,6 +16,8 @@ export type StageRow = StageRuntime & {
   // Optional in the type so existing test fixtures don't have to set it;
   // every Postgres-sourced row carries this column (added 2026-05-19).
   scenario_id?: string | null;
+  // Per-session override of the canonical scenario body (added 2026-05-20).
+  scenario_body_override?: string | null;
 };
 
 export type SessionRow = {
@@ -43,7 +45,7 @@ export function useSessionStages(sessionId: string): {
         supabase
           .from('stages')
           .select(
-            'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds, scenario_id',
+            'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds, scenario_id, scenario_body_override',
           )
           .eq('session_id', sessionId)
           .order('position', { ascending: true }),

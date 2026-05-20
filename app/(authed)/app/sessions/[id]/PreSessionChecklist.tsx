@@ -7,7 +7,10 @@ import {
   updatePreSessionCheckAction,
   updateSessionBriefAction,
 } from '@/app/(authed)/app/sessions/scenario-actions';
+import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionStatus, StageType } from '@/lib/sessions/types';
+
+import { ScenarioPickerDialog } from './ScenarioPickerDialog';
 
 const BRIEF_THRESHOLD = 40;
 
@@ -25,6 +28,8 @@ interface Props {
   preSessionCheck: Record<string, unknown>;
   stages: StageSummary[];
   canManage: boolean;
+  /** All caller-visible scenarios grouped by stage_type. Powers the picker. */
+  scenariosByStageType: Partial<Record<StageType, Scenario[]>>;
 }
 
 type ItemStatus = 'done' | 'open' | 'disabled';
@@ -36,6 +41,7 @@ export function PreSessionChecklist({
   preSessionCheck,
   stages,
   canManage,
+  scenariosByStageType,
 }: Props) {
   const [draftBrief, setDraftBrief] = useState(briefText);
   const [a11yReviewed, setA11yReviewed] = useState<boolean>(
@@ -44,6 +50,7 @@ export function PreSessionChecklist({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<string | null>('brief');
+  const [pickerStageId, setPickerStageId] = useState<string | null>(null);
 
   // Hidden once the session is past the pre-start phase. The stage list +
   // controller below becomes the primary surface from there.
@@ -80,6 +87,8 @@ export function PreSessionChecklist({
       }
     });
   }
+
+  const pickerStage = pickerStageId ? stages.find((s) => s.id === pickerStageId) ?? null : null;
 
   return (
     <section
@@ -127,19 +136,26 @@ export function PreSessionChecklist({
           expanded={expanded === 'scenarios'}
           onToggle={() => setExpanded(expanded === 'scenarios' ? null : 'scenarios')}
         >
-          <ul className="flex flex-col gap-1.5 text-[12px]">
+          <ul className="flex flex-col divide-y divide-zinc-100 text-[13px]">
             {stages.map((s) => (
-              <li key={s.id} className="flex items-center justify-between gap-2">
+              <li key={s.id} className="flex items-center justify-between gap-3 py-2">
                 <span className="text-zinc-700">{s.title ?? labelFor(s.stage_type)}</span>
-                <span className={s.scenarioId ? 'text-emerald-700' : 'text-zinc-500'}>
-                  {s.scenarioId ? 'Picked' : 'Not picked'}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setPickerStageId(s.id)}
+                  data-testid={`scenario-pick-${s.id}`}
+                  className={`inline-flex h-8 items-center rounded-lg px-3 text-[12px] font-medium transition-colors ${
+                    s.scenarioId
+                      ? 'text-zinc-600 ring-1 ring-zinc-200 hover:bg-zinc-900/5'
+                      : 'bg-[#c0613d] text-white hover:bg-[#a85432]'
+                  }`}
+                >
+                  {s.scenarioId ? 'Change' : 'Pick a scenario'}
+                </button>
               </li>
             ))}
           </ul>
-          <p className="mt-2 text-[11px] text-zinc-500">
-            Pick from the per-stage row in the list below. Ticks when every stage has a scenario.
-          </p>
+          <p className="mt-2 text-[11px] text-zinc-500">Ticks once every stage has a scenario.</p>
         </ChecklistRow>
 
         <ChecklistRow
@@ -189,6 +205,16 @@ export function PreSessionChecklist({
         <p role="alert" className="mt-3 text-[12px] text-red-700">
           {error}
         </p>
+      )}
+
+      {pickerStage && (
+        <ScenarioPickerDialog
+          stageId={pickerStage.id}
+          stageType={pickerStage.stage_type}
+          scenarios={scenariosByStageType[pickerStage.stage_type] ?? []}
+          currentScenarioId={pickerStage.scenarioId}
+          onClose={() => setPickerStageId(null)}
+        />
       )}
     </section>
   );

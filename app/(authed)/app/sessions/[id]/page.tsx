@@ -75,7 +75,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const stagesRes = await supabase
     .from('stages')
     .select(
-      'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds, scenario_id',
+      'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds, scenario_id, scenario_body_override',
     )
     .eq('session_id', id)
     .order('position', { ascending: true });
@@ -393,6 +393,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             scenarioId: s.scenario_id ?? null,
             title: s.title,
           }))}
+          scenariosByStageType={scenariosByStageType}
         />
         <SessionStages
           sessionId={session.id}
@@ -408,7 +409,6 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           upstreamStageTypeByStageId={upstreamStageTypeByStageId}
           myRoomIdByStageId={myRoomIdByStageId}
           currentUserId={user.id}
-          scenariosByStageType={scenariosByStageType}
           pickedScenarioByStageId={pickedScenarioByStageId}
         />
         <SpotlightTour canManageSession={canManageSession} />

@@ -25,6 +25,7 @@ export type ScenarioActionFailure =
   | { ok: false; code: 'scenario_not_found' }
   | { ok: false; code: 'scenario_stage_mismatch' }
   | { ok: false; code: 'brief_too_long' }
+  | { ok: false; code: 'body_too_long' }
   | { ok: false; code: 'invalid_check_key' }
   | { ok: false; code: 'invalid_check_value' };
 
@@ -190,5 +191,63 @@ export async function updatePreSessionCheckAction(
   if (upd.error) throw new Error(`updatePreSessionCheck update failed: ${upd.error.message}`);
 
   revalidatePath(`/app/sessions/${sessionId}`);
+  return { ok: true };
+}
+
+const BODY_OVERRIDE_MAX_CHARS = 4000;
+
+/**
+ * Per-stage scenario body override. Lets a facilitator tweak the canonical
+ * scenario prompt for their session without forking the seed row. Null or
+ * whitespace-only clears the override → stage card falls back to the
+ * canonical scenarios.body. Facilitator-gated, mirrors the
+ * updateSessionBriefAction pattern.
+ */
+export async function updateStageScenarioBodyAction(
+  stageId: string,
+  bodyText: string | null,
+): Promise<ScenarioActionResult> {
+  if (!UUID_RE.test(stageId)) return { ok: false, code: 'invalid_uuid' };
+
+  let normalised: string | null = null;
+  if (bodyText !== null) {
+    const trimmed = bodyText.trim();
+    if (trimmed.length > BODY_OVERRIDE_MAX_CHARS) return { ok: false, code: 'body_too_long' };
+    normalised = trimmed === '' ? null : trimmed;
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, code: 'unauthenticated' };
+
+  const stageRes = await supabase
+    .from('stages')
+    .select('id, session_id, sessions!stages_session_id_fkey ( id, facilitator_id )')
+    .eq('id', stageId)
+    .maybeSingle();
+  if (stageRes.error) {
+    throw new Error(`Failed to load stage: ${stageRes.error.message}`);
+  }
+  if (!stageRes.data) return { ok: false, code: 'stage_not_found' };
+
+  const stage = stageRes.data as unknown as {
+    id: string;
+    session_id: string;
+    sessions: { id: string; facilitator_id: string | null };
+  };
+  if (stage.sessions.facilitator_id !== user.id) {
+    return { ok: false, code: 'not_facilitator' };
+  }
+
+  const svc = getServiceSupabaseClient();
+  const upd = await svc
+    .from('stages')
+    .update({ scenario_body_override: normalised })
+    .eq('id', stage.id);
+  if (upd.error) throw new Error(`updateStageScenarioBody update failed: ${upd.error.message}`);
+
+  revalidatePath(`/app/sessions/${stage.session_id}`);
   return { ok: true };
 }

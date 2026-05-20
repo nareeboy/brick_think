@@ -774,6 +774,7 @@ export type Database = {
           id: string
           paused_at: string | null
           position: number
+          scenario_body_override: string | null
           scenario_id: string | null
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
@@ -791,6 +792,7 @@ export type Database = {
           id?: string
           paused_at?: string | null
           position: number
+          scenario_body_override?: string | null
           scenario_id?: string | null
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
@@ -808,6 +810,7 @@ export type Database = {
           id?: string
           paused_at?: string | null
           position?: number
+          scenario_body_override?: string | null
           scenario_id?: string | null
           session_id?: string
           stage_type?: Database["public"]["Enums"]["stage_type"]
