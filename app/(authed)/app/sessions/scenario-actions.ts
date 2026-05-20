@@ -133,3 +133,56 @@ export async function updateSessionBriefAction(
   revalidatePath(`/app/sessions/${sessionId}`);
   return { ok: true };
 }
+
+/**
+ * Shallow-merge a single whitelisted key into sessions.pre_session_check.
+ * Facilitator-gated. Phase-1 whitelist: 'a11y_reviewed'.
+ *
+ * Pre-existing keys outside the whitelist (e.g. a future Phase-2 key seeded
+ * by a different migration) are preserved by the merge — only the supplied
+ * key is overwritten.
+ */
+export async function updatePreSessionCheckAction(
+  sessionId: string,
+  key: PreSessionCheckKey,
+  value: boolean,
+): Promise<ScenarioActionResult> {
+  if (!UUID_RE.test(sessionId)) return { ok: false, code: 'invalid_uuid' };
+  if (!ALLOWED_PRE_SESSION_KEYS.includes(key)) {
+    return { ok: false, code: 'invalid_check_key' };
+  }
+  if (typeof value !== 'boolean') {
+    return { ok: false, code: 'invalid_check_value' };
+  }
+
+  const supabase = await createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, code: 'unauthenticated' };
+
+  const sessRes = await supabase
+    .from('sessions')
+    .select('id, facilitator_id, pre_session_check')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (sessRes.error) throw new Error(`Failed to load session: ${sessRes.error.message}`);
+  if (!sessRes.data) return { ok: false, code: 'session_not_found' };
+  if (sessRes.data.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
+
+  const previous =
+    sessRes.data.pre_session_check && typeof sessRes.data.pre_session_check === 'object'
+      ? (sessRes.data.pre_session_check as Record<string, unknown>)
+      : {};
+  const merged = { ...previous, [key]: value };
+
+  const svc = getServiceSupabaseClient();
+  const upd = await svc
+    .from('sessions')
+    .update({ pre_session_check: merged })
+    .eq('id', sessionId);
+  if (upd.error) throw new Error(`updatePreSessionCheck update failed: ${upd.error.message}`);
+
+  revalidatePath(`/app/sessions/${sessionId}`);
+  return { ok: true };
+}

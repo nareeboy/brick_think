@@ -34,6 +34,7 @@ vi.mock('@/lib/db/server', () => ({
 import {
   setStageScenarioAction,
   updateSessionBriefAction,
+  updatePreSessionCheckAction,
 } from '@/app/(authed)/app/sessions/scenario-actions';
 
 interface Fixture {
@@ -211,6 +212,80 @@ describe('updateSessionBriefAction', () => {
   test('invalid uuid', async () => {
     currentClient = await signInAs(fx.facilitator);
     expect(await updateSessionBriefAction('not-a-uuid', 'x')).toEqual({
+      ok: false,
+      code: 'invalid_uuid',
+    });
+  });
+});
+
+describe('updatePreSessionCheckAction', () => {
+  test('facilitator can flip a11y_reviewed true', async () => {
+    // Reset to a known state first.
+    const admin = getAdminClient();
+    await admin.from('sessions').update({ pre_session_check: {} }).eq('id', fx.session.id);
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', true);
+    expect(result).toEqual({ ok: true });
+    const sess = await admin
+      .from('sessions')
+      .select('pre_session_check')
+      .eq('id', fx.session.id)
+      .single();
+    expect(sess.data?.pre_session_check).toEqual({ a11y_reviewed: true });
+  });
+
+  test('shallow-merges with existing keys, does not overwrite the whole bag', async () => {
+    const admin = getAdminClient();
+    await admin
+      .from('sessions')
+      .update({ pre_session_check: { a11y_reviewed: true, future_key: 'kept' } })
+      .eq('id', fx.session.id);
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', false);
+    expect(result).toEqual({ ok: true });
+    const sess = await admin
+      .from('sessions')
+      .select('pre_session_check')
+      .eq('id', fx.session.id)
+      .single();
+    expect(sess.data?.pre_session_check).toEqual({ a11y_reviewed: false, future_key: 'kept' });
+  });
+
+  test('rejects keys outside the whitelist', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    expect(
+      await updatePreSessionCheckAction(
+        fx.session.id,
+        'consent_collected' as unknown as 'a11y_reviewed',
+        true,
+      ),
+    ).toEqual({ ok: false, code: 'invalid_check_key' });
+  });
+
+  test('rejects non-boolean values', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    expect(
+      await updatePreSessionCheckAction(
+        fx.session.id,
+        'a11y_reviewed',
+        'yes' as unknown as boolean,
+      ),
+    ).toEqual({ ok: false, code: 'invalid_check_value' });
+  });
+
+  test('non-facilitator refused', async () => {
+    currentClient = await signInAs(fx.participant);
+    expect(await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', true)).toEqual({
+      ok: false,
+      code: 'not_facilitator',
+    });
+  });
+
+  test('invalid uuid', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    expect(await updatePreSessionCheckAction('nope', 'a11y_reviewed', true)).toEqual({
       ok: false,
       code: 'invalid_uuid',
     });
