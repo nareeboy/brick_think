@@ -94,3 +94,25 @@ Fix, easiest first:
 2. Don't run `pnpm dev` and `pnpm dev:e2e` concurrently — they share port 3000 and `.next/` and corrupt each other's auth cookies (project ref differs between local and remote Supabase, so cookies don't carry over either).
 3. If you previously signed in against the remote project on `localhost`, clear site data for `localhost:3000` once when switching to `pnpm dev:e2e` — the stale remote-project cookie can shadow the local one.
 4. Only widen the allowlist if you genuinely need both hosts to work locally. Add `"http://127.0.0.1:3000/**"` (and the wildcard form of localhost) to `additional_redirect_urls` in [config.toml](config.toml), then `pnpm db:stop && pnpm db:start` so GoTrue re-reads it. Don't ship this change unless there's a reason — keeping the surface tight is the point.
+
+## `sessions.pre_session_check` schema
+
+Added 2026-05-19 ([migrations/20260519150000_session_prep_columns.sql](migrations/20260519150000_session_prep_columns.sql)). `jsonb not null default '{}'::jsonb`. Stores explicit facilitator acknowledgments for the pre-session checklist (PRD §5.3).
+
+**Whitelisted keys** — enforced by `updatePreSessionCheckAction` in [../app/(authed)/app/sessions/scenario-actions.ts](../app/\(authed\)/app/sessions/scenario-actions.ts), not at the DB layer. The runtime allowlist lives in [../lib/sessions/preSessionCheck.ts](../lib/sessions/preSessionCheck.ts) so the action file can stay async-only (Next.js `'use server'` disallows non-async exports).
+
+- `a11y_reviewed: boolean` — facilitator confirms they reviewed their accessibility preferences before the workshop.
+
+**Phase 2 keys (planned)**:
+
+- `consent_collected: boolean` — recording / story-capture consent confirmed by all participants.
+
+When adding a key: extend `ALLOWED_PRE_SESSION_KEYS` in `lib/sessions/preSessionCheck.ts`, add a row above, and update the matching ChecklistRow in [`PreSessionChecklist.tsx`](../app/\(authed\)/app/sessions/[id]/PreSessionChecklist.tsx). DB-level type checks are intentionally deferred — `jsonb` keeps the bag forward-compatible without per-key migrations.
+
+## `scenarios` table
+
+Added 2026-05-19 ([migrations/20260519140000_scenarios.sql](migrations/20260519140000_scenarios.sql), seeds in `20260519160000_scenarios_seed.sql`). 20 canonical Phase-1 templates (4 per stage_type) seeded via service-role migration; no INSERT/UPDATE/DELETE RLS policies yet (Phase 2 will add org-scoped custom authoring). The TS source of truth that the seed migration mirrors lives in [../lib/scenarios/canonical.ts](../lib/scenarios/canonical.ts); a unit test reads both files and asserts row counts match.
+
+SELECT policy: any authenticated user sees `is_template = true` rows plus rows where they're a member of `org_id`. Check constraint `scenarios_template_global_chk` enforces `is_template ⇒ org_id IS NULL`.
+
+`stages.scenario_id` is the per-stage pick (nullable, `ON DELETE SET NULL` so removing a template doesn't break historic sessions). Written by `setStageScenarioAction` under the existing facilitator gate.

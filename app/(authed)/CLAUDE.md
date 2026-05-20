@@ -4,8 +4,9 @@ Scope: pages under `app/(authed)/`. The nav IA, modal shape, badge pills, and ho
 
 ## Navigation hierarchy: Organisations → Sessions → Designs
 
-The app's IA is a single hierarchy with one cross-cutting index. Context comes from the URL on each page — there is no global "active org" state on the profile, no header switcher. The header has exactly two top-level nav links — `Organisations` and `My Designs` — plus a user block on the right: the user's avatar + display name (purely visual, not a click target), an icon-only cog linking to [`/app/account`](app/account/page.tsx), and the Sign-out form. The cog is the canonical entry point to per-account settings; the avatar and name reinforce identity but never duplicate navigation.
+The app's IA is a single hierarchy with one cross-cutting index. Context comes from the URL on each page — there is no global "active org" state on the profile, no header switcher. The header has three top-level nav links — `Organisations`, `Scenarios`, and `My Designs`, in that order — plus a user block on the right: the user's avatar + display name (purely visual, not a click target), an icon-only cog linking to [`/app/account`](app/account/page.tsx), and the Sign-out form. The cog is the canonical entry point to per-account settings; the avatar and name reinforce identity but never duplicate navigation. `Scenarios` (added 2026-05-19) sits in the middle because the user's mental model is "set up sessions (orgs) → reference scenarios → see your work (designs)".
 
+- **`/app/scenarios`** ([app/scenarios/page.tsx](app/scenarios/page.tsx)) is the read-only library of canonical Serious Play exercises (PRD §9.2 Phase 1). 20 template scenarios (4 per stage_type) seeded via [../../supabase/migrations/20260519160000_scenarios_seed.sql](../../supabase/migrations/20260519160000_scenarios_seed.sql). Filter by stage chip (radiogroup), duration bucket (`Any` / `≤10 min` / `10–30 min` / `30+ min`), and free-text search across title/body/tags. Cards open a `ModalBackdrop`-wrapped detail modal with a "Copy text" CTA — no "Use in a session" CTA in Phase 1; the per-stage picker on session detail is the workflow entry point. Custom scenario authoring lands in Phase 2 (PRD §5.3).
 - **`/app/my-designs`** ([app/my-designs/page.tsx](app/my-designs/page.tsx)) is the aggregate index of every design the signed-in user has authored (`owner_profile_id = me`), regardless of where it lives. Each card carries a badge: `Personal` (model has no session/org) or `{Org} · {Session}` (session-scoped). The page-level Filter dropdown narrows by Personal or by a specific org via `?filter=personal|org-<uuid>`; the URL is the source of truth (see [../../lib/my-designs/types.ts](../../lib/my-designs/types.ts) `parseFilter` / `serializeFilter`).
 - **`/app/orgs`** lists the orgs you're a member of; clicking one navigates to **`/app/orgs/[id]`** which shows that org's sessions list (primary content), member roster, and admin actions. Sessions list is the default surface — no separate `/app/orgs/[id]/sessions` route. The header carries the action group on the right: leave (icon), delete (icon, owner-only), and `Create session` (primary). Creating a session and adding a member both happen in modal dialogs ([app/orgs/[id]/sessions/NewSessionDialog.tsx](app/orgs/[id]/sessions/NewSessionDialog.tsx), [app/orgs/[id]/AddMemberDialog.tsx](app/orgs/[id]/AddMemberDialog.tsx)) — no inline forms on the page.
 - **`/app/sessions/[id]`** is the session detail page. Its eyebrow renders a breadcrumb `Organisations / {Org} / Session · {status}` linking back through the hierarchy. The unified [SessionStages](app/sessions/[id]/SessionStages.tsx) client component owns the entire stage list — it merges what was historically split between `SessionStageList` (model surface) and `StageControllerContainer` (timer controls). Each stage row carries: the canonical / overridden label via [StageMetaEditor](app/sessions/[id]/StageMetaEditor.tsx) (per-session overrides on the nullable `stages.title` / `stages.description` columns from [migrations/20260517000000_stage_overrides.sql](../../supabase/migrations/20260517000000_stage_overrides.sql), edited via `updateStageMeta` in [app/sessions/actions.ts](app/sessions/actions.ts)); the runtime status pill (`pending` / `active` / `paused` / `completed`) with a coloured dot; the editable per-stage duration (see "Stage controller + timer" below); and either the model action row or the dashed-border "Stage timer" cluster depending on facilitator-vs-participant view. The facilitator-only "Session settings" panel (status / mode / scheduled-for) lives in [SessionMetaForm](app/sessions/[id]/SessionMetaForm.tsx) and the `updateSessionMeta` action — both intact, both real columns on `sessions`, but **not currently rendered**: nothing in the app branches on those fields yet, so the editor would be misleading. Re-import the component on [page.tsx](app/sessions/[id]/page.tsx) when status / mode / scheduled-for actually drive behaviour (async-mode UX, scheduling, etc.).
@@ -264,3 +265,30 @@ Verification harness:
 
 - **`pnpm a11y:lhci`** — Lighthouse CI runs against `/`, `/sign-in`, `/privacy`, `/terms` asserting `categories:accessibility >= 0.95`. Authed-route audits would need a Puppeteer auth script (deferred — captured in the followups doc).
 - **`pnpm test:e2e -- e2e/a11y.spec.ts`** — axe-core scans across every authed route. The `design-builder` route is hard-fail (`expect`); other routes are `expect.soft` until the third-party audit confirms no additional violations. See [e2e/CLAUDE.md](../../e2e/CLAUDE.md) for the spec layout.
+
+## Scenario stage chip palette
+
+Stage-type chips on scenario cards and pickers are **categorical**, not status. Distinct from the runtime stage status palette in [SessionStages.tsx](app/sessions/[id]/SessionStages.tsx). Source of truth: [`lib/scenarios/stageChip.ts`](../../lib/scenarios/stageChip.ts). All combinations clear WCAG 2.2 AA on white.
+
+| Stage type | Background | Text |
+| --- | --- | --- |
+| `skill_building` | `bg-violet-50` | `text-violet-800` |
+| `individual_model` | `bg-sky-50` | `text-sky-800` |
+| `shared_model` | `bg-emerald-50` | `text-emerald-800` |
+| `system_model` | `bg-amber-50` | `text-amber-900` |
+| `guiding_principles` | `bg-rose-50` | `text-rose-800` |
+
+Reuses the badge pill shape (`rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em]`) from the existing badge convention above. Don't reach for these tones for status indication (timer / pending / paused); the runtime palette section above owns that vocabulary.
+
+## Pre-session checklist
+
+PRD §5.3 — four facilitator-only items rendered as a `<section>` above the stage list on [/app/sessions/[id]/page.tsx](app/sessions/[id]/page.tsx). Component: [PreSessionChecklist.tsx](app/sessions/[id]/PreSessionChecklist.tsx).
+
+- **Brief (`sessions.brief_text`)** — textarea, plain text in Phase 1 (markdown allowed but rendered as plain). Saved on blur via `updateSessionBriefAction` ([scenario-actions.ts](app/sessions/scenario-actions.ts)). Auto-ticks at trimmed length ≥ 40 chars; max 4000.
+- **Scenarios loaded (`stages.scenario_id`)** — read-only summary of each stage's pick. Auto-ticks when every stage has `scenario_id IS NOT NULL`. Pick affordance lives inline on the stage row ([StageScenarioRow.tsx](app/sessions/[id]/StageScenarioRow.tsx)) → opens [ScenarioPickerDialog.tsx](app/sessions/[id]/ScenarioPickerDialog.tsx).
+- **Recording consent** — disabled checkbox; placeholder for the Phase 2 story capture flow.
+- **Accessibility reviewed (`sessions.pre_session_check.a11y_reviewed`)** — manual boolean toggle. Saved via `updatePreSessionCheckAction` with a key whitelist (only `a11y_reviewed` in Phase 1).
+
+Visibility: section returns null when `sessions.status` is `live`, `completed`, or `archived`; the stage controller below becomes the primary surface from there. "Ready to start" pill renders in the section header when items 1 + 2 + 4 are all ticked (consent excluded — Phase 2 placeholder).
+
+When adding a new whitelist key, update **both** [`ALLOWED_PRE_SESSION_KEYS`](../../lib/sessions/preSessionCheck.ts) and the schema doc in [../supabase/CLAUDE.md](../../supabase/CLAUDE.md). The constant lives outside `scenario-actions.ts` because Next.js disallows non-async exports from `'use server'` files.
