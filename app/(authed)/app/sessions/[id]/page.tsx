@@ -8,11 +8,13 @@ import { getServiceSupabaseClient } from '@/lib/db/service';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
+import { PreSessionChecklist } from './PreSessionChecklist';
 import { SessionStages, type ParticipantModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
 import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
 import type { StageRoomSummary } from './RoomsPanel';
+import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types';
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
@@ -46,7 +48,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const sessionRes = await supabase
     .from('sessions')
     .select(
-      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, organisations:org_id ( id, name )',
+      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, organisations:org_id ( id, name )',
     )
     .eq('id', id)
     .maybeSingle();
@@ -62,6 +64,8 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     mode: SessionMode;
     scheduled_for: string | null;
     current_stage_id: string | null;
+    brief_text: string | null;
+    pre_session_check: Record<string, unknown> | null;
     organisations: { id: string; name: string } | null;
   };
 
@@ -71,7 +75,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const stagesRes = await supabase
     .from('stages')
     .select(
-      'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds',
+      'id, session_id, stage_type, position, title, description, duration_seconds, started_at, ended_at, status, paused_at, total_paused_ms, extended_seconds, scenario_id',
     )
     .eq('session_id', id)
     .order('position', { ascending: true });
@@ -312,6 +316,34 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     label: row.profiles?.full_name?.trim() || row.profiles?.email || 'Unknown',
   }));
 
+  // Scenarios: RLS filters to templates + caller-org rows. One query covers
+  // every stage_type — group locally so the picker can lookup by stage_type
+  // and the per-stage row can lookup its picked scenario by id.
+  const scenarioRes = await supabase
+    .from('scenarios')
+    .select('id, org_id, stage_type, title, body, tags, duration_minutes, is_template, created_at')
+    .order('stage_type', { ascending: true })
+    .order('title', { ascending: true });
+  if (scenarioRes.error) {
+    throw new Error(`Failed to load scenarios: ${scenarioRes.error.message}`);
+  }
+  const allScenarios = (scenarioRes.data ?? []) as unknown as Scenario[];
+
+  const scenariosByStageType: Partial<Record<StageType, Scenario[]>> = {};
+  const scenarioById = new Map<string, Scenario>();
+  for (const s of allScenarios) {
+    const bucket = scenariosByStageType[s.stage_type] ?? [];
+    bucket.push(s);
+    scenariosByStageType[s.stage_type] = bucket;
+    scenarioById.set(s.id, s);
+  }
+  const pickedScenarioByStageId: Record<string, Scenario | null> = {};
+  for (const stage of stages) {
+    pickedScenarioByStageId[stage.id] = stage.scenario_id
+      ? scenarioById.get(stage.scenario_id) ?? null
+      : null;
+  }
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
@@ -349,6 +381,19 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
             <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
           ) : null}
         </header>
+        <PreSessionChecklist
+          sessionId={session.id}
+          sessionStatus={session.status}
+          briefText={session.brief_text ?? ''}
+          preSessionCheck={(session.pre_session_check as Record<string, unknown>) ?? {}}
+          canManage={canManageSession}
+          stages={stages.map((s) => ({
+            id: s.id,
+            stage_type: s.stage_type as StageType,
+            scenarioId: s.scenario_id ?? null,
+            title: s.title,
+          }))}
+        />
         <SessionStages
           sessionId={session.id}
           sessionTitle={session.title}
@@ -363,6 +408,8 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           upstreamStageTypeByStageId={upstreamStageTypeByStageId}
           myRoomIdByStageId={myRoomIdByStageId}
           currentUserId={user.id}
+          scenariosByStageType={scenariosByStageType}
+          pickedScenarioByStageId={pickedScenarioByStageId}
         />
         <SpotlightTour canManageSession={canManageSession} />
         <ParticipantCoachMark />

@@ -497,8 +497,53 @@ export type Database = {
         }
         Relationships: []
       }
+      scenarios: {
+        Row: {
+          body: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          is_template: boolean
+          org_id: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          is_template?: boolean
+          org_id?: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          is_template?: boolean
+          org_id?: string | null
+          stage_type?: Database["public"]["Enums"]["stage_type"]
+          tags?: string[]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenarios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
+          brief_text: string | null
           created_at: string
           current_stage: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id: string | null
@@ -506,12 +551,14 @@ export type Database = {
           id: string
           mode: Database["public"]["Enums"]["session_mode"]
           org_id: string
+          pre_session_check: Json
           scheduled_for: string | null
           status: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at: string
         }
         Insert: {
+          brief_text?: string | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id?: string | null
@@ -519,12 +566,14 @@ export type Database = {
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id: string
+          pre_session_check?: Json
           scheduled_for?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at?: string
         }
         Update: {
+          brief_text?: string | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id?: string | null
@@ -532,6 +581,7 @@ export type Database = {
           id?: string
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id?: string
+          pre_session_check?: Json
           scheduled_for?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title?: string
@@ -724,6 +774,7 @@ export type Database = {
           id: string
           paused_at: string | null
           position: number
+          scenario_id: string | null
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
           started_at: string | null
@@ -740,6 +791,7 @@ export type Database = {
           id?: string
           paused_at?: string | null
           position: number
+          scenario_id?: string | null
           session_id: string
           stage_type: Database["public"]["Enums"]["stage_type"]
           started_at?: string | null
@@ -756,6 +808,7 @@ export type Database = {
           id?: string
           paused_at?: string | null
           position?: number
+          scenario_id?: string | null
           session_id?: string
           stage_type?: Database["public"]["Enums"]["stage_type"]
           started_at?: string | null
@@ -764,6 +817,13 @@ export type Database = {
           total_paused_ms?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "stages_scenario_id_fkey"
+            columns: ["scenario_id"]
+            isOneToOne: false
+            referencedRelation: "scenarios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stages_session_id_fkey"
             columns: ["session_id"]
