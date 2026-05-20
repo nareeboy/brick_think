@@ -32,6 +32,7 @@ const defaultProps = {
   preSessionCheck: {},
   stages: baseStages,
   canManage: true,
+  scenariosByStageType: {},
 };
 
 describe('PreSessionChecklist', () => {
