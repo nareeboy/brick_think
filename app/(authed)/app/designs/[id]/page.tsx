@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 
 import { Builder } from '@/components/builder/Builder';
+import { SpotlightBanner } from '@/components/session/SpotlightBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
@@ -125,18 +126,21 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <Builder
-      initialModel={initialModel}
-      readOnly={readOnly}
-      ownerLabel={ownerLabel}
-      orgId={data.org_id ?? null}
-      sessionContext={sessionContext}
-      liveMode={liveMode}
-      self={self}
-      colourblindMode={colourblindMode}
-      sourceStageLabel={sourceStageLabel}
-      alreadyImported={alreadyImported}
-    />
+    <>
+      {data.session_id && user && <SpotlightBanner sessionId={data.session_id} viewerProfileId={user.id} />}
+      <Builder
+        initialModel={initialModel}
+        readOnly={readOnly}
+        ownerLabel={ownerLabel}
+        orgId={data.org_id ?? null}
+        sessionContext={sessionContext}
+        liveMode={liveMode}
+        self={self}
+        colourblindMode={colourblindMode}
+        sourceStageLabel={sourceStageLabel}
+        alreadyImported={alreadyImported}
+      />
+    </>
   );
 }
 

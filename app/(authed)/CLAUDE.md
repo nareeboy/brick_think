@@ -332,3 +332,30 @@ After a session ends, the facilitator can export a branded PDF on `/app/sessions
 - `claude_api_error` — Anthropic 4xx/5xx; message is bubbled up so 401/429 etc. are diagnosable inline.
 
 When adding a new failure mode: extend the union in [report-actions.ts](app/sessions/report-actions.ts), add a `case` in `messageForCode` in the button, and re-run the integration suite ([tests/integration/report-generate.integration.test.ts](../../tests/integration/report-generate.integration.test.ts)) — its assertions reach into `result.code` and will surface drift.
+
+## Participant join + roster
+
+Introduced 2026-05-20. Allows external participants to join a session via a facilitator-shared code, view their role on the session page, and enables the facilitator to manage the participant roster with live Realtime updates. The join flow supports new and returning users; kicked participants cannot re-join via the code until the facilitator restores them from the Removed section.
+
+**Join page** (`/app/join/[code]` — public, not authed). Unauthenticated users land here with a `<code>` URL param. The page calls `redeemJoinCodeAction({ code })` server-side: looks up the session via `lookup_session_by_code()` (security-definer RPC), redirects signed-in users to the session page, triggers the auth flow for unsigned users. On auth callback, the action runs again — inserts a `session_participants` row (idempotent via `on conflict do nothing`) and writes a `participant_joined` notification to the facilitator.
+
+**Session page** (`/app/sessions/[id]`):
+
+- **Header** carries a `RosterButton` for facilitators only (icon-only, `title="Manage roster"`) that opens the modal. Visible when `session.join_code IS NOT NULL`.
+- **Row chips** per participant (read-only): a `Participant` badge in neutral grey, or a `Facilitator` badge when `session.facilitator_id`. Adjacent on-session designs is the `Go to my canvas` CTA (participants only, linked to their model for the current stage).
+- **Spotlight banner** (conditional): when a facilitator spots a participant via the roster modal, a sticky semi-transparent banner ("You've been spotted!") appears at the top of the session page for that participant only, tied to Realtime `spotlighted_at` changes. Banner auto-hides after 5s. Also rendered on `app/(authed)/app/designs/[id]/page.tsx` for session-scoped models so spotted participants see it while building.
+
+**Roster modal** ([app/sessions/[id]/RosterButton.tsx](app/sessions/[id]/RosterButton.tsx) → [ManageRosterDialog.tsx](app/sessions/[id]/ManageRosterDialog.tsx)). Tabbed: Active Participants, Pending Invites, Removed. Facilitator-only. Each active row carries name + role chip + hover-revealed actions: Open their model, Spotlight, Kick. Removed rows carry the participant name + a Restore button (re-accepts them back into `session_participants`). The modal also embeds the roster invite block above the tabs: join-code display + "Copy link" button, email-invite chip-list input (via `inviteThroughEmailAction`), and magic-link + invite-code transport. Both the join code and the email-list inputs are gated on the session having `join_code` set; facilitators establish code via a later create-session or rotate-code UI (currently only the action `rotateJoinCodeAction` exists — the UI surface is a follow-up).
+
+**Sticky-kick rule**: when a participant is kicked, they're soft-deleted via `session_participants.removed_at = now()`. The join-code lookup and `redeemJoinCodeAction` both refuse already-kicked users with `already_removed`; only the facilitator can restore them via the Removed section in the modal.
+
+**Realtime**: `RosterButton`, `RosterList`, `RosterRemovedList`, `RosterPendingInvitesList`, and `SpotlightBanner` all subscribe to participant-list changes and invitation changes. JWT auth is critical — each must call `supabase.realtime.setAuth(token)` before subscribing, using the pattern in `useSessionStages.ts`.
+
+**RLS extension**: every SELECT policy on `sessions`, `stages`, `stage_rooms`, `stage_room_members`, `stage_room_sources`, and the RPC `can_read_model` gains a parallel `is_session_participant(session_id)` OR-branch. The `models` SELECT policy also extends. The `profiles` table gains a separate `can_see_profile_via_session` security-definer RPC so non-org-members can see participant names for cross-session isolation. See [supabase/CLAUDE.md](../../supabase/CLAUDE.md) for the full schema and policy details.
+
+**Schema** (in [supabase/CLAUDE.md](../../supabase/CLAUDE.md) for the full reference):
+
+- `session_participants(session_id, profile_id)` — composite PK, soft-delete via `removed_at`, `spotlighted_at` for the banner.
+- `session_invitations(id, session_id, email, code)` — mirrors `org_invitations` shape, mirrored in `handle_new_user` trigger so claimed invitations auto-restore kicked users.
+- `sessions.join_code` — 6-char Crockford base32 via `generate_join_code()` SQL function, set on create, rotatable via `rotateJoinCodeAction`.
+- Notification kinds: `participant_joined` (facilitator notified when someone joins) and `session_invitation_claimed` (facilitator notified on magic-link / invite-code claim).
