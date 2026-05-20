@@ -43,7 +43,10 @@ vi.mock('@/lib/db/server', () => ({
 
 // Import AFTER mocks are registered.
 import {
+  cancelInvitationAction,
+  inviteParticipantsByEmailAction,
   removeParticipantAction,
+  resendInvitationAction,
   resolveSpotlightTargetModelAction,
   restoreParticipantAction,
   setSpotlightAction,
@@ -176,6 +179,21 @@ beforeAll(async () => {
   // against. Tests that need the alternative state flip it explicitly.
   await setCurrentStage(session.id, session.stageIds.individual_model);
   // blankStageSession deliberately leaves current_stage_id NULL (default).
+
+  // Backfill join_code on the primary session. createTestSession doesn't
+  // set one and there's no DB-side trigger — the invite action's defensive
+  // "no join_code" branch returns all-failed, so the invite tests need a
+  // real code present.
+  const admin = getAdminClient();
+  const codeRes = await admin.rpc('generate_join_code');
+  if (codeRes.error || !codeRes.data) {
+    throw new Error(`generate_join_code rpc failed: ${codeRes.error?.message}`);
+  }
+  const codeUpd = await admin
+    .from('sessions')
+    .update({ join_code: codeRes.data as string })
+    .eq('id', session.id);
+  if (codeUpd.error) throw new Error(`backfill join_code failed: ${codeUpd.error.message}`);
 });
 
 afterAll(async () => {
@@ -415,5 +433,256 @@ describe('resolveSpotlightTargetModelAction', () => {
 
     const admin = getAdminClient();
     await admin.from('models').delete().eq('id', modelId);
+  });
+});
+
+// ── invite / cancel / resend ────────────────────────────────────────────────
+// These hit the local Supabase Auth API (createUser, signInWithOtp,
+// inviteUserByEmail). Mail goes to Inbucket on :54324 — we don't assert on
+// delivery here (Task 17 e2e covers that). The asserts target the action's
+// return shape and the session_invitations row state.
+
+/**
+ * Generate a fresh @brick-think.test email local part for an invite test.
+ * Keeps emails unique per test so the unique-open-invite index doesn't
+ * collide across runs (cleanupTestUser in afterAll removes any auth.users
+ * row that was created, but session_invitations rows survive cascade-deletes
+ * of the inviter and we don't want leaks from a previous run to interfere).
+ */
+function freshInviteEmail(): string {
+  return `invite-${crypto.randomUUID().slice(0, 8)}@brick-think.test`;
+}
+
+/** Delete any session_invitations rows for the fixture session — keeps state clean per test. */
+async function clearInvitations(): Promise<void> {
+  const admin = getAdminClient();
+  await admin.from('session_invitations').delete().eq('session_id', fx.session.id);
+}
+
+describe('inviteParticipantsByEmailAction', () => {
+  test('rejects over-cap (26 emails) with over_cap', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const emails = Array.from({ length: 26 }, () => freshInviteEmail());
+    const result = await inviteParticipantsByEmailAction(fx.session.id, emails);
+    expect(result).toEqual({ ok: false, code: 'over_cap' });
+  });
+
+  test('marks invalid emails as invalid_email and processes the rest', async () => {
+    await clearInvitations();
+    const goodEmail = freshInviteEmail();
+    currentClient = await signInAs(fx.facilitator);
+    const result = await inviteParticipantsByEmailAction(fx.session.id, [
+      'not-an-email',
+      goodEmail,
+    ]);
+    if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
+    expect(result.results[0]).toEqual({ email: 'not-an-email', status: 'invalid_email' });
+    expect(result.results[1]?.email).toBe(goodEmail);
+    expect(result.results[1]?.status).toBe('sent_invite');
+  });
+
+  test('dedupes case-insensitively', async () => {
+    await clearInvitations();
+    const email = freshInviteEmail();
+    const upper = email.toUpperCase();
+    currentClient = await signInAs(fx.facilitator);
+    const result = await inviteParticipantsByEmailAction(fx.session.id, [email, upper]);
+    if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
+    expect(result.results[0]?.email).toBe(email);
+    expect(result.results[0]?.status).toBe('sent_invite');
+    expect(result.results[1]?.email).toBe(email);
+    expect(result.results[1]?.status).toBe('duplicate');
+  });
+
+  test('returns already_member for an active participant', async () => {
+    await clearInvitations();
+    await ensureActiveParticipant(fx.alice);
+    currentClient = await signInAs(fx.facilitator);
+    const result = await inviteParticipantsByEmailAction(fx.session.id, [fx.alice.email]);
+    if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
+    expect(result.results[0]).toEqual({
+      email: fx.alice.email.toLowerCase(),
+      status: 'already_member',
+    });
+    // No audit row should be written for already_member.
+    const admin = getAdminClient();
+    const { count } = await admin
+      .from('session_invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', fx.session.id)
+      .eq('email', fx.alice.email.toLowerCase());
+    expect(count).toBe(0);
+  });
+
+  test('writes a session_invitations row for a brand-new email (sent_invite)', async () => {
+    await clearInvitations();
+    const email = freshInviteEmail();
+    currentClient = await signInAs(fx.facilitator);
+    const result = await inviteParticipantsByEmailAction(fx.session.id, [email]);
+    if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
+    expect(result.results[0]).toEqual({ email, status: 'sent_invite' });
+
+    const admin = getAdminClient();
+    const row = await admin
+      .from('session_invitations')
+      .select('email, invited_by, claimed_at')
+      .eq('session_id', fx.session.id)
+      .eq('email', email)
+      .single();
+    expect(row.error).toBeNull();
+    expect(row.data?.email).toBe(email);
+    expect(row.data?.invited_by).toBe(fx.facilitator.id);
+    expect(row.data?.claimed_at).toBeNull();
+  });
+
+  test('returns sent_magiclink when the email already has a profile but no participant row', async () => {
+    await clearInvitations();
+    // Create a fresh user so we control their participation state.
+    const newcomer = await createTestUser();
+    try {
+      currentClient = await signInAs(fx.facilitator);
+      const result = await inviteParticipantsByEmailAction(fx.session.id, [newcomer.email]);
+      if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
+      expect(result.results[0]).toEqual({
+        email: newcomer.email.toLowerCase(),
+        status: 'sent_magiclink',
+      });
+
+      const admin = getAdminClient();
+      const row = await admin
+        .from('session_invitations')
+        .select('email, invited_by')
+        .eq('session_id', fx.session.id)
+        .eq('email', newcomer.email.toLowerCase())
+        .single();
+      expect(row.error).toBeNull();
+      expect(row.data?.email).toBe(newcomer.email.toLowerCase());
+      expect(row.data?.invited_by).toBe(fx.facilitator.id);
+    } finally {
+      await cleanupTestUser(newcomer.id);
+    }
+  });
+
+  test('rejects non-facilitator caller with not_facilitator', async () => {
+    currentClient = await signInAs(fx.alice);
+    const result = await inviteParticipantsByEmailAction(fx.session.id, [freshInviteEmail()]);
+    expect(result).toEqual({ ok: false, code: 'not_facilitator' });
+  });
+
+  test('returns unauthenticated when no caller', async () => {
+    currentClient = null;
+    const result = await inviteParticipantsByEmailAction(fx.session.id, [freshInviteEmail()]);
+    expect(result).toEqual({ ok: false, code: 'unauthenticated' });
+  });
+});
+
+describe('cancelInvitationAction', () => {
+  test('deletes a pending invitation when caller is facilitator', async () => {
+    await clearInvitations();
+    const admin = getAdminClient();
+    const email = freshInviteEmail();
+    const insertRes = await admin
+      .from('session_invitations')
+      .insert({ session_id: fx.session.id, email, invited_by: fx.facilitator.id })
+      .select('id')
+      .single();
+    if (insertRes.error || !insertRes.data) {
+      throw new Error(`seed invite failed: ${insertRes.error?.message}`);
+    }
+    const invitationId = insertRes.data.id as string;
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await cancelInvitationAction(invitationId);
+    expect(result).toEqual({ ok: true });
+
+    const after = await admin
+      .from('session_invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', invitationId);
+    expect(after.count).toBe(0);
+  });
+
+  test('rejects an already-claimed invitation with already_claimed', async () => {
+    await clearInvitations();
+    const admin = getAdminClient();
+    const insertRes = await admin
+      .from('session_invitations')
+      .insert({
+        session_id: fx.session.id,
+        email: freshInviteEmail(),
+        invited_by: fx.facilitator.id,
+        claimed_at: new Date().toISOString(),
+        claimed_by_profile_id: fx.alice.id,
+      })
+      .select('id')
+      .single();
+    if (insertRes.error || !insertRes.data) {
+      throw new Error(`seed claimed invite failed: ${insertRes.error?.message}`);
+    }
+    const invitationId = insertRes.data.id as string;
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await cancelInvitationAction(invitationId);
+    expect(result).toEqual({ ok: false, code: 'already_claimed' });
+
+    // Cleanup since we left it behind.
+    await admin.from('session_invitations').delete().eq('id', invitationId);
+  });
+
+  test('rejects non-facilitator caller', async () => {
+    await clearInvitations();
+    const admin = getAdminClient();
+    const insertRes = await admin
+      .from('session_invitations')
+      .insert({ session_id: fx.session.id, email: freshInviteEmail(), invited_by: fx.facilitator.id })
+      .select('id')
+      .single();
+    if (insertRes.error || !insertRes.data) {
+      throw new Error(`seed invite failed: ${insertRes.error?.message}`);
+    }
+    const invitationId = insertRes.data.id as string;
+
+    currentClient = await signInAs(fx.alice);
+    const result = await cancelInvitationAction(invitationId);
+    expect(result).toEqual({ ok: false, code: 'not_facilitator' });
+
+    await admin.from('session_invitations').delete().eq('id', invitationId);
+  });
+
+  test('rejects unknown invitation id with invitation_not_found', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const result = await cancelInvitationAction('00000000-0000-0000-0000-000000000000');
+    expect(result).toEqual({ ok: false, code: 'invitation_not_found' });
+  });
+});
+
+describe('resendInvitationAction', () => {
+  test('replays the original email through inviteParticipantsByEmailAction and keeps the audit row idempotent', async () => {
+    await clearInvitations();
+    const admin = getAdminClient();
+    const email = freshInviteEmail();
+    const insertRes = await admin
+      .from('session_invitations')
+      .insert({ session_id: fx.session.id, email, invited_by: fx.facilitator.id })
+      .select('id')
+      .single();
+    if (insertRes.error || !insertRes.data) {
+      throw new Error(`seed invite failed: ${insertRes.error?.message}`);
+    }
+    const invitationId = insertRes.data.id as string;
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await resendInvitationAction(invitationId);
+    expect(result).toEqual({ ok: true });
+
+    // Unique-open-invite partial index makes the audit insert a no-op
+    // (23505 swallowed) — exactly one row should still exist.
+    const after = await admin
+      .from('session_invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('session_id', fx.session.id)
+      .eq('email', email)
+      .is('claimed_at', null);
+    expect(after.count).toBe(1);
   });
 });

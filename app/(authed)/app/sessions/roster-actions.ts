@@ -310,3 +310,305 @@ export async function resolveSpotlightTargetModelAction(
     modelUrl: modelId ? `/app/designs/${modelId}` : null,
   };
 }
+
+// ── inviteParticipantsByEmailAction ─────────────────────────────────────────
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INVITE_CAP = 25;
+
+function getSiteUrl(): string {
+  // Mirrors orgs/actions.ts' redirect resolution but we don't have access
+  // to next/headers in this surface (the caller is a server action, but
+  // the spec asks for a single env-driven URL so the email link survives
+  // regardless of which host the facilitator was on). Fall through to the
+  // production hostname so a misconfigured local dev environment doesn't
+  // ship a literal `localhost` link.
+  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.brickthink.io';
+}
+
+/** Per-email outcome surfaced back to the caller for inline status display. */
+export type InviteStatus =
+  | 'sent_invite'
+  | 'sent_magiclink'
+  | 'duplicate'
+  | 'invalid_email'
+  | 'already_member'
+  | 'failed';
+
+export type InviteParticipantsByEmailResult =
+  | { ok: true; results: Array<{ email: string; status: InviteStatus }> }
+  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'over_cap' };
+
+/**
+ * Send Supabase-templated invite emails (or magic-link sign-ins, for
+ * already-registered users) to a batch of addresses. Branches per-email:
+ *
+ *   * existing profile + active participant     → `already_member` (no send)
+ *   * existing profile + not yet a participant  → `signInWithOtp` (magic link
+ *                                                 lands on the session's join
+ *                                                 URL so the trigger inserts
+ *                                                 them); writes a
+ *                                                 `session_invitations` audit
+ *                                                 row anyway so the roster
+ *                                                 panel can show "invited"
+ * * no profile                                  → `auth.admin.inviteUserByEmail`
+ *                                                 (Supabase's invite template),
+ *                                                 plus the audit row
+ *
+ * Audit-row inserts swallow 23505 — the unique-open-invite index makes a
+ * resend on an already-open invite a no-op, which is the intended idempotency.
+ *
+ * Refusal codes:
+ *   * `unauthenticated`  — no caller session
+ *   * `not_facilitator`  — caller is not the session facilitator
+ *   * `over_cap`         — batch exceeded INVITE_CAP (25); UI splits earlier
+ */
+export async function inviteParticipantsByEmailAction(
+  sessionId: string,
+  emails: string[],
+): Promise<InviteParticipantsByEmailResult> {
+  const actor = await assertFacilitator(sessionId);
+  if (!actor) {
+    const userSupabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await userSupabase.auth.getUser();
+    if (!user) return { ok: false, code: 'unauthenticated' };
+    return { ok: false, code: 'not_facilitator' };
+  }
+  if (emails.length > INVITE_CAP) return { ok: false, code: 'over_cap' };
+
+  const service = getServiceSupabaseClient();
+  const { data: session, error: sessionErr } = await service
+    .from('sessions')
+    .select('join_code')
+    .eq('id', sessionId)
+    .maybeSingle();
+  if (sessionErr) {
+    throw new Error(`inviteParticipantsByEmailAction sessions select failed: ${sessionErr.message}`);
+  }
+  if (!session?.join_code) {
+    // Defensive: post-backfill every session has a join_code, but if a
+    // future code path drops it (or this is reached during a partial
+    // migration), refuse without throwing — the UI surfaces all-failed.
+    return {
+      ok: true,
+      results: emails.map((email) => ({ email, status: 'failed' as InviteStatus })),
+    };
+  }
+  const joinUrl = `${getSiteUrl()}/app/join/${session.join_code}`;
+
+  const seen = new Set<string>();
+  const results: Array<{ email: string; status: InviteStatus }> = [];
+
+  for (const raw of emails) {
+    const email = raw.trim().toLowerCase();
+    if (!EMAIL_RE.test(email)) {
+      results.push({ email: raw, status: 'invalid_email' });
+      continue;
+    }
+    if (seen.has(email)) {
+      results.push({ email, status: 'duplicate' });
+      continue;
+    }
+    seen.add(email);
+
+    // citext column → case-insensitive match. Service-role read because
+    // the user-scoped client can't see profiles outside shared orgs.
+    const { data: profile, error: profileErr } = await service
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+    if (profileErr) {
+      console.error('inviteParticipantsByEmailAction: profiles lookup failed', { email, error: profileErr });
+      results.push({ email, status: 'failed' });
+      continue;
+    }
+
+    let perEmailStatus: InviteStatus;
+
+    if (profile) {
+      // Existing account: check membership first. An active participant
+      // gets `already_member` (no email send, no audit row).
+      const { data: existing, error: partErr } = await service
+        .from('session_participants')
+        .select('removed_at')
+        .eq('session_id', sessionId)
+        .eq('profile_id', profile.id)
+        .maybeSingle();
+      if (partErr) {
+        console.error('inviteParticipantsByEmailAction: session_participants probe failed', {
+          email,
+          error: partErr,
+        });
+        results.push({ email, status: 'failed' });
+        continue;
+      }
+      if (existing && !existing.removed_at) {
+        results.push({ email, status: 'already_member' });
+        continue;
+      }
+
+      // Magic-link sign-in for the existing user. The redirect lands on
+      // the join URL so the join flow runs after auth callback.
+      // shouldCreateUser: false because we already know this email has a
+      // profile — defensive against a stray Supabase upsert.
+      const { error: otpErr } = await service.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: joinUrl, shouldCreateUser: false },
+      });
+      if (otpErr) {
+        console.error('inviteParticipantsByEmailAction: signInWithOtp failed', { email, error: otpErr });
+        results.push({ email, status: 'failed' });
+        continue;
+      }
+      perEmailStatus = 'sent_magiclink';
+    } else {
+      // No profile yet: Supabase Auth's invite template handles delivery.
+      const { error: inviteErr } = await service.auth.admin.inviteUserByEmail(email, {
+        redirectTo: joinUrl,
+      });
+      if (inviteErr) {
+        console.error('inviteParticipantsByEmailAction: inviteUserByEmail failed', { email, error: inviteErr });
+        results.push({ email, status: 'failed' });
+        continue;
+      }
+      perEmailStatus = 'sent_invite';
+    }
+
+    // Audit row. The unique-open-invite partial index makes this idempotent
+    // for resends — surface 23505 as a benign no-op (the open invite already
+    // exists and will be cleared by handle_new_user on claim).
+    const { error: inviteInsertError } = await service
+      .from('session_invitations')
+      .insert({ session_id: sessionId, email, invited_by: actor });
+    if (inviteInsertError && (inviteInsertError as { code?: string }).code !== '23505') {
+      console.error('inviteParticipantsByEmailAction: invitation insert failed', {
+        email,
+        error: inviteInsertError,
+      });
+      // The email already went out; the audit row failed. Surface as failed
+      // so the UI can prompt a retry rather than silently dropping the row.
+      results.push({ email, status: 'failed' });
+      continue;
+    }
+
+    results.push({ email, status: perEmailStatus });
+  }
+
+  revalidatePath(`/app/sessions/${sessionId}`);
+  return { ok: true, results };
+}
+
+// ── cancelInvitationAction ──────────────────────────────────────────────────
+
+export type CancelInvitationResult =
+  | { ok: true }
+  | {
+      ok: false;
+      code:
+        | 'unauthenticated'
+        | 'not_facilitator'
+        | 'invitation_not_found'
+        | 'already_claimed';
+    };
+
+/**
+ * Hard-delete a pending invitation. Refuses on a claimed invite (the
+ * participant has already redeemed it; cancellation now would be misleading
+ * — the facilitator should `removeParticipantAction` instead).
+ */
+export async function cancelInvitationAction(invitationId: string): Promise<CancelInvitationResult> {
+  const service = getServiceSupabaseClient();
+  const inviteRes = await service
+    .from('session_invitations')
+    .select('session_id, claimed_at')
+    .eq('id', invitationId)
+    .maybeSingle();
+  if (inviteRes.error) {
+    throw new Error(`session_invitations select failed: ${inviteRes.error.message}`);
+  }
+  if (!inviteRes.data) return { ok: false, code: 'invitation_not_found' };
+  if (inviteRes.data.claimed_at) return { ok: false, code: 'already_claimed' };
+
+  const sessionId = inviteRes.data.session_id as string;
+  const actor = await assertFacilitator(sessionId);
+  if (!actor) {
+    const userSupabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await userSupabase.auth.getUser();
+    if (!user) return { ok: false, code: 'unauthenticated' };
+    return { ok: false, code: 'not_facilitator' };
+  }
+
+  const delRes = await service.from('session_invitations').delete().eq('id', invitationId);
+  if (delRes.error) {
+    throw new Error(`session_invitations delete failed: ${delRes.error.message}`);
+  }
+
+  revalidatePath(`/app/sessions/${sessionId}`);
+  return { ok: true };
+}
+
+// ── resendInvitationAction ──────────────────────────────────────────────────
+
+export type ResendInvitationResult =
+  | { ok: true }
+  | {
+      ok: false;
+      code:
+        | 'unauthenticated'
+        | 'not_facilitator'
+        | 'invitation_not_found'
+        | 'already_claimed'
+        | 'failed';
+    };
+
+/**
+ * Re-send a pending invitation by replaying the same email through
+ * `inviteParticipantsByEmailAction`. The unique-open-invite partial index
+ * keeps the audit row idempotent (23505 → no-op). Refuses on a claimed
+ * invite (already redeemed) and on the same auth + facilitator gates as
+ * the underlying action.
+ */
+export async function resendInvitationAction(invitationId: string): Promise<ResendInvitationResult> {
+  const service = getServiceSupabaseClient();
+  const inviteRes = await service
+    .from('session_invitations')
+    .select('session_id, email, claimed_at')
+    .eq('id', invitationId)
+    .maybeSingle();
+  if (inviteRes.error) {
+    throw new Error(`session_invitations select failed: ${inviteRes.error.message}`);
+  }
+  if (!inviteRes.data) return { ok: false, code: 'invitation_not_found' };
+  if (inviteRes.data.claimed_at) return { ok: false, code: 'already_claimed' };
+
+  const sessionId = inviteRes.data.session_id as string;
+  const email = inviteRes.data.email as string;
+
+  // The underlying action runs its own facilitator + unauthenticated gates,
+  // so this branch only short-circuits on lookup failures above. Defer the
+  // refusal mapping to the per-email status it returns.
+  const send = await inviteParticipantsByEmailAction(sessionId, [email]);
+  if (!send.ok) {
+    if (send.code === 'unauthenticated') return { ok: false, code: 'unauthenticated' };
+    if (send.code === 'not_facilitator') return { ok: false, code: 'not_facilitator' };
+    return { ok: false, code: 'failed' };
+  }
+  const perEmail = send.results[0];
+  if (!perEmail) return { ok: false, code: 'failed' };
+  if (
+    perEmail.status === 'sent_invite' ||
+    perEmail.status === 'sent_magiclink' ||
+    perEmail.status === 'already_member'
+  ) {
+    // already_member surfaces as ok because the participant has effectively
+    // already joined — the resend was a no-op against a now-redundant audit
+    // row but there's nothing more to do.
+    return { ok: true };
+  }
+  return { ok: false, code: 'failed' };
+}
