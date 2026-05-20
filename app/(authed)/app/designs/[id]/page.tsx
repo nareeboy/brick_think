@@ -9,6 +9,7 @@ import { getServiceSupabaseClient } from '@/lib/db/service';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
+import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
@@ -63,9 +64,14 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
   };
 
   let sessionContext: SessionContext | null = null;
+  let isSessionFacilitator = false;
   if (data.session_id && data.stage_id) {
     const [sessionRes, stageRes] = await Promise.all([
-      supabase.from('sessions').select('id, title').eq('id', data.session_id).maybeSingle(),
+      supabase
+        .from('sessions')
+        .select('id, title, facilitator_id')
+        .eq('id', data.session_id)
+        .maybeSingle(),
       supabase.from('stages').select('id, stage_type').eq('id', data.stage_id).maybeSingle(),
     ]);
     if (sessionRes.data && stageRes.data) {
@@ -74,8 +80,16 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         sessionTitle: sessionRes.data.title,
         stageType: stageRes.data.stage_type as StageType,
       };
+      isSessionFacilitator = sessionRes.data.facilitator_id === user.id;
     }
   }
+  // Facilitators of the parent session see a private-notes drawer in the
+  // canvas header. Pre-fetch the notes server-side via the single
+  // getFacilitatorNotes projection point (which re-asserts the gate).
+  const facilitatorNotes =
+    isSessionFacilitator && sessionContext
+      ? await getFacilitatorNotes(sessionContext.sessionId)
+      : null;
 
   const prefsRes = await supabase
     .from('profiles')
@@ -139,6 +153,8 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         colourblindMode={colourblindMode}
         sourceStageLabel={sourceStageLabel}
         alreadyImported={alreadyImported}
+        isSessionFacilitator={isSessionFacilitator}
+        facilitatorNotes={facilitatorNotes}
       />
     </>
   );

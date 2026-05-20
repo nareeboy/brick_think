@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
 import { getLatestSessionReport } from '../report-actions';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
+import { FacilitatorNotesCard } from './FacilitatorNotesCard';
 import GenerateReportButton from './GenerateReportButton';
 import { GoToMyCanvasButton } from './GoToMyCanvasButton';
 import { PreSessionChecklist } from './PreSessionChecklist';
@@ -359,6 +361,12 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       ? await getLatestSessionReport(session.id)
       : null;
 
+  // Private notes are facilitator-only (not org-admin), and the helper itself
+  // enforces that gate — call it for the facilitator's view and skip the
+  // round-trip otherwise.
+  const isFacilitator = session.facilitator_id === user.id;
+  const facilitatorNotes = isFacilitator ? await getFacilitatorNotes(session.id) : null;
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
@@ -437,6 +445,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           }))}
           scenariosByStageType={scenariosByStageType}
         />
+        {isFacilitator ? (
+          <FacilitatorNotesCard sessionId={session.id} initialValue={facilitatorNotes} />
+        ) : null}
         <SessionStages
           sessionId={session.id}
           sessionTitle={session.title}
