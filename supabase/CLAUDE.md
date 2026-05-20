@@ -25,6 +25,28 @@ Four migrations (`20260518120000_stage_runtime_state`, `20260518130000_stages_re
 - `stages` + `sessions` are added to the `supabase_realtime` publication with `REPLICA IDENTITY FULL` so `postgres_changes` UPDATE payloads carry the full row through the participant's RLS filter. **Anything new that needs Realtime row-filtering on UPDATE must also set REPLICA IDENTITY FULL** — without it the OLD record is PK-only and RLS gates can't evaluate.
 - Default per-stage durations come from `STAGE_DEFAULT_DURATIONS_SECONDS` in [lib/sessions/stage-labels.ts](../lib/sessions/stage-labels.ts), applied at `createSession` and `/api/test/seed-session` insert time. The backfill migration patched any pre-existing NULL rows once.
 
+
+## session_participants + session_invitations + join_code
+
+[migrations/20260520020000_session_participants.sql](migrations/20260520020000_session_participants.sql) and follow-ups introduce the join-code accept flow and facilitator-managed roster for session-level participant discovery.
+
+- `public.session_participants(session_id, profile_id)` — composite PK, one row per session-participant pair. Columns: `joined_at` (non-null), `removed_at` (soft-delete, nullable), `spotlighted_at` (Realtime tie for the banner, nullable). Org-member-scoped SELECT; service-role INSERT/UPDATE.
+- `public.session_invitations(id, session_id, email, code)` — mirrors `org_invitations` shape for email-based invites. `code` is the magic-link token minted by Supabase Auth; `claimed_at` (nullable) gates whether an invite was accepted via the auth callback. RLS: org-member-scoped SELECT; service-role INSERT/UPDATE. The `handle_new_user` trigger ([migrations/20260520010000_handle_new_user_upsert_invitations.sql](migrations/20260520010000_handle_new_user_upsert_invitations.sql)) also handles session invitations with `on conflict (session_id, email) do update` to auto-restore previously-kicked users when the facilitator re-invites them.
+- `public.sessions.join_code` (text, 6-char, nullable) — set on create via `generate_join_code()` SQL function (Crockford base32 alphabet to avoid confusion). Rotatable via `rotateJoinCodeAction`; the old code is wiped when a new one is generated. Only set on org-scoped sessions (`sessions.org_id NOT NULL`).
+- `public.generate_join_code()` — service-role-only SQL function. Generates unique 6-char codes; called on `createSession` and `rotateJoinCodeAction`.
+- `public.lookup_session_by_code(p_code)` — security-definer RPC, granted to `anon` and `authenticated`. Takes a join code, returns the session ID + org name + facilitator name (the fields needed for UX on the public `/app/join/[code]` page). Unauth-safe; returns `NULL` if the code doesn't match.
+- `public.is_session_participant(p_session_id)` — plpgsql security-definer helper. Returns `true` if the caller is in `session_participants` for that session, `false` otherwise. Used by the RLS extension (see below).
+- `public.is_session_participant_for(p_profile_id, p_session_id)` — plpgsql variant. Used by the `handle_new_user` trigger to check membership when processing claims.
+- `public.can_see_profile_via_session(p_profile_id, p_requester_id)` — plpgsql security-definer RPC. Returns `true` if `p_requester_id` is a session-participant with the same session as `p_profile_id`, OR if they're org-members together. Used by the `profiles` SELECT policy so non-org-members can see participant names on the session page.
+
+**RLS extension pattern**: every SELECT policy on `sessions`, `stages`, `stage_rooms`, `stage_room_members`, `stage_room_sources`, and the `can_read_model` RPC gains a parallel `is_session_participant(session_id)` OR-branch so session-participants see the data regardless of org membership. The `models` SELECT also extends — service-role read in design pages, participant sees their own model + room-composed models if Yjs is on. Example: a pre-existing `(auth.uid() = s.owner_profile_id OR is_org_member(s.org_id))` becomes `(... OR is_session_participant(s.id))`. All new session-related tables and their FKs are scoped through this extension so the participant-only path keeps working.
+
+- Backfill: existing `session_participants` rows were created for sessions with `join_code` set via [migrations/20260520030000_backfill_session_participants.sql](migrations/20260520030000_backfill_session_participants.sql), which inserted one row per (session, org-member) pair so legacy sessions keep the "all org members join" semantics when rooms are enabled.
+
+**Notifications** — new `notifications.kind` values ([migrations/20260520040000_notification_kinds_session.sql](migrations/20260520040000_notification_kinds_session.sql)):
+
+- `participant_joined` — fired by `redeemJoinCodeAction` when a new participant joins (the facilitator is notified).
+- `session_invitation_claimed` — fired by the auth callback when someone clicks a magic-link in a session invite email and claims the code.
 ## Stage rooms data model
 
 [migrations/20260519130000_stage_rooms.sql](migrations/20260519130000_stage_rooms.sql) introduces breakout-group rooms on `shared_model`, `system_model`, and `guiding_principles`. The full UI / server-action surface is documented in [(authed)/CLAUDE.md "Stage rooms (breakout groups)"](<../app/(authed)/CLAUDE.md>); this section covers the schema invariants only.
