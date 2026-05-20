@@ -393,7 +393,6 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
               {session.status === 'completed' ? (
                 <GenerateReportButton
                   sessionId={session.id}
-                  orgId={session.org_id}
                   initialPdfUrl={
                     reportLatest && reportLatest.ok ? reportLatest.pdfUrl : null
                   }

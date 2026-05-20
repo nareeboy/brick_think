@@ -341,48 +341,6 @@ export type Database = {
           },
         ]
       }
-      org_integrations: {
-        Row: {
-          anthropic_api_key_ciphertext: string | null
-          anthropic_api_key_last4: string | null
-          anthropic_api_key_nonce: string | null
-          org_id: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
-          org_id: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
-          org_id?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "org_integrations_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: true
-            referencedRelation: "organisations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "org_integrations_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       org_invitations: {
         Row: {
           claimed_at: string | null
@@ -928,6 +886,38 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_integrations: {
+        Row: {
+          anthropic_api_key_ciphertext: string | null
+          anthropic_api_key_last4: string | null
+          anthropic_api_key_nonce: string | null
+          profile_id: string
+          updated_at: string
+        }
+        Insert: {
+          anthropic_api_key_ciphertext?: string | null
+          anthropic_api_key_last4?: string | null
+          anthropic_api_key_nonce?: string | null
+          profile_id: string
+          updated_at?: string
+        }
+        Update: {
+          anthropic_api_key_ciphertext?: string | null
+          anthropic_api_key_last4?: string | null
+          anthropic_api_key_nonce?: string | null
+          profile_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_integrations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
