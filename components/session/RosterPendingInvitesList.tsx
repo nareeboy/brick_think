@@ -56,6 +56,14 @@ export function RosterPendingInvitesList({ sessionId }: Props) {
       setRows(data || []);
     };
 
+    // Prime realtime auth so RLS-filtered payloads reach this client.
+    // See useSessionStages.ts for the canonical pattern + rationale.
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (active && token) await supabase.realtime.setAuth(token);
+    })();
+
     void reload();
 
     // Subscribe to session_invitations changes
