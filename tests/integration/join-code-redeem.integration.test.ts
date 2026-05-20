@@ -45,7 +45,7 @@ vi.mock('@/lib/db/server', () => ({
   }),
 }));
 
-import { redeemJoinCodeAction } from '@/app/(authed)/app/sessions/join-actions';
+import { redeemJoinCodeAction, rotateJoinCodeAction } from '@/app/(authed)/app/sessions/join-actions';
 
 interface Fixture {
   facilitator: TestUser;
@@ -253,6 +253,63 @@ describe('redeemJoinCodeAction', () => {
     // { user: null } and the action short-circuits.
     currentClient = null;
     const result = await redeemJoinCodeAction(fx.sessionCode);
+    expect(result).toEqual({ ok: false, code: 'unauthenticated' });
+  });
+});
+
+describe('rotateJoinCodeAction', () => {
+  test('rotates the code; old code stops working, new code works', async () => {
+    // Capture the current join code.
+    const oldCode = fx.sessionCode;
+
+    // Rotate as facilitator.
+    currentClient = await signInAs(fx.facilitator);
+    const rotateResult = await rotateJoinCodeAction(fx.session.id);
+    expect(rotateResult.ok).toBe(true);
+    if (!rotateResult.ok) throw new Error('Expected ok=true');
+    const newCode = rotateResult.code;
+
+    // Verify the new code is 6 chars (Crockford base32).
+    expect(newCode).toMatch(/^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{6}$/);
+    expect(newCode).not.toBe(oldCode);
+
+    // Verify old code no longer redeems (shape-valid but unknown).
+    const freshUserForOldTest = await createTestUser();
+    try {
+      currentClient = await signInAs(freshUserForOldTest);
+      const oldResult = await redeemJoinCodeAction(oldCode);
+      expect(oldResult).toEqual({ ok: false, code: 'code_not_found' });
+    } finally {
+      await cleanupTestUser(freshUserForOldTest.id);
+    }
+
+    // Verify new code redeems successfully (use a fresh user so idempotent
+    // branch doesn't mask the lookup).
+    const freshUserForNewTest = await createTestUser();
+    try {
+      currentClient = await signInAs(freshUserForNewTest);
+      const newResult = await redeemJoinCodeAction(newCode);
+      expect(newResult).toEqual({ ok: true, sessionId: fx.session.id });
+    } finally {
+      await cleanupTestUser(freshUserForNewTest.id);
+    }
+  });
+
+  test('non-facilitator gets not_facilitator', async () => {
+    currentClient = await signInAs(fx.participant);
+    const result = await rotateJoinCodeAction(fx.session.id);
+    expect(result).toEqual({ ok: false, code: 'not_facilitator' });
+  });
+
+  test('unknown session id gets session_not_found', async () => {
+    currentClient = await signInAs(fx.facilitator);
+    const result = await rotateJoinCodeAction('00000000-0000-0000-0000-000000000000');
+    expect(result).toEqual({ ok: false, code: 'session_not_found' });
+  });
+
+  test('unauthenticated caller gets unauthenticated', async () => {
+    currentClient = null;
+    const result = await rotateJoinCodeAction(fx.session.id);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });
 });
