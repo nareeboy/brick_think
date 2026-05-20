@@ -1,4 +1,4 @@
-export type NotificationKind = 'org_added' | 'session_started';
+export type NotificationKind = 'org_added' | 'session_started' | 'participant_joined' | 'session_invitation_claimed';
 
 export interface NotificationRow {
   id: string;
