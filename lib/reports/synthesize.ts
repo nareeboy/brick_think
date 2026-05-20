@@ -2,6 +2,8 @@ import type Anthropic from '@anthropic-ai/sdk';
 
 import type { CollectedSession } from '@/lib/reports/collect';
 
+const SYNTHESIS_TIMEOUT_MS = 90_000;
+
 const SYSTEM_PROMPT = `You are writing a session report for BrickThink, a facilitation tool for LEGO Serious Play sessions. Voice: confident, plain English, no jargon, no marketing fluff. Reference participants by first name. Never invent details that aren't in the input. Use British English.
 
 Output exactly one JSON object matching this schema:
@@ -25,18 +27,21 @@ export async function synthesizeReport(
 ): Promise<Synthesis> {
   const userBlock = buildUserBlock(collected);
 
-  const resp = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4000,
-    system: [
-      {
-        type: 'text',
-        text: SYSTEM_PROMPT,
-        cache_control: { type: 'ephemeral' },
-      },
-    ],
-    messages: [{ role: 'user', content: userBlock }],
-  });
+  const resp = await client.messages.create(
+    {
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4000,
+      system: [
+        {
+          type: 'text',
+          text: SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: [{ role: 'user', content: userBlock }],
+    },
+    { timeout: SYNTHESIS_TIMEOUT_MS },
+  );
 
   const block = resp.content.find((c) => c.type === 'text');
   if (!block || block.type !== 'text') {
