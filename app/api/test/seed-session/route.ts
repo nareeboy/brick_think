@@ -144,13 +144,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // insert into org_memberships manually here (that would be a duplicate).
   }
 
-  // 3. Create the session.
+  // 3. Create the session. Generate a join_code up front so e2e specs that
+  //    exercise the participant join flow can resolve a code without an
+  //    extra round-trip. Production session creation goes through
+  //    createSession (org-scoped, RLS); the join_code generator there is a
+  //    DB function call, mirrored here.
+  const joinCodeRes = await admin.rpc('generate_join_code');
+  if (joinCodeRes.error || !joinCodeRes.data) {
+    return NextResponse.json(
+      { error: 'join_code_failed', detail: joinCodeRes.error?.message ?? 'unknown' },
+      { status: 500 },
+    );
+  }
+  const joinCode = joinCodeRes.data as string;
   const sessionRes = await admin
     .from('sessions')
     .insert({
       org_id: orgId,
       facilitator_id: profile.id,
       title,
+      join_code: joinCode,
     })
     .select('id')
     .single();
@@ -184,6 +197,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   return NextResponse.json({
     sessionId,
     orgId,
+    joinCode,
     stageIds,
   });
 }

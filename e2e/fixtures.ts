@@ -19,6 +19,7 @@ interface Fixtures {
   seededSession: {
     sessionId: string;
     orgId: string;
+    joinCode: string;
     stageIds: Record<
       | 'skill_building'
       | 'individual_model'
