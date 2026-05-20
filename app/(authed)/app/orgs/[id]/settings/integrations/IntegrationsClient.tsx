@@ -149,6 +149,10 @@ function messageForCode(code: string, fallback?: string): string {
       return "Couldn't reach Anthropic. Try again.";
     case 'not_org_admin':
       return 'You need to be an org admin to manage integrations.';
+    case 'unauthenticated':
+      return 'Sign in to manage integrations.';
+    case 'invalid_uuid':
+      return 'Invalid organisation ID.';
     default:
       return fallback ?? 'Something went wrong.';
   }
