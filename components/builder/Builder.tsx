@@ -21,6 +21,7 @@ import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
 import { ExportMenu } from '@/components/exports/ExportMenu';
+import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
@@ -38,6 +39,10 @@ interface BuilderProps {
   colourblindMode?: boolean;
   sourceStageLabel?: string | null;
   alreadyImported?: boolean;
+  /** True when the signed-in caller is the parent session's facilitator. */
+  isSessionFacilitator?: boolean;
+  /** Pre-fetched facilitator notes (server-side); null for everyone else. */
+  facilitatorNotes?: string | null;
 }
 
 export function Builder({
@@ -51,6 +56,8 @@ export function Builder({
   colourblindMode = false,
   sourceStageLabel = null,
   alreadyImported = false,
+  isSessionFacilitator = false,
+  facilitatorNotes = null,
 }: BuilderProps) {
   return (
     <BuilderProvider
@@ -81,7 +88,13 @@ export function Builder({
                 ownerLabel={ownerLabel}
                 sessionContext={sessionContext}
               />
-              <CanvasStage orgId={orgId} colourblindMode={colourblindMode} />
+              <CanvasStage
+                orgId={orgId}
+                colourblindMode={colourblindMode}
+                sessionContext={sessionContext}
+                isSessionFacilitator={isSessionFacilitator}
+                facilitatorNotes={facilitatorNotes}
+              />
             </div>
           </div>
         </div>
@@ -248,9 +261,15 @@ function SaveToast() {
 function CanvasStage({
   orgId,
   colourblindMode = false,
+  sessionContext = null,
+  isSessionFacilitator = false,
+  facilitatorNotes = null,
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
+  sessionContext?: SessionContext | null;
+  isSessionFacilitator?: boolean;
+  facilitatorNotes?: string | null;
 }) {
   const { awareness, selfClientId, view, self } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
@@ -289,10 +308,33 @@ function CanvasStage({
 
         <ShareButton orgId={orgId} />
         <ExportButton />
+        {isSessionFacilitator && sessionContext ? (
+          <NotesHeaderButton
+            sessionId={sessionContext.sessionId}
+            initialValue={facilitatorNotes}
+          />
+        ) : null}
         <PiecesDrawer />
         <BringInPreviousModelCard />
       </section>
     </DragPieceProvider>
+  );
+}
+
+function NotesHeaderButton({
+  sessionId,
+  initialValue,
+}: {
+  sessionId: string;
+  initialValue: string | null;
+}) {
+  // Slot rhythm in the canvas section: PiecesDrawer at right-5, Share at
+  // right-[72px], Export at right-[124px]. Notes sits to the left of Export
+  // so all four chrome buttons line up at 52px intervals.
+  return (
+    <div className="absolute right-[176px] top-5 z-30">
+      <FacilitatorNotesButton sessionId={sessionId} initialValue={initialValue} />
+    </div>
   );
 }
 

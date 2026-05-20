@@ -1,7 +1,7 @@
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
-export const FACILITATOR_NOTES_MAX = 8000;
+export { FACILITATOR_NOTES_MAX } from './facilitatorNotesConstants';
 
 /**
  * The ONLY function that ever projects `facilitator_notes` from `sessions`.
