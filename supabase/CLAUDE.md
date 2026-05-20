@@ -148,3 +148,13 @@ Two storage gotchas the codebase has been bitten by — keep these in mind for a
 RLS: a user can read/write their own `user_integrations` row only (`profile_id = auth.uid()`). Service-role bypass is used by the report action's lookup (`getAnthropicClientForProfile` in [../lib/integrations/anthropic.ts](../lib/integrations/anthropic.ts)) — the plaintext key is constructed only there and never logged.
 
 `profile_id` cascades on `profiles` delete, so account deletion sweeps the encrypted blob cleanly.
+
+## `brick_reactions` + `brick_comments`
+
+Per-brick reactions (composite-PK toggle) and flat comments (soft-delete via `deleted_at`) on room-backed canvases. Added in [migrations/20260520220000_brick_reactions_and_comments.sql](migrations/20260520220000_brick_reactions_and_comments.sql).
+
+Both gated by `public.can_edit_room(auth.uid(), model_id)`. The function was originally service-role only — granted to `authenticated` in [migrations/20260520230000_can_edit_room_grant_authenticated.sql](migrations/20260520230000_can_edit_room_grant_authenticated.sql) so the RLS policies can call it from the user-scoped client. `can_edit_room` is `security definer` with pinned `search_path`, so exposing it is safe.
+
+`brick_id` is a TEXT column referencing the stable string id assigned by `makeBrickId('b')` in `components/builder/builderState.tsx`. Bricks live in Yjs, not Postgres — no FK. Orphans after brick deletion are retained as historical record; UI hides them.
+
+Both tables join `supabase_realtime` with `REPLICA IDENTITY FULL` so RLS row-filtering works on UPDATE/DELETE payloads. `brick_comments` UPDATE policy is restricted to soft-delete (`deleted_at`) of the caller's own row; body is immutable from RLS (and enforced again in the server action).
