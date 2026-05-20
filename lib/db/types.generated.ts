@@ -697,6 +697,7 @@ export type Database = {
           current_stage: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id: string | null
           facilitator_id: string | null
+          facilitator_notes: string | null
           id: string
           join_code: string | null
           mode: Database["public"]["Enums"]["session_mode"]
@@ -714,6 +715,7 @@ export type Database = {
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id?: string | null
           facilitator_id?: string | null
+          facilitator_notes?: string | null
           id?: string
           join_code?: string | null
           mode?: Database["public"]["Enums"]["session_mode"]
@@ -731,6 +733,7 @@ export type Database = {
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
           current_stage_id?: string | null
           facilitator_id?: string | null
+          facilitator_notes?: string | null
           id?: string
           join_code?: string | null
           mode?: Database["public"]["Enums"]["session_mode"]

@@ -131,6 +131,18 @@ Added 2026-05-19 ([migrations/20260519150000_session_prep_columns.sql](migration
 
 When adding a key: extend `ALLOWED_PRE_SESSION_KEYS` in `lib/sessions/preSessionCheck.ts`, add a row above, and update the matching ChecklistRow in [`PreSessionChecklist.tsx`](../app/\(authed\)/app/sessions/[id]/PreSessionChecklist.tsx). DB-level type checks are intentionally deferred — `jsonb` keeps the bag forward-compatible without per-key migrations.
 
+## `sessions.facilitator_notes` privacy
+
+Single `text` column on `sessions` (`null`able, CHECK `char_length ≤ 8000`) added in [migrations/20260520210000_sessions_facilitator_notes.sql](migrations/20260520210000_sessions_facilitator_notes.sql). Stores the facilitator's private working notes per session. UI surface (collapsible session-page card + canvas-chrome drawer on session-scoped designs) is documented in [../app/(authed)/CLAUDE.md "Facilitator notes"](<../app/(authed)/CLAUDE.md>); this section covers the privacy invariant only.
+
+**Privacy is enforced at the data-access layer, not by RLS.** The existing `sessions` SELECT policy grants any org member the ability to read the row (org members need to see session title / status / current_stage_id to render the page); Postgres can't gate column visibility row-by-row through `select *`. Instead:
+
+- The single read helper [`getFacilitatorNotes(sessionId)`](../lib/sessions/facilitatorNotes.ts) is the **only** function in the codebase that projects `facilitator_notes` from `sessions`. It uses the service-role client, re-asserts `data.facilitator_id === user.id`, and returns `null` for any non-facilitator caller — including org owners and admins.
+- The write path is the equally narrow [`updateFacilitatorNotesAction`](../app/\(authed\)/app/sessions/notes-actions.ts) which re-asserts the same facilitator gate before UPDATE.
+- A source-grep invariant in [tests/integration/facilitator-notes-isolation.integration.test.ts](../tests/integration/facilitator-notes-isolation.integration.test.ts) walks the repo and asserts that only a small allowlist of files (the helper, the action, `NotesEditor`, and the two surface components) references the `facilitator_notes` literal. If you add a new caller that needs notes, route it through `getFacilitatorNotes` rather than reintroducing the column on a generic `.select()` call — and **never `select('*')` on `sessions`**, the column would tag along (and the source-grep doesn't catch `'*'` directly, so this is on you).
+
+The 8000-char CHECK matches the client `maxLength` in [NotesEditor.tsx](../components/session/NotesEditor.tsx) / [lib/sessions/facilitatorNotesConstants.ts](../lib/sessions/facilitatorNotesConstants.ts) — if you raise one, raise both (and add a migration that drops + re-adds the CHECK with the new cap).
+
 ## `scenarios` table
 
 Added 2026-05-19 ([migrations/20260519140000_scenarios.sql](migrations/20260519140000_scenarios.sql), seeds in `20260519160000_scenarios_seed.sql`). 20 canonical Phase-1 templates (4 per stage_type) seeded via service-role migration; no INSERT/UPDATE/DELETE RLS policies yet (Phase 2 will add org-scoped custom authoring). The TS source of truth that the seed migration mirrors lives in [../lib/scenarios/canonical.ts](../lib/scenarios/canonical.ts); a unit test reads both files and asserts row counts match.
