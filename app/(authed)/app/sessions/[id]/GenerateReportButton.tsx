@@ -6,7 +6,6 @@ import { generateSessionReport } from '../report-actions';
 
 interface Props {
   sessionId: string;
-  orgId: string;
   initialPdfUrl: string | null;
   initialGeneratedAt: string | null;
   initialError?: string;
@@ -14,7 +13,6 @@ interface Props {
 
 export default function GenerateReportButton({
   sessionId,
-  orgId,
   initialPdfUrl,
   initialGeneratedAt,
   initialError,
@@ -32,7 +30,7 @@ export default function GenerateReportButton({
         setPdfUrl(res.pdfUrl);
         setGeneratedAt(res.generatedAt);
       } else if (res.code === 'no_claude_key') {
-        setError('This org has no Anthropic key yet.');
+        setError('You have no Anthropic key yet.');
       } else {
         setError(messageForCode(res.code, res.message));
       }
@@ -79,7 +77,7 @@ export default function GenerateReportButton({
         <p className="text-xs text-red-700" role="status">
           {error}{' '}
           {error.includes('no Anthropic key') ? (
-            <a href={`/app/orgs/${orgId}/settings/integrations`} className="underline">
+            <a href="/app/account" className="underline">
               Add one
             </a>
           ) : null}

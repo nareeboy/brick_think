@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import { getAnthropicClientForOrg } from '@/lib/integrations/anthropic';
+import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
 import { getCanvasImageBuffer } from '@/lib/reports/canvas-image';
 import { collectSession, orderedStages } from '@/lib/reports/collect';
 import { renderSessionReportPdf, type SessionReportData } from '@/lib/reports/pdf';
@@ -60,7 +60,10 @@ export async function generateSessionReport(
   const stagesPresent = orderedStages(collected.modelsByStage);
   if (stagesPresent.length === 0) return { ok: false, code: 'no_models' };
 
-  const clientLookup = await getAnthropicClientForOrg(session.org_id);
+  // The Anthropic key follows the facilitator, not the org. Each user pastes
+  // their own key on /app/account; the report bills against that user's
+  // Anthropic account.
+  const clientLookup = await getAnthropicClientForProfile(user.id);
   if (!clientLookup.ok) return { ok: false, code: 'no_claude_key' };
 
   let synthesis;
