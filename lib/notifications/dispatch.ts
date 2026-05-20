@@ -1,8 +1,9 @@
 import 'server-only';
 
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import { resolveActorDisplay } from './actorDisplay';
 
-export { resolveActorDisplay } from './actorDisplay';
+export { resolveActorDisplay };
 
 export type NotificationKind = 'org_added' | 'session_started' | 'participant_joined' | 'session_invitation_claimed';
 
@@ -83,5 +84,47 @@ export async function dispatchSessionStartedNotifications(
   const { error } = await svc.from('notifications').insert(rows);
   if (error) {
     console.error('dispatchSessionStartedNotifications insert failed', error);
+  }
+}
+
+interface DispatchParticipantJoinedArgs {
+  sessionId: string;
+  sessionTitle: string;
+  facilitatorId: string;
+  joinerProfileId: string;
+  joinerFullName: string | null;
+  joinerEmail: string | null;
+}
+
+/**
+ * Insert a single `participant_joined` notification for the facilitator when
+ * a participant successfully joins their session via join code. Idempotent at
+ * the call-site: callers gate this on a successful session_participants
+ * insert (the insert is the actual "joined" event; this is the notification
+ * side-effect).
+ *
+ * Uses resolveActorDisplay internally with 'A new participant' as the
+ * fallback for participants with no usable display name.
+ */
+export async function dispatchParticipantJoinedNotification(
+  args: DispatchParticipantJoinedArgs,
+): Promise<void> {
+  const joinerDisplay = resolveActorDisplay({
+    fullName: args.joinerFullName,
+    email: args.joinerEmail,
+    fallback: 'A new participant',
+  });
+
+  const svc = getServiceSupabaseClient();
+  const { error } = await svc.from('notifications').insert({
+    recipient_profile_id: args.facilitatorId,
+    kind: 'participant_joined',
+    title: `${joinerDisplay} joined ${args.sessionTitle}`,
+    link_url: `/app/sessions/${args.sessionId}`,
+    actor_profile_id: args.joinerProfileId,
+    session_id: args.sessionId,
+  });
+  if (error) {
+    console.error('dispatchParticipantJoinedNotification failed', error);
   }
 }
