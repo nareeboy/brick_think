@@ -57,16 +57,16 @@ test.describe('Per-stage picker + pre-session checklist', () => {
       { timeout: 5_000 },
     );
 
-    // 2. Scenarios: pick one per stage. seededSession exposes all five.
+    // 2. Scenarios: expand the checklist row (each ChecklistRow renders its
+    // body only when expanded), then pick one per stage. The pick button's
+    // testid stays the same on both states; the label flips from "Pick a
+    // scenario" to "Change" once a pick lands.
+    await signedInPage.getByRole('button', { name: /Pick a scenario for each stage/i }).click();
     for (const stageId of Object.values(seededSession.stageIds)) {
-      await signedInPage.locator(`[data-testid="scenario-pick-${stageId}"]`).click();
-      await signedInPage
-        .getByTestId('scenario-picker-confirm')
-        .first()
-        .click();
-      await expect(
-        signedInPage.locator(`[data-testid="scenario-change-${stageId}"]`),
-      ).toBeVisible({ timeout: 5_000 });
+      const button = signedInPage.locator(`[data-testid="scenario-pick-${stageId}"]`);
+      await button.click();
+      await signedInPage.getByTestId('scenario-picker-confirm').first().click();
+      await expect(button).toHaveText(/Change/, { timeout: 5_000 });
     }
 
     await expect(signedInPage.locator('[data-testid="checklist-item-scenarios"]')).toHaveAttribute(

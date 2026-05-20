@@ -116,3 +116,12 @@ Added 2026-05-19 ([migrations/20260519140000_scenarios.sql](migrations/202605191
 SELECT policy: any authenticated user sees `is_template = true` rows plus rows where they're a member of `org_id`. Check constraint `scenarios_template_global_chk` enforces `is_template ⇒ org_id IS NULL`.
 
 `stages.scenario_id` is the per-stage pick (nullable, `ON DELETE SET NULL` so removing a template doesn't break historic sessions). Written by `setStageScenarioAction` under the existing facilitator gate.
+
+## Per-stage scenario overrides
+
+Two nullable text columns on `stages` let facilitators tailor the canonical prompt for their session without forking the seed row. When either is set, the stage-card scenario panel shows a `customised` chip and renders the override; clearing either falls back to the canonical `scenarios.title` / `scenarios.body`.
+
+- `stages.scenario_title_override text` (CHECK ≤ 120) — added [migrations/20260520140000_stage_scenario_title_override.sql](migrations/20260520140000_stage_scenario_title_override.sql).
+- `stages.scenario_body_override text` (CHECK ≤ 4000) — added [migrations/20260520120000_stage_scenario_body_override.sql](migrations/20260520120000_stage_scenario_body_override.sql).
+
+Both written atomically by `updateStageScenarioOverridesAction({ title, body })` in [../app/(authed)/app/sessions/scenario-actions.ts](../app/\(authed\)/app/sessions/scenario-actions.ts). The action normalises empty / whitespace / canonical-matching inputs to `NULL` so the override only persists when the facilitator's text genuinely differs from the seed.
