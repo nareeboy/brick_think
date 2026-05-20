@@ -93,6 +93,8 @@ function messageForCode(code: string, fallback?: string): string {
       return 'End the session first.';
     case 'no_models':
       return 'This session has no models to include.';
+    case 'decrypt_failed':
+      return 'Your stored key can\'t be decrypted (encryption key changed?). Re-paste it on /app/account.';
     case 'claude_api_error':
       return `Anthropic error: ${fallback ?? 'unknown'}.`;
     case 'render_failed':
