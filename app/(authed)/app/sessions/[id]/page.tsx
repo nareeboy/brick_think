@@ -12,6 +12,7 @@ import { getLatestSessionReport } from '../report-actions';
 import { DeleteSessionButton } from './DeleteSessionButton';
 import GenerateReportButton from './GenerateReportButton';
 import { PreSessionChecklist } from './PreSessionChecklist';
+import { RosterButton } from '@/components/session/RosterButton';
 import { SessionStages, type ParticipantModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
@@ -51,7 +52,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const sessionRes = await supabase
     .from('sessions')
     .select(
-      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, organisations:org_id ( id, name )',
+      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, organisations:org_id ( id, name )',
     )
     .eq('id', id)
     .maybeSingle();
@@ -69,6 +70,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     current_stage_id: string | null;
     brief_text: string | null;
     pre_session_check: Record<string, unknown> | null;
+    join_code: string | null;
     organisations: { id: string; name: string } | null;
   };
 
@@ -388,6 +390,9 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
               canRename={canManageSession}
             />
           </div>
+          {canManageSession && session.join_code ? (
+            <RosterButton sessionId={session.id} joinCode={session.join_code} />
+          ) : null}
           {canManageSession ? (
             <div className="flex items-start gap-3">
               {session.status === 'completed' ? (
