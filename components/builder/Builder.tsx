@@ -6,6 +6,7 @@ import { SaveVersionModal } from './SaveVersionModal';
 import { ShareModal } from './ShareModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 
+import { BrickCommentIndicator } from './BrickCommentIndicator';
 import { BrickReactionChips } from './BrickReactionChips';
 import {
   BringInPreviousModelCard,
@@ -21,9 +22,10 @@ import { PeopleHereStrip } from './PeopleHereStrip';
 import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
+import { useBrickComments } from './useBrickComments';
 import { useBrickReactions } from './useBrickReactions';
 import { ExportMenu } from '@/components/exports/ExportMenu';
-import type { ReactionRow } from '@/lib/brickFeedback/loadInitial';
+import type { CommentRow, ReactionRow } from '@/lib/brickFeedback/loadInitial';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
@@ -47,6 +49,11 @@ interface BuilderProps {
    * a fresh room canvas.
    */
   initialReactions?: ReactionRow[] | null;
+  /**
+   * Pre-fetched comments for the brick-feedback overlay. Same room-scoping
+   * rule as `initialReactions` — non-null only on room-backed canvases.
+   */
+  initialComments?: CommentRow[] | null;
   /** Caller's profile id; needed to tag "mine" pills. */
   myProfileId?: string | null;
 }
@@ -63,9 +70,11 @@ export function Builder({
   sourceStageLabel = null,
   alreadyImported = false,
   initialReactions = null,
+  initialComments = null,
   myProfileId = null,
 }: BuilderProps) {
   const reactionsEnabled = initialReactions !== null && myProfileId !== null && !!initialModel;
+  const commentsEnabled = initialComments !== null && myProfileId !== null && !!initialModel;
   return (
     <BuilderProvider
       readOnly={readOnly}
@@ -100,6 +109,8 @@ export function Builder({
                 colourblindMode={colourblindMode}
                 reactionsEnabled={reactionsEnabled}
                 initialReactions={initialReactions ?? []}
+                commentsEnabled={commentsEnabled}
+                initialComments={initialComments ?? []}
                 myProfileId={myProfileId}
                 readOnly={readOnly}
               />
@@ -271,6 +282,8 @@ function CanvasStage({
   colourblindMode = false,
   reactionsEnabled = false,
   initialReactions = [],
+  commentsEnabled = false,
+  initialComments = [],
   myProfileId = null,
   readOnly = false,
 }: {
@@ -278,6 +291,8 @@ function CanvasStage({
   colourblindMode?: boolean;
   reactionsEnabled?: boolean;
   initialReactions?: ReactionRow[];
+  commentsEnabled?: boolean;
+  initialComments?: CommentRow[];
   myProfileId?: string | null;
   readOnly?: boolean;
 }) {
@@ -319,6 +334,14 @@ function CanvasStage({
         {reactionsEnabled && myProfileId ? (
           <BrickReactionsLayer
             initialReactions={initialReactions}
+            myProfileId={myProfileId}
+            disabled={readOnly}
+          />
+        ) : null}
+
+        {commentsEnabled && myProfileId ? (
+          <BrickCommentsLayer
+            initialComments={initialComments}
             myProfileId={myProfileId}
             disabled={readOnly}
           />
@@ -374,6 +397,54 @@ function BrickReactionsLayer({
             brickId={b.id}
             position={{ left, top }}
             reactions={reactionsByBrick[b.id]}
+            myProfileId={myProfileId}
+            disabled={disabled}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function BrickCommentsLayer({
+  initialComments,
+  myProfileId,
+  disabled,
+}: {
+  initialComments: CommentRow[];
+  myProfileId: string;
+  disabled: boolean;
+}) {
+  const { modelId, bricks, groups, view } = useBuilderState();
+  const commentsByBrick = useBrickComments(modelId ?? '', initialComments);
+
+  const groupVisible = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const g of groups) m.set(g.id, g.visible);
+    return m;
+  }, [groups]);
+
+  if (!modelId) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20">
+      {bricks.map((b) => {
+        if (!b.visible) return null;
+        if (groupVisible.get(b.groupId) === false) return null;
+        // Indicator is anchored to the brick's top-right corner in screen
+        // space — same pan/zoom math the reaction-chip layer uses, just at a
+        // different corner of the brick bounding box.
+        const x = b.x * view.zoom + view.pan.x;
+        const y = b.y * view.zoom + view.pan.y;
+        const width = b.width * view.zoom;
+        const height = b.height * view.zoom;
+        return (
+          <BrickCommentIndicator
+            key={b.id}
+            modelId={modelId}
+            brickId={b.id}
+            bounds={{ x, y, width, height }}
+            comments={commentsByBrick[b.id]}
             myProfileId={myProfileId}
             disabled={disabled}
           />
