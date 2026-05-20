@@ -36,8 +36,8 @@ export async function getAnthropicClientForProfile(
   let apiKey: string;
   try {
     apiKey = decryptApiKey(
-      Buffer.from(data.anthropic_api_key_ciphertext),
-      Buffer.from(data.anthropic_api_key_nonce),
+      Buffer.from(data.anthropic_api_key_ciphertext, 'base64'),
+      Buffer.from(data.anthropic_api_key_nonce, 'base64'),
     );
   } catch (err) {
     return {

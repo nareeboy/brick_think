@@ -138,8 +138,8 @@ async function seedUserIntegration(): Promise<void> {
   const res = await admin.from('user_integrations').upsert(
     {
       profile_id: fx.facilitator.id,
-      anthropic_api_key_ciphertext: ciphertext,
-      anthropic_api_key_nonce: nonce,
+      anthropic_api_key_ciphertext: ciphertext.toString('base64'),
+      anthropic_api_key_nonce: nonce.toString('base64'),
       anthropic_api_key_last4: last4,
       updated_at: new Date().toISOString(),
     },
