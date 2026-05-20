@@ -36,12 +36,12 @@ const defaultProps = {
 };
 
 describe('PreSessionChecklist', () => {
-  test('renders the four items', () => {
+  test('renders the three visible items (consent hidden until Phase 2)', () => {
     render(<PreSessionChecklist {...defaultProps} />);
     screen.getByText(/Write a brief/i);
     screen.getByText(/Pick a scenario for each stage/i);
-    screen.getByText(/Recording consent/i);
     screen.getByText(/Review accessibility/i);
+    expect(screen.queryByText(/Recording consent/i)).toBeNull();
   });
 
   test('brief item ticks when text length ≥ 40 chars', () => {
@@ -59,13 +59,6 @@ describe('PreSessionChecklist', () => {
     render(<PreSessionChecklist {...defaultProps} stages={stages} />);
     expect(screen.getByTestId('checklist-item-scenarios').getAttribute('data-status')).toBe(
       'done',
-    );
-  });
-
-  test('consent item is rendered disabled', () => {
-    render(<PreSessionChecklist {...defaultProps} />);
-    expect(screen.getByTestId('checklist-item-consent').getAttribute('data-status')).toBe(
-      'disabled',
     );
   });
 

@@ -62,7 +62,6 @@ export function PreSessionChecklist({
   const briefDone: ItemStatus = briefTrimmed.length >= BRIEF_THRESHOLD ? 'done' : 'open';
   const allPicked = stages.length > 0 && stages.every((s) => s.scenarioId !== null);
   const scenariosDone: ItemStatus = allPicked ? 'done' : 'open';
-  const consentDone: ItemStatus = 'disabled';
   const a11yDone: ItemStatus = a11yReviewed ? 'done' : 'open';
 
   const tickedCount = [briefDone, scenariosDone, a11yDone].filter((s) => s === 'done').length;
@@ -158,14 +157,7 @@ export function PreSessionChecklist({
           <p className="mt-2 text-[11px] text-zinc-500">Ticks once every stage has a scenario.</p>
         </ChecklistRow>
 
-        <ChecklistRow
-          testid="checklist-item-consent"
-          title="Recording consent"
-          status={consentDone}
-          expanded={false}
-          onToggle={() => undefined}
-          disabledHint="Available once story capture ships in Phase 2."
-        />
+        {/* Recording consent row hidden until story capture ships in Phase 2. */}
 
         <ChecklistRow
           testid="checklist-item-a11y"
