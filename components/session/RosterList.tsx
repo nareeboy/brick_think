@@ -107,9 +107,14 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
       )
       .subscribe();
 
-    // Subscribe to sessions spotlight changes
+    // Subscribe to sessions spotlight changes. Distinct channel name from
+    // SpotlightBanner.tsx (which also subscribes to spotlight changes on
+    // the same session): the Realtime client throws
+    // "cannot add `postgres_changes` callbacks ... after subscribe()" when
+    // two mount sites collide on a channel name. Suffix this listener so
+    // the two channels stay independent.
     const sessChannel = supabase
-      .channel(`spotlight:${sessionId}`)
+      .channel(`roster-spotlight:${sessionId}`)
       .on(
         'postgres_changes',
         {

@@ -131,7 +131,18 @@ export async function redeemJoinCodeAction(code: string): Promise<RedeemJoinCode
     }
   }
 
-  revalidatePath(`/app/sessions/${sessionId}`);
+  // revalidatePath throws when called from a server-component render context.
+  // The join page calls this action from its server component during render
+  // (so the redirect can happen synchronously before any UI paints), where
+  // Next.js refuses to allow cache invalidation. The facilitator's roster
+  // panel uses Supabase Realtime — not Next's data cache — so the new
+  // participant lands live regardless. Swallow the throw so the action
+  // stays safe to call from both server components and server actions.
+  try {
+    revalidatePath(`/app/sessions/${sessionId}`);
+  } catch {
+    // no-op — server-component render path doesn't permit revalidatePath
+  }
   return { ok: true, sessionId };
 }
 
