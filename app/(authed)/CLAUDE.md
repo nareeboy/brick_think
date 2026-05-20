@@ -332,3 +332,14 @@ After a session ends, the facilitator can export a branded PDF on `/app/sessions
 - `claude_api_error` — Anthropic 4xx/5xx; message is bubbled up so 401/429 etc. are diagnosable inline.
 
 When adding a new failure mode: extend the union in [report-actions.ts](app/sessions/report-actions.ts), add a `case` in `messageForCode` in the button, and re-run the integration suite ([tests/integration/report-generate.integration.test.ts](../../tests/integration/report-generate.integration.test.ts)) — its assertions reach into `result.code` and will surface drift.
+
+## Brick reactions and comments
+
+Per-brick reactions (fixed 6-emoji palette) and flat comments live on room-backed canvases only (`shared_model`, `system_model`, `guiding_principles` — anywhere `models.room_id IS NOT NULL`). Schema, RLS, realtime gotchas in [../supabase/CLAUDE.md](../../supabase/CLAUDE.md).
+
+- **Palette:** [lib/brickFeedback/palette.ts](../../lib/brickFeedback/palette.ts) — 6 emoji + labels + validator + `COMMENT_BODY_MAX = 2000`. Adding/removing palette entries is a list edit; no migration.
+- **Server actions:** [app/(authed)/app/sessions/brick-feedback-actions.ts](app/sessions/brick-feedback-actions.ts) — `toggleReactionAction`, `addCommentAction`, `softDeleteCommentAction`. All use the user-scoped supabase client and rely on RLS (`can_edit_room`) for authorisation rather than a service-role + manual facilitator check.
+- **RSC seed:** [lib/brickFeedback/loadInitial.ts](../../lib/brickFeedback/loadInitial.ts) — `loadInitialBrickFeedback(modelId)` returns `{ reactions, comments }`. Called from the design page only when `model.room_id` is set; otherwise both arrays are `null` and the overlay layers don't mount.
+- **Realtime hooks:** [components/builder/useBrickReactions.ts](../../components/builder/useBrickReactions.ts) and [useBrickComments.ts](../../components/builder/useBrickComments.ts). Both eagerly call `supabase.realtime.setAuth(token)` before opening the channel (mirrors `useModelRealtime` / `useSessionStages` — see [JWT for Realtime](#stage-controller--timer) note for the rationale). Cleanup via `supabase.removeChannel` in the effect return.
+- **Canvas overlay:** [components/builder/BrickReactionChips.tsx](../../components/builder/BrickReactionChips.tsx) anchors a chip cluster to the brick's bottom-center. [BrickCommentIndicator.tsx](../../components/builder/BrickCommentIndicator.tsx) anchors a speech-bubble / add-button to the brick's top-right; clicking opens [BrickCommentPopover.tsx](../../components/builder/BrickCommentPopover.tsx) (Escape + outside-click dismiss, Cmd/Ctrl+Enter posts).
+- **Visibility:** [components/builder/Builder.tsx](../../components/builder/Builder.tsx) gates both overlay layers on `initialReactions !== null && initialComments !== null && myProfileId !== null`. Non-room canvases (individual_model, skill_building, personal) skip the layers entirely.
