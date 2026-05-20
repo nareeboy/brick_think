@@ -53,7 +53,7 @@ async function getMailpitMessage(
           }
         }
       }
-    } catch (err) {
+    } catch {
       // Network error; retry.
     }
 
