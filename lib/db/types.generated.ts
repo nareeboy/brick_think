@@ -541,6 +541,104 @@ export type Database = {
           },
         ]
       }
+      session_invitations: {
+        Row: {
+          claimed_at: string | null
+          claimed_by_profile_id: string | null
+          email: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          session_id: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          claimed_by_profile_id?: string | null
+          email: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          session_id: string
+        }
+        Update: {
+          claimed_at?: string | null
+          claimed_by_profile_id?: string | null
+          email?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_invitations_claimed_by_profile_id_fkey"
+            columns: ["claimed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_invitations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_participants: {
+        Row: {
+          joined_at: string
+          profile_id: string
+          removed_at: string | null
+          removed_by_profile_id: string | null
+          session_id: string
+        }
+        Insert: {
+          joined_at?: string
+          profile_id: string
+          removed_at?: string | null
+          removed_by_profile_id?: string | null
+          session_id: string
+        }
+        Update: {
+          joined_at?: string
+          profile_id?: string
+          removed_at?: string | null
+          removed_by_profile_id?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_participants_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_participants_removed_by_profile_id_fkey"
+            columns: ["removed_by_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_reports: {
         Row: {
           claude_model: string
@@ -600,10 +698,12 @@ export type Database = {
           current_stage_id: string | null
           facilitator_id: string | null
           id: string
+          join_code: string | null
           mode: Database["public"]["Enums"]["session_mode"]
           org_id: string
           pre_session_check: Json
           scheduled_for: string | null
+          spotlight_target_profile_id: string | null
           status: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at: string
@@ -615,10 +715,12 @@ export type Database = {
           current_stage_id?: string | null
           facilitator_id?: string | null
           id?: string
+          join_code?: string | null
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id: string
           pre_session_check?: Json
           scheduled_for?: string | null
+          spotlight_target_profile_id?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at?: string
@@ -630,10 +732,12 @@ export type Database = {
           current_stage_id?: string | null
           facilitator_id?: string | null
           id?: string
+          join_code?: string | null
           mode?: Database["public"]["Enums"]["session_mode"]
           org_id?: string
           pre_session_check?: Json
           scheduled_for?: string | null
+          spotlight_target_profile_id?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title?: string
           updated_at?: string
@@ -658,6 +762,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_spotlight_target_profile_id_fkey"
+            columns: ["spotlight_target_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -956,11 +1067,29 @@ export type Database = {
         Args: { p_model_id: string; p_profile_id: string }
         Returns: boolean
       }
+      generate_join_code: { Args: never; Returns: string }
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member_for: {
         Args: { p_org_id: string; p_profile_id: string }
         Returns: boolean
+      }
+      is_session_participant: {
+        Args: { p_session_id: string }
+        Returns: boolean
+      }
+      is_session_participant_for: {
+        Args: { p_profile_id: string; p_session_id: string }
+        Returns: boolean
+      }
+      lookup_session_by_code: {
+        Args: { p_code: string }
+        Returns: {
+          facilitator_full_name: string
+          id: string
+          status: Database["public"]["Enums"]["session_status"]
+          title: string
+        }[]
       }
       purge_dead_share_links: { Args: never; Returns: undefined }
       purge_expired_trashed_models: { Args: never; Returns: undefined }
@@ -1120,3 +1249,4 @@ export const Constants = {
     },
   },
 } as const
+
