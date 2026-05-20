@@ -1,11 +1,12 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { SaveVersionModal } from './SaveVersionModal';
 import { ShareModal } from './ShareModal';
 import { VersionHistoryPanel } from './VersionHistoryPanel';
 
+import { BrickReactionChips } from './BrickReactionChips';
 import {
   BringInPreviousModelCard,
   BringInPreviousModelProvider,
@@ -20,7 +21,9 @@ import { PeopleHereStrip } from './PeopleHereStrip';
 import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
+import { useBrickReactions } from './useBrickReactions';
 import { ExportMenu } from '@/components/exports/ExportMenu';
+import type { ReactionRow } from '@/lib/brickFeedback/loadInitial';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
@@ -38,6 +41,14 @@ interface BuilderProps {
   colourblindMode?: boolean;
   sourceStageLabel?: string | null;
   alreadyImported?: boolean;
+  /**
+   * Pre-fetched reactions for the brick-feedback overlay. Non-null only when
+   * the model is room-backed (the affordance is room-scoped). Empty array on
+   * a fresh room canvas.
+   */
+  initialReactions?: ReactionRow[] | null;
+  /** Caller's profile id; needed to tag "mine" pills. */
+  myProfileId?: string | null;
 }
 
 export function Builder({
@@ -51,7 +62,10 @@ export function Builder({
   colourblindMode = false,
   sourceStageLabel = null,
   alreadyImported = false,
+  initialReactions = null,
+  myProfileId = null,
 }: BuilderProps) {
+  const reactionsEnabled = initialReactions !== null && myProfileId !== null && !!initialModel;
   return (
     <BuilderProvider
       readOnly={readOnly}
@@ -81,7 +95,14 @@ export function Builder({
                 ownerLabel={ownerLabel}
                 sessionContext={sessionContext}
               />
-              <CanvasStage orgId={orgId} colourblindMode={colourblindMode} />
+              <CanvasStage
+                orgId={orgId}
+                colourblindMode={colourblindMode}
+                reactionsEnabled={reactionsEnabled}
+                initialReactions={initialReactions ?? []}
+                myProfileId={myProfileId}
+                readOnly={readOnly}
+              />
             </div>
           </div>
         </div>
@@ -248,9 +269,17 @@ function SaveToast() {
 function CanvasStage({
   orgId,
   colourblindMode = false,
+  reactionsEnabled = false,
+  initialReactions = [],
+  myProfileId = null,
+  readOnly = false,
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
+  reactionsEnabled?: boolean;
+  initialReactions?: ReactionRow[];
+  myProfileId?: string | null;
+  readOnly?: boolean;
 }) {
   const { awareness, selfClientId, view, self } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
@@ -287,12 +316,70 @@ function CanvasStage({
         />
         <PeopleHereStrip peers={presence.peers} />
 
+        {reactionsEnabled && myProfileId ? (
+          <BrickReactionsLayer
+            initialReactions={initialReactions}
+            myProfileId={myProfileId}
+            disabled={readOnly}
+          />
+        ) : null}
+
         <ShareButton orgId={orgId} />
         <ExportButton />
         <PiecesDrawer />
         <BringInPreviousModelCard />
       </section>
     </DragPieceProvider>
+  );
+}
+
+function BrickReactionsLayer({
+  initialReactions,
+  myProfileId,
+  disabled,
+}: {
+  initialReactions: ReactionRow[];
+  myProfileId: string;
+  disabled: boolean;
+}) {
+  const { modelId, bricks, groups, view } = useBuilderState();
+  // Hook is mounted unconditionally; when modelId is null (transient on
+  // first render) it bails out internally.
+  const reactionsByBrick = useBrickReactions(modelId ?? '', initialReactions);
+
+  const groupVisible = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const g of groups) m.set(g.id, g.visible);
+    return m;
+  }, [groups]);
+
+  if (!modelId) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20">
+      {bricks.map((b) => {
+        if (!b.visible) return null;
+        if (groupVisible.get(b.groupId) === false) return null;
+        // Anchor screen position to the brick's bottom-center in world space,
+        // then offset down a few pixels so the chips sit just below the brick.
+        // The chip wrapper applies -translate-x-1/2 to center horizontally on
+        // this point. Pan/zoom mirror the canvas math used elsewhere
+        // (PresenceCursors, selectionOverlay).
+        const left = b.x * view.zoom + view.pan.x;
+        const top = (b.y + b.height / 2) * view.zoom + view.pan.y + 4;
+        return (
+          <BrickReactionChips
+            key={b.id}
+            modelId={modelId}
+            brickId={b.id}
+            position={{ left, top }}
+            reactions={reactionsByBrick[b.id]}
+            myProfileId={myProfileId}
+            disabled={disabled}
+          />
+        );
+      })}
+    </div>
   );
 }
 
