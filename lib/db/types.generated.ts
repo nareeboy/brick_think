@@ -341,6 +341,48 @@ export type Database = {
           },
         ]
       }
+      org_integrations: {
+        Row: {
+          anthropic_api_key_ciphertext: string | null
+          anthropic_api_key_last4: string | null
+          anthropic_api_key_nonce: string | null
+          org_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          anthropic_api_key_ciphertext?: string | null
+          anthropic_api_key_last4?: string | null
+          anthropic_api_key_nonce?: string | null
+          org_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          anthropic_api_key_ciphertext?: string | null
+          anthropic_api_key_last4?: string | null
+          anthropic_api_key_nonce?: string | null
+          org_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_integrations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_integrations_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_invitations: {
         Row: {
           claimed_at: string | null
@@ -496,6 +538,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      session_reports: {
+        Row: {
+          claude_model: string
+          error_code: string | null
+          error_message: string | null
+          generated_at: string
+          generated_by: string | null
+          generation_status: string
+          included_artifacts: Json
+          pdf_path: string | null
+          session_id: string
+        }
+        Insert: {
+          claude_model: string
+          error_code?: string | null
+          error_message?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          generation_status: string
+          included_artifacts?: Json
+          pdf_path?: string | null
+          session_id: string
+        }
+        Update: {
+          claude_model?: string
+          error_code?: string | null
+          error_message?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          generation_status?: string
+          included_artifacts?: Json
+          pdf_path?: string | null
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_reports_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_reports_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sessions: {
         Row: {
