@@ -4,8 +4,17 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import {
+  ALLOWED_PRE_SESSION_KEYS,
+  type PreSessionCheckKey,
+} from '@/lib/sessions/preSessionCheck';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Types live alongside the actions but are erased at compile time, so they
+// don't trip the Next.js "use server" rule (async-functions-only). The
+// runtime ALLOWED_PRE_SESSION_KEYS constant lives in the non-server module
+// imported above.
 
 export type ScenarioActionFailure =
   | { ok: false; code: 'unauthenticated' }
@@ -20,9 +29,6 @@ export type ScenarioActionFailure =
   | { ok: false; code: 'invalid_check_value' };
 
 export type ScenarioActionResult = { ok: true } | ScenarioActionFailure;
-
-export const ALLOWED_PRE_SESSION_KEYS = ['a11y_reviewed'] as const;
-export type PreSessionCheckKey = (typeof ALLOWED_PRE_SESSION_KEYS)[number];
 
 const BRIEF_MAX_CHARS = 4000;
 
