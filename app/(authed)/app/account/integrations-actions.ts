@@ -46,12 +46,15 @@ export async function saveAnthropicKey(apiKey: string): Promise<IntegrationsActi
 
   const { ciphertext, nonce, last4 } = encryptApiKey(trimmed);
   const svc = getServiceSupabaseClient();
+  // ciphertext + nonce are stored as base64 in text columns (see migration
+  // 20260520170000) — bytea round-trip through supabase-js was unreliable
+  // because Buffer JSON-serialised as {type:'Buffer',data:[...]}.
   const upsert = await svc
     .from('user_integrations')
     .upsert({
       profile_id: ctx.userId,
-      anthropic_api_key_ciphertext: ciphertext,
-      anthropic_api_key_nonce: nonce,
+      anthropic_api_key_ciphertext: ciphertext.toString('base64'),
+      anthropic_api_key_nonce: nonce.toString('base64'),
       anthropic_api_key_last4: last4,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'profile_id' });
