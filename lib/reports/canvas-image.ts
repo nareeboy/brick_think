@@ -13,9 +13,13 @@ import type { CanvasState } from '@/lib/models/types';
  */
 async function resolveBrickImageFromPublic(imagePath: string): Promise<string> {
   // Brick paths are always app-absolute, e.g. "/bricks/block-green-medium-left.png".
-  // Strip the leading slash so path.join keeps us inside `public/`.
+  // Strip the leading slash so path.resolve keeps us inside `public/`.
   const rel = imagePath.replace(/^\/+/, '');
-  const abs = path.join(process.cwd(), 'public', rel);
+  const publicDir = path.resolve(process.cwd(), 'public');
+  const abs = path.resolve(publicDir, rel);
+  if (abs !== publicDir && !abs.startsWith(publicDir + path.sep)) {
+    throw new Error(`Brick image path escapes public/: ${imagePath}`);
+  }
   const buf = await readFile(abs);
   const ext = path.extname(rel).toLowerCase();
   const mime =
@@ -66,7 +70,8 @@ export async function getCanvasImageBuffer(args: {
       resolveBrickImage: resolveBrickImageFromPublic,
     });
     svgText = await blob.text();
-  } catch {
+  } catch (err) {
+    console.error('canvas-image: SVG render failed', err);
     return null;
   }
 
@@ -75,7 +80,8 @@ export async function getCanvasImageBuffer(args: {
       .resize({ width: maxWidth, withoutEnlargement: true })
       .png()
       .toBuffer();
-  } catch {
+  } catch (err) {
+    console.error('canvas-image: sharp rasterise failed', err);
     return null;
   }
 }
