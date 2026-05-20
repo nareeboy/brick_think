@@ -4,7 +4,7 @@ import { getServiceSupabaseClient } from '@/lib/db/service';
 
 export { resolveActorDisplay } from './actorDisplay';
 
-export type NotificationKind = 'org_added' | 'session_started';
+export type NotificationKind = 'org_added' | 'session_started' | 'participant_joined' | 'session_invitation_claimed';
 
 interface DispatchOrgAddedArgs {
   recipientProfileId: string;
