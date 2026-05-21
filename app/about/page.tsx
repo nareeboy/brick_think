@@ -18,38 +18,38 @@ export const metadata: Metadata = {
 const PRINCIPLES = [
   {
     n: '01',
-    title: 'Methodology fidelity over feature surface.',
-    body: 'A whiteboard with bricks pasted on it is not Serious Play. We model the five stages, the narration, and the etiquette directly in the product — and we say no to features that water them down.',
+    title: 'Method first. Features second.',
+    body: 'A whiteboard with brick pictures on it is not LSP. The five stages, the story, and the rules are built right into the product. We say no to features that water them down.',
   },
   {
     n: '02',
     title: 'Open by default.',
-    body: 'The code is Apache 2.0. The data model is documented. You can self-host the entire stack and never sign a contract with us. We earn the hosted version on convenience, not lock-in.',
+    body: 'The code is open. The data model is plain. Run your own copy and you never have to talk to us. We earn the hosted version on ease, not lock-in.',
   },
   {
     n: '03',
-    title: 'Accessibility is the bar to ship, not a Phase 2.',
-    body: 'WCAG 2.2 AA from day one. Keyboard, screen reader, reduced-motion and colour-blind-safe palette work on the same canvas every other participant sees.',
+    title: 'Accessibility ships with the feature.',
+    body: 'Every person in the room uses the same canvas. Works with a keyboard. Works with a screen reader. Stops the motion if you ask. Colour-blind safe with patterns.',
   },
   {
     n: '04',
     title: 'Quiet product. Loud sessions.',
-    body: 'The interface should disappear during a session. Facilitators look at participants and a single shared model — not at the toolbar.',
+    body: 'The screen should fade away during a session. You look at your people and the shared model. Not at the toolbar.',
   },
 ];
 
 const ORIGINS = [
   {
     label: 'The problem',
-    body: 'Serious Play was designed for a physical room. Most remote adaptations either lose the methodology (a generic whiteboard) or lose the medium (a fancy video call). We wanted neither.',
+    body: 'LSP was made for a room. Most online tools either drop the method (a blank whiteboard) or drop the bricks (a fancy video call). We wanted both.',
   },
   {
-    label: 'The wager',
-    body: 'A canonical, time-boxed five-stage flow plus narrated 2D brick canvases is enough to keep the methodology intact remotely — without violating any LEGO Group trademarks.',
+    label: 'The bet',
+    body: 'A timed five-stage flow plus a flat brick canvas keeps the method whole. No LEGO bricks. No LEGO name. Same outcomes.',
   },
   {
-    label: 'The reality',
-    body: 'BrickThink is Phase 0. The five stages exist, the canvas works, Yjs keeps shared models smooth. Exports, AI assist, voice narration are on the roadmap and the dates are honest.',
+    label: 'Where we are',
+    body: 'Still early. The five stages work. The canvas works. Live editing works. Exports, AI help, and voice notes are coming. Honest dates, not vapour.',
   },
 ];
 
@@ -76,23 +76,22 @@ function Hero() {
             About BrickThink
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[78px]">
-            A studio building one
+            We build one tool.
             <br />
-            <span className="text-[#c0613d]">opinionated</span> tool, well.
+            We build it <span className="text-[#c0613d]">right</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
-            BrickThink is a remote-native adaptation of the Serious Play methodology. It exists
-            because we were unwilling to keep telling facilitators that the methodology cannot
-            survive online. It can — but only with discipline, not with another whiteboard.
+            BrickThink runs LSP workshops online. People said the method only works in a room. We
+            disagreed. So we built this. With care, not with another whiteboard.
           </p>
         </div>
         <aside className="md:col-span-4">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-zinc-900/10 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
             {[
-              ['Phase 0', 'In active build'],
-              ['Apache 2.0', 'Source licence'],
-              ['CC BY-SA 3.0', 'Methodology licence'],
-              ['EU', 'Data residency'],
+              ['Building', 'Where we are'],
+              ['Apache 2.0', 'Code licence'],
+              ['CC BY-SA 3.0', 'Method licence'],
+              ['EU', 'Where data sits'],
             ].map(([val, label]) => (
               <div key={label}>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
@@ -121,10 +120,10 @@ function ThesisBand() {
         </div>
         <div className="md:col-span-8">
           <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[34px]">
-            The five-stage Serious Play methodology survives the move online —{' '}
-            <span className="text-[#d8a85d]">if and only if</span> the product refuses to be a
-            generic whiteboard. Canvas, narration, sequence, and timer have to be first-class. Most
-            of what we say no to is more important than what we ship.
+            LSP works online —{' '}
+            <span className="text-[#d8a85d]">only if</span> the tool stops trying to be a
+            whiteboard. The canvas, the story, the order, and the timer all have to be built in.
+            What we leave out matters more than what we put in.
           </p>
         </div>
       </div>
@@ -142,7 +141,7 @@ function OriginSection() {
               How we got here
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-              The problem, the wager, the current state.
+              Why we built this.
             </h2>
           </div>
           <ol className="md:col-span-7">
@@ -182,7 +181,7 @@ function PrinciplesSection() {
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Easier to write down. Harder to keep. We keep them as commit-time checks, not as a
+            Easy to write. Hard to live by. We check ourselves on every code change. Not on a
             poster.
           </p>
         </div>
@@ -221,11 +220,11 @@ function StackSection() {
             How it is built
           </p>
           <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-            Boring stack. Quiet infrastructure.
+            Boring tech. On purpose.
           </h2>
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-600">
-            None of the choices below are clever. They are the smallest set of pieces that let one
-            small team ship a real product with a real methodology under a real licence.
+            Nothing clever below. Just the smallest pieces a small team needs to ship a real tool,
+            with a real method, under a real licence.
           </p>
           <a
             href={GITHUB_URL}
@@ -282,8 +281,8 @@ function CtaBand() {
               Use it. Break it. Tell us.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              Every stage, every feature, no caps. BrickThink is Apache 2.0 — we run the hosted
-              version because it is convenient, not because we plan to charge for it.
+              All stages. All features. No caps. We will never charge for this. The hosted site is
+              here because it is easier than running your own.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link

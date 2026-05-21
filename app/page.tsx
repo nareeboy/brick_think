@@ -19,49 +19,49 @@ const STAGES = [
     n: '01',
     name: 'Skill-building',
     duration: '15 min',
-    blurb: 'Warm-up. Learn the grid, learn to build with metaphor.',
+    blurb: 'Warm up. Get used to the bricks and how to build a small idea.',
   },
   {
     n: '02',
     name: 'Individual model',
     duration: '13 min',
-    blurb: 'Each participant builds privately, then narrates.',
+    blurb: 'Each person builds alone. Then they share what it means.',
   },
   {
     n: '03',
     name: 'Shared model',
     duration: '30 min',
-    blurb: 'Combine builds on a shared canvas. Negotiate. Decide.',
+    blurb: 'Combine the builds on one canvas. Talk. Decide together.',
   },
   {
     n: '04',
     name: 'System model',
     duration: '25 min',
-    blurb: 'Add connections, agents, forces. The system shows itself.',
+    blurb: 'Add links and outside forces. Now you see how it all fits.',
   },
   {
     n: '05',
     name: 'Guiding principles',
     duration: '20 min',
-    blurb: 'Extract written principles, anchored to the bricks that justify them.',
+    blurb: 'Pull out clear rules. Each one points to the bricks that prove it.',
   },
 ];
 
 const PERSONAS = [
   {
-    role: 'Certified Serious Play facilitator',
-    who: 'Independent or agency',
-    line: 'Run paid client workshops remotely with the same outcomes you get in a room. Methodology fidelity, not a generic whiteboard.',
+    role: 'Certified LSP facilitator',
+    who: 'Solo or agency',
+    line: 'Run your paid client workshops online. Same outcomes as the room. Not a blank whiteboard with bricks pasted on it.',
   },
   {
     role: 'Agile coach',
-    who: 'Internal at enterprise',
-    line: 'Retrospectives, working agreements, strategy sessions — across distributed teams. Two hours, real shared model, exportable record.',
+    who: 'Inside a big company',
+    line: 'Run retros, working agreements, and strategy sessions with teams in different cities. Two hours, one shared model, a record you can keep.',
   },
   {
-    role: 'Leadership & L&D',
+    role: 'Head of People or L&D',
     who: 'Director, Head of People',
-    line: 'Strategy alignment, team formation, cultural integration. Hands-on insight from people who would never speak up in a regular meeting.',
+    line: 'Plan strategy. Form new teams. Settle a new culture. Hear from the quiet people who would never speak up in a normal meeting.',
   },
 ];
 
@@ -134,7 +134,7 @@ function Hero() {
         <div className="md:col-span-8 lg:col-span-7">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-200 backdrop-blur">
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
-            Virtual Serious Play, remote-native
+            Run your LSP workshop online
           </div>
 
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[0.98] tracking-[-0.02em] text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)] sm:text-[58px] md:text-[78px]">
@@ -144,9 +144,9 @@ function Hero() {
           </h1>
 
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-200/95 drop-shadow-[0_1px_12px_rgba(0,0,0,0.45)]">
-            BrickThink runs the canonical five-stage Serious Play methodology online. Participants
-            build 2D tile models, narrate the meaning out loud, and progress from individual story
-            to shared system to written principles — without a box of bricks in sight.
+            BrickThink runs real LSP workshops online. People build. People share what their build
+            means. Five stages, in order — the same flow you use in the room. No box of bricks
+            needed.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -154,22 +154,22 @@ function Hero() {
               href="/sign-in"
               className="group inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-medium text-zinc-950 shadow-[0_12px_30px_-12px_rgba(0,0,0,0.6)] transition-all hover:bg-zinc-100 active:translate-y-[1px]"
             >
-              Run a session free
+              Run your first session free
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <a
               href="#methodology"
               className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/[0.06] px-5 py-3 text-sm font-medium text-zinc-100 backdrop-blur transition-colors hover:bg-white/[0.12]"
             >
-              How a session runs
+              See how a session runs
             </a>
           </div>
 
           <dl className="mt-12 grid max-w-xl grid-cols-3 gap-x-6 border-t border-white/15 pt-6">
             {[
-              ['57', 'brick pieces in the canon'],
-              ['WCAG 2.2 AA', 'from day one'],
-              ['Apache 2.0', 'open source'],
+              ['57', 'brick pieces, free to use'],
+              ['Always free', 'no card, no caps'],
+              ['Open source', 'run your own copy'],
             ].map(([val, label]) => (
               <div key={label}>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-400">
@@ -202,11 +202,11 @@ function MethodologySection() {
               id="methodology-heading"
               className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
-              Methodology fidelity, end to end.
+              All five stages. Done right.
             </h2>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-600">
-              The canonical etiquette is a first-class concept in the data model and the UI. Run all
-              five, run a subset, or run a single stage as a focused exercise.
+              Run all five. Run a few. Or run one as a focused exercise. The order, the rules, and
+              the timing are the same as in the room.
             </p>
           </div>
           <ol className="md:col-span-8">
@@ -254,12 +254,12 @@ function FeatureBento() {
               id="features-heading"
               className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
-              A whole facilitator toolkit, not a whiteboard with extra steps.
+              Built for facilitators. Not just a whiteboard.
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Pair with whatever video tool the team already uses. BrickThink is the build, the
-            narration, the record — not the call.
+            Use your own video tool. BrickThink handles the bricks, the story, and the record. Not
+            the call.
           </p>
         </div>
 
@@ -268,8 +268,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-4 md:row-span-2"
             label="canvas"
-            title="A brick canvas built for serious work."
-            body="Konva-rendered, infinite zoom, layer groups, lock, z-order, drag-rotate-recolour. Yjs CRDT under the hood — shared-model stages stay smooth with every facilitator and participant pointing at the same canvas."
+            title="A canvas built for the work."
+            body="Drag, turn, and recolour bricks. Zoom in close, zoom out far. Everyone in the room sees the same canvas, in real time. No lag. No fight over who is editing."
           >
             <CanvasFeatureVisual />
           </FeatureCard>
@@ -278,8 +278,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-2"
             label="ai assist"
-            title="Claude in the facilitator chair."
-            body="Prompt suggestions from a topic, theme extraction across narrations, and candidate principles drafted from the system model. Always assistive — the facilitator approves before participants see anything."
+            title="An AI helper, on your side."
+            body="Get build prompts from a topic. Spot themes across stories. Draft first-pass rules from the system model. Nothing reaches the room until you say yes."
             status="roadmap"
           >
             <PromptVisual />
@@ -289,8 +289,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-2"
             label="story capture"
-            title="Narration is the artefact."
-            body="Text, voice and video captured on the canvas, not in a separate tab. Auto-transcribed and indexed by participant and stage."
+            title="The story is the record."
+            body="Capture text, voice, and video right on the canvas. We write it out for you. Find any quote by person or stage."
             status="roadmap"
           >
             <NarrationVisual />
@@ -299,9 +299,9 @@ function FeatureBento() {
           {/* Facilitator tooling */}
           <FeatureCard
             className="md:col-span-3"
-            label="facilitator tooling"
-            title="Sessions, stages, roster — wired end to end."
-            body="Create a session, configure the five stages, invite an org, start each participant's model. Stage timer controls, spotlight a build, private notes and a pre-session consent checklist are next."
+            label="facilitator tools"
+            title="Set up a session in five minutes."
+            body="Make a session. Pick your stages. Invite your group. Run the timer, spotlight a build, and keep private notes — all in one place."
           >
             <ToolingVisual />
           </FeatureCard>
@@ -310,8 +310,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-3"
             label="outputs"
-            title="A session ends with a record, not a screenshot."
-            body="PDF and DOCX session reports, per-stage PNG and SVG, narrated MP4 per participant, full JSON state for re-import, CSV of stories and principles. Canvas thumbnails ship today; the rest is next."
+            title="Walk away with a record, not a screenshot."
+            body="Export a PDF report. Save each stage as an image. Download each person’s narration as video. Take the whole session with you — no lock-in."
             status="roadmap"
           >
             <ExportsVisual />
@@ -321,8 +321,8 @@ function FeatureBento() {
           <FeatureCard
             className="md:col-span-6"
             label="accessibility"
-            title="WCAG 2.2 AA is the bar, from day one."
-            body="Reduced-motion respected. Keyboard navigation across modals and panels. Screen-reader-named brick canvas, colour-blind safe palette with pattern overlays, and voice-described builds rendered as text-equivalents are next on the bar to clear."
+            title="Works for every person in the room."
+            body="Stops the motion if a person asks. Works with a keyboard. Screen readers name every brick. Our colours work for colour-blind people, with patterns to back them up."
           >
             <AccessibilityVisual />
           </FeatureCard>
@@ -626,11 +626,11 @@ function PersonasSection() {
               id="personas-heading"
               className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
-              Three audiences. One non-negotiable: methodology fidelity.
+              Built for facilitators who take this work seriously.
             </h2>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-600">
-              The product exists for facilitators who can already run this in a room and want the
-              remote version to feel like the same thing — not a compromise.
+              You can run LSP in a room. You want the online version to feel the same — not a
+              second-best. That is who this is for.
             </p>
           </div>
           <ul className="md:col-span-7">
@@ -642,7 +642,7 @@ function PersonasSection() {
                 } border-zinc-900/10`}
               >
                 <span className="col-span-12 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500 md:col-span-3">
-                  Persona {String(i + 1).padStart(2, '0')}
+                  Who it is for · {String(i + 1).padStart(2, '0')}
                 </span>
                 <div className="col-span-12 md:col-span-9">
                   <p className="text-[19px] font-medium tracking-tight text-zinc-950">{p.role}</p>
@@ -673,14 +673,12 @@ function FidelitySection() {
         </div>
         <div className="md:col-span-8">
           <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[30px]">
-            BrickThink is a remote-native adaptation of the Serious Play methodology — published
-            under{' '}
+            BrickThink brings LSP online. The method is open{' '}
             <span className="font-mono text-[18px] text-[#d8a85d] md:text-[22px]">
               CC BY-SA 3.0
             </span>
-            . The methodology can be referenced and taught. The trademark and the bricks of the
-            other company cannot. We do not reference them, we do not copy them, and our 52-tile
-            asset set is original.
+            , so anyone can teach it. The LEGO name and brick designs are not. So we made our own
+            52 tiles. They look different. They feel right.
           </p>
         </div>
       </div>
@@ -705,26 +703,25 @@ function OpenSourceSection() {
               id="open-source-heading"
               className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
-              Free to use. Free to self-host. Apache&nbsp;2.0.
+              Free to use. Always.
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            BrickThink is built in the open. Use the hosted version, or run your own — the entire
-            stack is on GitHub.
+            Use our site. Or run your own copy. The whole codebase is on GitHub.
           </p>
         </div>
 
         <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex flex-col rounded-3xl border border-zinc-900/10 bg-white p-7 text-zinc-900">
             <div className="flex items-center justify-between">
-              <p className="text-[15px] font-medium tracking-tight">Hosted</p>
+              <p className="text-[15px] font-medium tracking-tight">Use our site</p>
               <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
                 brickthink.io
               </span>
             </div>
             <p className="mt-6 max-w-[42ch] text-[14px] leading-relaxed text-zinc-600">
-              Sign in and run a session. No setup, no infrastructure, no bill. EU residency, WCAG
-              2.2 AA, GDPR-aligned.
+              Sign in. Run a session. No setup. No bill. Your data stays in the EU. Built to work
+              with screen readers from day one.
             </p>
             <Link
               href="/sign-in"
@@ -737,15 +734,14 @@ function OpenSourceSection() {
 
           <div className="flex flex-col rounded-3xl border border-zinc-900 bg-zinc-950 p-7 text-zinc-100">
             <div className="flex items-center justify-between">
-              <p className="text-[15px] font-medium tracking-tight">Self-host</p>
+              <p className="text-[15px] font-medium tracking-tight">Run your own copy</p>
               <span className="rounded-full bg-[#c0613d] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white">
                 Apache 2.0
               </span>
             </div>
             <p className="mt-6 max-w-[42ch] text-[14px] leading-relaxed text-zinc-300">
-              Clone the repo, point it at your own Supabase, run it on Railway or anywhere Node
-              runs. Same five-stage methodology, your data on your infrastructure. Issues and PRs
-              welcome.
+              Run it on your own servers. Your data, your rules. Same five stages. Bug reports and
+              pull requests welcome.
             </p>
             <a
               href={GITHUB_URL}
@@ -760,8 +756,7 @@ function OpenSourceSection() {
         </div>
 
         <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-500">
-          Apache 2.0 · Built with Next.js, Supabase, Yjs and Konva · Methodology referenced under CC
-          BY-SA 3.0
+          Apache 2.0 · LSP method used under CC BY-SA 3.0
         </p>
       </div>
     </section>
@@ -784,8 +779,8 @@ function CtaBand() {
               Run your first session free.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              Every stage, every feature, no caps, no card. BrickThink is Apache 2.0 open source —
-              we will never charge for it.
+              All stages. All features. No card. No caps. BrickThink is open source. We will never
+              charge for it.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
