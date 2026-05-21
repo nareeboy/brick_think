@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { getBrowserSupabaseClient } from '@/lib/db/client';
-import { removeParticipantAction, setSpotlightAction } from '@/app/(authed)/app/sessions/roster-actions';
+import { removeParticipantAction } from '@/app/(authed)/app/sessions/roster-actions';
 import { Avatar } from '@/components/app/Avatar';
 
 interface Row {
@@ -20,17 +20,14 @@ interface Props {
 
 export function RosterList({ sessionId, facilitatorId }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
-  const [spotlightTargetId, setSpotlightTargetId] = useState<string | null>(null);
-  const [openMenuRow, setOpenMenuRow] = useState<string | null>(null);
-  const menuRef = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Initial load + realtime subscription.
   //
   // We eagerly prime `supabase.realtime.setAuth(token)` before creating
   // any channels so the WS join frame carries the JWT — otherwise the
-  // RLS row-filter on `session_participants` / `sessions` drops every
-  // payload and the live count / roster / spotlight UI never updates.
-  // See useSessionStages.ts for the canonical pattern + rationale.
+  // RLS row-filter on `session_participants` drops every payload and
+  // the live count / roster never updates. See useSessionStages.ts for
+  // the canonical pattern + rationale.
   useEffect(() => {
     const supabase = getBrowserSupabaseClient();
     let active = true;
@@ -120,74 +117,15 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
       )
       .subscribe();
 
-    // Subscribe to sessions spotlight changes. Distinct channel name from
-    // SpotlightBanner.tsx (which also subscribes to spotlight changes on
-    // the same session): the Realtime client throws
-    // "cannot add `postgres_changes` callbacks ... after subscribe()" when
-    // two mount sites collide on a channel name. Suffix this listener so
-    // the two channels stay independent.
-    const sessChannel = supabase
-      .channel(`roster-spotlight:${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'sessions',
-          filter: `id=eq.${sessionId}`,
-        },
-        (payload) => {
-          if (payload.new?.spotlight_target_profile_id) {
-            setSpotlightTargetId(payload.new.spotlight_target_profile_id as string);
-          } else {
-            setSpotlightTargetId(null);
-          }
-        },
-      )
-      .subscribe();
-
     return () => {
       active = false;
       supabase.removeChannel(partChannel);
-      supabase.removeChannel(sessChannel);
     };
   }, [sessionId]);
 
-  // Close menu on outside click
-  useEffect(() => {
-    if (!openMenuRow) return;
-
-    const handleMouseDown = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      // Check if click is inside the menu for the open row
-      if (openMenuRow && menuRef.current[openMenuRow]?.contains(target)) {
-        return;
-      }
-      // Check if click is on a kebab button
-      if (target.closest('[data-roster-kebab]')) {
-        return;
-      }
-      setOpenMenuRow(null);
-    };
-
-    window.addEventListener('mousedown', handleMouseDown);
-    return () => window.removeEventListener('mousedown', handleMouseDown);
-  }, [openMenuRow]);
-
   const handleRemove = async (profileId: string) => {
-    const result = await removeParticipantAction(sessionId, profileId);
-    if (result.ok) {
-      setOpenMenuRow(null);
-    }
-  };
-
-  const handleToggleSpotlight = async (profileId: string) => {
-    const newTarget = spotlightTargetId === profileId ? null : profileId;
-    const result = await setSpotlightAction(sessionId, newTarget);
-    if (result.ok) {
-      setOpenMenuRow(null);
-      setSpotlightTargetId(newTarget);
-    }
+    await removeParticipantAction(sessionId, profileId);
+    // Realtime subscription refreshes the list.
   };
 
   const displayName = (row: Row) => row.full_name || row.email;
@@ -204,17 +142,11 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
         <ul className="flex flex-col gap-1">
           {rows.map((row) => {
             const isFacilitator = row.profile_id === facilitatorId;
-            const isSpotlit = spotlightTargetId === row.profile_id;
-            const isMenuOpen = openMenuRow === row.profile_id;
 
             return (
               <li
                 key={row.profile_id}
-                className={`relative flex items-center gap-3 rounded-lg px-3 py-2 transition-colors ${
-                  isSpotlit
-                    ? 'border-l-2 border-l-[#c0613d] bg-[#c0613d]/5'
-                    : 'hover:bg-zinc-50'
-                }`}
+                className="relative flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-zinc-50"
               >
                 <Avatar
                   url={row.avatar_url}
@@ -239,52 +171,28 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
                 </div>
 
                 {!isFacilitator && (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      data-roster-kebab={row.profile_id}
-                      onClick={() => setOpenMenuRow(isMenuOpen ? null : row.profile_id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-md opacity-0 transition-opacity hover:bg-zinc-200 focus-visible:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
-                      title="Actions"
-                      aria-label="Actions for this participant"
+                  <button
+                    type="button"
+                    onClick={() => void handleRemove(row.profile_id)}
+                    title="Remove from session"
+                    aria-label={`Remove ${displayName(row)} from the session`}
+                    className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
                     >
-                      <svg
-                        className="h-4 w-4 text-zinc-600"
-                        fill="currentColor"
-                        viewBox="0 0 16 16"
-                      >
-                        <circle cx="8" cy="3" r="1.5" />
-                        <circle cx="8" cy="8" r="1.5" />
-                        <circle cx="8" cy="13" r="1.5" />
-                      </svg>
-                    </button>
-
-                    {isMenuOpen && (
-                      <div
-                        ref={(el) => {
-                          if (el) menuRef.current[row.profile_id] = el;
-                        }}
-                        className="absolute right-0 top-full mt-1 z-50 w-40 rounded-lg border border-zinc-200 bg-white shadow-lg"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleToggleSpotlight(row.profile_id)}
-                          className="block w-full px-3 py-2 text-left text-sm text-zinc-700 hover:bg-zinc-50 first:rounded-t-md"
-                        >
-                          {spotlightTargetId === row.profile_id
-                            ? 'Remove spotlight'
-                            : 'Spotlight'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemove(row.profile_id)}
-                          className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 last:rounded-b-md"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <line x1="22" y1="11" x2="16" y2="11" />
+                    </svg>
+                  </button>
                 )}
               </li>
             );

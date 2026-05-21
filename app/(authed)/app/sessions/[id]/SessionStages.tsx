@@ -34,6 +34,8 @@ import { StageMetaEditor } from './StageMetaEditor';
 import { StageScenarioRow } from './StageScenarioRow';
 import { StartModelButton } from './StartModelButton';
 import { RoomsPanel, type StageRoomSummary } from './RoomsPanel';
+import { setSpotlightAction } from '../roster-actions';
+import { getBrowserSupabaseClient } from '@/lib/db/client';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
 import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
 import type { Scenario } from '@/lib/scenarios/types';
@@ -44,6 +46,7 @@ export interface ParticipantModel {
   id: string;
   title: string;
   ownerLabel: string;
+  ownerProfileId: string;
 }
 
 interface OwnedModelRow {
@@ -384,6 +387,8 @@ function StageRow({
           participants={participants}
           lastUpdatedAt={lastUpdatedAt}
           nowMs={nowMs}
+          sessionId={sessionId}
+          stageStatus={status}
         />
       ) : null}
     </li>
@@ -395,19 +400,74 @@ function ParticipantsPanel({
   participants,
   lastUpdatedAt,
   nowMs,
+  sessionId,
+  stageStatus,
 }: {
   stageType: StageType;
   participants: ParticipantModel[];
   lastUpdatedAt: Map<string, number>;
   nowMs: number;
+  sessionId: string;
+  stageStatus: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [spotlightTargetId, setSpotlightTargetId] = useState<string | null>(null);
+  const [spotlightBusy, setSpotlightBusy] = useState<string | null>(null);
 
   const handleRefresh = () => {
     startTransition(() => {
       router.refresh();
     });
+  };
+
+  // Subscribe to the session's spotlight pointer so the chip on each
+  // participant row reflects live state. Realtime auth is primed via
+  // setAuth so RLS-filtered payloads land. Hidden when stageStatus
+  // isn't 'active' (the toggle button is disabled in that case too,
+  // since the "Open it" affordance only resolves for the current stage).
+  useEffect(() => {
+    const supabase = getBrowserSupabaseClient();
+    let active = true;
+    const load = async () => {
+      const { data } = await supabase
+        .from('sessions')
+        .select('spotlight_target_profile_id')
+        .eq('id', sessionId)
+        .maybeSingle();
+      if (active) setSpotlightTargetId(data?.spotlight_target_profile_id ?? null);
+    };
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (active && token) await supabase.realtime.setAuth(token);
+    })();
+    void load();
+    const channel = supabase
+      .channel(`stage-spotlight:${sessionId}:${stageType}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
+        (payload) => {
+          setSpotlightTargetId(
+            (payload.new?.spotlight_target_profile_id as string | null) ?? null,
+          );
+        },
+      )
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId, stageType]);
+
+  const handleToggleSpotlight = async (profileId: string) => {
+    if (stageStatus !== 'active') return;
+    const next = spotlightTargetId === profileId ? null : profileId;
+    setSpotlightBusy(profileId);
+    const result = await setSpotlightAction(sessionId, next);
+    setSpotlightBusy(null);
+    if (result.ok) setSpotlightTargetId(next);
   };
 
   return (
@@ -457,12 +517,41 @@ function ParticipantsPanel({
                     {p.ownerLabel}
                   </p>
                 </div>
-                <Link
-                  href={`/app/designs/${p.id}`}
-                  className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
-                >
-                  Open
-                </Link>
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const isSpotlit = spotlightTargetId === p.ownerProfileId;
+                    const canSpotlight = stageStatus === 'active';
+                    const busy = spotlightBusy === p.ownerProfileId;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => void handleToggleSpotlight(p.ownerProfileId)}
+                        disabled={!canSpotlight || busy}
+                        title={
+                          canSpotlight
+                            ? isSpotlit
+                              ? 'Stop spotlighting this participant'
+                              : 'Spotlight this participant — everyone else sees a banner inviting them to view this canvas'
+                            : 'Start the stage to spotlight a participant'
+                        }
+                        aria-pressed={isSpotlit}
+                        className={`inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border px-3 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                          isSpotlit
+                            ? 'border-[#c0613d] bg-[#c0613d] text-white hover:bg-[#a8543a]'
+                            : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
+                        }`}
+                      >
+                        {isSpotlit ? 'Spotlit' : 'Spotlight'}
+                      </button>
+                    );
+                  })()}
+                  <Link
+                    href={`/app/designs/${p.id}`}
+                    className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
+                  >
+                    Open
+                  </Link>
+                </div>
               </li>
             );
           })}

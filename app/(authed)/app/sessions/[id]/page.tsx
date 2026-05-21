@@ -163,6 +163,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
         id: m.id,
         title: m.title,
         ownerLabel: label,
+        ownerProfileId: m.owner_profile_id,
       });
       participantsByStage[m.stage_id] = list;
     }
@@ -405,7 +406,7 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
               />
             </div>
           </div>
-          <div className="flex items-start gap-3">
+          <div className="flex items-center gap-3">
             <GoToMyCanvasButton sessionId={session.id} currentStageId={session.current_stage_id} />
             {canManageSession ? (
               <>

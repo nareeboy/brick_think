@@ -32,7 +32,7 @@ export function DeleteSessionButton({
         onClick={() => setConfirming(true)}
         aria-label="Delete session"
         title="Delete session"
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors hover:bg-red-50 disabled:cursor-default disabled:opacity-60"
+        className="inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-red-200 text-red-700 transition-colors hover:bg-red-50 disabled:cursor-default disabled:opacity-60"
       >
         <TrashIcon className="h-4 w-4" />
       </button>
