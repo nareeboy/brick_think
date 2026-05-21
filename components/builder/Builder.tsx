@@ -25,6 +25,7 @@ import { PiecesDrawer } from './PiecesDrawer';
 import { ScenarioPanel, type BuilderScenario } from './ScenarioPanel';
 import { useBrickComments } from './useBrickComments';
 import { useBrickReactions } from './useBrickReactions';
+import { useFeedbackVisible } from './useFeedbackVisible';
 import { ExportMenu } from '@/components/exports/ExportMenu';
 import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
 import type { CommentRow, ReactionRow } from '@/lib/brickFeedback/loadInitial';
@@ -324,6 +325,7 @@ function CanvasStage({
 }) {
   const { awareness, selfClientId, view, self, modelId } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
+  const [feedbackVisible, toggleFeedback] = useFeedbackVisible();
 
   // Chrome buttons sit absolutely positioned in the canvas top-right.
   // Pieces always anchors at right-5; the rest fill slots 72px / 124px /
@@ -337,12 +339,14 @@ function CanvasStage({
   const showShare = modelId !== null && orgId === null;
   const showExport = modelId !== null;
   const showNotes = isSessionFacilitator && sessionContext !== null;
+  const showFeedbackToggle = reactionsEnabled || commentsEnabled;
   const SLOT_BASE = 72;
   const SLOT_STEP = 52;
   let chromeSlot = 0;
   const shareRight = showShare ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
   const exportRight = showExport ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
   const notesRight = showNotes ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
+  const feedbackToggleRight = showFeedbackToggle ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
 
   // Live-presence avatar strip sits in the same row as the chrome buttons,
   // just to the left of the leftmost button so it never sits behind them.
@@ -360,6 +364,12 @@ function CanvasStage({
   }
   if (notesRight !== null) {
     peopleStripRight = Math.max(peopleStripRight, notesRight + NOTES_BTN_WIDTH + STRIP_GAP);
+  }
+  if (feedbackToggleRight !== null) {
+    peopleStripRight = Math.max(
+      peopleStripRight,
+      feedbackToggleRight + ICON_BTN_WIDTH + STRIP_GAP,
+    );
   }
 
   return (
@@ -395,7 +405,7 @@ function CanvasStage({
         />
         <PeopleHereStrip peers={presence.peers} rightPx={peopleStripRight} />
 
-        {reactionsEnabled && myProfileId ? (
+        {reactionsEnabled && myProfileId && feedbackVisible ? (
           <BrickReactionsLayer
             initialReactions={initialReactions}
             myProfileId={myProfileId}
@@ -403,7 +413,7 @@ function CanvasStage({
           />
         ) : null}
 
-        {commentsEnabled && myProfileId ? (
+        {commentsEnabled && myProfileId && feedbackVisible ? (
           <BrickCommentsLayer
             initialComments={initialComments}
             myProfileId={myProfileId}
@@ -418,6 +428,13 @@ function CanvasStage({
             sessionId={sessionContext.sessionId}
             initialValue={facilitatorNotes}
             rightPx={notesRight}
+          />
+        ) : null}
+        {feedbackToggleRight !== null ? (
+          <FeedbackToggleButton
+            rightPx={feedbackToggleRight}
+            visible={feedbackVisible}
+            onToggle={toggleFeedback}
           />
         ) : null}
         {scenario ? <ScenarioPanel scenario={scenario} /> : null}
@@ -441,6 +458,44 @@ function NotesHeaderButton({
     <div className="absolute top-5 z-30" style={{ right: rightPx }}>
       <FacilitatorNotesButton sessionId={sessionId} initialValue={initialValue} />
     </div>
+  );
+}
+
+function FeedbackToggleButton({
+  rightPx,
+  visible,
+  onToggle,
+}: {
+  rightPx: number;
+  visible: boolean;
+  onToggle: () => void;
+}) {
+  const label = visible ? 'Hide reactions and comments' : 'Show reactions and comments';
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-pressed={!visible}
+      title={label}
+      data-testid="feedback-toggle-button"
+      style={{ right: rightPx }}
+      className="absolute top-5 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-zinc-900/10 bg-white/85 text-zinc-700 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur transition-colors hover:bg-white hover:text-zinc-900"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-5 w-5"
+        aria-hidden="true"
+      >
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+        {!visible ? <line x1="4" y1="20" x2="20" y2="4" /> : null}
+      </svg>
+    </button>
   );
 }
 
