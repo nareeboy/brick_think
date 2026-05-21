@@ -1,5 +1,15 @@
 import type { NextConfig } from 'next';
 
+// Baseline Content-Security-Policy applied to every response. Intentionally
+// narrow: only the directives that are pure additions and can't break the
+// existing OAuth, Supabase, or Yjs flows. A fuller script-src/connect-src
+// CSP would need per-request nonces via middleware, which is a follow-up.
+const BASELINE_CSP = [
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+].join('; ');
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -11,6 +21,14 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: BASELINE_CSP },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
       {
         source: '/share/:token',
         headers: [
