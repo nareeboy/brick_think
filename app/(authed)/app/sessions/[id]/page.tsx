@@ -372,7 +372,10 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
         <header data-tour-id="session-header" className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            <div className="mb-6">
+              <SessionRoleChip isFacilitator={session.facilitator_id === user.id} />
+            </div>
+            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               <Link href="/app/orgs" className="underline-offset-2 hover:underline">
                 Organisations
               </Link>
@@ -400,7 +403,6 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
                 initialTitle={session.title}
                 canRename={canManageSession}
               />
-              <SessionRoleChip isFacilitator={session.facilitator_id === user.id} />
             </div>
           </div>
           <div className="flex items-start gap-3">

@@ -5,11 +5,18 @@ interface Props {
 }
 
 export function SessionRoleChip({ isFacilitator }: Props) {
-  const label = isFacilitator ? 'Facilitator' : 'Participant';
+  if (isFacilitator) {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-full bg-violet-600 px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.22em] text-white shadow-[0_1px_2px_rgba(76,29,149,0.25)]">
+        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-violet-200" />
+        Facilitator
+      </span>
+    );
+  }
 
   return (
-    <span className="inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
-      {label}
+    <span className="inline-flex items-center rounded-full bg-zinc-900/5 px-3 py-1 font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-700">
+      Participant
     </span>
   );
 }

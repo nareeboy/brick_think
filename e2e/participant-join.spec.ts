@@ -145,7 +145,7 @@ test.describe('participant join + spotlight + kick + restore', () => {
       await expect(participantA.page.getByText(/Test session/i).first()).toBeVisible();
       // RosterButton is facilitator-only and must not appear here.
       await expect(
-        participantA.page.getByRole('button', { name: /^Roster\s*\(\d+\)$/ }),
+        participantA.page.getByRole('button', { name: /^Invite Members\s*\(\d+\)$/ }),
       ).toHaveCount(0);
 
       await participantB.page.goto(joinUrl);
