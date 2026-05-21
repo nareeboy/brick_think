@@ -254,7 +254,7 @@ function LiveReadOnlyBanner({
     <div
       role="status"
       data-testid="live-readonly-banner"
-      className="flex items-center gap-2 border-b border-zinc-200 bg-emerald-50 px-4 py-1.5 text-[12px] text-zinc-700"
+      className="flex items-center justify-center gap-2 border-b border-zinc-200 bg-emerald-50 px-4 py-1.5 text-[12px] text-zinc-700"
     >
       <span
         role="img"
@@ -344,6 +344,24 @@ function CanvasStage({
   const exportRight = showExport ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
   const notesRight = showNotes ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
 
+  // Live-presence avatar strip sits in the same row as the chrome buttons,
+  // just to the left of the leftmost button so it never sits behind them.
+  // Icon-only chrome is 44px wide (h-11 w-11); the Notes pill is wider.
+  const PIECES_RIGHT = 20; // right-5
+  const ICON_BTN_WIDTH = 44;
+  const NOTES_BTN_WIDTH = 132; // h-11 pill with icon + "Private Notes"
+  const STRIP_GAP = 12;
+  let peopleStripRight = PIECES_RIGHT + ICON_BTN_WIDTH + STRIP_GAP;
+  if (shareRight !== null) {
+    peopleStripRight = Math.max(peopleStripRight, shareRight + ICON_BTN_WIDTH + STRIP_GAP);
+  }
+  if (exportRight !== null) {
+    peopleStripRight = Math.max(peopleStripRight, exportRight + ICON_BTN_WIDTH + STRIP_GAP);
+  }
+  if (notesRight !== null) {
+    peopleStripRight = Math.max(peopleStripRight, notesRight + NOTES_BTN_WIDTH + STRIP_GAP);
+  }
+
   return (
     <DragPieceProvider>
       <section
@@ -375,7 +393,7 @@ function CanvasStage({
           pan={view.pan}
           zoom={view.zoom}
         />
-        <PeopleHereStrip peers={presence.peers} />
+        <PeopleHereStrip peers={presence.peers} rightPx={peopleStripRight} />
 
         {reactionsEnabled && myProfileId ? (
           <BrickReactionsLayer
