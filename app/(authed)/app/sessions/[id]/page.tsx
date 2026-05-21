@@ -308,23 +308,54 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
     }
   }
 
-  // Org members power the room-assignment modal. Always fetched (RLS already
-  // limits to fellow members), so we can render the picker without a
-  // round-trip when the facilitator opens it.
-  const orgMembersRes = await supabase
-    .from('org_memberships')
-    .select('profile_id, profiles:profile_id ( email, full_name )')
-    .eq('org_id', session.org_id);
+  // Members power the room-assignment modal. We need the union of org members
+  // and active session participants — code-joined participants don't have an
+  // org_memberships row but must still be assignable to a room. Profile RLS
+  // (`can_see_profile_via_session`) already lets the facilitator read both
+  // sets, so a direct join works for either path.
+  const [orgMembersRes, sessionParticipantsRes] = await Promise.all([
+    supabase
+      .from('org_memberships')
+      .select('profile_id, profiles:profile_id ( email, full_name )')
+      .eq('org_id', session.org_id),
+    supabase
+      .from('session_participants')
+      .select('profile_id, profiles:profile_id ( email, full_name )')
+      .eq('session_id', session.id)
+      .is('removed_at', null),
+  ]);
   if (orgMembersRes.error) {
     throw new Error(`Failed to load org members: ${orgMembersRes.error.message}`);
   }
-  orgMembers = ((orgMembersRes.data ?? []) as unknown as {
+  if (sessionParticipantsRes.error) {
+    throw new Error(
+      `Failed to load session participants: ${sessionParticipantsRes.error.message}`,
+    );
+  }
+  const memberById = new Map<string, OrgMemberSummary>();
+  const addRow = (row: {
     profile_id: string;
     profiles: { email: string; full_name: string | null } | null;
-  }[]).map((row) => ({
-    id: row.profile_id,
-    label: row.profiles?.full_name?.trim() || row.profiles?.email || 'Unknown',
-  }));
+  }) => {
+    if (memberById.has(row.profile_id)) return;
+    memberById.set(row.profile_id, {
+      id: row.profile_id,
+      label: row.profiles?.full_name?.trim() || row.profiles?.email || 'Unknown',
+    });
+  };
+  for (const row of (orgMembersRes.data ?? []) as unknown as {
+    profile_id: string;
+    profiles: { email: string; full_name: string | null } | null;
+  }[]) {
+    addRow(row);
+  }
+  for (const row of (sessionParticipantsRes.data ?? []) as unknown as {
+    profile_id: string;
+    profiles: { email: string; full_name: string | null } | null;
+  }[]) {
+    addRow(row);
+  }
+  orgMembers = Array.from(memberById.values());
 
   // Scenarios: RLS filters to templates + caller-org rows. One query covers
   // every stage_type — group locally so the picker can lookup by stage_type
