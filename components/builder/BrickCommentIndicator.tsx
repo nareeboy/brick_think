@@ -22,10 +22,12 @@ interface Props {
 /**
  * Speech-bubble icon at the brick's top-right corner. Two visual states:
  *
- * - count > 0 → always-visible chip carrying the count, click to open the
- *   thread (read-only viewers can still inspect the thread).
- * - count = 0 → tiny "+" button, hidden by default and revealed on hover /
- *   focus / touch so the canvas doesn't get peppered with empty affordances.
+ * - count > 0 → chip carrying the count, click to open the thread (read-only
+ *   viewers can still inspect the thread).
+ * - count = 0 → speech-bubble add-comment button, always visible when the
+ *   caller can post. Mirrors the reaction-chip "+" affordance so the two
+ *   feedback surfaces feel symmetric — discoverability beats canvas tidiness
+ *   here.
  *
  * The popover is rendered as a child here (not a portal) so the dialog's
  * outside-click handler can scope to the dialog's own DOM tree.
@@ -67,9 +69,20 @@ export function BrickCommentIndicator({
           disabled={disabled}
           onClick={() => setOpen(true)}
           aria-label="Add comment"
-          className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-white/95 text-xs text-zinc-500 opacity-0 shadow-sm ring-1 ring-zinc-200/60 transition-opacity hover:opacity-100 focus-visible:opacity-100 disabled:cursor-default disabled:opacity-50 [@media(hover:none)]:opacity-100"
+          className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-white/95 text-xs text-zinc-500 shadow-sm ring-1 ring-zinc-200/60 transition-colors hover:bg-white hover:text-zinc-900 disabled:cursor-default disabled:opacity-50"
         >
-          +
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-3.5 w-3.5"
+          >
+            <path d="M2.5 11.5V4.5a1.5 1.5 0 0 1 1.5-1.5h8a1.5 1.5 0 0 1 1.5 1.5v5a1.5 1.5 0 0 1-1.5 1.5H6l-3 2.5v-2z" />
+          </svg>
         </button>
       )}
       {open ? (
