@@ -36,6 +36,11 @@ const DB_URL = process.env.WORKER_DATABASE_URL ?? process.env.DATABASE_URL;
 const SECRET = process.env.YJS_JWT_SECRET;
 const PERSIST_DEBOUNCE_MS = Number(process.env.YJS_PERSIST_DEBOUNCE_MS ?? 5000);
 const PERSIST_CEILING_MS = Number(process.env.YJS_PERSIST_CEILING_MS ?? 60_000);
+// Hard caps to bound an authenticated client's blast radius. A legit canvas
+// caps at ~1MB; a serious-play session caps at a handful of peers per room.
+// Both are env-overridable for stress tests or unusually large workshops.
+const MAX_MESSAGE_BYTES = Number(process.env.YJS_MAX_MESSAGE_BYTES ?? 5 * 1024 * 1024);
+const MAX_PEERS_PER_ROOM = Number(process.env.YJS_MAX_PEERS_PER_ROOM ?? 50);
 
 function logEvent(msg: string, extra?: Record<string, unknown>): void {
   const payload = {
@@ -98,13 +103,25 @@ const httpServer = createServer((req, res) => {
   res.end();
 });
 
-const wss = new WebSocketServer({ noServer: true });
+const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE_BYTES });
+const peersByRoom = new Map<string, number>();
 
 httpServer.on('upgrade', (request, socket, head) => {
   void (async () => {
     const modelId = parseModelIdFromUrl(request.url);
     if (!modelId) {
       socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    if ((peersByRoom.get(modelId) ?? 0) >= MAX_PEERS_PER_ROOM) {
+      logEvent('upgrade_rejected', {
+        status: 429,
+        reason: 'room full',
+        modelId,
+        peers: peersByRoom.get(modelId),
+      });
+      socket.write('HTTP/1.1 429 Too Many Requests\r\n\r\n');
       socket.destroy();
       return;
     }
@@ -135,7 +152,14 @@ httpServer.on('upgrade', (request, socket, head) => {
 });
 
 wss.on('connection', (conn: WebSocket, request: IncomingMessage, modelId: string) => {
-  logEvent('client_connected', { modelId });
+  const next = (peersByRoom.get(modelId) ?? 0) + 1;
+  peersByRoom.set(modelId, next);
+  logEvent('client_connected', { modelId, peers: next });
+  conn.on('close', () => {
+    const remaining = (peersByRoom.get(modelId) ?? 1) - 1;
+    if (remaining <= 0) peersByRoom.delete(modelId);
+    else peersByRoom.set(modelId, remaining);
+  });
   wsUtils.setupWSConnection(conn, request, { docName: modelId, gc: true });
   setImmediate(() => attachPersistenceForDoc(modelId));
 });
