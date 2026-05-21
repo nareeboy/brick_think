@@ -322,8 +322,28 @@ function CanvasStage({
   readOnly?: boolean;
   scenario?: BuilderScenario | null;
 }) {
-  const { awareness, selfClientId, view, self } = useBuilderState();
+  const { awareness, selfClientId, view, self, modelId } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
+
+  // Chrome buttons sit absolutely positioned in the canvas top-right.
+  // Pieces always anchors at right-5; the rest fill slots 72px / 124px /
+  // 176px from the right edge in order. Computing visibility + offsets
+  // here (rather than letting each component hard-code its slot) so a
+  // hidden button — Share on legacy org-shared designs is the only case —
+  // doesn't leave an empty gap; the remaining buttons slide in.
+  //
+  // Share is shown on every session-scoped design (orgId === null) for
+  // both owners and viewers; the ShareModal itself owns who can mint links.
+  const showShare = modelId !== null && orgId === null;
+  const showExport = modelId !== null;
+  const showNotes = isSessionFacilitator && sessionContext !== null;
+  const SLOT_BASE = 72;
+  const SLOT_STEP = 52;
+  let chromeSlot = 0;
+  const shareRight = showShare ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
+  const exportRight = showExport ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
+  const notesRight = showNotes ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
+
   return (
     <DragPieceProvider>
       <section
@@ -373,12 +393,13 @@ function CanvasStage({
           />
         ) : null}
 
-        <ShareButton orgId={orgId} />
-        <ExportButton />
-        {isSessionFacilitator && sessionContext ? (
+        {shareRight !== null ? <ShareButton rightPx={shareRight} /> : null}
+        {exportRight !== null ? <ExportButton rightPx={exportRight} /> : null}
+        {notesRight !== null && sessionContext ? (
           <NotesHeaderButton
             sessionId={sessionContext.sessionId}
             initialValue={facilitatorNotes}
+            rightPx={notesRight}
           />
         ) : null}
         {scenario ? <ScenarioPanel scenario={scenario} /> : null}
@@ -392,15 +413,14 @@ function CanvasStage({
 function NotesHeaderButton({
   sessionId,
   initialValue,
+  rightPx,
 }: {
   sessionId: string;
   initialValue: string | null;
+  rightPx: number;
 }) {
-  // Slot rhythm in the canvas section: PiecesDrawer at right-5, Share at
-  // right-[72px], Export at right-[124px]. Notes sits to the left of Export
-  // so all four chrome buttons line up at 52px intervals.
   return (
-    <div className="absolute right-[176px] top-5 z-30">
+    <div className="absolute top-5 z-30" style={{ right: rightPx }}>
       <FacilitatorNotesButton sessionId={sessionId} initialValue={initialValue} />
     </div>
   );
@@ -504,16 +524,13 @@ function BrickCommentsLayer({
   );
 }
 
-function ExportButton() {
+function ExportButton({ rightPx }: { rightPx: number }) {
   const { modelId, title, groups, bricks, stage } = useBuilderState();
   const stageRef = useRef<typeof stage>(stage);
   stageRef.current = stage;
   if (!modelId) return null;
-  // Top-right slot rhythm in the canvas section: PiecesDrawer trigger sits at
-  // right-5 and ShareButton at right-[72px] (both z-30, both h-11 w-11). Slot
-  // Export to the left of Share so all three sit in a row without collision.
   return (
-    <div className="absolute right-[124px] top-5 z-30">
+    <div className="absolute top-5 z-30" style={{ right: rightPx }}>
       <ExportMenu
         source={{
           kind: 'stage',
@@ -579,14 +596,13 @@ function CloseIcon({ className = '' }: { className?: string }) {
   );
 }
 
-function ShareButton({ orgId }: { orgId: string | null }) {
-  const { modelId, readOnly } = useBuilderState();
+function ShareButton({ rightPx }: { rightPx: number }) {
+  // Visibility (modelId / readOnly / orgId === null) is decided by the
+  // parent CanvasStage so chrome slot indices stay correct; this component
+  // just renders the trigger + modal at the assigned offset.
+  const { modelId } = useBuilderState();
   const [open, setOpen] = useState(false);
   if (!modelId) return null;
-  if (readOnly) return null;
-  // Org-shared designs are not publicly shareable (spec Q7a). Hide the entry
-  // point entirely; the server action also throws as defence in depth.
-  if (orgId !== null) return null;
   return (
     <>
       <button
@@ -595,7 +611,8 @@ function ShareButton({ orgId }: { orgId: string | null }) {
         aria-label="Share design"
         title="Share design"
         data-testid="share-button"
-        className="absolute right-[72px] top-5 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-zinc-900/10 bg-white/85 text-zinc-700 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur transition-colors hover:bg-white hover:text-zinc-900"
+        style={{ right: rightPx }}
+        className="absolute top-5 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-zinc-900/10 bg-white/85 text-zinc-700 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur transition-colors hover:bg-white hover:text-zinc-900"
       >
         <ShareIcon className="h-5 w-5" />
       </button>
