@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/db/server', () => ({ createServerSupabaseClient: vi.fn() }));
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { __resetRateLimitForTests } from '@/lib/rateLimit';
 import { verifyYjsToken } from '@/lib/yjs/jwt';
 
 import { POST } from './route';
@@ -40,6 +41,7 @@ describe('POST /api/yjs/token', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetRateLimitForTests();
     process.env.YJS_JWT_SECRET = 'a'.repeat(64);
   });
 
@@ -84,5 +86,22 @@ describe('POST /api/yjs/token', () => {
     });
     expect(claims.profileId).toBe('u1');
     expect(claims.modelId).toBe(VALID_MODEL_ID);
+  });
+
+  it('returns 429 with Retry-After after the per-user burst limit', async () => {
+    mockSupabase({
+      user: { id: 'u-burst' },
+      modelRow: { id: VALID_MODEL_ID },
+    });
+    // 30 calls per 10s window — drain it, then expect the next call to 429.
+    for (let i = 0; i < 30; i++) {
+      const res = await POST(makeRequest({ modelId: VALID_MODEL_ID }));
+      expect(res.status).toBe(200);
+    }
+    const res = await POST(makeRequest({ modelId: VALID_MODEL_ID }));
+    expect(res.status).toBe(429);
+    const retryAfter = res.headers.get('Retry-After');
+    expect(retryAfter).not.toBeNull();
+    expect(Number(retryAfter)).toBeGreaterThan(0);
   });
 });
