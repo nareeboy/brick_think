@@ -23,19 +23,19 @@ const GROUPS: FaqGroup[] = [
   {
     id: 'getting-started',
     label: 'Getting started',
-    title: 'New facilitator onboarding',
+    title: 'First session, step by step',
     items: [
       {
         q: 'Do I need to be a certified LSP facilitator to use BrickThink?',
-        a: 'No. The product is open to anyone. But BrickThink is a methodology tool, not a generic whiteboard — it will feel underspecified if the person running the session has never been through the five stages. The hosted version is free and unmetered, so the cheapest way to evaluate is to run one.',
+        a: 'No. Anyone can use it. But this is a method tool, not a blank whiteboard. If you have never been through the five stages, the screen will feel empty. The hosted site is free. The cheapest way to find out is to run one.',
       },
       {
         q: 'How long does it take to set up a session?',
-        a: 'Five minutes. Create an account, create a session, pick which of the five stages to run, paste a participant list, and start. The default cadence (15 / 13 / 30 / 25 / 20 minutes) is the canonical one; you can override per stage.',
+        a: 'Five minutes. Sign up. Make a session. Pick your stages. Paste in your people. Start. Default times are 15, 13, 30, 25, 20 minutes. Change them per stage if you want.',
       },
       {
-        q: 'Do participants need an account?',
-        a: 'They need to be signed in for their narrations to attach to their identity. Magic-link sign-in works — no password required for participants joining a session.',
+        q: 'Do people in my room need an account?',
+        a: 'Yes — so their stories stick to their name. Magic-link sign-in works fine. No password needed.',
       },
     ],
   },
@@ -46,19 +46,19 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: 'Do you replace our video tool?',
-        a: 'No. Pair BrickThink with whatever the team already uses — Meet, Zoom, Teams, Around. We are the build, the narration, and the record. The video call stays where it is.',
+        a: 'No. Use your own video tool — Meet, Zoom, Teams, whatever. We handle the bricks, the story, and the record. The video call stays where it is.',
       },
       {
-        q: 'What happens if a participant loses their connection mid-session?',
-        a: 'Their canvas state is durable. Yjs sync resumes when they reconnect; they rejoin the same shared canvas at the position the rest of the room is at. The facilitator can also pause the stage from the toolbar while waiting.',
+        q: 'What if someone loses their connection mid-session?',
+        a: 'Their work is safe. When they reconnect, they jump back in where the rest of the room is. You can also pause the stage from the toolbar while you wait.',
       },
       {
         q: 'Can I run a single stage instead of all five?',
-        a: 'Yes. Each session is configured stage-by-stage. Skipping stages out of order is allowed by the product but breaks the methodology — we leave that judgement to the facilitator.',
+        a: 'Yes. Each session is set up stage by stage. Skipping out of order is allowed by the tool — but it breaks the method. That call is yours.',
       },
       {
-        q: 'How many participants can join a session?',
-        a: 'Eight today. Larger group sizes are on the roadmap. Eight is also the upper edge of what the methodology recommends for a single facilitator.',
+        q: 'How many people can join a session?',
+        a: 'Eight today. Bigger groups are on the way. Eight is also the top end LSP suggests for one facilitator.',
       },
     ],
   },
@@ -69,61 +69,61 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: 'How much does BrickThink cost?',
-        a: 'Nothing. BrickThink is an open-source program — Apache 2.0 on the code, and the hosted version at www.brickthink.io is free for everyone. There is no paid tier and we have no plans to introduce one.',
+        a: 'Nothing. The code is open source. The hosted site at www.brickthink.io is free for everyone. No paid tier. No plans for one.',
       },
       {
         q: 'Is there a Pro plan coming?',
-        a: 'No. Earlier copy mentioned a future Pro tier; we have since committed to staying free. If priorities change we will say so loudly, not bury it in a pricing page.',
+        a: 'No. Older copy mentioned a future Pro tier. We dropped it. If we ever change our minds, we will say so loudly — not hide it in a pricing page.',
       },
       {
         q: 'How can I support the project?',
-        a: 'Three honest ways: file bug reports and PRs on GitHub, run sessions and tell other facilitators about it, or sponsor the repo if your organisation wants the project to keep moving. None of those are required to use the product.',
+        a: 'Three honest ways. File bugs or pull requests on GitHub. Run sessions and tell other facilitators. Sponsor the repo if your firm wants us to keep going. None of these are needed to use the tool.',
       },
       {
-        q: 'Will the methodology stay openly referenced?',
-        a: 'Yes. The Serious Play methodology is published under CC BY-SA 3.0 and we keep referencing it under that licence. Our own code stays Apache 2.0.',
+        q: 'Will the LSP method stay openly referenced?',
+        a: 'Yes. LSP is open (CC BY-SA 3.0). We keep using it under that licence. Our code stays Apache 2.0.',
       },
     ],
   },
   {
     id: 'accessibility',
     label: 'Accessibility',
-    title: 'Designed-in, not retro-fitted',
+    title: 'Built in from day one',
     items: [
       {
-        q: 'What is your accessibility target?',
-        a: 'WCAG 2.2 AA from day one. The brick canvas is keyboard-navigable, every interactive control has a visible focus ring, prefers-reduced-motion is respected across the product, and our colour palette is colour-blind safe with pattern overlays on brick fills.',
+        q: 'How well does this work for people with disabilities?',
+        a: 'We aim for WCAG 2.2 AA from day one. The brick canvas works with a keyboard. Every button shows a focus ring. We stop motion if a person asks. Our colours work for colour-blind people, with patterns to back them up.',
       },
       {
         q: 'Does the canvas work with a screen reader?',
-        a: 'Bricks are exposed as named, positioned, owned objects (for example: "2x4 terracotta brick with diagonal hatch, position B6, owned by Idris"). Voice-described build mode — where the model is presented as a spoken text equivalent — is on the roadmap.',
+        a: 'Yes. Each brick has a name, a spot, and an owner. Like: "2x4 terracotta brick, diagonal hatch, B6, made by Idris." Voice-described build mode is coming — that turns the model into a spoken description.',
       },
       {
-        q: 'Can I lengthen the timer for a participant who needs more time?',
-        a: 'Yes. Each stage has a timer-pressure mode: strict, standard, or no pressure. Facilitators can adjust it per session.',
+        q: 'Can I give someone more time on the timer?',
+        a: 'Yes. Each stage has three timer modes: strict, standard, no pressure. You set it per session.',
       },
     ],
   },
   {
     id: 'privacy',
     label: 'Privacy & security',
-    title: 'Where your data sits and who can see it',
+    title: 'Where your data lives',
     items: [
       {
-        q: 'Where is data stored?',
-        a: 'Supabase, in the EU region. GDPR-aligned. Session canvases, narrations, and exports stay inside your org and are not shared with third parties. The methodology references are public.',
+        q: 'Where is my data stored?',
+        a: 'In the EU. GDPR rules apply. Session canvases, stories, and exports stay inside your team. They are not shared with anyone else.',
       },
       {
-        q: 'Do you use participant data to train AI models?',
-        a: 'No. Claude calls happen on the facilitator side, on prompts the facilitator writes, with explicit consent — and we do not feed canvas or narration content into training pipelines.',
+        q: 'Do you use my session data to train AI models?',
+        a: 'No. The AI helper only runs on prompts you write. With your consent. We never feed canvas or story content into AI training.',
       },
       {
         q: 'How do I delete a session?',
-        a: 'From the session settings, choose Delete. The session canvas, narrations, and exports are removed within 30 days; backups roll off on the same window.',
+        a: 'In session settings, pick Delete. The canvas, stories, and exports are gone within 30 days. Backups go too, on the same clock.',
       },
       {
         q: 'How do I report a security issue?',
-        a: 'Email security@brickthink.io and we will respond inside one working day. Please do not file public GitHub issues for security-sensitive reports.',
+        a: 'Email security@brickthink.io. We reply within one working day. Please do not open a public GitHub issue for security bugs.',
       },
     ],
   },
@@ -133,16 +133,16 @@ const GROUPS: FaqGroup[] = [
     title: 'Run your own copy',
     items: [
       {
-        q: 'Can I self-host BrickThink?',
-        a: 'Yes. The repo is Apache 2.0. Clone it, point it at your own Supabase project, and deploy the web service and worker service on Railway, Fly, or any Node host. The README walks through it.',
+        q: 'Can I run my own copy of BrickThink?',
+        a: 'Yes. The code is open. Clone the repo. Point it at your own Supabase. Run it on Railway, Fly, or any Node host. The README has the steps.',
       },
       {
-        q: 'Do I have to keep my self-hosted copy open source?',
-        a: 'No. Apache 2.0 is permissive — you can modify and re-distribute under your own terms. If you publish changes back upstream, please use a PR so others can benefit.',
+        q: 'Do I have to keep my copy open source?',
+        a: 'No. The licence (Apache 2.0) lets you change and share on your own terms. If your change might help others, please send a pull request.',
       },
       {
-        q: 'Is there commercial support for self-hosted deployments?',
-        a: 'No paid support today, and we are not planning a paid tier. The community channel is GitHub issues; we triage there. If you need bespoke help, contact us and we will point you at facilitators or contributors familiar with the stack.',
+        q: 'Is there paid support for self-hosted copies?',
+        a: 'No paid support. We are not planning any. GitHub issues are where we answer. If you need hands-on help, write to us. We will point you at someone who knows the code.',
       },
     ],
   },
@@ -225,14 +225,13 @@ function Hero() {
             Help &amp; FAQ
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[78px]">
-            Plain answers,
+            Plain answers.
             <br />
-            <span className="text-[#c0613d]">concrete ones</span>.
+            <span className="text-[#c0613d]">Real ones</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
-            Most of what facilitators ask us has a short, honest answer. The longer ones live on
-            the GitHub repo. If something below is wrong, file an issue — we use this page as the
-            source of truth.
+            Most facilitator questions have a short, honest answer. The longer ones live on GitHub.
+            If anything below is wrong, file an issue. We treat this page as the source of truth.
           </p>
         </div>
         <aside className="md:col-span-4">
@@ -241,8 +240,8 @@ function Hero() {
               Looking for something specific?
             </p>
             <p className="mt-3 text-[14px] leading-relaxed text-zinc-700">
-              File a question on the public repo. We triage within a working day and pull common
-              ones up to this page.
+              File a question on GitHub. We answer within a working day. The common ones move up to
+              this page.
             </p>
             <a
               href={`${GITHUB_URL}/issues/new`}
@@ -277,7 +276,7 @@ function StillStuck() {
                 Talk to a human.
               </h2>
               <p className="mt-4 text-[14px] leading-relaxed text-zinc-700">
-                We answer support email ourselves. No tier-1 outsourcing, no chatbot in front.
+                We answer support email ourselves. No bot. No outsourcing.
               </p>
             </div>
             <div className="flex items-center md:justify-end">

@@ -15,45 +15,45 @@ const STAGES = [
     name: 'Skill-building',
     duration: '15 min',
     blurb:
-      'Hands learn before minds do. The room builds together — towers, ducks, a thing that means hope — until the technique stops being a barrier.',
+      'Hands learn before heads. Build a tower. Build a duck. Build a thing that means hope. Get past feeling shy with the bricks.',
     detail:
-      'No metaphor yet. Just confidence with the bricks and the etiquette of building-as-thinking.',
+      'No deep meaning yet. Just get used to the bricks. Get used to thinking by building.',
   },
   {
     n: '02',
     name: 'Individual model',
     duration: '13 min',
     blurb:
-      'Each person builds their own answer to one carefully framed question. Privately. Without commentary.',
+      'Each person builds their own answer to one clear question. Alone. With no one talking.',
     detail:
-      'The model is the answer. It is not a draft of an answer or an illustration of an answer. Then it is narrated, brick by brick, in the participant’s own words.',
+      'The model is the answer. Not a draft. Not a picture of an answer. Then each person tells the room what each brick means.',
   },
   {
     n: '03',
     name: 'Shared model',
     duration: '30 min',
     blurb:
-      'Individual models negotiate themselves into one shared model. Bricks move. Meaning moves with them.',
+      'Each person’s model joins into one shared model. Bricks shift around. The meaning shifts too.',
     detail:
-      'The point is not consensus. The point is a shared object the group built together that everyone can point at and continue to argue with afterwards.',
+      'Don’t aim for agreement. Aim for one thing the group made together. Something they can keep pointing at and arguing with later.',
   },
   {
     n: '04',
     name: 'System model',
     duration: '25 min',
     blurb:
-      'Connections, forces, and outside agents go on the canvas. The system stops being a list and starts being a structure.',
+      'Add the links. Add the outside players. Add the forces at play. It stops being a list. It starts being a shape.',
     detail:
-      'String, arrows, antagonists, allies. The model now shows what reinforces what and what is downstream of what.',
+      'Lines, arrows, friends, rivals. The model shows what feeds what. And what depends on what.',
   },
   {
     n: '05',
     name: 'Guiding principles',
     duration: '20 min',
     blurb:
-      'Extract written principles, each one anchored to the bricks that justify it. Take the principles. Leave the bricks behind.',
+      'Pull out clear rules. Each one points to bricks that back it up. Take the rules home. Leave the bricks behind.',
     detail:
-      'A principle that cannot be traced back to a brick in the system model does not survive this stage.',
+      'A rule that can’t point back to a brick does not make the final cut.',
   },
 ];
 
@@ -61,31 +61,31 @@ const TENETS = [
   {
     label: 'Hand-knowledge',
     title: 'The hands know things the mouth does not.',
-    body: 'A 70/30 rule of thumb in the practitioner community: most of what people know about how their organisation actually works is non-verbal until they build it.',
+    body: 'Rule of thumb: most of what people know about their team and their work, they cannot say out loud. Until they build it.',
   },
   {
     label: '100% participation',
-    title: 'Everyone builds. Everyone narrates.',
-    body: 'No silent observers. No one defers to the loudest person. Anyone unwilling to build is in the wrong room — and that is allowed to be said out loud.',
+    title: 'Everyone builds. Everyone shares.',
+    body: 'No watchers. No leaning on the loudest voice. If someone will not build, they are in the wrong room. You can say that out loud.',
   },
   {
     label: 'The model owns the meaning',
     title: 'You point at bricks, not at people.',
-    body: 'Disagreement happens through the model. You move a brick, you change a connection, you stop a metaphor — instead of arguing with a colleague’s words.',
+    body: 'Arguments happen through the model. Move a brick. Cut a line. Stop a metaphor. No one argues with a colleague’s words.',
   },
   {
     label: 'Time-boxed by design',
-    title: 'Constraint is the whole point.',
-    body: 'Each stage has a duration. The pressure of the timer is what stops people optimising their answer and forces them to commit one.',
+    title: 'The clock is the point.',
+    body: 'Each stage has a timer. The pressure stops people over-thinking. It forces them to pick an answer and live with it.',
   },
 ];
 
 const WHEN_TO_USE = [
-  'Strategy: turning a fuzzy ambition into a system everyone can defend.',
-  'Team formation: surfacing real expectations of each other in a new team.',
-  'Retrospectives: getting past the safe answers and into what people actually noticed.',
-  'Working agreements: making the unwritten rules of a team explicit and editable.',
-  'Cultural integration: post-merger, post-restructure, post-leadership-change.',
+  'Strategy: turn a fuzzy goal into a system the team can defend.',
+  'Team forming: get the real expectations on the table early.',
+  'Retros: get past the safe answers and into what people really noticed.',
+  'Working agreements: write down the unwritten rules. Then change them.',
+  'Big change: after a merger. After a re-org. After a new boss.',
 ];
 
 export default function WhatIsLspPage() {
@@ -109,7 +109,7 @@ function Hero() {
         <div className="md:col-span-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 backdrop-blur">
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
-            Methodology primer
+            What is LSP?
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[80px]">
             What is <span className="text-[#c0613d]">LEGO®</span>
@@ -117,19 +117,18 @@ function Hero() {
             SERIOUS PLAY®?
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
-            A facilitated methodology that uses physical models — and metaphor — to surface what a
-            team actually thinks, instead of what it is willing to say out loud. Five stages, in
-            sequence, with discipline. The methodology is released under CC BY-SA 3.0; the
-            trademarks of the LEGO Group are not used here.
+            LSP is a workshop method. People build small models out of bricks. Then they tell the
+            room what each model means. You hear what your team really thinks — not just the safe
+            answer. Five stages. In order. With care.
           </p>
         </div>
         <aside className="md:col-span-4">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-zinc-900/10 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
             {[
-              ['1996', 'Methodology conceived'],
-              ['2010', 'Released open-source'],
+              ['1996', 'Method first dreamed up'],
+              ['2010', 'Made free for all'],
               ['CC BY-SA 3.0', 'Licence in use today'],
-              ['5 stages', 'Canonical sequence'],
+              ['5 stages', 'In a strict order'],
             ].map(([val, label]) => (
               <div key={label}>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
@@ -158,11 +157,10 @@ function ThesisSection() {
         </div>
         <div className="md:col-span-8">
           <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[34px]">
-            Most of what your team understands about its own work is{' '}
-            <span className="text-[#d8a85d]">non-verbal</span>. Conventional meetings only capture
-            the part people are willing to articulate on the spot — which is usually the safest
-            part. LSP forces the rest onto the table by making everyone build it first and explain
-            it second.
+            Most of what your team knows about its work, they{' '}
+            <span className="text-[#d8a85d]">can’t put into words</span>. Normal meetings only catch
+            what people are willing to say on the spot. That is the safe part. LSP gets the rest
+            out — because people build first and talk second.
           </p>
         </div>
       </div>
@@ -180,12 +178,11 @@ function StagesSection() {
               The five stages
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-              The sequence is the methodology.
+              The order is the method.
             </h2>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-600">
-              You can run a single stage as a focused exercise. You can run a subset. But running
-              them out of order, or skipping the narration steps, is no longer LSP — it is a
-              workshop with bricks in it.
+              You can run one stage. You can run a few. But out of order, or with no story step,
+              you are just running a workshop with bricks. That is not LSP.
             </p>
           </div>
           <ol className="md:col-span-8">
@@ -230,11 +227,11 @@ function TenetsSection() {
               Tenets
             </p>
             <h2 className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-              Four non-negotiables that make a session LSP and not theatre.
+              Four rules that keep it real.
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Drop any one of these and the method stops doing the thing it was designed to do.
+            Drop one of these and it stops working.
           </p>
         </div>
 
@@ -278,11 +275,10 @@ function WhenSection() {
             When to reach for it
           </p>
           <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-            Use it when the words are not getting you there.
+            Use it when words stop working.
           </h2>
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-600">
-            If the team already agrees on everything, you do not need this. If they are stuck in
-            polite versions of the same conversation, you do.
+            If the team agrees, skip this. If they keep having the same polite talk, you need it.
           </p>
         </div>
         <ul className="md:col-span-7">
@@ -318,17 +314,17 @@ function TrademarkSection() {
         </div>
         <div className="md:col-span-8 space-y-5 text-[15px] leading-relaxed text-zinc-700">
           <p>
-            The methodology is published under{' '}
-            <span className="font-mono text-[13px] text-[#c0613d]">CC BY-SA 3.0</span> and can be
-            referenced, taught, and built upon. The names <em className="not-italic font-medium">LEGO</em>,{' '}
+            The LSP method is open under{' '}
+            <span className="font-mono text-[13px] text-[#c0613d]">CC BY-SA 3.0</span>. Anyone can
+            teach it. Anyone can build on it. The names{' '}
+            <em className="not-italic font-medium">LEGO</em>,{' '}
             <em className="not-italic font-medium">SERIOUS PLAY</em>,{' '}
             <em className="not-italic font-medium">IMAGINOPEDIA</em>, the Minifigure, and the Brick
-            and Knob configurations are trademarks of the LEGO Group.
+            and Knob shapes belong to the LEGO Group.
           </p>
           <p>
-            BrickThink references the methodology under the open licence. We do not use the
-            trademarks, the brick designs, or the figurines. Our 52-tile asset set is original,
-            named differently, and visually distinct.
+            BrickThink uses the method under the open licence. We do not use the LEGO names, brick
+            designs, or figures. Our 52 tiles are our own — different names, different look.
           </p>
           <p>
             The LEGO Group does not sponsor, authorize, or endorse this product.
@@ -352,11 +348,11 @@ function CtaBand() {
               Run it remotely
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[48px]">
-              Bring the five stages online, without the compromises.
+              Run the five stages online.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              BrickThink is the canonical sequence, the narration, the shared canvas, and the
-              record — built for distributed teams.
+              BrickThink gives you the five stages, the story, the shared canvas, and the record.
+              Made for teams in different cities.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link

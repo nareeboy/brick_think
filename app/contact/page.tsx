@@ -24,54 +24,54 @@ type Channel = {
 const CHANNELS: Channel[] = [
   {
     label: 'Support',
-    title: 'Facilitator and participant help.',
+    title: 'Help for facilitators and people in your room.',
     description:
-      'Day-to-day questions about running a session, billing, accessibility, or anything that is blocking you in the product. Real humans, on a working-day SLA.',
+      'Day-to-day questions. Running a session. Stuck in the product. Real humans answer. One working day.',
     action: { kind: 'mailto', href: 'mailto:hello@brickthink.io', label: 'hello@brickthink.io' },
     detail: 'Reply within one working day. CET hours.',
   },
   {
     label: 'Partnerships',
-    title: 'Workshops, agencies, integration.',
+    title: 'Workshops, agencies, big teams.',
     description:
-      'Certified Serious Play facilitators running paid workshops, agencies considering BrickThink as a delivery platform, or HR/L&D teams piloting it inside a larger org.',
+      'Certified LSP facilitators running paid workshops. Agencies using us as their tool. HR teams trying us inside a bigger company.',
     action: { kind: 'mailto', href: 'mailto:partners@brickthink.io', label: 'partners@brickthink.io' },
   },
   {
     label: 'Security',
-    title: 'Vulnerability disclosure.',
+    title: 'Found a security bug?',
     description:
-      'Security-sensitive reports go here directly rather than to a public GitHub issue. We follow coordinated disclosure: triage in one working day, fix window before public write-up.',
+      'Send security bugs here, not to a public GitHub issue. We look at it within one working day. We fix it before talking about it.',
     action: { kind: 'mailto', href: 'mailto:security@brickthink.io', label: 'security@brickthink.io' },
     detail: 'PGP available on request.',
   },
   {
     label: 'Press',
-    title: 'Journalists, analysts, podcasts.',
+    title: 'Writers, analysts, podcasts.',
     description:
-      'Interviews on the methodology, the remote-native build, or the open-source thesis. We do not pay for placement and we will not ghost-write quotes.',
+      'Interviews about the method, the online product, or the open-source side. We do not pay for placement. We do not write your quotes.',
     action: { kind: 'mailto', href: 'mailto:press@brickthink.io', label: 'press@brickthink.io' },
   },
   {
     label: 'Bug reports',
-    title: 'Public issue tracker.',
+    title: 'File a bug in public.',
     description:
-      'Reproducible bugs, feature requests, and discussion happen on GitHub. Searchable, indexed, and visible to other facilitators looking for the same thing.',
+      'Bugs, feature ideas, and chat live on GitHub. Other facilitators can search and find the same question.',
     action: { kind: 'github', href: `${GITHUB_URL}/issues`, label: 'GitHub Issues' },
   },
   {
     label: 'Source',
     title: 'The whole codebase.',
     description:
-      'Apache 2.0. Clone it, fork it, self-host it, or read it to understand what we mean when we say methodology fidelity is wired into the data model.',
+      'Apache 2.0. Clone it. Fork it. Run your own copy. Or read it to see how the method is built into the data.',
     action: { kind: 'github', href: GITHUB_URL, label: 'github.com/brickthink' },
   },
 ];
 
 const COMPANY = [
-  ['Legal entity', 'BrickThink Ltd.'],
+  ['Legal name', 'BrickThink Ltd.'],
   ['Status', 'Open source · always free'],
-  ['Data residency', 'European Union'],
+  ['Where data lives', 'European Union'],
   ['Hosted at', 'www.brickthink.io'],
 ];
 
@@ -100,8 +100,8 @@ function Hero() {
             <span className="text-[#c0613d]">our own</span> email.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
-            No contact form, no chatbot, no tier-1 outsourcing. Pick the channel that matches what
-            you need and write to a real person. Replies inside one working day, CET hours.
+            No form. No bot. No outsourcing. Pick the right address below and write to a real
+            person. We reply within one working day, on CET time.
           </p>
         </div>
         <aside className="md:col-span-4">
@@ -137,8 +137,7 @@ function ChannelsSection() {
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Use the right channel and you skip a triage step. The wrong one still gets a reply —
-            just a slower one.
+            Pick the right one and you get a faster reply. The wrong one still works — just slower.
           </p>
         </div>
 
@@ -212,9 +211,9 @@ function DetailsSection() {
             Most conversations happen in public.
           </h2>
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-700">
-            Roadmap discussion, design rationale, bug triage and changelogs all live on the public
-            repo. If the question is not commercial or security-sensitive, please prefer GitHub —
-            it helps the next facilitator with the same question.
+            Roadmap talks, design choices, bug triage, and release notes all live on GitHub. If
+            your question is not about money or security, post it there. It helps the next
+            facilitator with the same question.
           </p>
         </div>
         <div className="md:col-span-7">
