@@ -4,7 +4,17 @@ import type { PeerSummary } from '@/lib/yjs/usePeerPresence';
 
 const MAX_VISIBLE = 5;
 
-export function PeopleHereStrip({ peers }: { peers: PeerSummary[] }) {
+interface Props {
+  peers: PeerSummary[];
+  /**
+   * Distance in px from the canvas right edge. CanvasStage computes this from
+   * the visible chrome layout so the strip sits just left of whatever button
+   * is leftmost (Notes pill / Export / Share / Pieces).
+   */
+  rightPx?: number;
+}
+
+export function PeopleHereStrip({ peers, rightPx = 16 }: Props) {
   if (peers.length === 0) return null;
 
   const visible = peers.slice(0, MAX_VISIBLE);
@@ -14,7 +24,8 @@ export function PeopleHereStrip({ peers }: { peers: PeerSummary[] }) {
   return (
     <div
       data-testid="people-here-strip"
-      className="pointer-events-none absolute right-4 top-4 z-20 inline-flex items-center gap-0 rounded-full border border-zinc-900/10 bg-white/95 px-2 py-1.5 shadow-[0_8px_18px_-10px_rgba(0,0,0,0.18)] backdrop-blur"
+      style={{ right: rightPx }}
+      className="pointer-events-none absolute top-[25px] z-30 inline-flex items-center gap-0 rounded-full border border-zinc-900/10 bg-white/95 px-2 py-1.5 shadow-[0_8px_18px_-10px_rgba(0,0,0,0.18)] backdrop-blur"
     >
       {visible.map((p, i) => (
         <PeerAvatar peer={p} stackIndex={i} key={p.clientId} />
