@@ -35,7 +35,12 @@ export async function sendMagicLink(
 
   const supabase = await createServerSupabaseClient();
   const origin = await originFromHeaders();
-  const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  // Token-hash strategy: the magic_link email template appends
+  // &token_hash=...&type=magiclink to this URL, landing the user on
+  // /auth/confirm which verifies server-side. Survives cross-browser opens
+  // (in-app webviews, different-device clicks, strict cookie blockers) that
+  // would otherwise trip the PKCE verifier-missing error on /auth/callback.
+  const redirectTo = `${origin}/auth/confirm?next=${encodeURIComponent(next)}`;
 
   const { error } = await supabase.auth.signInWithOtp({
     email,

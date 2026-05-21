@@ -396,7 +396,14 @@ export async function inviteParticipantsByEmailAction(
       results: emails.map((email) => ({ email, status: 'failed' as InviteStatus })),
     };
   }
-  const joinUrl = `${getSiteUrl()}/app/join/${session.join_code}`;
+  // Send-side URL for the magic_link / invite email templates. We route
+  // through /auth/confirm so the token_hash works even when the invitee
+  // opens the email in a different browser than the facilitator that sent
+  // it (always the case for cross-user invites). next= lands them on the
+  // join page after verifyOtp succeeds.
+  const confirmRedirect = `${getSiteUrl()}/auth/confirm?next=${encodeURIComponent(
+    `/app/join/${session.join_code}`,
+  )}`;
 
   const seen = new Set<string>();
   const results: Array<{ email: string; status: InviteStatus }> = [];
@@ -451,12 +458,13 @@ export async function inviteParticipantsByEmailAction(
       }
 
       // Magic-link sign-in for the existing user. The redirect lands on
-      // the join URL so the join flow runs after auth callback.
-      // shouldCreateUser: false because we already know this email has a
-      // profile — defensive against a stray Supabase upsert.
+      // /auth/confirm which verifyOtp's the token_hash and then forwards
+      // to the join URL. shouldCreateUser: false because we already know
+      // this email has a profile — defensive against a stray Supabase
+      // upsert.
       const { error: otpErr } = await service.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: joinUrl, shouldCreateUser: false },
+        options: { emailRedirectTo: confirmRedirect, shouldCreateUser: false },
       });
       if (otpErr) {
         console.error('inviteParticipantsByEmailAction: signInWithOtp failed', { email, error: otpErr });
@@ -466,8 +474,10 @@ export async function inviteParticipantsByEmailAction(
       perEmailStatus = 'sent_magiclink';
     } else {
       // No profile yet: Supabase Auth's invite template handles delivery.
+      // Route through /auth/confirm so the invitee can open the email on
+      // any device/browser without tripping the PKCE verifier check.
       const { error: inviteErr } = await service.auth.admin.inviteUserByEmail(email, {
-        redirectTo: joinUrl,
+        redirectTo: confirmRedirect,
       });
       if (inviteErr) {
         console.error('inviteParticipantsByEmailAction: inviteUserByEmail failed', { email, error: inviteErr });

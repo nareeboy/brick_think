@@ -15,6 +15,20 @@ function publicOrigin(request: NextRequest): string {
   return `${proto}://${host}`;
 }
 
+// Map raw Supabase errors to UI-friendly codes that /sign-in renders into
+// contextual help. The most common in-the-wild case is the PKCE verifier
+// going missing because the email link was opened in a different browser
+// context (in-app webview from a mail client, different device, etc.) —
+// surface a recognisable code so the sign-in page can show resend guidance
+// instead of leaking "PKCE code verifier not found in storage" raw.
+function classifyError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes('code verifier') || m.includes('pkce')) return 'pkce_verifier_missing';
+  if (m.includes('expired')) return 'link_expired';
+  if (m.includes('rate limit')) return 'rate_limited';
+  return 'link_invalid';
+}
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
@@ -27,7 +41,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (errorDescription) {
     const failure = new URL('/sign-in', origin);
-    failure.searchParams.set('error', errorDescription);
+    failure.searchParams.set('error_code', classifyError(errorDescription));
     return NextResponse.redirect(failure);
   }
 
@@ -40,7 +54,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   if (error) {
     const failure = new URL('/sign-in', origin);
-    failure.searchParams.set('error', error.message);
+    failure.searchParams.set('error_code', classifyError(error.message));
     return NextResponse.redirect(failure);
   }
 
