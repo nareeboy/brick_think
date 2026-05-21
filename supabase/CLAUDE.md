@@ -104,6 +104,23 @@ Local Supabase runs `kong` as the API gateway in front of `gotrue` (auth), `post
 
 Fix: `docker restart supabase_kong_brick_think` to force Kong to re-resolve upstreams. Takes ~2 seconds. Alternatively `pnpm db:stop && pnpm db:start` restarts everything cleanly.
 
+### Email templates use the token-hash strategy (not PKCE)
+
+All email-delivered auth links — magic links, invites, signup confirmation — flow through [/auth/confirm](../app/auth/confirm/route.ts) carrying `?token_hash=…&type=…&next=…`. That route calls `supabase.auth.verifyOtp({ token_hash, type })`, which has no client-side state requirement and so works even when the email is opened in a browser that didn't initiate the flow (mobile in-app webview from a mail client, phone clicking a link sent from a laptop, different browser profile, strict cookie blockers). The legacy `?code=…` PKCE flow on [/auth/callback](../app/auth/callback/route.ts) is now reserved for OAuth only (Google), where the browser context never changes.
+
+**Send-side**: every server-side caller of `signInWithOtp` / `inviteUserByEmail` MUST point its `emailRedirectTo` / `redirectTo` at `${origin}/auth/confirm?next=<encoded path>`, never `/auth/callback`. The email template appends `&token_hash=…&type=…` to whatever URL the caller passed, so the caller controls the `next` query parameter and the template controls the auth-verification parameters. Current callers: [app/sign-in/actions.ts](../app/sign-in/actions.ts), [app/(authed)/app/orgs/actions.ts](../app/\(authed\)/app/orgs/actions.ts), [app/(authed)/app/sessions/roster-actions.ts](../app/\(authed\)/app/sessions/roster-actions.ts).
+
+**Custom email templates** live in [supabase/templates/](templates/) and are wired into the local stack via `[auth.email.template.*]` blocks in [config.toml](config.toml). They render `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=…` as the link href.
+
+**Remote (production) deploy checklist** — Supabase Dashboard, **must be done manually after merging template changes**:
+
+1. **Dashboard → Authentication → URL Configuration → Redirect URLs**: add `https://www.brickthink.io/auth/confirm` to the allowlist alongside the existing `/auth/callback` entry.
+2. **Dashboard → Authentication → Email Templates**: open each of `Magic Link`, `Invite user`, `Confirm signup` and paste the contents of the matching file under [supabase/templates/](templates/) into the message body. (The dashboard does not pull from the repo — local Inbucket reads the file, prod doesn't.)
+3. For each template, set the subject line to match the `subject = "…"` value in [config.toml](config.toml).
+4. After updating templates, send yourself a test sign-in link and verify the URL in the email contains `/auth/confirm?next=…&token_hash=…&type=magiclink` (not `/auth/callback?code=…`).
+
+If a future flow needs to send an auth email and you forget the redirect convention, the symptom is the legacy PKCE error reappearing on whatever surface the user lands on — re-check the call site's `emailRedirectTo` and the template's `&type=…` value.
+
 ### Magic-link PKCE: localhost vs 127.0.0.1 host pinning
 
 Symptom while running `pnpm dev:e2e` (or `pnpm dev`): you submit the magic-link form, click the link in Mailpit, and the sign-in page comes back with **"PKCE code verifier not found in storage. This can happen if the auth flow was initiated in a different browser or device, or if the storage was cleared…"**.
