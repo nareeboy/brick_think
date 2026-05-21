@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 interface SignInPageProps {
-  searchParams: Promise<{ next?: string; error?: string; reason?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; error_code?: string; reason?: string }>;
 }
 
 function safeNext(next: string | undefined): string {
@@ -21,10 +21,46 @@ function safeNext(next: string | undefined): string {
   return next.startsWith('/') ? next : '/app/my-designs';
 }
 
+// Friendly error copy for callback/confirm bounce-back. `pkce_verifier_missing`
+// is the one most users actually hit — covers in-app webviews, cross-device
+// link opens, and aggressive cookie blockers. We coach them to request a new
+// link rather than leaking the raw "PKCE code verifier not found" string.
+function describeErrorCode(
+  code: string | undefined,
+  rawError: string | undefined,
+): { title: string; body: string } | null {
+  switch (code) {
+    case 'pkce_verifier_missing':
+      return {
+        title: 'Open the sign-in link in the same browser.',
+        body: 'It looks like the link was opened in a different browser or tab than where you requested it. Send yourself a new one below and click it from this browser.',
+      };
+    case 'link_expired':
+      return {
+        title: 'That link has expired.',
+        body: 'Sign-in links are valid for one hour. Request a new one below.',
+      };
+    case 'link_invalid':
+    case 'link_malformed':
+      return {
+        title: 'That sign-in link did not work.',
+        body: 'It may have already been used, or it was tampered with in transit. Request a new one below.',
+      };
+    case 'rate_limited':
+      return {
+        title: 'Too many attempts.',
+        body: 'Wait a minute, then request a fresh link.',
+      };
+    default:
+      if (!rawError) return null;
+      return { title: 'Sign-in failed.', body: rawError };
+  }
+}
+
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams;
   const next = safeNext(params.next);
-  const errorMessage = params.error;
+  const errorBlock = describeErrorCode(params.error_code, params.error);
   const unconfigured = params.reason === 'unconfigured' || !isSupabaseConfigured();
 
   if (isSupabaseConfigured()) {
@@ -62,18 +98,21 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               account for synchronous sessions — just a join code.
             </p>
 
-            {errorMessage ? (
-              <p
+            {errorBlock ? (
+              <div
                 role="alert"
                 data-testid="auth-error"
-                className="mt-6 inline-flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-[13px] leading-snug text-rose-800"
+                className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-[13px] leading-snug text-rose-800"
               >
-                <span
-                  aria-hidden="true"
-                  className="mt-0.5 inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500"
-                />
-                {errorMessage}
-              </p>
+                <p className="flex items-start gap-2 font-medium">
+                  <span
+                    aria-hidden="true"
+                    className="mt-0.5 inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-rose-500"
+                  />
+                  <span>{errorBlock.title}</span>
+                </p>
+                <p className="mt-1 pl-3.5 text-rose-700/90">{errorBlock.body}</p>
+              </div>
             ) : null}
 
             {unconfigured ? (
