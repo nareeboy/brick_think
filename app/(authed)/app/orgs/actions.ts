@@ -162,13 +162,14 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
     throw new Error(`Invite create failed: ${inviteInsertError.message}`);
   }
 
-  // Resolve site origin the same way the sign-in actions do so the magic
-  // link in the email lands on the same host the inviter is on (the PKCE
-  // gotcha in supabase/CLAUDE.md applies here too).
+  // Resolve site origin the same way the sign-in actions do. We point at
+  // /auth/confirm so the invite email's token_hash works even when the
+  // invitee opens it in a different browser than the one the inviter is on
+  // (which is always the case for cross-user invites). See app/auth/confirm.
   const h = await headers();
   const proto = h.get('x-forwarded-proto') ?? 'http';
   const host = h.get('host') ?? 'localhost:3000';
-  const redirectTo = `${proto}://${host}/auth/callback?next=${encodeURIComponent(
+  const redirectTo = `${proto}://${host}/auth/confirm?next=${encodeURIComponent(
     `/app/orgs/${orgId}`,
   )}`;
 
