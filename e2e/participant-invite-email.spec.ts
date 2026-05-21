@@ -76,8 +76,8 @@ test.describe('email invite flow with Mailpit', () => {
     await facPage.goto(`/app/sessions/${sessionId}`);
     await facPage.waitForURL(`**/app/sessions/${sessionId}`, { timeout: 10_000 });
 
-    // Open Roster modal. Button text is "Roster (N)" where N is participant count.
-    const rosterButton = facPage.getByRole('button', { name: /^Roster\s*\(\d+\)$/ });
+    // Open Roster modal. Button text is "Invite Members (N)" where N is participant count.
+    const rosterButton = facPage.getByRole('button', { name: /^Invite Members\s*\(\d+\)$/ });
     await expect(rosterButton).toBeVisible();
     await rosterButton.click();
 
