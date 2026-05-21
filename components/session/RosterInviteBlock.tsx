@@ -1,7 +1,10 @@
 'use client';
 
 import { useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { inviteParticipantsByEmailAction } from '@/app/(authed)/app/sessions/roster-actions';
+import { rotateJoinCodeAction } from '@/app/(authed)/app/sessions/join-actions';
+import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 
 interface Props {
   sessionId: string;
@@ -15,6 +18,7 @@ function getSiteUrl(): string {
 }
 
 export function RosterInviteBlock({ sessionId, joinCode }: Props) {
+  const router = useRouter();
   const [emails, setEmails] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [copied, setCopied] = useState(false);
@@ -22,9 +26,25 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
     Array<{ email: string; status: string }> | null
   >(null);
   const [pending, startTransition] = useTransition();
+  const [rotateConfirming, setRotateConfirming] = useState(false);
+  const [rotatePending, setRotatePending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const inviteUrl = `${getSiteUrl()}/app/join/${joinCode}`;
+
+  function handleRotate() {
+    setRotatePending(true);
+    void (async () => {
+      const result = await rotateJoinCodeAction(sessionId);
+      if (result.ok) {
+        setRotateConfirming(false);
+        // Re-fetch the session page so the new join_code flows back
+        // through the prop chain (page.tsx → RosterButton → modal).
+        router.refresh();
+      }
+      setRotatePending(false);
+    })();
+  }
 
   function copyToClipboard() {
     navigator.clipboard.writeText(inviteUrl);
@@ -104,15 +124,55 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
     <div className="flex flex-col gap-4">
       {/* Copy invite link section */}
       <div className="flex flex-col gap-2">
-        <p className="text-[13px] font-semibold text-zinc-700">Copy invite link</p>
-        <button
-          type="button"
-          onClick={copyToClipboard}
-          className="h-9 w-full cursor-pointer rounded-lg border border-zinc-900/10 bg-white px-3 text-[13px] font-semibold text-zinc-700 transition-colors hover:bg-zinc-900/5"
-        >
-          {copied ? '✓ Copied!' : 'Copy invite link'}
-        </button>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[13px] font-semibold text-zinc-700">Invite link</p>
+          <span className="font-mono text-[11px] tracking-[0.18em] text-zinc-500">
+            CODE · <span className="text-zinc-900">{joinCode}</span>
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={copyToClipboard}
+            className="h-9 flex-1 cursor-pointer rounded-lg border border-zinc-900/10 bg-white px-3 text-[13px] font-semibold text-zinc-700 transition-colors hover:bg-zinc-900/5"
+          >
+            {copied ? '✓ Copied!' : 'Copy invite link'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setRotateConfirming(true)}
+            title="Generate a new code — any pending email invites stop working"
+            className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
+          >
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 0 1 15.5-6.36L21 8" />
+              <path d="M21 3v5h-5" />
+              <path d="M21 12a9 9 0 0 1-15.5 6.36L3 16" />
+              <path d="M3 21v-5h5" />
+            </svg>
+            Rotate
+          </button>
+        </div>
       </div>
+
+      {rotateConfirming && (
+        <DeleteConfirmDialog
+          title="Rotate join code?"
+          description={
+            <>
+              A new code will replace <span className="font-mono font-semibold text-zinc-900">{joinCode}</span>.
+              Any previously-shared invite links and unclaimed email invites
+              will stop working. You can resend invites with the new code
+              afterwards.
+            </>
+          }
+          confirmLabel="Rotate code"
+          confirmPendingLabel="Rotating…"
+          pending={rotatePending}
+          onCancel={() => setRotateConfirming(false)}
+          onConfirm={handleRotate}
+        />
+      )}
 
       {/* Email invite section */}
       <div className="flex flex-col gap-2">
