@@ -56,7 +56,7 @@ export function RosterButton({ sessionId, joinCode }: { sessionId: string; joinC
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-lg border border-zinc-900/10 bg-white px-3 py-1.5 text-[13px] font-medium transition-colors hover:bg-zinc-50 active:scale-[0.98]"
+        className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5 active:scale-[0.98]"
       >
         Invite Members{count !== null ? ` (${count})` : ''}
       </button>

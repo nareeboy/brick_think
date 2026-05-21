@@ -125,21 +125,18 @@ export function RosterRemovedList({ sessionId }: Props) {
 
   const displayName = (row: Row) => row.full_name || row.email;
 
-  if (rows.length === 0) {
-    return null;
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <button
         type="button"
         onClick={() => setCollapsed(!collapsed)}
-        className="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700 transition-colors"
+        disabled={rows.length === 0}
+        className="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700 transition-colors disabled:cursor-default disabled:text-zinc-500 disabled:hover:text-zinc-500"
         aria-expanded={!collapsed}
         aria-label={collapsed ? `Expand removed participants (${rows.length})` : `Collapse removed participants (${rows.length})`}
       >
-        <span className="text-xs">{collapsed ? '▶' : '▼'}</span>
         Removed ({rows.length})
+        {rows.length > 0 ? <span className="text-xs">{collapsed ? '▶' : '▼'}</span> : null}
       </button>
 
       {!collapsed && (
