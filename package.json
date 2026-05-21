@@ -12,7 +12,7 @@
   "packageManager": "pnpm@10.30.3",
   "scripts": {
     "dev": "next dev",
-    "dev:e2e": "dotenv -e .env.test -- next dev",
+    "dev:e2e": "concurrently -k -n web,yjs -c blue,green \"dotenv -e .env.test -- next dev\" \"pnpm worker:dev\"",
     "build": "next build",
     "build:e2e": "dotenv -e .env.test -- next build",
     "start": "next start",
@@ -76,6 +76,7 @@
     "@types/react-dom": "^19.0.3",
     "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^3.0.4",
+    "concurrently": "^9.2.1",
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
