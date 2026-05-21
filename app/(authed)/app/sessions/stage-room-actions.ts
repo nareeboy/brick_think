@@ -94,18 +94,36 @@ export async function setSharedModelRooms(input: {
   }
   const orgId = sessionRes.data.org_id as string;
 
-  // Confirm every profile referenced is actually an org member of the session.
+  // Confirm every profile referenced is reachable through this session:
+  // either an org member, or a participant who joined via the join code.
+  // Code-joined participants don't have an org_memberships row, so a strict
+  // org-only check would reject them with `unknown_member`.
   if (seenProfiles.size > 0) {
     const ids = Array.from(seenProfiles);
-    const memberRes = await supabase
-      .from('org_memberships')
-      .select('profile_id')
-      .eq('org_id', orgId)
-      .in('profile_id', ids);
+    const [memberRes, participantRes] = await Promise.all([
+      supabase
+        .from('org_memberships')
+        .select('profile_id')
+        .eq('org_id', orgId)
+        .in('profile_id', ids),
+      supabase
+        .from('session_participants')
+        .select('profile_id')
+        .eq('session_id', sessionId)
+        .is('removed_at', null)
+        .in('profile_id', ids),
+    ]);
     if (memberRes.error) {
       throw new Error(`setSharedModelRooms: membership check failed: ${memberRes.error.message}`);
     }
-    const present = new Set((memberRes.data ?? []).map((r) => r.profile_id));
+    if (participantRes.error) {
+      throw new Error(
+        `setSharedModelRooms: participant check failed: ${participantRes.error.message}`,
+      );
+    }
+    const present = new Set<string>();
+    for (const r of memberRes.data ?? []) present.add(r.profile_id);
+    for (const r of participantRes.data ?? []) present.add(r.profile_id);
     for (const id of ids) {
       if (!present.has(id)) return { ok: false, code: 'unknown_member' };
     }
