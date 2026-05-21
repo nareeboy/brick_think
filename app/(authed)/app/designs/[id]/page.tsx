@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 
 import { Builder } from '@/components/builder/Builder';
+import type { BuilderScenario } from '@/components/builder/ScenarioPanel';
 import { SpotlightBanner } from '@/components/session/SpotlightBanner';
 import {
   loadInitialBrickFeedback,
@@ -70,6 +71,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
 
   let sessionContext: SessionContext | null = null;
   let isSessionFacilitator = false;
+  let scenario: BuilderScenario | null = null;
   if (data.session_id && data.stage_id) {
     const [sessionRes, stageRes] = await Promise.all([
       supabase
@@ -77,7 +79,13 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         .select('id, title, facilitator_id')
         .eq('id', data.session_id)
         .maybeSingle(),
-      supabase.from('stages').select('id, stage_type').eq('id', data.stage_id).maybeSingle(),
+      supabase
+        .from('stages')
+        .select(
+          'id, stage_type, scenario_id, scenario_title_override, scenario_body_override',
+        )
+        .eq('id', data.stage_id)
+        .maybeSingle(),
     ]);
     if (sessionRes.data && stageRes.data) {
       sessionContext = {
@@ -86,6 +94,23 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         stageType: stageRes.data.stage_type as StageType,
       };
       isSessionFacilitator = sessionRes.data.facilitator_id === user.id;
+
+      if (stageRes.data.scenario_id) {
+        const scenarioRes = await supabase
+          .from('scenarios')
+          .select('title, body')
+          .eq('id', stageRes.data.scenario_id)
+          .maybeSingle();
+        if (scenarioRes.data) {
+          const titleOverride = stageRes.data.scenario_title_override?.trim();
+          const bodyOverride = stageRes.data.scenario_body_override?.trim();
+          scenario = {
+            stageType: stageRes.data.stage_type as StageType,
+            title: titleOverride && titleOverride.length > 0 ? titleOverride : scenarioRes.data.title,
+            body: bodyOverride && bodyOverride.length > 0 ? bodyOverride : scenarioRes.data.body,
+          };
+        }
+      }
     }
   }
   // Facilitators of the parent session see a private-notes drawer in the
@@ -175,6 +200,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         initialReactions={initialReactions}
         initialComments={initialComments}
         myProfileId={user.id}
+        scenario={scenario}
       />
     </>
   );

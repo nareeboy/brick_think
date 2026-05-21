@@ -22,6 +22,7 @@ import { PeopleHereStrip } from './PeopleHereStrip';
 import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
+import { ScenarioPanel, type BuilderScenario } from './ScenarioPanel';
 import { useBrickComments } from './useBrickComments';
 import { useBrickReactions } from './useBrickReactions';
 import { ExportMenu } from '@/components/exports/ExportMenu';
@@ -61,6 +62,11 @@ interface BuilderProps {
   initialComments?: CommentRow[] | null;
   /** Caller's profile id; needed to tag "mine" pills. */
   myProfileId?: string | null;
+  /**
+   * Scenario brief for the stage this canvas belongs to. Null for personal
+   * designs and for stages without a picked scenario.
+   */
+  scenario?: BuilderScenario | null;
 }
 
 export function Builder({
@@ -79,6 +85,7 @@ export function Builder({
   initialReactions = null,
   initialComments = null,
   myProfileId = null,
+  scenario = null,
 }: BuilderProps) {
   const reactionsEnabled = initialReactions !== null && myProfileId !== null && !!initialModel;
   const commentsEnabled = initialComments !== null && myProfileId !== null && !!initialModel;
@@ -123,6 +130,7 @@ export function Builder({
                 initialComments={initialComments ?? []}
                 myProfileId={myProfileId}
                 readOnly={readOnly}
+                scenario={scenario}
               />
             </div>
           </div>
@@ -299,6 +307,7 @@ function CanvasStage({
   initialComments = [],
   myProfileId = null,
   readOnly = false,
+  scenario = null,
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
@@ -311,6 +320,7 @@ function CanvasStage({
   initialComments?: CommentRow[];
   myProfileId?: string | null;
   readOnly?: boolean;
+  scenario?: BuilderScenario | null;
 }) {
   const { awareness, selfClientId, view, self } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
@@ -371,6 +381,7 @@ function CanvasStage({
             initialValue={facilitatorNotes}
           />
         ) : null}
+        {scenario ? <ScenarioPanel scenario={scenario} /> : null}
         <PiecesDrawer />
         <BringInPreviousModelCard />
       </section>
