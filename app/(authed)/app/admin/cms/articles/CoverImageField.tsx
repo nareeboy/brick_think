@@ -69,8 +69,9 @@ export function CoverImageField({ articleId, initialUrl }: Props) {
           className="mb-3 aspect-[16/9] w-full rounded-xl object-cover"
         />
       ) : (
-        <div className="mb-3 flex aspect-[16/9] w-full items-center justify-center rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-[12px] text-zinc-500">
-          No cover yet
+        <div className="mb-3 flex aspect-[16/9] w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-zinc-300 bg-zinc-50 text-zinc-500">
+          <span className="text-[12px]">No cover yet</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em]">16 : 9</span>
         </div>
       )}
 
@@ -100,7 +101,11 @@ export function CoverImageField({ articleId, initialUrl }: Props) {
         </p>
       ) : null}
 
-      <p className="mt-2 text-[11px] text-zinc-500">PNG only, max 2 MB.</p>
+      <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
+        PNG only, max 2 MB. Recommended <span className="font-mono">1600 × 900</span> (16:9).
+        Anything smaller works; the public page crops to 16:9 so off-ratio uploads lose top/bottom
+        edges.
+      </p>
     </div>
   );
 }
