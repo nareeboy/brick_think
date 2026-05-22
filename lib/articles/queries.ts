@@ -3,6 +3,7 @@ import 'server-only';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { createServiceRoleSupabaseClient } from '@/lib/db/serviceRole';
 
+import { lookupAuthorConfig } from './authors';
 import { getCoverPublicUrl } from './storage';
 import type {
   ArticleDetail,
@@ -61,27 +62,39 @@ function authorDisplay(author: JoinedRow['author']): string | null {
 interface PublicAuthor {
   name: string | null;
   avatarUrl: string | null;
+  tagline: string | null;
+  linkedinUrl: string | null;
+  portfolioUrl: string | null;
 }
 
 // Public anon callers cannot read `profiles` (RLS restricts SELECT to
 // authenticated org-mates / session-participants). The article author is
 // genuinely public info though — name + avatar shown beneath the headline.
 // We escalate to the service role for this narrow lookup, deliberately
-// selecting only the two columns we need (no email, no other PII) so the
-// surface is auditable. Profile ids without a row resolve to nulls.
+// selecting only the columns the byline needs (full_name, avatar_url) plus
+// email — email is used solely as the key into `AUTHOR_LINKS` (see
+// lib/articles/authors.ts) and never leaves this function. Profile ids
+// without a row resolve to nulls.
 async function loadPublicAuthors(profileIds: readonly string[]): Promise<Map<string, PublicAuthor>> {
   const unique = Array.from(new Set(profileIds.filter((id): id is string => Boolean(id))));
   if (unique.length === 0) return new Map();
   const admin = createServiceRoleSupabaseClient();
   const { data, error } = await admin
     .from('profiles')
-    .select('id, full_name, avatar_url')
+    .select('id, full_name, avatar_url, email')
     .in('id', unique);
   if (error) throw new Error(`Failed to load article authors: ${error.message}`);
   const map = new Map<string, PublicAuthor>();
   for (const row of data ?? []) {
     const name = row.full_name?.trim() || null;
-    map.set(row.id, { name, avatarUrl: row.avatar_url ?? null });
+    const config = lookupAuthorConfig(row.email);
+    map.set(row.id, {
+      name,
+      avatarUrl: row.avatar_url ?? null,
+      tagline: config?.tagline ?? null,
+      linkedinUrl: config?.linkedinUrl ?? null,
+      portfolioUrl: config?.portfolioUrl ?? null,
+    });
   }
   return map;
 }
@@ -173,6 +186,9 @@ export async function listPublishedArticles(): Promise<PublishedArticleSummary[]
       coverImageUrl: getCoverPublicUrl(supabase, row.cover_image_path),
       authorName: a?.name ?? null,
       authorAvatarUrl: a?.avatarUrl ?? null,
+      authorTagline: a?.tagline ?? null,
+      authorLinkedinUrl: a?.linkedinUrl ?? null,
+      authorPortfolioUrl: a?.portfolioUrl ?? null,
     };
   });
 }
@@ -208,5 +224,8 @@ export async function getPublishedArticleBySlug(
     publishedAt: row.published_at,
     authorName: a?.name ?? null,
     authorAvatarUrl: a?.avatarUrl ?? null,
+    authorTagline: a?.tagline ?? null,
+    authorLinkedinUrl: a?.linkedinUrl ?? null,
+    authorPortfolioUrl: a?.portfolioUrl ?? null,
   };
 }
