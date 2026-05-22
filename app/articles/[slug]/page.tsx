@@ -51,7 +51,13 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         <Header article={article} minutes={minutes} />
         {article.coverImageUrl ? <Cover url={article.coverImageUrl} alt={article.title} /> : null}
         <Body markdown={article.bodyMarkdown} />
-        <ArticleAuthorByline name={article.authorName} avatarUrl={article.authorAvatarUrl} />
+        <ArticleAuthorByline
+          name={article.authorName}
+          avatarUrl={article.authorAvatarUrl}
+          tagline={article.authorTagline}
+          linkedinUrl={article.authorLinkedinUrl}
+          portfolioUrl={article.authorPortfolioUrl}
+        />
         <Outro />
       </article>
     </MarketingShell>

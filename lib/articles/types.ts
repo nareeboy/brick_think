@@ -31,6 +31,9 @@ export interface PublishedArticleSummary {
   coverImageUrl: string | null;
   authorName: string | null;
   authorAvatarUrl: string | null;
+  authorTagline: string | null;
+  authorLinkedinUrl: string | null;
+  authorPortfolioUrl: string | null;
 }
 
 export interface PublishedArticleDetail extends PublishedArticleSummary {
