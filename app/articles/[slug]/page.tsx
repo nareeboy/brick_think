@@ -4,9 +4,11 @@ import { notFound } from 'next/navigation';
 
 import { ArticleAuthorByline } from '@/components/articles/ArticleAuthorByline';
 import { ArticleProse } from '@/components/articles/ArticleProse';
+import { CoverCreditLine } from '@/components/articles/CoverCreditLine';
 import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/MarketingChrome';
 import { formatPublishedDate, isoDate, readingMinutes } from '@/lib/articles/format';
 import { getPublishedArticleBySlug } from '@/lib/articles/queries';
+import type { CoverCredit } from '@/lib/articles/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +51,13 @@ export default async function ArticleDetailPage({ params }: PageProps) {
     <MarketingShell>
       <article>
         <Header article={article} minutes={minutes} />
-        {article.coverImageUrl ? <Cover url={article.coverImageUrl} alt={article.title} /> : null}
+        {article.coverImageUrl ? (
+          <Cover
+            url={article.coverImageUrl}
+            alt={article.title}
+            credit={article.coverCredit}
+          />
+        ) : null}
         <Body markdown={article.bodyMarkdown} />
         <ArticleAuthorByline
           name={article.authorName}
@@ -135,7 +143,7 @@ function Header({ article, minutes }: { article: HeaderArticle; minutes: number 
   );
 }
 
-function Cover({ url, alt }: { url: string; alt: string }) {
+function Cover({ url, alt, credit }: { url: string; alt: string; credit: CoverCredit }) {
   return (
     <section className="border-b border-zinc-900/5 bg-[#FAF7F1]">
       <div className="mx-auto max-w-7xl px-6 py-12 md:py-16">
@@ -145,6 +153,7 @@ function Cover({ url, alt }: { url: string; alt: string }) {
           alt={alt}
           className="aspect-[16/9] w-full rounded-2xl object-cover shadow-[0_40px_80px_-30px_rgba(0,0,0,0.3)]"
         />
+        <CoverCreditLine credit={credit} />
       </div>
     </section>
   );
