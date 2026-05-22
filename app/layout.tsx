@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { CookieConsent } from '@/components/consent/CookieConsent';
 import './globals.css';
 
 const geistSans = Geist({
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Skip to main content
         </a>
         {children}
+        <CookieConsent />
       </body>
     </html>
   );

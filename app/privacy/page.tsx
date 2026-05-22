@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+
 export const metadata: Metadata = {
   title: 'Privacy Policy · BrickThink',
   description:
@@ -602,6 +604,7 @@ function LegalFooterNav() {
         <a href="mailto:privacy@brickthink.io" className="hover:text-zinc-900">
           Contact
         </a>
+        <ManageCookiesButton className="cursor-pointer text-[13px] text-zinc-600 transition-colors hover:text-zinc-900" />
       </nav>
       <p className="mt-4 max-w-3xl text-[12px] leading-relaxed text-zinc-500">
         LEGO, SERIOUS PLAY, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations are

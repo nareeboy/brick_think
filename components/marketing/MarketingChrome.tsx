@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+
 export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 
 const NAV_LINKS = [
@@ -161,6 +163,7 @@ export function Footer() {
             <Link href="/privacy" className="hover:text-zinc-800">
               Privacy
             </Link>
+            <ManageCookiesButton className="cursor-pointer text-[12px] text-zinc-500 transition-colors hover:text-zinc-800" />
           </nav>
         </div>
       </div>
