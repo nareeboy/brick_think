@@ -22,7 +22,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, avatar_url')
+    .select('full_name, email, avatar_url, is_site_admin')
     .eq('id', user.id)
     .single();
 
@@ -42,12 +42,18 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
     fullName !== null && emailLocalPart !== null && fullName.toLowerCase() === emailLocalPart;
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const userAvatarUrl = profileRes.data?.avatar_url ?? null;
+  const isSiteAdmin = profileRes.data?.is_site_admin === true;
   const initialNotifications = await fetchRecentNotifications();
 
   return (
     <NotificationsProvider profileId={user.id} initial={initialNotifications}>
       <div className="flex h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
-        <GlobalHeader userName={userName} userEmail={email} userAvatarUrl={userAvatarUrl} />
+        <GlobalHeader
+          userName={userName}
+          userEmail={email}
+          userAvatarUrl={userAvatarUrl}
+          isSiteAdmin={isSiteAdmin}
+        />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
         <NotificationToast />
       </div>

@@ -34,6 +34,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          author_profile_id: string | null
+          body_markdown: string
+          cover_image_path: string | null
+          created_at: string
+          excerpt: string | null
+          id: string
+          published_at: string | null
+          slug: string
+          status: Database["public"]["Enums"]["article_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_profile_id?: string | null
+          body_markdown?: string
+          cover_image_path?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["article_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_profile_id?: string | null
+          body_markdown?: string
+          cover_image_path?: string | null
+          created_at?: string
+          excerpt?: string | null
+          id?: string
+          published_at?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["article_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_author_profile_id_fkey"
+            columns: ["author_profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brick_comments: {
         Row: {
           body: string
@@ -559,6 +609,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_site_admin: boolean
           updated_at: string
         }
         Insert: {
@@ -568,6 +619,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_site_admin?: boolean
           updated_at?: string
         }
         Update: {
@@ -577,6 +629,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_site_admin?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -1154,6 +1207,10 @@ export type Database = {
         Args: { p_model_id: string; p_profile_id: string }
         Returns: boolean
       }
+      can_see_profile_via_session: {
+        Args: { p_profile_id: string }
+        Returns: boolean
+      }
       generate_join_code: { Args: never; Returns: string }
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
@@ -1169,6 +1226,7 @@ export type Database = {
         Args: { p_profile_id: string; p_session_id: string }
         Returns: boolean
       }
+      is_site_admin: { Args: never; Returns: boolean }
       lookup_session_by_code: {
         Args: { p_code: string }
         Returns: {
@@ -1182,6 +1240,7 @@ export type Database = {
       purge_expired_trashed_models: { Args: never; Returns: undefined }
     }
     Enums: {
+      article_status: "draft" | "published"
       org_role: "owner" | "admin" | "facilitator" | "member"
       session_mode: "sync" | "async" | "hybrid"
       session_status: "draft" | "scheduled" | "live" | "completed" | "archived"
@@ -1322,6 +1381,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      article_status: ["draft", "published"],
       org_role: ["owner", "admin", "facilitator", "member"],
       session_mode: ["sync", "async", "hybrid"],
       session_status: ["draft", "scheduled", "live", "completed", "archived"],
@@ -1336,4 +1396,3 @@ export const Constants = {
     },
   },
 } as const
-
