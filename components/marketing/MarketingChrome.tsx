@@ -5,6 +5,7 @@ export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
+  { href: '/articles', label: 'Articles' },
   { href: '/about', label: 'About' },
   { href: '/help', label: 'Help' },
   { href: '/contact', label: 'Contact' },
