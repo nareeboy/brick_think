@@ -116,3 +116,110 @@ body {
 [data-scroll-target] :focus-visible {
   scroll-margin-top: 4.5rem;
 }
+
+/* Editorial prose styles for the public articles reader.
+   The markdown renderer produces semantic HTML (h1–h6, p, ul/ol/li,
+   blockquote, pre/code, a). Typography here mirrors the marketing voice:
+   Fraunces upright on headings + blockquotes (no italics), Geist body,
+   65ch measure, generous leading, brand-coloured underlined links. */
+.article-prose {
+  max-width: 65ch;
+}
+.article-prose > * + * {
+  margin-top: 1.25em;
+}
+.article-prose h1,
+.article-prose h2,
+.article-prose h3,
+.article-prose h4 {
+  font-family: var(--font-display);
+  font-style: normal;
+  color: #18181b;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+.article-prose h2 {
+  font-size: 1.75rem;
+  margin-top: 2.5em;
+  margin-bottom: 0.6em;
+  font-weight: 500;
+}
+.article-prose h3 {
+  font-size: 1.35rem;
+  margin-top: 2em;
+  margin-bottom: 0.4em;
+  font-weight: 500;
+}
+.article-prose h4 {
+  font-size: 1.1rem;
+  margin-top: 1.6em;
+  margin-bottom: 0.3em;
+  font-weight: 500;
+}
+.article-prose p {
+  color: #3f3f46;
+}
+.article-prose strong {
+  color: #18181b;
+  font-weight: 600;
+}
+.article-prose em {
+  font-style: italic;
+  color: #27272a;
+}
+.article-prose a {
+  color: #c0613d;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color 150ms ease;
+}
+.article-prose a:hover {
+  color: #9a4a2c;
+}
+.article-prose ul,
+.article-prose ol {
+  padding-left: 1.5rem;
+  color: #3f3f46;
+}
+.article-prose ul {
+  list-style: disc;
+}
+.article-prose ol {
+  list-style: decimal;
+}
+.article-prose li + li {
+  margin-top: 0.4em;
+}
+.article-prose blockquote {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-size: 1.35rem;
+  line-height: 1.4;
+  color: #18181b;
+  padding-left: 1.25rem;
+  border-left: 2px solid #c0613d;
+}
+.article-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  background: rgba(24, 24, 27, 0.06);
+  color: #18181b;
+}
+.article-prose pre {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background: #18181b;
+  color: #f4f4f5;
+  overflow-x: auto;
+  line-height: 1.65;
+}
+.article-prose pre code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
