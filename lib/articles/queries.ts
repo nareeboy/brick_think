@@ -12,6 +12,8 @@ import type {
   PublishedArticleSummary,
 } from './types';
 
+const COVER_CREDIT_COLS = `cover_credit_name, cover_credit_url, cover_credit_source, cover_credit_source_url`;
+
 const ROW_WITH_AUTHOR = `
   id,
   slug,
@@ -19,6 +21,7 @@ const ROW_WITH_AUTHOR = `
   excerpt,
   body_markdown,
   cover_image_path,
+  ${COVER_CREDIT_COLS},
   status,
   published_at,
   author_profile_id,
@@ -34,12 +37,20 @@ const PUBLIC_ROW = `
   title,
   excerpt,
   cover_image_path,
+  ${COVER_CREDIT_COLS},
   status,
   published_at,
   author_profile_id
 `;
 
-interface JoinedRow {
+interface CoverCreditCols {
+  cover_credit_name: string | null;
+  cover_credit_url: string | null;
+  cover_credit_source: string | null;
+  cover_credit_source_url: string | null;
+}
+
+interface JoinedRow extends CoverCreditCols {
   id: string;
   slug: string;
   title: string;
@@ -52,6 +63,15 @@ interface JoinedRow {
   created_at: string;
   updated_at: string;
   author: { full_name: string | null; email: string | null; avatar_url: string | null } | null;
+}
+
+function coverCreditFrom(row: CoverCreditCols) {
+  return {
+    name: row.cover_credit_name ?? null,
+    url: row.cover_credit_url ?? null,
+    source: row.cover_credit_source ?? null,
+    sourceUrl: row.cover_credit_source_url ?? null,
+  };
 }
 
 function authorDisplay(author: JoinedRow['author']): string | null {
@@ -117,6 +137,7 @@ function toDetail(
     createdAt: row.created_at,
     authorProfileId: row.author_profile_id,
     authorName: authorDisplay(row.author),
+    coverCredit: coverCreditFrom(row),
   };
 }
 
@@ -151,7 +172,7 @@ export async function getArticleByIdForAdmin(id: string): Promise<ArticleDetail 
   return toDetail(supabase, data as unknown as JoinedRow);
 }
 
-interface PublicListRow {
+interface PublicListRow extends CoverCreditCols {
   id: string;
   slug: string;
   title: string;
@@ -227,5 +248,6 @@ export async function getPublishedArticleBySlug(
     authorTagline: a?.tagline ?? null,
     authorLinkedinUrl: a?.linkedinUrl ?? null,
     authorPortfolioUrl: a?.portfolioUrl ?? null,
+    coverCredit: coverCreditFrom(row),
   };
 }

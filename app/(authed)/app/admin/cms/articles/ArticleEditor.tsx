@@ -33,7 +33,8 @@ const CODE_MESSAGES: Record<string, string> = {
     'Slug must be lowercase letters, numbers, and dashes (no leading/trailing dash). Max 120 chars.',
   invalid_excerpt: 'Excerpt is too long.',
   invalid_body: 'Body is too long.',
-  invalid_cover: 'Cover image must be a PNG ≤ 2 MB.',
+  invalid_cover: 'Cover image must be a PNG or JPG ≤ 2 MB.',
+  invalid_credit_url: 'Image credit URLs must be a full http(s) link.',
   slug_taken: 'That slug is already used by another article. Pick another.',
   forbidden: 'You no longer have admin access. Reload and try again.',
   unauthenticated: 'Sign in again to continue.',
@@ -53,6 +54,10 @@ export function ArticleEditor({ mode, article }: Props) {
   const [slugTouched, setSlugTouched] = useState(Boolean(article?.slug));
   const [excerpt, setExcerpt] = useState(article?.excerpt ?? '');
   const [body, setBody] = useState(article?.bodyMarkdown ?? '');
+  const [creditName, setCreditName] = useState(article?.coverCredit?.name ?? '');
+  const [creditUrl, setCreditUrl] = useState(article?.coverCredit?.url ?? '');
+  const [creditSource, setCreditSource] = useState(article?.coverCredit?.source ?? '');
+  const [creditSourceUrl, setCreditSourceUrl] = useState(article?.coverCredit?.sourceUrl ?? '');
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
@@ -84,6 +89,10 @@ export function ArticleEditor({ mode, article }: Props) {
     fd.set('slug', slug || slugify(title));
     fd.set('excerpt', excerpt);
     fd.set('body', body);
+    fd.set('coverCreditName', creditName);
+    fd.set('coverCreditUrl', creditUrl);
+    fd.set('coverCreditSource', creditSource);
+    fd.set('coverCreditSourceUrl', creditSourceUrl);
     startTransition(async () => {
       const result = mode === 'new' ? await createArticleAction(fd) : await updateArticleAction(fd);
       // create redirects on success; only failures land here.
@@ -271,6 +280,71 @@ export function ArticleEditor({ mode, article }: Props) {
               Save the draft first to upload a cover image.
             </div>
           )}
+
+          <div className="rounded-2xl border border-zinc-900/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+            <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              Image credit
+            </div>
+            <p className="mb-3 text-[11px] leading-relaxed text-zinc-500">
+              Unsplash and Pexels ask for attribution. Renders as{' '}
+              <span className="font-mono">Photo by [name] on [source]</span> beneath the cover.
+              Leave blank for own / unattributed photos.
+            </p>
+            <div className="space-y-3">
+              <label className="block space-y-1">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                  Photographer
+                </span>
+                <input
+                  type="text"
+                  value={creditName}
+                  onChange={(e) => setCreditName(e.target.value)}
+                  maxLength={120}
+                  placeholder="Xavi Cabrera"
+                  className="block w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-[13px] text-zinc-900 outline-none focus:border-zinc-400"
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                  Photographer link
+                </span>
+                <input
+                  type="url"
+                  value={creditUrl}
+                  onChange={(e) => setCreditUrl(e.target.value)}
+                  maxLength={2000}
+                  placeholder="https://unsplash.com/@xavi_cabrera"
+                  className="block w-full rounded-md border border-zinc-200 bg-white px-3 py-2 font-mono text-[12px] text-zinc-900 outline-none focus:border-zinc-400"
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                  Source
+                </span>
+                <input
+                  type="text"
+                  value={creditSource}
+                  onChange={(e) => setCreditSource(e.target.value)}
+                  maxLength={60}
+                  placeholder="Unsplash"
+                  className="block w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-[13px] text-zinc-900 outline-none focus:border-zinc-400"
+                />
+              </label>
+              <label className="block space-y-1">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                  Source link
+                </span>
+                <input
+                  type="url"
+                  value={creditSourceUrl}
+                  onChange={(e) => setCreditSourceUrl(e.target.value)}
+                  maxLength={2000}
+                  placeholder="https://unsplash.com/photos/..."
+                  className="block w-full rounded-md border border-zinc-200 bg-white px-3 py-2 font-mono text-[12px] text-zinc-900 outline-none focus:border-zinc-400"
+                />
+              </label>
+            </div>
+          </div>
 
           <div className="rounded-2xl border border-zinc-900/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">

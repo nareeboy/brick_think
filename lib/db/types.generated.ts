@@ -38,6 +38,10 @@ export type Database = {
         Row: {
           author_profile_id: string | null
           body_markdown: string
+          cover_credit_name: string | null
+          cover_credit_source: string | null
+          cover_credit_source_url: string | null
+          cover_credit_url: string | null
           cover_image_path: string | null
           created_at: string
           excerpt: string | null
@@ -51,6 +55,10 @@ export type Database = {
         Insert: {
           author_profile_id?: string | null
           body_markdown?: string
+          cover_credit_name?: string | null
+          cover_credit_source?: string | null
+          cover_credit_source_url?: string | null
+          cover_credit_url?: string | null
           cover_image_path?: string | null
           created_at?: string
           excerpt?: string | null
@@ -64,6 +72,10 @@ export type Database = {
         Update: {
           author_profile_id?: string | null
           body_markdown?: string
+          cover_credit_name?: string | null
+          cover_credit_source?: string | null
+          cover_credit_source_url?: string | null
+          cover_credit_url?: string | null
           cover_image_path?: string | null
           created_at?: string
           excerpt?: string | null

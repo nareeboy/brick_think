@@ -15,12 +15,20 @@ export interface ArticleListItem {
   authorName: string | null;
 }
 
+export interface CoverCredit {
+  name: string | null;
+  url: string | null;
+  source: string | null;
+  sourceUrl: string | null;
+}
+
 export interface ArticleDetail extends ArticleListItem {
   bodyMarkdown: string;
   coverImagePath: string | null;
   coverImageUrl: string | null;
   authorProfileId: string | null;
   createdAt: string;
+  coverCredit: CoverCredit;
 }
 
 export interface PublishedArticleSummary {
@@ -38,4 +46,5 @@ export interface PublishedArticleSummary {
 
 export interface PublishedArticleDetail extends PublishedArticleSummary {
   bodyMarkdown: string;
+  coverCredit: CoverCredit;
 }
