@@ -30,6 +30,7 @@ export interface PublishedArticleSummary {
   publishedAt: string;
   coverImageUrl: string | null;
   authorName: string | null;
+  authorAvatarUrl: string | null;
 }
 
 export interface PublishedArticleDetail extends PublishedArticleSummary {
