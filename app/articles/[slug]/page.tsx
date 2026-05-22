@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { ArticleAuthorByline } from '@/components/articles/ArticleAuthorByline';
 import { ArticleProse } from '@/components/articles/ArticleProse';
 import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/MarketingChrome';
 import { formatPublishedDate, isoDate, readingMinutes } from '@/lib/articles/format';
@@ -50,6 +51,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         <Header article={article} minutes={minutes} />
         {article.coverImageUrl ? <Cover url={article.coverImageUrl} alt={article.title} /> : null}
         <Body markdown={article.bodyMarkdown} />
+        <ArticleAuthorByline name={article.authorName} avatarUrl={article.authorAvatarUrl} />
         <Outro />
       </article>
     </MarketingShell>

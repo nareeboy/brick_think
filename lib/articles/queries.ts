@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { createServiceRoleSupabaseClient } from '@/lib/db/serviceRole';
 
 import { getCoverPublicUrl } from './storage';
 import type {
@@ -22,7 +23,19 @@ const ROW_WITH_AUTHOR = `
   author_profile_id,
   created_at,
   updated_at,
-  author:author_profile_id (full_name, email)
+  author:author_profile_id (full_name, email, avatar_url)
+`;
+
+// Same shape minus body_markdown — used by the public list query.
+const PUBLIC_ROW = `
+  id,
+  slug,
+  title,
+  excerpt,
+  cover_image_path,
+  status,
+  published_at,
+  author_profile_id
 `;
 
 interface JoinedRow {
@@ -37,12 +50,40 @@ interface JoinedRow {
   author_profile_id: string | null;
   created_at: string;
   updated_at: string;
-  author: { full_name: string | null; email: string | null } | null;
+  author: { full_name: string | null; email: string | null; avatar_url: string | null } | null;
 }
 
 function authorDisplay(author: JoinedRow['author']): string | null {
   if (!author) return null;
   return author.full_name?.trim() || author.email || null;
+}
+
+interface PublicAuthor {
+  name: string | null;
+  avatarUrl: string | null;
+}
+
+// Public anon callers cannot read `profiles` (RLS restricts SELECT to
+// authenticated org-mates / session-participants). The article author is
+// genuinely public info though — name + avatar shown beneath the headline.
+// We escalate to the service role for this narrow lookup, deliberately
+// selecting only the two columns we need (no email, no other PII) so the
+// surface is auditable. Profile ids without a row resolve to nulls.
+async function loadPublicAuthors(profileIds: readonly string[]): Promise<Map<string, PublicAuthor>> {
+  const unique = Array.from(new Set(profileIds.filter((id): id is string => Boolean(id))));
+  if (unique.length === 0) return new Map();
+  const admin = createServiceRoleSupabaseClient();
+  const { data, error } = await admin
+    .from('profiles')
+    .select('id, full_name, avatar_url')
+    .in('id', unique);
+  if (error) throw new Error(`Failed to load article authors: ${error.message}`);
+  const map = new Map<string, PublicAuthor>();
+  for (const row of data ?? []) {
+    const name = row.full_name?.trim() || null;
+    map.set(row.id, { name, avatarUrl: row.avatar_url ?? null });
+  }
+  return map;
 }
 
 function toDetail(
@@ -97,24 +138,47 @@ export async function getArticleByIdForAdmin(id: string): Promise<ArticleDetail 
   return toDetail(supabase, data as unknown as JoinedRow);
 }
 
+interface PublicListRow {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  cover_image_path: string | null;
+  status: 'draft' | 'published';
+  published_at: string | null;
+  author_profile_id: string | null;
+}
+
 export async function listPublishedArticles(): Promise<PublishedArticleSummary[]> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('articles')
-    .select(ROW_WITH_AUTHOR)
+    .select(PUBLIC_ROW)
     .eq('status', 'published')
     .order('published_at', { ascending: false });
   if (error) throw new Error(`Failed to load published articles: ${error.message}`);
-  return ((data ?? []) as unknown as JoinedRow[])
-    .filter((row) => row.published_at !== null)
-    .map((row) => ({
+  const rows = ((data ?? []) as unknown as PublicListRow[]).filter(
+    (row) => row.published_at !== null,
+  );
+  const authors = await loadPublicAuthors(
+    rows.map((r) => r.author_profile_id).filter((id): id is string => Boolean(id)),
+  );
+  return rows.map((row) => {
+    const a = row.author_profile_id ? authors.get(row.author_profile_id) : undefined;
+    return {
       slug: row.slug,
       title: row.title,
       excerpt: row.excerpt,
       publishedAt: row.published_at as string,
       coverImageUrl: getCoverPublicUrl(supabase, row.cover_image_path),
-      authorName: authorDisplay(row.author),
-    }));
+      authorName: a?.name ?? null,
+      authorAvatarUrl: a?.avatarUrl ?? null,
+    };
+  });
+}
+
+interface PublicDetailRow extends PublicListRow {
+  body_markdown: string;
 }
 
 export async function getPublishedArticleBySlug(
@@ -123,14 +187,18 @@ export async function getPublishedArticleBySlug(
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('articles')
-    .select(ROW_WITH_AUTHOR)
+    .select(`${PUBLIC_ROW}, body_markdown`)
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle();
   if (error) throw new Error(`Failed to load article: ${error.message}`);
   if (!data) return null;
-  const row = data as unknown as JoinedRow;
+  const row = data as unknown as PublicDetailRow;
   if (row.published_at === null) return null;
+  const authors = row.author_profile_id
+    ? await loadPublicAuthors([row.author_profile_id])
+    : new Map<string, PublicAuthor>();
+  const a = row.author_profile_id ? authors.get(row.author_profile_id) : undefined;
   return {
     slug: row.slug,
     title: row.title,
@@ -138,6 +206,7 @@ export async function getPublishedArticleBySlug(
     bodyMarkdown: row.body_markdown,
     coverImageUrl: getCoverPublicUrl(supabase, row.cover_image_path),
     publishedAt: row.published_at,
-    authorName: authorDisplay(row.author),
+    authorName: a?.name ?? null,
+    authorAvatarUrl: a?.avatarUrl ?? null,
   };
 }
