@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     'How BrickThink collects, uses, and discloses personal information for users of brickthink.io and the BrickThink platform.',
 };
 
-const LAST_UPDATED = '15 May 2026';
+const LAST_UPDATED = '22 May 2026';
 
 const SECTIONS = [
   'Definitions and key terms',
@@ -229,10 +229,17 @@ export default function PrivacyPage() {
 
             <Section heading="Your consent">
               <P>
-                We&apos;ve updated our Privacy Policy to provide you with complete transparency into
-                what is being set when you visit our site and how it&apos;s being used. By using our
-                website, registering an account, or making a purchase, you hereby consent to our
-                Privacy Policy and agree to its terms.
+                Essential cookies and basic site operation rely on your continued use of the
+                Service. Non-essential cookies &mdash; including any analytics or measurement
+                cookies &mdash; are off by default and only run after you make an explicit choice
+                using the cookie banner shown on your first visit.
+              </P>
+              <P>
+                You can change your choice at any time using the &ldquo;Cookies&rdquo; link in any
+                page footer. Withdrawing consent stops the relevant scripts from loading on
+                subsequent page views. By using our website or registering an account, you consent
+                to the parts of this Privacy Policy that describe essential processing necessary
+                to provide the Service to you.
               </P>
             </Section>
 
@@ -252,16 +259,42 @@ export default function PrivacyPage() {
 
             <Section heading="Cookies">
               <P>
-                Brick Think uses &ldquo;Cookies&rdquo; to identify the areas of our website that you
-                have visited. A Cookie is a small piece of data stored on your computer or mobile
-                device by your web browser. We use Cookies to enhance the performance and
-                functionality of our website but are non-essential to their use. However, without
-                these cookies, certain functionality like videos may become unavailable or you would
-                be required to enter your login details every time you visit the website as we would
-                not be able to remember that you had logged in previously. Most web browsers can be
-                set to disable the use of Cookies. However, if you disable Cookies, you may not be
-                able to access functionality on our website correctly or at all. We never place
-                Personally Identifiable Information in Cookies.
+                A Cookie is a small piece of data stored on your computer or mobile device by your
+                web browser. Brick Think uses two categories of cookies, described below. We never
+                place Personally Identifiable Information directly inside cookies.
+              </P>
+
+              <SubHeading>Essential cookies (always on)</SubHeading>
+              <P>
+                Essential cookies are required for the Service to function. They keep you signed
+                in, preserve session state across page loads, protect against cross-site request
+                forgery, and remember the cookie-consent choice you made on the banner. Without
+                these cookies, you would be unable to sign in, save work, or move between pages
+                while logged in. These cookies do not track you across other websites and are not
+                used for analytics. Most web browsers can be set to disable cookies entirely, but
+                doing so will break sign-in and other core features.
+              </P>
+
+              <SubHeading>Analytics cookies (off by default &mdash; opt-in)</SubHeading>
+              <P>
+                Analytics cookies help us count visits, see which pages get used, and decide where
+                to spend effort improving the Service. They are <Em>off by default</Em>; they only
+                load after you explicitly accept analytics on the cookie banner shown on your first
+                visit. You can withdraw consent at any time using the &ldquo;Cookies&rdquo; link in
+                any page footer &mdash; the analytics scripts will stop loading on subsequent page
+                views, and your existing analytics cookies will expire naturally or be cleared by
+                your browser.
+              </P>
+              <P>
+                We use Google Analytics 4 for this purpose. Details about the data Google receives,
+                where it is processed, and how long it is retained are in the{' '}
+                <a
+                  href="#third-party-services"
+                  className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                >
+                  Third-party services
+                </a>{' '}
+                section below.
               </P>
             </Section>
 
@@ -316,6 +349,73 @@ export default function PrivacyPage() {
                 information, applications, and other products services) or provide links to
                 third-party websites or services (&ldquo;Third-Party Services&rdquo;).
               </P>
+
+              <SubHeading>Analytics &mdash; Google Analytics 4</SubHeading>
+              <UL>
+                <li>
+                  <Em>Provider:</Em> Google LLC, 1600 Amphitheatre Parkway, Mountain View,
+                  California 94043, USA, and its affiliates (collectively &ldquo;Google&rdquo;).
+                </li>
+                <li>
+                  <Em>Purpose:</Em> Aggregate, pseudonymous measurement of site usage &mdash; visit
+                  counts, page views, referrers, approximate location at country level, and
+                  device/browser type &mdash; so we can decide which parts of the Service to
+                  improve.
+                </li>
+                <li>
+                  <Em>Data processed:</Em> A pseudonymous client identifier set in a first-party
+                  cookie, a truncated IP address (we enable IP anonymisation via the{' '}
+                  <code className="rounded bg-zinc-900/[0.06] px-1 py-0.5 font-mono text-[12px]">
+                    anonymize_ip
+                  </code>{' '}
+                  flag), the URL of the page you visited, the referring URL, and basic device and
+                  browser characteristics.
+                </li>
+                <li>
+                  <Em>Legal basis:</Em> Your explicit consent, given via the cookie banner
+                  (GDPR Art. 6(1)(a) / FADP Art. 6).
+                </li>
+                <li>
+                  <Em>International transfer:</Em> Google processes this data in the United States.
+                  Google LLC is certified under the EU&ndash;US Data Privacy Framework and the
+                  Swiss&ndash;US Data Privacy Framework, which the European Commission and the
+                  Swiss Federal Council have recognised as providing an adequate level of data
+                  protection.
+                </li>
+                <li>
+                  <Em>Retention:</Em> User- and event-level data is retained by Google for the
+                  shortest period the GA4 product allows for the property (we have configured the
+                  retention window to the minimum available; aggregated reports persist
+                  indefinitely in non-identifiable form).
+                </li>
+                <li>
+                  <Em>How to opt out:</Em> Use the &ldquo;Cookies&rdquo; link in any page footer to
+                  withdraw consent. You can also install the official{' '}
+                  <a
+                    href="https://tools.google.com/dlpage/gaoptout"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline-offset-2 hover:underline"
+                  >
+                    Google Analytics opt-out browser add-on
+                  </a>
+                  , which blocks GA across every site that uses it.
+                </li>
+                <li>
+                  <Em>Google&apos;s own privacy policy:</Em>{' '}
+                  <a
+                    href="https://policies.google.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline-offset-2 hover:underline"
+                  >
+                    policies.google.com/privacy
+                  </a>
+                  .
+                </li>
+              </UL>
+
+              <SubHeading>Other third-party services</SubHeading>
               <P>
                 You acknowledge and agree that Brick Think shall not be responsible for any
                 Third-Party Services, including their accuracy, completeness, timeliness, validity,
