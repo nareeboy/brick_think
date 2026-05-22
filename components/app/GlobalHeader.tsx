@@ -10,9 +10,15 @@ interface Props {
   userName: string;
   userEmail: string | null;
   userAvatarUrl: string | null;
+  isSiteAdmin?: boolean;
 }
 
-export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
+export function GlobalHeader({
+  userName,
+  userEmail,
+  userAvatarUrl,
+  isSiteAdmin = false,
+}: Props) {
   return (
     <header className="shrink-0 border-b border-zinc-900/5 bg-white">
       <HeaderInner>
@@ -27,7 +33,7 @@ export function GlobalHeader({ userName, userEmail, userAvatarUrl }: Props) {
               BrickThink
             </span>
           </Link>
-          <HeaderNav />
+          <HeaderNav showAdmin={isSiteAdmin} />
         </div>
 
         <div className="flex items-center gap-1">
