@@ -19,8 +19,8 @@ export function CoverImageField({ articleId, initialUrl }: Props) {
     setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.type !== 'image/png') {
-      setError('Cover image must be a PNG.');
+    if (file.type !== 'image/png' && file.type !== 'image/jpeg' && file.type !== 'image/jpg') {
+      setError('Cover image must be a PNG or JPG.');
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
@@ -78,7 +78,7 @@ export function CoverImageField({ articleId, initialUrl }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/png"
+        accept="image/png,image/jpeg"
         onChange={handleFile}
         disabled={pending}
         className="block w-full text-[12px] text-zinc-700 file:mr-3 file:cursor-pointer file:rounded-md file:border file:border-zinc-200 file:bg-white file:px-3 file:py-1.5 file:text-[12px] file:font-medium file:text-zinc-800 hover:file:bg-zinc-50"
@@ -102,7 +102,7 @@ export function CoverImageField({ articleId, initialUrl }: Props) {
       ) : null}
 
       <p className="mt-2 text-[11px] leading-relaxed text-zinc-500">
-        PNG only, max 2 MB. Recommended <span className="font-mono">1600 × 900</span> (16:9).
+        PNG or JPG, max 2 MB. Recommended <span className="font-mono">1600 × 900</span> (16:9).
         Anything smaller works; the public page crops to 16:9 so off-ratio uploads lose top/bottom
         edges.
       </p>
