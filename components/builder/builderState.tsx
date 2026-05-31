@@ -70,7 +70,11 @@ export const ZOOM_STEP = 1.25;
 // Idle delay before auto-capturing the design-card thumbnail after an edit.
 // Resets on every edit, so continuous editing produces no uploads until the
 // user pauses — then a single capture lands while the canvas is still mounted.
-export const THUMBNAIL_CAPTURE_DEBOUNCE_MS = 2000;
+// Kept well under the ~1s pause people make before navigating away: the capture
+// must START (and its upload, which survives the SPA navigation, finish) before
+// the builder unmounts and tears the Konva canvas down. A longer delay means a
+// quick edit-then-leave never captures.
+export const THUMBNAIL_CAPTURE_DEBOUNCE_MS = 600;
 
 function makeId(prefix: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
