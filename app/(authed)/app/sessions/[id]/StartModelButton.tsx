@@ -8,10 +8,12 @@ export function StartModelButton({
   sessionId,
   stageId,
   stageType,
+  isTourTarget = false,
 }: {
   sessionId: string;
   stageId: string;
   stageType: string;
+  isTourTarget?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   return (
@@ -28,6 +30,7 @@ export function StartModelButton({
         type="submit"
         disabled={pending}
         data-testid={`start-model-${stageType}`}
+        {...(isTourTarget ? { 'data-tour-id': 'start-model-button' } : {})}
         className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5 disabled:cursor-default disabled:opacity-60"
       >
         {pending ? 'Starting…' : 'Start your model'}

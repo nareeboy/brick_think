@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -28,6 +29,7 @@ import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
+import { StartModelSpotlight } from '@/components/onboarding/StartModelSpotlight';
 import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 
 export const dynamic = 'force-dynamic';
@@ -44,8 +46,16 @@ export async function generateMetadata({
   return { title: data?.title ? `${data.title} · Session` : 'Session' };
 }
 
-export default async function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SessionDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ onboarding?: string }>;
+}) {
   const { id } = await params;
+  const { onboarding } = await searchParams;
+  const startModelSpotlightActive = onboarding === 'start-model';
   if (!isSupabaseConfigured()) {
     redirect(`/sign-in?reason=unconfigured&next=%2Fapp%2Fsessions%2F${id}`);
   }
@@ -509,7 +519,10 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
           currentUserId={user.id}
           pickedScenarioByStageId={pickedScenarioByStageId}
         />
-        <SpotlightTour canManageSession={canManageSession} />
+        <SpotlightTour canManageSession={canManageSession} suppressed={startModelSpotlightActive} />
+        <Suspense fallback={null}>
+          <StartModelSpotlight />
+        </Suspense>
         <ParticipantCoachMark />
       </div>
     </main>

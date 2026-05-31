@@ -121,6 +121,29 @@ test.describe('onboarding walkthrough', () => {
     await expect(signedInPage.getByTestId('create-session-spotlight')).toHaveCount(0);
   });
 
+  test('start-model spotlight sequences Start then Start your model', async ({
+    signedInPage,
+    seededSession,
+  }) => {
+    // Checklist step 3 carries ?onboarding=start-model; landing on the session
+    // with it runs the two-step spotlight and suppresses the auto-tour.
+    await signedInPage.goto(`/app/sessions/${seededSession.sessionId}?onboarding=start-model`);
+
+    const spotlight = signedInPage.getByTestId('start-model-spotlight');
+    await expect(spotlight).toBeVisible();
+    await expect(spotlight).toContainText('Open the stage');
+    // Auto-tour is suppressed while this spotlight is active.
+    await expect(signedInPage.getByTestId('onboarding-spotlight')).toHaveCount(0);
+
+    await spotlight.getByTestId('start-model-spotlight-next').click();
+    await expect(spotlight).toContainText('Start your model');
+
+    // The highlighted button is clickable through the overlay and opens the
+    // builder (first stage is skill_building).
+    await signedInPage.getByTestId('start-model-skill_building').click();
+    await expect(signedInPage).toHaveURL(/\/app\/designs\//);
+  });
+
   test('spotlight tour fires on first session page visit', async ({
     signedInPage,
     seededSession,

@@ -30,9 +30,13 @@ const STEPS: Step[] = [
 
 interface Props {
   canManageSession: boolean;
+  /** Suppress the auto-tour when another onboarding spotlight is taking over
+   *  this page (e.g. the checklist step-3 "start your model" sequence), so the
+   *  two overlays don't stack. */
+  suppressed?: boolean;
 }
 
-export function SpotlightTour({ canManageSession }: Props) {
+export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
   const { role, sessionTourSeen, hydrated, markSessionTourSeen } = useOnboardingState();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -59,7 +63,11 @@ export function SpotlightTour({ canManageSession }: Props) {
   );
 
   const active =
-    hydrated && role === 'facilitator' && !sessionTourSeen && stepIndex < visibleSteps.length;
+    !suppressed &&
+    hydrated &&
+    role === 'facilitator' &&
+    !sessionTourSeen &&
+    stepIndex < visibleSteps.length;
 
   const finish = useCallback(() => {
     markSessionTourSeen();
