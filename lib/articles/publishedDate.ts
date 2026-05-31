@@ -1,0 +1,28 @@
+// Pure helpers for the CMS "edit published date" feature. Kept out of the
+// 'use server' actions module so they can be plain (non-async) exports and
+// unit-tested without a database.
+
+const YYYY_MM_DD = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// `value` is the raw `<input type="date">` string. Empty means "leave the
+// stored date as-is" and is therefore valid. A non-empty value must be a
+// strict YYYY-MM-DD that round-trips to a real calendar day (rejects e.g.
+// 2026-02-30).
+export function isValidPublishedDateInput(value: string): boolean {
+  if (value.length === 0) return true;
+  const match = YYYY_MM_DD.exec(value);
+  if (!match) return false;
+  // Capture groups are all-digit, so Number() yields a real number (never NaN).
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
+// Store at noon UTC: the public render is date-only (en-GB) and the UK is
+// GMT/BST, so noon guarantees the displayed calendar day never shifts across
+// viewer timezones, and `published_at DESC` ordering stays stable.
+export function publishedDateToInstant(value: string): string {
+  return `${value}T12:00:00.000Z`;
+}
