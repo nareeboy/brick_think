@@ -7,6 +7,7 @@ import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorCheckli
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 import type {
   AggregateDesignRow,
   MyDesignsFilterValue,
@@ -121,39 +122,13 @@ export default async function MyDesignsPage({
     .filter((o): o is OrgSummary => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const orgIds = orgs.map((o) => o.id);
-  const firstOrgId = orgs[0]?.id ?? null;
-
-  let hasSessionInAnyOrg = false;
-  let firstSessionId: string | null = null;
-  if (orgIds.length > 0) {
-    const onboardingSessionRes = await supabase
-      .from('sessions')
-      .select('id')
-      .in('org_id', orgIds)
-      .order('created_at', { ascending: true })
-      .limit(1);
-    if (onboardingSessionRes.error) {
-      throw new Error(`Onboarding session check failed: ${onboardingSessionRes.error.message}`);
-    }
-    const first = onboardingSessionRes.data?.[0];
-    if (first) {
-      hasSessionInAnyOrg = true;
-      firstSessionId = first.id;
-    }
-  }
-
-  const onboardingDesignRes = await supabase
-    .from('models')
-    .select('id', { head: true, count: 'exact' })
-    .eq('owner_profile_id', user.id)
-    .not('session_id', 'is', null)
-    .is('deleted_at', null)
-    .limit(1);
-  if (onboardingDesignRes.error) {
-    throw new Error(`Onboarding design check failed: ${onboardingDesignRes.error.message}`);
-  }
-  const hasOwnedSessionDesign = (onboardingDesignRes.count ?? 0) > 0;
+  // Onboarding checklist state — shared with /app/sessions/[id] via the helper
+  // so the walkthrough stays in sync wherever the user lands. We already have
+  // the user's orgs, so pass them in to skip a duplicate membership query.
+  const onboardingProgress = await computeFacilitatorChecklistProgress(supabase, user.id, {
+    orgIds: orgs.map((o) => o.id),
+    firstOrgId: orgs[0]?.id ?? null,
+  });
 
   // If tag filters are active, first resolve which of the user's owned
   // models carry every requested tag (AND semantics) — keeps the subsequent
@@ -388,15 +363,7 @@ export default async function MyDesignsPage({
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
         <WelcomeModal />
-        <FacilitatorChecklist
-          progress={{
-            hasOrg: orgs.length > 0,
-            hasSessionInAnyOrg,
-            hasOwnedSessionDesign,
-            firstOrgId,
-            firstSessionId,
-          }}
-        />
+        <FacilitatorChecklist progress={onboardingProgress} />
         <header className="flex flex-col gap-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
