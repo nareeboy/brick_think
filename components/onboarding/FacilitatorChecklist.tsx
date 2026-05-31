@@ -182,6 +182,10 @@ function ChecklistRow({ done, label, href, testid, isNext }: RowProps) {
       </span>
       <Link
         href={href}
+        // Don't reset scroll to top on navigation — the spotlight that some of
+        // these links trigger scrolls to its own target, and a scroll-to-top
+        // would fight it.
+        scroll={false}
         className={`text-[13px] underline-offset-2 hover:underline ${
           done
             ? 'text-zinc-500 line-through decoration-zinc-400'
