@@ -25,8 +25,10 @@ import type { StageRoomSummary } from './RoomsPanel';
 import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types';
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
+import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
+import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 
 export const dynamic = 'force-dynamic';
 
@@ -399,9 +401,18 @@ export default async function SessionDetailPage({ params }: { params: Promise<{ 
   const isFacilitator = session.facilitator_id === user.id;
   const facilitatorNotes = isFacilitator ? await getFacilitatorNotes(session.id) : null;
 
+  // Onboarding walkthrough — the same checklist shown on /app/my-designs follows
+  // the user here, where step 3 ("start your first model") actually happens.
+  // Point step 3's "next" link at the session they're already on.
+  const onboardingProgress = {
+    ...(await computeFacilitatorChecklistProgress(supabase, user.id)),
+    firstSessionId: session.id,
+  };
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
+        <FacilitatorChecklist progress={onboardingProgress} />
         <header data-tour-id="session-header" className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="mb-6">

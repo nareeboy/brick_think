@@ -67,6 +67,18 @@ test.describe('onboarding walkthrough', () => {
     await signedInPage.goto(`/app/sessions/${seededSession.sessionId}`);
     // Dismiss the spotlight tour first so it doesn't intercept clicks.
     await signedInPage.getByTestId('onboarding-spotlight-skip').click();
+    // The walkthrough checklist follows the user onto the session page — steps
+    // 1 & 2 are done (org + session exist) but step 3 (start a model) is not.
+    await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
+    await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute('data-done', '1');
+    await expect(signedInPage.getByTestId('onboarding-step-session')).toHaveAttribute(
+      'data-done',
+      '1',
+    );
+    await expect(signedInPage.getByTestId('onboarding-step-model')).toHaveAttribute(
+      'data-done',
+      '0',
+    );
     // Click the first "Start your model" button.
     await signedInPage.locator('[data-testid^="start-model-"]').first().click();
     // Wait for the design page to open, then go back to my-designs.
