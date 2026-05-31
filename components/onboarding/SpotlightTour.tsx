@@ -76,6 +76,7 @@ export function SpotlightTour({ canManageSession }: Props) {
     const step = visibleSteps[stepIndex]!;
     let rafId = 0;
     let lastKey = '';
+    let scrolled = false;
     const tick = () => {
       const el = document.querySelector(step.selector);
       if (!el) {
@@ -89,6 +90,16 @@ export function SpotlightTour({ canManageSession }: Props) {
           return next;
         });
         return; // effect re-runs for the new step; schedule no further frames
+      }
+      // Bring an off-screen target (e.g. a stage card below the fold) into
+      // view once, so its highlight + tooltip are actually visible. Skip when
+      // it's already fully in view so visible steps (the header) don't jump.
+      if (!scrolled) {
+        scrolled = true;
+        const vr = el.getBoundingClientRect();
+        if (vr.top < 0 || vr.bottom > window.innerHeight) {
+          el.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }
       }
       const r = el.getBoundingClientRect();
       const key = `${r.left},${r.top},${r.width},${r.height}`;
