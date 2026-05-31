@@ -64,16 +64,28 @@ export function CreateSessionSpotlight() {
       dismiss(true);
       return;
     }
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    // Nudge into view only if needed (block:'nearest' won't scroll a visible
+    // element). The button lives in the page header so it's usually visible.
+    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+
+    // Track the target every frame rather than only on scroll/resize: the
+    // FacilitatorChecklist mounts after hydration and pushes the header down,
+    // a layout shift that fires no scroll/resize event. The rAF loop keeps the
+    // cut-out glued to the button through hydration, mount, and scroll. We only
+    // setRect when the box actually moves, so it settles to a no-op quickly.
     let rafId = 0;
-    const measure = () => setRect(el.getBoundingClientRect());
-    measure();
-    const onReflow = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(measure);
+    let lastKey = '';
+    const tick = () => {
+      const r = el.getBoundingClientRect();
+      const key = `${r.left},${r.top},${r.width},${r.height}`;
+      if (key !== lastKey) {
+        lastKey = key;
+        setRect(r);
+      }
+      rafId = requestAnimationFrame(tick);
     };
-    window.addEventListener('resize', onReflow);
-    window.addEventListener('scroll', onReflow, true);
+    tick();
+
     // Clicking the highlighted button proceeds — hide the overlay so the
     // dialog is unobstructed. Don't strip the param here: a soft nav could
     // race the button's own click handler that opens the dialog.
@@ -81,8 +93,6 @@ export function CreateSessionSpotlight() {
     el.addEventListener('click', onTargetClick);
     return () => {
       cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', onReflow);
-      window.removeEventListener('scroll', onReflow, true);
       el.removeEventListener('click', onTargetClick);
     };
   }, [active, dismiss]);
