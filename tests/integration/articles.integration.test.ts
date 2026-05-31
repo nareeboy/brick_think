@@ -440,6 +440,38 @@ describe('updateArticleAction — editable published date', () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.code).toBe('invalid_published_date');
   });
+
+  test('empty date on a published article leaves published_at untouched while other edits land', async () => {
+    currentClient = await signInAs(fx.admin);
+    try {
+      await createArticleAction(fdFor({ title: 'Keep Date', slug: 'keep-date', body: 'x' }));
+    } catch (err) {
+      if (!(err as Error).message.startsWith('__redirect__:')) throw err;
+    }
+    const admin = getAdminClient();
+    const created = await admin.from('articles').select('id').eq('slug', 'keep-date').single();
+    const id = created.data!.id as string;
+    createdArticleIds.push(id);
+
+    const pub = await publishArticleAction(id);
+    expect(pub.ok).toBe(true);
+    const before = await admin.from('articles').select('published_at').eq('id', id).single();
+    const originalPublishedAt = before.data!.published_at as string;
+
+    // Save with an empty publishedDate ("no change") but an edited title.
+    const result = await updateArticleAction(
+      fdFor({ id, title: 'Keep Date (edited)', slug: 'keep-date', body: 'x', publishedDate: '' }),
+    );
+    expect(result.ok).toBe(true);
+
+    const after = await admin
+      .from('articles')
+      .select('title, published_at')
+      .eq('id', id)
+      .single();
+    expect(after.data!.published_at).toBe(originalPublishedAt);
+    expect(after.data!.title).toBe('Keep Date (edited)');
+  });
 });
 
 function makeFreshAnon(): SupabaseClient {
