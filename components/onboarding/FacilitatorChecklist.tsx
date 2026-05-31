@@ -113,7 +113,17 @@ export function FacilitatorChecklist({ progress }: Props) {
         <ChecklistRow
           done={progress.hasSessionInAnyOrg}
           label="Create a session inside it"
-          href={progress.firstOrgId ? `/app/orgs/${progress.firstOrgId}` : '/app/orgs'}
+          // Until the step is done, deep-link to the org and trigger the
+          // "Create session" spotlight there (CreateSessionSpotlight reads this
+          // param). From the org page itself firstOrgId is the current org, so
+          // it's a same-page nav; from elsewhere it routes to the first org.
+          href={
+            progress.firstOrgId
+              ? `/app/orgs/${progress.firstOrgId}${
+                  progress.hasSessionInAnyOrg ? '' : '?onboarding=create-session'
+                }`
+              : '/app/orgs'
+          }
           testid="onboarding-step-session"
           isNext={progress.hasOrg && !progress.hasSessionInAnyOrg}
         />
