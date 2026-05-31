@@ -67,6 +67,10 @@ export const MAX_PIECE_SIZE = 2000;
 export const MIN_ZOOM = 0.25;
 export const MAX_ZOOM = 4;
 export const ZOOM_STEP = 1.25;
+// Idle delay before auto-capturing the design-card thumbnail after an edit.
+// Resets on every edit, so continuous editing produces no uploads until the
+// user pauses — then a single capture lands while the canvas is still mounted.
+export const THUMBNAIL_CAPTURE_DEBOUNCE_MS = 2000;
 
 function makeId(prefix: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -427,15 +431,10 @@ export function BuilderProvider({
   }, [awareness, selfClientId]);
 
   const captureFnRef = useRef<(() => Promise<Blob | null>) | null>(null);
-  // Whether the canvas has changed since the last successful thumbnail upload.
-  // Set on every content edit, cleared after a capture lands. Drives the
-  // capture-on-leave effect so the card thumbnail tracks the user's latest work
-  // instead of a single early frame.
-  const thumbnailDirtyRef = useRef(false);
-  // Guards against a hide and an unmount both firing a capture at once.
+  // Serializes captures so a debounce firing mid-upload can't double-post.
   const thumbnailCaptureInFlightRef = useRef(false);
-  // First run of the dirty-tracking effect is the initial hydration, not an
-  // edit — skip it so a freshly opened design isn't marked dirty.
+  // First run of the debounce effect is the initial hydration, not an edit —
+  // skip it so merely opening a design doesn't schedule a capture.
   const thumbnailInitialRef = useRef(true);
 
   const registerThumbnailCapture = useCallback((fn: (() => Promise<Blob | null>) | null) => {
@@ -491,7 +490,6 @@ export function BuilderProvider({
         body: fd,
       });
       if (!res.ok) throw new Error(`thumbnail POST ${res.status}`);
-      thumbnailDirtyRef.current = false;
     } catch (err) {
       console.error('thumbnail upload failed', err);
     } finally {
@@ -509,40 +507,27 @@ export function BuilderProvider({
     return () => window.removeEventListener('beforeunload', handler);
   }, [autosave.status]);
 
-  // Mark the thumbnail stale whenever the canvas content changes. The first
-  // run is initial hydration, not an edit, so it's skipped. Live mode is
-  // excluded — the Yjs worker owns the canvas projection (and thumbnails)
-  // there, and read-only views never produce thumbnails.
+  // Keep the design-card thumbnail current by capturing a fresh PNG a short
+  // beat after the user stops editing. This MUST run while the canvas is still
+  // mounted: capturing on unmount or visibilitychange can't work — React tears
+  // down BuilderCanvas (which deregisters the capture fn and destroys the Konva
+  // layer) before a provider-level cleanup runs, and requestAnimationFrame
+  // (which the capture awaits) is paused in a hidden tab. The debounce resets on
+  // every edit, so continuous editing produces no uploads until the user pauses;
+  // each capture upserts a single object (no storage growth). The "Save version"
+  // path still captures immediately on demand. liveMode (Yjs worker owns the
+  // projection) and read-only views are excluded.
   useEffect(() => {
     if (liveMode || readOnly) return;
     if (thumbnailInitialRef.current) {
       thumbnailInitialRef.current = false;
-      return;
+      return; // initial hydration, not an edit
     }
-    thumbnailDirtyRef.current = true;
-  }, [data.groups, data.bricks, liveMode, readOnly]);
-
-  // Capture a fresh thumbnail when the user leaves the design — either by
-  // hiding/closing the tab (visibilitychange → hidden, which fires before
-  // unload and survives long enough for the request in the common cases) or by
-  // navigating away within the app (effect cleanup on unmount). Both are
-  // gated on the dirty flag so an unchanged canvas costs nothing, and the
-  // in-flight guard keeps a hide+unmount pair from double-uploading.
-  useEffect(() => {
-    if (liveMode || readOnly) return;
-    function maybeCapture() {
-      if (!thumbnailDirtyRef.current) return;
+    const timer = setTimeout(() => {
       void captureAndUploadThumbnail();
-    }
-    function onVisibilityChange() {
-      if (document.visibilityState === 'hidden') maybeCapture();
-    }
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      maybeCapture();
-    };
-  }, [liveMode, readOnly, captureAndUploadThumbnail]);
+    }, THUMBNAIL_CAPTURE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [data.groups, data.bricks, liveMode, readOnly, captureAndUploadThumbnail]);
 
   const zoomBy = useCallback((factor: number, anchor: { x: number; y: number }) => {
     setZoom((prevZoom) => {
