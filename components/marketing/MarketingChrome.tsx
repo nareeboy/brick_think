@@ -102,11 +102,6 @@ export function Footer() {
                 Open source
               </Link>
             </li>
-            <li>
-              <Link href="/roadmap" className="hover:text-zinc-950">
-                Roadmap
-              </Link>
-            </li>
           </ul>
         </div>
         <div className="md:col-span-2">
@@ -115,6 +110,11 @@ export function Footer() {
             <li>
               <Link href="/about" className="hover:text-zinc-950">
                 About
+              </Link>
+            </li>
+            <li>
+              <Link href="/roadmap" className="hover:text-zinc-950">
+                Roadmap
               </Link>
             </li>
             <li>
