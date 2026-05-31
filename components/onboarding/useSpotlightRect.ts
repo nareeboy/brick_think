@@ -36,10 +36,10 @@ export function useSpotlightRect(selector: string | null, active: boolean): DOMR
       }
       if (!scrolled) {
         scrolled = true;
-        const vr = el.getBoundingClientRect();
-        if (vr.top < 0 || vr.bottom > window.innerHeight) {
-          el.scrollIntoView({ block: 'center', inline: 'nearest' });
-        }
+        // Always centre the target on activation. Centring (rather than only
+        // scrolling when off-screen) reliably brings each step's button into a
+        // comfortable position, and wins over the soft-nav's scroll-to-top.
+        el.scrollIntoView({ block: 'center', inline: 'nearest' });
       }
       const r = el.getBoundingClientRect();
       const key = `${r.left},${r.top},${r.width},${r.height}`;
