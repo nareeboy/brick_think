@@ -427,8 +427,16 @@ export function BuilderProvider({
   }, [awareness, selfClientId]);
 
   const captureFnRef = useRef<(() => Promise<Blob | null>) | null>(null);
-  const hasCapturedThisSession = useRef(false);
-  const prevAutosaveStatusRef = useRef<SaveStatus>('idle');
+  // Whether the canvas has changed since the last successful thumbnail upload.
+  // Set on every content edit, cleared after a capture lands. Drives the
+  // capture-on-leave effect so the card thumbnail tracks the user's latest work
+  // instead of a single early frame.
+  const thumbnailDirtyRef = useRef(false);
+  // Guards against a hide and an unmount both firing a capture at once.
+  const thumbnailCaptureInFlightRef = useRef(false);
+  // First run of the dirty-tracking effect is the initial hydration, not an
+  // edit — skip it so a freshly opened design isn't marked dirty.
+  const thumbnailInitialRef = useRef(true);
 
   const registerThumbnailCapture = useCallback((fn: (() => Promise<Blob | null>) | null) => {
     captureFnRef.current = fn;
@@ -469,8 +477,10 @@ export function BuilderProvider({
 
   const captureAndUploadThumbnail = useCallback(async (): Promise<void> => {
     if (!modelId) return;
+    if (thumbnailCaptureInFlightRef.current) return;
     const fn = captureFnRef.current;
     if (!fn) return;
+    thumbnailCaptureInFlightRef.current = true;
     try {
       const blob = await fn();
       if (!blob) return;
@@ -481,8 +491,11 @@ export function BuilderProvider({
         body: fd,
       });
       if (!res.ok) throw new Error(`thumbnail POST ${res.status}`);
+      thumbnailDirtyRef.current = false;
     } catch (err) {
       console.error('thumbnail upload failed', err);
+    } finally {
+      thumbnailCaptureInFlightRef.current = false;
     }
   }, [modelId]);
 
@@ -496,16 +509,40 @@ export function BuilderProvider({
     return () => window.removeEventListener('beforeunload', handler);
   }, [autosave.status]);
 
+  // Mark the thumbnail stale whenever the canvas content changes. The first
+  // run is initial hydration, not an edit, so it's skipped. Live mode is
+  // excluded — the Yjs worker owns the canvas projection (and thumbnails)
+  // there, and read-only views never produce thumbnails.
   useEffect(() => {
-    const prev = prevAutosaveStatusRef.current;
-    prevAutosaveStatusRef.current = autosave.status;
-    if (liveMode) return;
-    if (hasCapturedThisSession.current) return;
-    if (prev !== 'saving' || autosave.status !== 'saved') return;
-    if (!captureFnRef.current) return;
-    hasCapturedThisSession.current = true;
-    void captureAndUploadThumbnail();
-  }, [autosave.status, captureAndUploadThumbnail, liveMode]);
+    if (liveMode || readOnly) return;
+    if (thumbnailInitialRef.current) {
+      thumbnailInitialRef.current = false;
+      return;
+    }
+    thumbnailDirtyRef.current = true;
+  }, [data.groups, data.bricks, liveMode, readOnly]);
+
+  // Capture a fresh thumbnail when the user leaves the design — either by
+  // hiding/closing the tab (visibilitychange → hidden, which fires before
+  // unload and survives long enough for the request in the common cases) or by
+  // navigating away within the app (effect cleanup on unmount). Both are
+  // gated on the dirty flag so an unchanged canvas costs nothing, and the
+  // in-flight guard keeps a hide+unmount pair from double-uploading.
+  useEffect(() => {
+    if (liveMode || readOnly) return;
+    function maybeCapture() {
+      if (!thumbnailDirtyRef.current) return;
+      void captureAndUploadThumbnail();
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === 'hidden') maybeCapture();
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      maybeCapture();
+    };
+  }, [liveMode, readOnly, captureAndUploadThumbnail]);
 
   const zoomBy = useCallback((factor: number, anchor: { x: number; y: number }) => {
     setZoom((prevZoom) => {
