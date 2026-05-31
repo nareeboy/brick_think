@@ -35,6 +35,7 @@ const CODE_MESSAGES: Record<string, string> = {
   invalid_body: 'Body is too long.',
   invalid_cover: 'Cover image must be a PNG or JPG ≤ 2 MB.',
   invalid_credit_url: 'Image credit URLs must be a full http(s) link.',
+  invalid_published_date: 'Enter a valid published date.',
   slug_taken: 'That slug is already used by another article. Pick another.',
   forbidden: 'You no longer have admin access. Reload and try again.',
   unauthenticated: 'Sign in again to continue.',
@@ -58,6 +59,9 @@ export function ArticleEditor({ mode, article }: Props) {
   const [creditUrl, setCreditUrl] = useState(article?.coverCredit?.url ?? '');
   const [creditSource, setCreditSource] = useState(article?.coverCredit?.source ?? '');
   const [creditSourceUrl, setCreditSourceUrl] = useState(article?.coverCredit?.sourceUrl ?? '');
+  const [publishedDate, setPublishedDate] = useState(
+    article?.publishedAt ? article.publishedAt.slice(0, 10) : '',
+  );
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
@@ -93,6 +97,7 @@ export function ArticleEditor({ mode, article }: Props) {
     fd.set('coverCreditUrl', creditUrl);
     fd.set('coverCreditSource', creditSource);
     fd.set('coverCreditSourceUrl', creditSourceUrl);
+    fd.set('publishedDate', publishedDate);
     startTransition(async () => {
       const result = mode === 'new' ? await createArticleAction(fd) : await updateArticleAction(fd);
       // create redirects on success; only failures land here.
@@ -135,12 +140,20 @@ export function ArticleEditor({ mode, article }: Props) {
             {article ? <ArticleStatusPill status={status} /> : null}
           </div>
           {article ? (
-            <p className="text-[13px] text-zinc-600">
-              /{article.slug}
-              {article.publishedAt
-                ? ` · first published ${new Date(article.publishedAt).toLocaleString()}`
-                : ''}
-            </p>
+            <p className="text-[13px] text-zinc-600">/{article.slug}</p>
+          ) : null}
+          {article && status === 'published' ? (
+            <label className="flex items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                Published
+              </span>
+              <input
+                type="date"
+                value={publishedDate}
+                onChange={(e) => setPublishedDate(e.target.value)}
+                className="rounded-lg border border-zinc-200 bg-white px-2 py-1 text-[13px] text-zinc-900 outline-none focus:border-zinc-400"
+              />
+            </label>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
