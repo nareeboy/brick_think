@@ -102,6 +102,11 @@ export function Footer() {
                 Open source
               </Link>
             </li>
+            <li>
+              <Link href="/roadmap" className="hover:text-zinc-950">
+                Roadmap
+              </Link>
+            </li>
           </ul>
         </div>
         <div className="md:col-span-2">
@@ -137,10 +142,13 @@ export function Footer() {
         </div>
         <div className="md:col-span-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Status</p>
-          <p className="mt-3 inline-flex items-center gap-2 text-[13px] text-zinc-700">
+          <Link
+            href="/roadmap"
+            className="mt-3 inline-flex items-center gap-2 text-[13px] text-zinc-700 hover:text-zinc-950"
+          >
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Phase 0 — Foundations
-          </p>
+            Phase 1 — Feedback
+          </Link>
           <p className="mt-2 text-[13px] text-zinc-600">
             WCAG 2.2 AA. GDPR-aligned. EU data residency. Always free.
           </p>
