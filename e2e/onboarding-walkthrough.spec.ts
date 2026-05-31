@@ -99,6 +99,28 @@ test.describe('onboarding walkthrough', () => {
     await expect(signedInPage.getByTestId('onboarding-checklist')).toHaveCount(0);
   });
 
+  test('create-session spotlight fires from the checklist deep-link', async ({
+    signedInPage,
+    seededSession,
+  }) => {
+    // The checklist's step 2 link carries ?onboarding=create-session; landing
+    // on the org page with that param fires the spotlight on the button.
+    await signedInPage.goto(`/app/orgs/${seededSession.orgId}?onboarding=create-session`);
+
+    const spotlight = signedInPage.getByTestId('create-session-spotlight');
+    await expect(spotlight).toBeVisible();
+    await expect(spotlight).toContainText('Create your first session');
+
+    // The highlighted button stays clickable through the overlay and opens the
+    // new-session dialog; the spotlight gets out of the way.
+    await signedInPage.getByTestId('open-new-session-dialog').click();
+    await expect(spotlight).toHaveCount(0);
+
+    // Reloading without the param does not re-fire it.
+    await signedInPage.goto(`/app/orgs/${seededSession.orgId}`);
+    await expect(signedInPage.getByTestId('create-session-spotlight')).toHaveCount(0);
+  });
+
   test('spotlight tour fires on first session page visit', async ({
     signedInPage,
     seededSession,

@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
+import { CreateSessionSpotlight } from '@/components/onboarding/CreateSessionSpotlight';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -111,6 +113,9 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10">
+        <Suspense fallback={null}>
+          <CreateSessionSpotlight />
+        </Suspense>
         <FacilitatorChecklist progress={onboardingProgress} />
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
