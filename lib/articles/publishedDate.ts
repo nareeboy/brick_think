@@ -2,7 +2,7 @@
 // 'use server' actions module so they can be plain (non-async) exports and
 // unit-tested without a database.
 
-const YYYY_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
+const YYYY_MM_DD = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 // `value` is the raw `<input type="date">` string. Empty means "leave the
 // stored date as-is" and is therefore valid. A non-empty value must be a
@@ -10,9 +10,12 @@ const YYYY_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
 // 2026-02-30).
 export function isValidPublishedDateInput(value: string): boolean {
   if (value.length === 0) return true;
-  if (!YYYY_MM_DD.test(value)) return false;
-  // Regex guarantees three all-digit segments, so Number() never yields NaN here.
-  const [y, m, d] = value.split('-').map(Number);
+  const match = YYYY_MM_DD.exec(value);
+  if (!match) return false;
+  // Capture groups are all-digit, so Number() yields a real number (never NaN).
+  const y = Number(match[1]);
+  const m = Number(match[2]);
+  const d = Number(match[3]);
   const dt = new Date(Date.UTC(y, m - 1, d));
   return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
 }
