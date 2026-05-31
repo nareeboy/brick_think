@@ -106,160 +106,149 @@ describe('thumbnail capture trigger', () => {
     vi.restoreAllMocks();
   });
 
-  it('fires the registered capture exactly once on the first saving→saved transition', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    try {
-      const captureMock = vi
-        .fn<() => Promise<Blob | null>>()
-        .mockResolvedValue(new Blob([new Uint8Array([0x89])], { type: 'image/png' }));
-
-      const initial = {
-        modelId: 'm1',
-        title: 'T',
-        canvasState: {
-          groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
-          bricks: [],
-        },
-      };
-      const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initial) });
-
-      act(() => {
-        result.current.registerThumbnailCapture(captureMock);
-      });
-
-      act(() => {
-        result.current.addBrick({
-          id: 'b1',
-          groupId: 'g1',
-          code: 'A',
-          image: '',
-          width: 50,
-          height: 50,
-          x: 10,
-          y: 10,
-          rotation: 0,
-          visible: true,
-        });
-      });
-      act(() => {
-        vi.advanceTimersByTime(1100);
-      });
-
-      await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
-      await waitFor(() => expect(captureMock).toHaveBeenCalledTimes(1));
-
-      act(() => {
-        result.current.updateBrick('b1', { x: 20 });
-      });
-      act(() => {
-        vi.advanceTimersByTime(1100);
-      });
-      await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
-      await act(async () => {
-        await Promise.resolve();
-      });
-      expect(captureMock).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.useRealTimers();
+  // jsdom's visibilityState is a read-only getter defaulting to 'visible'.
+  // Override it to 'hidden' and dispatch the event synchronously so the
+  // builder's visibilitychange handler sees a hidden tab.
+  function fireTabHidden() {
+    const original = Object.getOwnPropertyDescriptor(Document.prototype, 'visibilityState');
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    if (original) {
+      Object.defineProperty(document, 'visibilityState', original);
+    } else {
+      // @ts-expect-error — clean up the override we added.
+      delete document.visibilityState;
     }
+  }
+
+  function pngCapture() {
+    return vi
+      .fn<() => Promise<Blob | null>>()
+      .mockResolvedValue(new Blob([new Uint8Array([0x89])], { type: 'image/png' }));
+  }
+
+  const sampleBrick = {
+    id: 'b1',
+    groupId: 'g1',
+    code: 'A',
+    image: '',
+    width: 50,
+    height: 50,
+    x: 10,
+    y: 10,
+    rotation: 0,
+    visible: true,
+  };
+
+  function initialState(modelId: string) {
+    return {
+      modelId,
+      title: 'T',
+      canvasState: {
+        groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
+        bricks: [],
+      },
+    };
+  }
+
+  it('captures on tab-hide after a canvas change', async () => {
+    const captureMock = pngCapture();
+    const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initialState('m1')) });
+
+    act(() => result.current.registerThumbnailCapture(captureMock));
+    act(() => result.current.addBrick(sampleBrick));
+
+    fireTabHidden();
+
+    await waitFor(() => expect(captureMock).toHaveBeenCalledTimes(1));
   });
 
-  it('does not fire if no capture fn is registered', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    try {
-      const initial = {
-        modelId: 'm2',
-        title: 'T',
-        canvasState: {
-          groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
-          bricks: [],
-        },
-      };
-      const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initial) });
+  it('captures on unmount after a canvas change', async () => {
+    const captureMock = pngCapture();
+    const { result, unmount } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(initialState('m1')),
+    });
 
-      act(() => {
-        result.current.addBrick({
-          id: 'b1',
-          groupId: 'g1',
-          code: 'A',
-          image: '',
-          width: 50,
-          height: 50,
-          x: 10,
-          y: 10,
-          rotation: 0,
-          visible: true,
-        });
-      });
-      act(() => {
-        vi.advanceTimersByTime(1100);
-      });
-      await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
+    act(() => result.current.registerThumbnailCapture(captureMock));
+    act(() => result.current.addBrick(sampleBrick));
 
-      const fetchCalls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
-      const thumbnailCall = fetchCalls.find((args: unknown[]) => {
-        const url = args[0];
-        return typeof url === 'string' && url.includes('/thumbnail');
-      });
-      expect(thumbnailCall).toBeUndefined();
-    } finally {
-      vi.useRealTimers();
-    }
+    act(() => unmount());
+
+    await waitFor(() => expect(captureMock).toHaveBeenCalledTimes(1));
   });
 
-  it('defers when no fn is registered yet, then fires once on a later transition', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true });
-    try {
-      const initial = {
-        modelId: 'm3',
-        title: 'T',
-        canvasState: {
-          groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
-          bricks: [],
-        },
-      };
-      const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initial) });
+  it('does not capture on tab-hide when nothing changed since load', async () => {
+    const captureMock = pngCapture();
+    const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initialState('m1')) });
 
-      // First save cycle WITHOUT a registered capture: must not burn the session.
-      act(() => {
-        result.current.addBrick({
-          id: 'b1',
-          groupId: 'g1',
-          code: 'A',
-          image: '',
-          width: 50,
-          height: 50,
-          x: 10,
-          y: 10,
-          rotation: 0,
-          visible: true,
-        });
-      });
-      act(() => {
-        vi.advanceTimersByTime(1100);
-      });
-      await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
+    act(() => result.current.registerThumbnailCapture(captureMock));
 
-      // Now register a capture fn (simulates BuilderCanvas mounting late).
-      const captureMock = vi
-        .fn<() => Promise<Blob | null>>()
-        .mockResolvedValue(new Blob([new Uint8Array([0x89])], { type: 'image/png' }));
-      act(() => {
-        result.current.registerThumbnailCapture(captureMock);
-      });
+    fireTabHidden();
+    await act(async () => {
+      await Promise.resolve();
+    });
 
-      // Drive a second save cycle. The capture must fire now.
-      act(() => {
-        result.current.updateBrick('b1', { x: 30 });
-      });
-      act(() => {
-        vi.advanceTimersByTime(1100);
-      });
-      await waitFor(() => expect(result.current.saveStatus).toBe('saved'));
-      await waitFor(() => expect(captureMock).toHaveBeenCalledTimes(1));
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(captureMock).not.toHaveBeenCalled();
+  });
+
+  it('does not capture if no capture fn is registered', async () => {
+    const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initialState('m2')) });
+
+    act(() => result.current.addBrick(sampleBrick));
+
+    fireTabHidden();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const fetchCalls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
+    const thumbnailCall = fetchCalls.find((args: unknown[]) => {
+      const url = args[0];
+      return typeof url === 'string' && url.includes('/thumbnail');
+    });
+    expect(thumbnailCall).toBeUndefined();
+  });
+
+  it('captures again on a later tab-hide after further edits (no one-shot lock)', async () => {
+    const captureMock = pngCapture();
+    const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(initialState('m1')) });
+
+    act(() => result.current.registerThumbnailCapture(captureMock));
+
+    act(() => result.current.addBrick(sampleBrick));
+    fireTabHidden();
+    await waitFor(() => expect(captureMock).toHaveBeenCalledTimes(1));
+
+    act(() => result.current.updateBrick('b1', { x: 20 }));
+    fireTabHidden();
+    await waitFor(() => expect(captureMock).toHaveBeenCalledTimes(2));
+  });
+
+  it('does not capture in live mode (worker owns the canvas projection)', async () => {
+    const captureMock = pngCapture();
+    const self = { userId: 'u1', displayName: 'U', avatarUrl: null };
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <BuilderProvider initial={initialState('m1')} liveMode self={self}>
+          {children}
+        </BuilderProvider>
+      ),
+    });
+
+    act(() => result.current.registerThumbnailCapture(captureMock));
+    act(() => result.current.addBrick(sampleBrick));
+
+    fireTabHidden();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(captureMock).not.toHaveBeenCalled();
   });
 });
 
