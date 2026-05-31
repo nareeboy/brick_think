@@ -65,43 +65,41 @@ export function SpotlightTour({ canManageSession }: Props) {
     markSessionTourSeen();
   }, [markSessionTourSeen]);
 
-  // Recompute the target rect on resize/scroll. Uses requestAnimationFrame to
-  // avoid layout thrash when the target animates in (e.g. fade-in cards).
+  // Track the target every frame so the cut-out stays glued to it through
+  // hydration and layout shifts — e.g. the FacilitatorChecklist mounts above
+  // the header after hydration and pushes targets down, a shift that fires no
+  // scroll/resize event. setRect only fires when the box actually moves, so
+  // tracking settles to a no-op. A missing target silently advances.
   useLayoutEffect(() => {
     if (!active) return;
-    let rafId = 0;
     // stepIndex < visibleSteps.length is asserted by `active`
     const step = visibleSteps[stepIndex]!;
-    const measure = () => {
+    let rafId = 0;
+    let lastKey = '';
+    const tick = () => {
       const el = document.querySelector(step.selector);
       if (!el) {
-        // Silent skip — try the next step on the next frame.
-        rafId = requestAnimationFrame(() => {
-          setRect(null);
-          setStepIndex((i) => {
-            const next = i + 1;
-            if (next >= visibleSteps.length) {
-              finish();
-            }
-            return next;
-          });
+        // Silent skip — advance to the next step (finish past the end).
+        setRect(null);
+        setStepIndex((i) => {
+          const next = i + 1;
+          if (next >= visibleSteps.length) {
+            finish();
+          }
+          return next;
         });
-        return;
+        return; // effect re-runs for the new step; schedule no further frames
       }
-      setRect(el.getBoundingClientRect());
+      const r = el.getBoundingClientRect();
+      const key = `${r.left},${r.top},${r.width},${r.height}`;
+      if (key !== lastKey) {
+        lastKey = key;
+        setRect(r);
+      }
+      rafId = requestAnimationFrame(tick);
     };
-    measure();
-    const onResize = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(measure);
-    };
-    window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', onResize, true);
-    return () => {
-      cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', onResize, true);
-    };
+    tick();
+    return () => cancelAnimationFrame(rafId);
   }, [active, stepIndex, visibleSteps, finish]);
 
   useEffect(() => {
