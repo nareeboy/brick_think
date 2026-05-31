@@ -63,6 +63,12 @@ test.describe('onboarding walkthrough', () => {
     seededSession,
   }) => {
     // seededSession creates org + session for the user but no models yet.
+    // The walkthrough checklist follows the user onto the org detail page too,
+    // where step 2 (create a session) happens.
+    await signedInPage.goto(`/app/orgs/${seededSession.orgId}`);
+    await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
+    await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute('data-done', '1');
+
     // To tick step 3, navigate into the session and start a model.
     await signedInPage.goto(`/app/sessions/${seededSession.sessionId}`);
     // Dismiss the spotlight tour first so it doesn't intercept clicks.

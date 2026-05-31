@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 
+import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 import type { OrgMember, OrgRole } from '@/lib/orgs/types';
 
 import { AddMemberForm } from './AddMemberForm';
@@ -98,9 +100,18 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
     .filter((m): m is OrgMember => m !== null)
     .sort((a, b) => a.email.localeCompare(b.email));
 
+  // Onboarding walkthrough — this org page is where step 2 ("create a session")
+  // happens, so the checklist follows the user here. Point its "next" link at
+  // the org they're already in.
+  const onboardingProgress = {
+    ...(await computeFacilitatorChecklistProgress(supabase, user.id)),
+    firstOrgId: id,
+  };
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10">
+        <FacilitatorChecklist progress={onboardingProgress} />
         <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1">
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
