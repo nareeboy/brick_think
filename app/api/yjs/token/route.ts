@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { consumeRateLimit } from '@/lib/rateLimit';
 import { mintYjsToken } from '@/lib/yjs/jwt';
 
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,8 @@ export const runtime = 'nodejs';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TTL_SECONDS = 60;
+const RATE_LIMIT_PER_WINDOW = 30;
+const RATE_LIMIT_WINDOW_MS = 10_000;
 
 export async function POST(request: Request): Promise<Response> {
   const secret = process.env.YJS_JWT_SECRET;
@@ -32,6 +35,21 @@ export async function POST(request: Request): Promise<Response> {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'unauthenticated' }, { status: 401 });
+  }
+
+  const limit = consumeRateLimit(
+    `yjs-token:${user.id}`,
+    RATE_LIMIT_PER_WINDOW,
+    RATE_LIMIT_WINDOW_MS,
+  );
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: 'rate limited' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil(limit.retryAfterMs / 1000)) },
+      },
+    );
   }
 
   // RLS itself answers "is the caller allowed to read this model?" — no row
