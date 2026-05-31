@@ -56,13 +56,21 @@ interface Fixture {
 let fx: Fixture;
 const createdArticleIds: string[] = [];
 
-function fdFor(input: { id?: string; title: string; slug: string; excerpt?: string; body?: string }): FormData {
+function fdFor(input: {
+  id?: string;
+  title: string;
+  slug: string;
+  excerpt?: string;
+  body?: string;
+  publishedDate?: string;
+}): FormData {
   const fd = new FormData();
   if (input.id) fd.set('id', input.id);
   fd.set('title', input.title);
   fd.set('slug', input.slug);
   fd.set('excerpt', input.excerpt ?? '');
   fd.set('body', input.body ?? '');
+  if (input.publishedDate !== undefined) fd.set('publishedDate', input.publishedDate);
   return fd;
 }
 
@@ -359,6 +367,78 @@ describe('deleteArticleAction', () => {
     expect(verify.data).toBeNull();
     const removeIdx = createdArticleIds.indexOf(id);
     if (removeIdx >= 0) createdArticleIds.splice(removeIdx, 1);
+  });
+});
+
+describe('updateArticleAction — editable published date', () => {
+  test('sets published_at to the noon-UTC instant on a published article', async () => {
+    currentClient = await signInAs(fx.admin);
+
+    let createdId = '';
+    try {
+      await createArticleAction(fdFor({ title: 'Date Edit', slug: 'date-edit', body: 'x' }));
+    } catch (err) {
+      if (!(err as Error).message.startsWith('__redirect__:')) throw err;
+    }
+    const admin = getAdminClient();
+    const created = await admin.from('articles').select('id').eq('slug', 'date-edit').single();
+    createdId = created.data!.id as string;
+    createdArticleIds.push(createdId);
+
+    const pub = await publishArticleAction(createdId);
+    expect(pub.ok).toBe(true);
+
+    const result = await updateArticleAction(
+      fdFor({ id: createdId, title: 'Date Edit', slug: 'date-edit', body: 'x', publishedDate: '2020-01-15' }),
+    );
+    expect(result.ok).toBe(true);
+
+    const verify = await admin
+      .from('articles')
+      .select('published_at')
+      .eq('id', createdId)
+      .single();
+    expect(new Date(verify.data!.published_at as string).toISOString()).toBe('2020-01-15T12:00:00.000Z');
+  });
+
+  test('ignores publishedDate on a draft (published_at stays null)', async () => {
+    currentClient = await signInAs(fx.admin);
+    try {
+      await createArticleAction(fdFor({ title: 'Draft Date', slug: 'draft-date', body: 'x' }));
+    } catch (err) {
+      if (!(err as Error).message.startsWith('__redirect__:')) throw err;
+    }
+    const admin = getAdminClient();
+    const created = await admin.from('articles').select('id').eq('slug', 'draft-date').single();
+    const id = created.data!.id as string;
+    createdArticleIds.push(id);
+
+    const result = await updateArticleAction(
+      fdFor({ id, title: 'Draft Date', slug: 'draft-date', body: 'x', publishedDate: '2020-01-15' }),
+    );
+    expect(result.ok).toBe(true);
+
+    const verify = await admin.from('articles').select('published_at').eq('id', id).single();
+    expect(verify.data!.published_at).toBeNull();
+  });
+
+  test('rejects an invalid date with invalid_published_date', async () => {
+    currentClient = await signInAs(fx.admin);
+    try {
+      await createArticleAction(fdFor({ title: 'Bad Date', slug: 'bad-date', body: 'x' }));
+    } catch (err) {
+      if (!(err as Error).message.startsWith('__redirect__:')) throw err;
+    }
+    const admin = getAdminClient();
+    const created = await admin.from('articles').select('id').eq('slug', 'bad-date').single();
+    const id = created.data!.id as string;
+    createdArticleIds.push(id);
+
+    const result = await updateArticleAction(
+      fdFor({ id, title: 'Bad Date', slug: 'bad-date', body: 'x', publishedDate: '2020-02-30' }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('invalid_published_date');
   });
 });
 

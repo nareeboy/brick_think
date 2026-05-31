@@ -10,8 +10,10 @@ import {
   ARTICLE_TITLE_MAX,
 } from '@/lib/articles/constants';
 import { isValidSlug, slugify } from '@/lib/articles/slug';
+import { isValidPublishedDateInput, publishedDateToInstant } from '@/lib/articles/publishedDate';
 import { ARTICLE_COVERS_BUCKET } from '@/lib/articles/storage';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import type { Database } from '@/lib/db/types.generated';
 import { isJpeg } from '@/lib/images/validateJpeg';
 import { isPng } from '@/lib/images/validatePng';
 
@@ -25,6 +27,7 @@ type Code =
   | 'invalid_body'
   | 'invalid_cover'
   | 'invalid_credit_url'
+  | 'invalid_published_date'
   | 'slug_taken'
   | 'unknown';
 
@@ -42,6 +45,7 @@ interface ArticleInput {
   coverCreditUrl: string;
   coverCreditSource: string;
   coverCreditSourceUrl: string;
+  publishedDate: string;
 }
 
 const CREDIT_NAME_MAX = 120;
@@ -89,6 +93,7 @@ function validate(input: ArticleInput): Code | null {
   if (input.coverCreditSource.length > CREDIT_SOURCE_MAX) return 'invalid_credit_url';
   if (!isValidExternalUrl(input.coverCreditUrl)) return 'invalid_credit_url';
   if (!isValidExternalUrl(input.coverCreditSourceUrl)) return 'invalid_credit_url';
+  if (!isValidPublishedDateInput(input.publishedDate)) return 'invalid_published_date';
   return null;
 }
 
@@ -115,6 +120,7 @@ function readInput(formData: FormData): ArticleInput {
     coverCreditUrl: readField(formData, 'coverCreditUrl'),
     coverCreditSource: readField(formData, 'coverCreditSource'),
     coverCreditSourceUrl: readField(formData, 'coverCreditSourceUrl'),
+    publishedDate: readField(formData, 'publishedDate'),
   };
 }
 
@@ -183,15 +189,31 @@ export async function updateArticleAction(formData: FormData): Promise<ArticleAc
   const invalid = validate(input);
   if (invalid) return { ok: false, code: invalid };
 
+  // Server must not trust the client's "this is published" decision: re-read
+  // the row's status. published_at is applied only to published rows, and an
+  // empty date input means "leave as-is" — we never write null (that would
+  // violate articles_published_has_timestamp and silently wipe the date).
+  const existing = await supabase
+    .from('articles')
+    .select('status')
+    .eq('id', input.id)
+    .maybeSingle();
+  if (!existing.data) return { ok: false, code: 'not_found' };
+
+  const updateFields: Database['public']['Tables']['articles']['Update'] = {
+    title: input.title.trim(),
+    slug: input.slug,
+    excerpt: input.excerpt.length === 0 ? null : input.excerpt,
+    body_markdown: input.bodyMarkdown,
+    ...creditFields(input),
+  };
+  if (input.publishedDate.length > 0 && existing.data.status === 'published') {
+    updateFields.published_at = publishedDateToInstant(input.publishedDate);
+  }
+
   const updateRes = await supabase
     .from('articles')
-    .update({
-      title: input.title.trim(),
-      slug: input.slug,
-      excerpt: input.excerpt.length === 0 ? null : input.excerpt,
-      body_markdown: input.bodyMarkdown,
-      ...creditFields(input),
-    })
+    .update(updateFields)
     .eq('id', input.id)
     .select('id, slug')
     .single();
