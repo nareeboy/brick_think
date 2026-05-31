@@ -344,6 +344,7 @@ function StageRow({
               sessionId={sessionId}
               stageId={stage.id}
               stageType={stageType}
+              isFirst={isFirst}
             />
           )}
         </div>
@@ -366,6 +367,7 @@ function StageRow({
           sessionId={sessionId}
           sessionTitle={sessionTitle}
           sessionStatus={sessionStatus}
+          isFirst={isFirst}
         />
       ) : null}
 
@@ -586,11 +588,13 @@ function ModelAction({
   sessionId,
   stageId,
   stageType,
+  isFirst,
 }: {
   ownedModel: OwnedModelRow | null;
   sessionId: string;
   stageId: string;
   stageType: StageType;
+  isFirst: boolean;
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -606,7 +610,12 @@ function ModelAction({
           </Link>
         </>
       ) : (
-        <StartModelButton sessionId={sessionId} stageId={stageId} stageType={stageType} />
+        <StartModelButton
+          sessionId={sessionId}
+          stageId={stageId}
+          stageType={stageType}
+          isTourTarget={isFirst}
+        />
       )}
     </div>
   );
@@ -619,6 +628,7 @@ function StageTimerControls({
   sessionId,
   sessionTitle,
   sessionStatus,
+  isFirst,
 }: {
   stage: LiveStageRow;
   isLastStage: boolean;
@@ -629,6 +639,7 @@ function StageTimerControls({
   sessionId: string;
   sessionTitle: string;
   sessionStatus: string;
+  isFirst: boolean;
 }) {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -670,6 +681,7 @@ function StageTimerControls({
             onClick={wrap(() => STAGE_ACTIONS.start(stage.id))}
             disabled={pending}
             className={btn('primary')}
+            {...(isFirst ? { 'data-tour-id': 'stage-timer-start' } : {})}
           >
             Start
           </button>
