@@ -312,7 +312,6 @@ function FeatureBento() {
             label="outputs"
             title="Walk away with a record, not a screenshot."
             body="Export a PDF report. Save each stage as an image. Download each person’s narration as video. Take the whole session with you — no lock-in."
-            status="roadmap"
           >
             <ExportsVisual />
           </FeatureCard>
