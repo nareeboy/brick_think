@@ -130,7 +130,17 @@ export function FacilitatorChecklist({ progress }: Props) {
         <ChecklistRow
           done={progress.hasOwnedSessionDesign}
           label="Open a stage and start your first model"
-          href={progress.firstSessionId ? `/app/sessions/${progress.firstSessionId}` : '/app/orgs'}
+          // Until done, deep-link to the session and run the start-model
+          // spotlight there (StartModelSpotlight reads this param). On the
+          // session page firstSessionId is the current session (same-page nav);
+          // from elsewhere it routes to the user's first session.
+          href={
+            progress.firstSessionId
+              ? `/app/sessions/${progress.firstSessionId}${
+                  progress.hasOwnedSessionDesign ? '' : '?onboarding=start-model'
+                }`
+              : '/app/orgs'
+          }
           testid="onboarding-step-model"
           isNext={progress.hasOrg && progress.hasSessionInAnyOrg && !progress.hasOwnedSessionDesign}
         />
