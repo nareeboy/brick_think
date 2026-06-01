@@ -13,6 +13,18 @@ const BASELINE_CSP = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    // Server Actions cap request bodies at 1 MB by default, but the article
+    // cover upload (uploadCoverImageAction) accepts images up to 2 MB
+    // (ARTICLE_COVER_MAX_BYTES). A 1–2 MB cover — typical for photo JPGs — was
+    // rejected by the Server Action runtime *before* the action ran, surfacing
+    // as a 500 on the POST rather than the action's own `invalid_cover` result.
+    // Lift the transport limit above the 2 MB cover cap, with headroom for
+    // multipart/form-data overhead, so the validation cap is the real gate.
+    serverActions: {
+      bodySizeLimit: '4mb',
+    },
+  },
   webpack: (config, { dev }) => {
     if (!dev) {
       config.cache = false;
