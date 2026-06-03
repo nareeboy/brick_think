@@ -53,11 +53,12 @@ Three Railway environments map to **two** Supabase projects:
 
 **One-time setup** for the Action ([.github/workflows/db-migrate.yml](.github/workflows/db-migrate.yml)):
 
-- GitHub → Settings → Secrets and variables → Actions:
-  - `SUPABASE_ACCESS_TOKEN` — the brick-think account PAT
-  - `SUPABASE_DB_PASSWORD_NONPROD` — DB password for `fzlyvqcwjadpmrgprfov`
-  - `SUPABASE_DB_PASSWORD_PROD` — DB password for `wreypwrvfpzjyijpyhkb`
+- GitHub → Settings → Secrets and variables → Actions — each is a full **Session Pooler** connection string (port 5432, password embedded):
+  - `SUPABASE_DB_URL_NONPROD` — pooler URL for `fzlyvqcwjadpmrgprfov`
+  - `SUPABASE_DB_URL_PROD` — pooler URL for `wreypwrvfpzjyijpyhkb`
 - GitHub → Settings → Environments → create `production` with **Required reviewers** enabled. This is the approval gate; without it the prod migration runs unattended.
+
+**Why the pooler, not `supabase link`.** The Action pushes with `supabase db push --db-url <pooler>`, not `link` + `--linked`. Supabase **direct** connections (`db.<ref>.supabase.co:5432`) are **IPv6-only**, and GitHub-hosted runners have no IPv6 — `--linked` fails with `IPv6 is not supported on your current network`. The **Session Pooler** (`aws-<n>-<region>.pooler.supabase.com:5432`) is IPv4. Same reason `WORKER_DATABASE_URL` must be the pooler.
 
 ## Yjs collaboration (`NEXT_PUBLIC_YJS_COLLAB_ENABLED=1`)
 
