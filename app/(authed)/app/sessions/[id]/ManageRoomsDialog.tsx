@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
@@ -60,6 +61,7 @@ export function ManageRoomsDialog({ stageId, orgMembers, initialRooms, onClose }
   const [error, setError] = useState<string | null>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
+  const router = useRouter();
 
   useEffect(() => {
     firstInputRef.current?.focus();
@@ -112,6 +114,7 @@ export function ManageRoomsDialog({ stageId, orgMembers, initialRooms, onClose }
     start(async () => {
       const result = await setSharedModelRooms({ stageId, rooms: payload });
       if (result.ok) {
+        router.refresh();
         onClose();
       } else {
         setError(errorMessage(result.code));
