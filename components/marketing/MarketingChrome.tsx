@@ -5,6 +5,7 @@ import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
 
 export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 export const LINKEDIN_URL = 'https://www.linkedin.com/company/brickthink';
+export const LEGO_SERIOUS_PLAY_URL = 'https://www.lego.com/en-ch/themes/serious-play';
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
@@ -113,6 +114,16 @@ export function Footer() {
               <Link href="/#open-source" className="hover:text-zinc-950">
                 Open source
               </Link>
+            </li>
+            <li>
+              <a
+                href={LEGO_SERIOUS_PLAY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-950"
+              >
+                Buy the Pieces
+              </a>
             </li>
           </ul>
         </div>
