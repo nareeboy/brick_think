@@ -676,7 +676,7 @@ function FidelitySection() {
             <span className="font-mono text-[18px] text-[#d8a85d] md:text-[22px]">
               CC BY-SA 3.0
             </span>
-            , so anyone can teach it. The LEGO name and brick designs are not. So we made our own
+            , so anyone can teach it. The LEGO® name and brick designs are not. So we made our own
             52 tiles. They look different. They feel right.
           </p>
         </div>

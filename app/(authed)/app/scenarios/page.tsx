@@ -43,7 +43,7 @@ export default async function ScenariosPage() {
             Scenarios
           </h1>
           <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-zinc-600">
-            Canonical Serious Play exercises for each stage of a session.
+            Canonical LEGO® SERIOUS PLAY® exercises for each stage of a session.
           </p>
         </div>
         <span
