@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
@@ -67,6 +68,7 @@ export function ManageDownstreamRoomsDialog({
   const [error, setError] = useState<string | null>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
+  const router = useRouter();
 
   useEffect(() => {
     firstInputRef.current?.focus();
@@ -108,6 +110,7 @@ export function ManageDownstreamRoomsDialog({
     start(async () => {
       const result = await setDownstreamStageRooms({ stageId, rooms: payload });
       if (result.ok) {
+        router.refresh();
         onClose();
       } else {
         setError(errorMessage(result.code));
