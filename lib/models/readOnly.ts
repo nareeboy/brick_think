@@ -10,19 +10,23 @@ export interface DesignReadOnlyArgs {
   liveMode: boolean;
   /** Is the caller the `owner_profile_id` of the model row? */
   isOwner: boolean;
+  /** Is the caller the parent session's facilitator? */
+  isSessionFacilitator: boolean;
 }
 
 /**
  * Single source of truth for whether a design opens read-only.
  *
- * **Room-backed canvases gate on membership, NOT ownership.** The facilitator
- * owns the `models` row for every `shared_model` / `system_model` /
- * `guiding_principles` room (1-1 via `models.room_id`), but ownership does not
- * grant edit access — only transitive room membership (`can_edit_room`) does.
- * So a facilitator who isn't a member of the room observes it read-only. They
- * still see live updates: the design page mounts `useModelRealtime`, and the
- * Yjs worker projects every room edit to `models.canvas_state`, which is in the
- * Supabase Realtime publication.
+ * **Room-backed canvases (the collaborative stages — `shared_model`,
+ * `system_model`, `guiding_principles`) are read-only for the facilitator and
+ * for non-members; only room members build in them.** The facilitator owns
+ * every room's `models` row and `can_edit_room` even grants them a live-edit
+ * bypass, but per product intent the facilitator *orchestrates* rooms rather
+ * than building in them — they observe read-only and only edit their own
+ * example model (a personal `individual_model` they own). Observers still see
+ * live updates: the design page keeps them on the Supabase-Realtime path, and
+ * the Yjs worker projects every room edit to `models.canvas_state`, which is in
+ * the Realtime publication.
  *
  * **Non-room canvases** keep the legacy rule: the owner edits, live co-editors
  * (legacy `shared_model`) edit, everyone else is read-only.
@@ -32,7 +36,13 @@ export function computeDesignReadOnly({
   isRoomMember,
   liveMode,
   isOwner,
+  isSessionFacilitator,
 }: DesignReadOnlyArgs): boolean {
-  if (roomId !== null) return !isRoomMember;
+  if (roomId !== null) {
+    // The facilitator observes every room read-only (they build only in their
+    // own example model). Everyone else gates on transitive room membership.
+    if (isSessionFacilitator) return true;
+    return !isRoomMember;
+  }
   return !liveMode && !isOwner;
 }

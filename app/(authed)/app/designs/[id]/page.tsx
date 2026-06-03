@@ -141,22 +141,30 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
     isRoomMember = Boolean(rpc.data);
   }
 
-  const liveMode = canPlaceLive({
-    sessionContext,
-    flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
-    isRoomMember,
-  });
-  // Edit permission. For room-backed canvases this is transitive room
-  // membership, NOT ownership: the facilitator owns the room's `models` row but
-  // observes read-only unless they're a member (see computeDesignReadOnly). For
-  // non-room canvases the owner edits and non-owners stay read-only outside the
-  // legacy live-shared_model case.
   const roomBacked = data.room_id !== null;
+  // The facilitator orchestrates collaborative rooms but doesn't build in them
+  // (only their own example model is editable). Keep them out of live (Yjs)
+  // edit mode on rooms — even though `can_edit_room` grants a facilitator
+  // bypass — so they ride the same read-only Supabase-Realtime path as any
+  // other observer and see the worker's projected `canvas_state` updates.
+  const facilitatorObservingRoom = roomBacked && isSessionFacilitator;
+  const liveMode =
+    !facilitatorObservingRoom &&
+    canPlaceLive({
+      sessionContext,
+      flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
+      isRoomMember,
+    });
+  // Edit permission. Room-backed canvases are read-only for the facilitator and
+  // for non-members (only members build in them); non-room canvases let the
+  // owner edit and keep non-owners read-only outside the legacy
+  // live-shared_model case. See computeDesignReadOnly.
   const readOnly = computeDesignReadOnly({
     roomId: data.room_id,
     isRoomMember,
     liveMode,
     isOwner: data.owner_profile_id === user.id,
+    isSessionFacilitator,
   });
   // Room canvases have no single human "owner" in the UX sense (they're shared
   // breakout rooms), so don't surface an owner name on the read-only chrome —
