@@ -13,6 +13,7 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { parseCanvasState } from '@/lib/models/canvasState';
+import { computeDesignReadOnly } from '@/lib/models/readOnly';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
 import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
@@ -145,12 +146,24 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
     flagEnabled: process.env.NEXT_PUBLIC_YJS_COLLAB_ENABLED === '1',
     isRoomMember,
   });
-  // In live mode every session-org member is a co-editor of the same Y.Doc;
-  // ownership only determines the canonical `models.canvas_state` row, not
-  // edit permission. Outside live mode, non-owners stay read-only (the
-  // existing personal / org-shared / session-spectator behaviour).
-  const readOnly = !liveMode && data.owner_profile_id !== user.id;
-  const ownerLabel = await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
+  // Edit permission. For room-backed canvases this is transitive room
+  // membership, NOT ownership: the facilitator owns the room's `models` row but
+  // observes read-only unless they're a member (see computeDesignReadOnly). For
+  // non-room canvases the owner edits and non-owners stay read-only outside the
+  // legacy live-shared_model case.
+  const roomBacked = data.room_id !== null;
+  const readOnly = computeDesignReadOnly({
+    roomId: data.room_id,
+    isRoomMember,
+    liveMode,
+    isOwner: data.owner_profile_id === user.id,
+  });
+  // Room canvases have no single human "owner" in the UX sense (they're shared
+  // breakout rooms), so don't surface an owner name on the read-only chrome —
+  // the banner switches to room-aware copy below.
+  const ownerLabel = roomBacked
+    ? null
+    : await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
   const self = liveMode ? await loadSelfPresence(supabase, user.id) : null;
 
   // Reactions + comments are scoped to room-backed canvases (the
@@ -188,6 +201,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
       <Builder
         initialModel={initialModel}
         readOnly={readOnly}
+        roomBacked={roomBacked}
         ownerLabel={ownerLabel}
         orgId={data.org_id ?? null}
         sessionContext={sessionContext}

@@ -143,6 +143,11 @@ test.describe('facilitator live read-only view', () => {
       await participant.page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
       const modelUrl = participant.page.url();
 
+      // Participant drops a brick so there's a piece for the facilitator to
+      // (fail to) manipulate.
+      await dropFirstBrickAt(participant.page, 200, 200);
+      await expect(participant.page.getByTestId('placed-brick')).toHaveCount(1);
+
       // Facilitator opens the participant's model.
       await facilitatorPage.goto(modelUrl);
       await expect(facilitatorPage.getByTestId('builder-canvas')).toBeVisible();
@@ -157,6 +162,25 @@ test.describe('facilitator live read-only view', () => {
       // The "Save version" button must be absent — SaveBuildButton returns null
       // when readOnly=true.
       await expect(facilitatorPage.getByRole('button', { name: /save version/i })).toHaveCount(0);
+
+      // The brick propagates to the facilitator's read-only view.
+      const facBrick = facilitatorPage.getByTestId('placed-brick').first();
+      await expect(facBrick).toHaveCount(1, { timeout: 8000 });
+
+      // Selecting a brick must NOT surface any edit affordance on the canvas.
+      // Before the read-only canvas fix, selecting showed the floating "Delete
+      // piece" button (and the brick was draggable); both are now gated on
+      // !readOnly so a facilitator can observe but never move or remove pieces.
+      await facBrick.focus();
+      await facilitatorPage.keyboard.press('Enter'); // select the brick
+      await expect(
+        facilitatorPage.getByRole('button', { name: /delete piece/i }),
+      ).toHaveCount(0);
+
+      // Pressing Delete on the selected brick must be a no-op — the piece stays.
+      await facBrick.focus();
+      await facilitatorPage.keyboard.press('Delete');
+      await expect(facilitatorPage.getByTestId('placed-brick')).toHaveCount(1);
     } finally {
       await cleanupParticipant(facilitatorPage, participant);
     }
