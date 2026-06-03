@@ -38,8 +38,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const url = new URL(request.url);
   const tokenHash = url.searchParams.get('token_hash');
   const type = url.searchParams.get('type');
+  const code = url.searchParams.get('code');
   const next = safeNext(url.searchParams.get('next'));
   const origin = publicOrigin(request);
+
+  // Fallback for the built-in {{ .ConfirmationURL }} template: if a Supabase
+  // project (or a local stack started before the custom token-hash templates
+  // were applied) still emits a /auth/v1/verify link, GoTrue redirects here
+  // with ?code=… and no token_hash. Hand it to /auth/callback, which owns the
+  // PKCE code-exchange path, instead of bouncing to link_malformed.
+  if (!tokenHash && code) {
+    const callback = new URL('/auth/callback', origin);
+    callback.searchParams.set('code', code);
+    callback.searchParams.set('next', next);
+    return NextResponse.redirect(callback);
+  }
 
   if (!tokenHash || !type || !ALLOWED_TYPES.has(type)) {
     const failure = new URL('/sign-in', origin);
