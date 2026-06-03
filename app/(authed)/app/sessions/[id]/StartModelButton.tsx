@@ -9,11 +9,17 @@ export function StartModelButton({
   stageId,
   stageType,
   isTourTarget = false,
+  canManage = false,
 }: {
   sessionId: string;
   stageId: string;
   stageType: string;
   isTourTarget?: boolean;
+  /**
+   * Facilitator/admin view. Flips the label to "Create Example Model" — the
+   * facilitator builds a demonstration canvas, participants "Start your model".
+   */
+  canManage?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   return (
@@ -33,7 +39,13 @@ export function StartModelButton({
         {...(isTourTarget ? { 'data-tour-id': 'start-model-button' } : {})}
         className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5 disabled:cursor-default disabled:opacity-60"
       >
-        {pending ? 'Starting…' : 'Start your model'}
+        {pending
+          ? canManage
+            ? 'Creating…'
+            : 'Starting…'
+          : canManage
+            ? 'Create Example Model'
+            : 'Start your model'}
       </button>
     </form>
   );

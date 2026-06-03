@@ -356,6 +356,7 @@ function StageRow({
               stageId={stage.id}
               stageType={stageType}
               isFirst={isFirst}
+              canManageSession={canManageSession}
             />
           )}
         </div>
@@ -598,12 +599,14 @@ function ModelAction({
   stageId,
   stageType,
   isFirst,
+  canManageSession,
 }: {
   ownedModel: OwnedModelRow | null;
   sessionId: string;
   stageId: string;
   stageType: StageType;
   isFirst: boolean;
+  canManageSession: boolean;
 }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -624,6 +627,7 @@ function ModelAction({
           stageId={stageId}
           stageType={stageType}
           isTourTarget={isFirst}
+          canManage={canManageSession}
         />
       )}
     </div>
