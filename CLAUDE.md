@@ -23,6 +23,42 @@ Production hostname: `https://www.brickthink.io` (apex 301-redirects to www). DN
 
 **`pnpm db:push` against the remote requires explicit user authorisation.** Agents (including subagents) must never run it autonomously — even to unblock E2E or fix what looks like a "trivial" gap. Stop, surface the underlying problem (almost always: "this should run against the local stack via `pnpm build:e2e` / `pnpm start:e2e`"), and wait for a deliberate go-ahead. Pushing to remote is a deploy. Full Supabase guidance in [supabase/CLAUDE.md](supabase/CLAUDE.md).
 
+## Database environments & migrations
+
+Three Railway environments map to **two** Supabase projects:
+
+| Branch | Railway env | Supabase project | How migrations land |
+| --- | --- | --- | --- |
+| `main` | production (`www.brickthink.io`) | `wreypwrvfpzjyijpyhkb` (**prod**) | [db-migrate.yml](.github/workflows/db-migrate.yml) → **`production` Environment approval gate** |
+| `staging` | staging | `fzlyvqcwjadpmrgprfov` (**shared non-prod**) | [db-migrate.yml](.github/workflows/db-migrate.yml), auto |
+| `test` | test | `fzlyvqcwjadpmrgprfov` (**shared non-prod**) | [db-migrate.yml](.github/workflows/db-migrate.yml), auto |
+| local dev | — | `fzlyvqcwjadpmrgprfov` (**shared non-prod**) | manual `pnpm db:push` |
+
+`test` and `staging` deliberately **share one** Supabase project — they hold non-prod data, so isolating them from each other isn't worth a second project. They are isolated from **prod**, which is the line that matters.
+
+### Branch push authorisation rules
+
+| Branch | Who triggers the push | Authorisation |
+| --- | --- | --- |
+| `staging` | default — agents may push freely | none needed |
+| `test` | only on the user's confirmation | confirm before each push |
+| `main` | **never automatic** | **explicit user authorisation every time** |
+
+- **`staging` is the default landing branch.** Routine work is pushed here without asking.
+- **`test` pushes require the user to confirm** each time before they happen.
+- **`main` pushes always require explicit authorisation** and never happen automatically — this is the production line.
+- **Every push to `main` must first ensure the non-prod (test/staging) DB is aligned with the prod DB on Supabase.** In practice: the same migration set must already be applied and validated on the shared non-prod project (via a `staging`/`test` push) *before* `main` is pushed and the gated prod migration is approved. Prod never receives a migration that hasn't been exercised on non-prod first.
+
+**Local `.env.local` points `SUPABASE_PROJECT_REF` at the shared non-prod project.** So a hand-run `pnpm db:push` targets test/staging, never prod — that's the safety default. The only sanctioned path to the prod DB is merging to `main`, which triggers the gated Action. The "never autonomous `pnpm db:push`" rule above still binds humans and agents at the terminal; CI is the exception *because* a human approves the `production` Environment before the prod job runs.
+
+**One-time setup** for the Action ([.github/workflows/db-migrate.yml](.github/workflows/db-migrate.yml)):
+
+- GitHub → Settings → Secrets and variables → Actions:
+  - `SUPABASE_ACCESS_TOKEN` — the brick-think account PAT
+  - `SUPABASE_DB_PASSWORD_NONPROD` — DB password for `fzlyvqcwjadpmrgprfov`
+  - `SUPABASE_DB_PASSWORD_PROD` — DB password for `wreypwrvfpzjyijpyhkb`
+- GitHub → Settings → Environments → create `production` with **Required reviewers** enabled. This is the approval gate; without it the prod migration runs unattended.
+
 ## Yjs collaboration (`NEXT_PUBLIC_YJS_COLLAB_ENABLED=1`)
 
 Yjs is the live-collab transport for room-backed canvases on `shared_model`, `system_model`, and `guiding_principles`. When the flag is on, [BuilderProvider](components/builder/builderState.tsx) mounts [useYjsBinding](components/builder/useYjsBinding.ts) instead of [useAutosave](components/builder/useAutosave.ts); the worker ([worker/src/yjs-server.ts](worker/src/yjs-server.ts)) is the sole writer to both `public.yjs_documents.state` (binary CRDT snapshot) and `public.models.canvas_state` (JSON projection for cold reload, share links, thumbnails). Other stages and all personal/org-shared designs keep using autosave.
