@@ -50,6 +50,10 @@ supabase/.branches/
 # Local-only documentation per project guideline
 docs/
 
+# CLAUDE.md guidance files — keep local, never commit to the remote
+CLAUDE.md
+**/CLAUDE.md
+
 # Brainstorming visual-companion working dir (local only)
 .superpowers/
 
