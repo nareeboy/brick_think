@@ -14,6 +14,7 @@ import {
   type StageRow as LiveStageRow,
 } from '@/components/session/useSessionStages';
 import { useSessionModelsRealtime } from '@/components/session/useSessionModelsRealtime';
+import { useRoomAssignmentRefresh } from '@/components/session/useRoomAssignmentRefresh';
 
 import {
   advanceStageAction,
@@ -160,6 +161,9 @@ export function SessionStages({
   const session = ready && liveSession ? liveSession : initialSession;
   const nowMs = useNowMs();
   const { lastUpdatedAt } = useSessionModelsRealtime(sessionId);
+  // Live-refresh a participant's room assignment so the "Open my room" button
+  // appears the moment the facilitator partitions rooms — no manual refresh.
+  useRoomAssignmentRefresh(sessionId, currentUserId);
 
   const sorted = [...stages].sort((a, b) => a.position - b.position);
   const completed = sorted.filter((s) => s.status === 'completed');
