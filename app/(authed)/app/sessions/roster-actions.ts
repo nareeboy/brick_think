@@ -200,8 +200,14 @@ export type SetSpotlightResult =
  * Point the session's spotlight at a participant's canvas, or clear it
  * (`targetProfileId = null`). Realtime-published via the existing
  * `sessions` publication (REPLICA IDENTITY FULL) so every participant's
- * banner updates without a refresh. The targeted profile must be an
- * active (non-removed) participant; soft-deleted rows refuse.
+ * banner updates without a refresh.
+ *
+ * A valid target is anyone the facilitator's ParticipantsPanel actually
+ * lists, which is built from model ownership (see session page.tsx) — i.e.
+ * any org member who owns a canvas in this session, NOT just join-code
+ * participants. So the target is accepted when it is either an active
+ * (non-removed) `session_participants` row OR owns a model in the session.
+ * Soft-deleted participants who own no model still refuse.
  */
 export async function setSpotlightAction(
   sessionId: string,
@@ -229,7 +235,22 @@ export async function setSpotlightAction(
     if (partRes.error) {
       throw new Error(`session_participants probe failed: ${partRes.error.message}`);
     }
-    if (!partRes.data) return { ok: false, code: 'target_not_participant' };
+    if (!partRes.data) {
+      // Not on the join-code roster — fall back to model ownership, which is
+      // what the facilitator's panel is actually built from. Org members who
+      // built a canvas without redeeming a join code have no participant row.
+      const modelRes = await service
+        .from('models')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('owner_profile_id', targetProfileId)
+        .limit(1)
+        .maybeSingle();
+      if (modelRes.error) {
+        throw new Error(`models probe failed: ${modelRes.error.message}`);
+      }
+      if (!modelRes.data) return { ok: false, code: 'target_not_participant' };
+    }
   }
 
   const updRes = await service
