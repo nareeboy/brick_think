@@ -66,6 +66,18 @@ describe('GET /auth/confirm', () => {
     expect(res.headers.get('location')).toBe('https://www.brickthink.io/app/my-designs');
   });
 
+  it('delegates to /auth/callback when only a PKCE code is present (default-template fallback)', async () => {
+    const verifyOtp = vi.fn();
+    mockSupabase(verifyOtp);
+
+    const res = await GET(makeRequest('?code=pkce_abc&next=/app/sessions') as never);
+
+    expect(verifyOtp).not.toHaveBeenCalled();
+    expect(res.headers.get('location')).toBe(
+      'https://www.brickthink.io/auth/callback?code=pkce_abc&next=%2Fapp%2Fsessions',
+    );
+  });
+
   it('bounces to /sign-in with link_malformed when token_hash missing', async () => {
     const verifyOtp = vi.fn();
     mockSupabase(verifyOtp);
