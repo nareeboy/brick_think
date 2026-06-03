@@ -228,7 +228,7 @@ function BrandPanel() {
   return (
     <div className="relative overflow-hidden rounded-[28px] border border-zinc-900/10 bg-gradient-to-br from-[#FBF7F1] to-[#F2E8D8] p-8 shadow-[0_30px_60px_-30px_rgba(60,30,15,0.18)] md:p-10">
       <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-        Virtual Serious Play, remote-native
+        Virtual LEGO® SERIOUS PLAY®, remote-native
       </p>
       <h2 className="mt-3 font-display text-[34px] font-medium leading-[0.98] tracking-[-0.02em] text-zinc-950 md:text-[44px]">
         Build <span className="text-[#c0613d]">one model</span>

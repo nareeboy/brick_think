@@ -707,7 +707,7 @@ function LegalFooterNav() {
         <ManageCookiesButton className="cursor-pointer text-[13px] text-zinc-600 transition-colors hover:text-zinc-900" />
       </nav>
       <p className="mt-4 max-w-3xl text-[12px] leading-relaxed text-zinc-500">
-        LEGO, SERIOUS PLAY, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations are
+        LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations are
         trademarks of the LEGO Group, which does not sponsor, authorize or endorse this product.
       </p>
     </>

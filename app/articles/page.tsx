@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Articles',
   description:
-    'Field notes on Serious Play, remote facilitation, and how BrickThink is built — in the open, with care.',
+    'Field notes on LEGO® SERIOUS PLAY®, remote facilitation, and how BrickThink is built — in the open, with care.',
 };
 
 export default async function ArticlesIndexPage() {
@@ -42,7 +42,7 @@ function Hero({ count }: { count: number }) {
             <span className="text-[#c0613d]">workshop floor</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
-            Short pieces on Serious Play, remote facilitation, and how this product is built. No
+            Short pieces on LEGO® SERIOUS PLAY®, remote facilitation, and how this product is built. No
             growth hacks. No SEO loops. Just things we&apos;ve learned and want to share.
           </p>
         </div>
