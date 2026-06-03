@@ -48,7 +48,13 @@ function selectionOverlay(
 interface BrickNodeProps {
   brick: BrickInstance;
   selected: boolean;
-  panLocked: boolean;
+  /**
+   * Whether this brick accepts pointer interaction (drag / select / transform).
+   * False while Space-pan is held OR the canvas is read-only — both cases want
+   * the pointer-down to fall through to the canvas-level pan handler instead of
+   * grabbing the brick.
+   */
+  interactive: boolean;
   onSelect: (id: string) => void;
   onMove: (id: string, x: number, y: number) => void;
   onRotate: (id: string) => void;
@@ -61,7 +67,7 @@ interface BrickNodeProps {
 function BrickNode({
   brick,
   selected,
-  panLocked,
+  interactive,
   onSelect,
   onMove,
   onRotate,
@@ -89,11 +95,11 @@ function BrickNode({
       offsetX={brick.width / 2}
       offsetY={brick.height / 2}
       rotation={brick.rotation}
-      // While the user holds Space to pan, suppress brick interactions
-      // (select/drag/transform) so the pointer-down on a brick falls
-      // through to the canvas-level pan handler.
-      draggable={!panLocked}
-      listening={!panLocked}
+      // Suppress brick interactions (select/drag/transform) while Space-pan is
+      // held or the canvas is read-only, so the pointer-down on a brick falls
+      // through to the canvas-level pan handler instead of moving the piece.
+      draggable={interactive}
+      listening={interactive}
       stroke={selected ? '#c0613d' : undefined}
       strokeWidth={selected ? 3 : 0}
       shadowColor={selected ? '#c0613d' : 'transparent'}
@@ -140,6 +146,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     selectBrick,
     updateBrick,
     deleteBrick,
+    readOnly,
     view,
     setPan,
     zoomBy,
@@ -178,6 +185,13 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
   // Spacebar-held pan mode (Figma convention). When true, brick
   // interactions are suppressed and any drag pans the canvas.
   const [panLocked, setPanLocked] = useState(false);
+  // Bricks accept pointer interaction only when not panning and not read-only.
+  // Read-only viewers (e.g. a facilitator observing a participant's model or a
+  // non-member of a shared room) can still pan/zoom to look around, but every
+  // drag/select/resize/transform is disabled so they can't move pieces — the
+  // slice-level guards already drop the writes, this stops the misleading
+  // visual drag/affordances too.
+  const interactive = !panLocked && !readOnly;
 
   const visibleBricks = useMemo(() => {
     const groupVisible = new Map<string, boolean>();
@@ -244,8 +258,8 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
 
   function handleStageMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
     if (panLocked || e.target === e.target.getStage()) {
-      // panLocked: every drag pans, even over a brick (Brick listening is
-      // already off via the panLocked prop, so this branch handles the
+      // panLocked: every drag pans, even over a brick (brick listening is
+      // already off via the `interactive` prop, so this branch handles the
       // empty-area case where the event reaches the Stage).
       // Otherwise: click started on the empty stage background — arm a pan
       // candidate and defer the deselect to pointerup-without-drag.
@@ -539,7 +553,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
                   key={b.id}
                   brick={b}
                   selected={selectedId === b.id}
-                  panLocked={panLocked}
+                  interactive={interactive}
                   onSelect={selectBrick}
                   onMove={handleMove}
                   onRotate={handleRotate}
@@ -612,8 +626,9 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
                 anchorStroke="#c0613d"
                 anchorFill="#ffffff"
                 anchorCornerRadius={2}
-                // Suppress resize-handle interaction while space-pan is held.
-                listening={!panLocked}
+                // Suppress resize-handle interaction while space-pan is held
+                // or the canvas is read-only.
+                listening={interactive}
                 boundBoxFunc={(oldBox, newBox) => {
                   if (newBox.width < MIN_PIECE_SIZE || newBox.height < MIN_PIECE_SIZE)
                     return oldBox;
@@ -625,7 +640,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
             </Layer>
           </Stage>
           <div className="pointer-events-none absolute inset-0 z-30">
-            {overlay && selectedId ? (
+            {overlay && selectedId && !readOnly ? (
               <button
                 type="button"
                 aria-label="Delete piece"

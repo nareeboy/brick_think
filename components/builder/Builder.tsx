@@ -38,6 +38,8 @@ import { StageTimerContainer } from '@/components/session/StageTimerContainer';
 interface BuilderProps {
   initialModel?: ModelDetail;
   readOnly?: boolean;
+  /** True when the model is a room-backed canvas (a shared breakout room). */
+  roomBacked?: boolean;
   ownerLabel?: string | null;
   orgId?: string | null;
   sessionContext?: SessionContext | null;
@@ -73,6 +75,7 @@ interface BuilderProps {
 export function Builder({
   initialModel,
   readOnly = false,
+  roomBacked = false,
   ownerLabel = null,
   orgId = null,
   sessionContext = null,
@@ -111,7 +114,11 @@ export function Builder({
         alreadyImported={alreadyImported}
       >
         <div className="flex min-h-0 flex-1 flex-col bg-[#FAF7F1] text-zinc-900 md:overflow-hidden">
-          <LiveReadOnlyBanner ownerLabel={ownerLabel} sessionContext={sessionContext} />
+          <LiveReadOnlyBanner
+            ownerLabel={ownerLabel}
+            roomBacked={roomBacked}
+            sessionContext={sessionContext}
+          />
           <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
             <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
               <UnifiedSidebar
@@ -244,9 +251,11 @@ function SaveBuildButton() {
 
 function LiveReadOnlyBanner({
   ownerLabel,
+  roomBacked,
   sessionContext,
 }: {
   ownerLabel: string | null;
+  roomBacked: boolean;
   sessionContext: SessionContext | null;
 }) {
   const { readOnly, liveMode } = useBuilderState();
@@ -263,7 +272,9 @@ function LiveReadOnlyBanner({
         className="inline-block h-2 w-2 rounded-full bg-emerald-500"
       />
       <span>
-        Live — viewing {ownerLabel ? `${ownerLabel}'s` : "participant's"} model · read-only
+        {roomBacked
+          ? 'Live — viewing the shared room · read-only'
+          : `Live — viewing ${ownerLabel ? `${ownerLabel}'s` : "participant's"} model · read-only`}
       </span>
     </div>
   );
