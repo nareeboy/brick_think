@@ -32,9 +32,7 @@ export function StageSection({ stageType, models, sessionTitle, pageNumber, tota
   return (
     <Page size="A4" style={styles.page}>
       <Text style={styles.h2}>{STAGE_LABELS[stageType] ?? stageType}</Text>
-      <Text style={[styles.muted, { marginBottom: 8 }]}>
-        {STAGE_INTENTS[stageType] ?? ''}
-      </Text>
+      <Text style={[styles.muted, { marginBottom: 8 }]}>{STAGE_INTENTS[stageType] ?? ''}</Text>
       <View style={styles.divider} />
       <View style={styles.cardGrid}>
         {models.map((m) => (

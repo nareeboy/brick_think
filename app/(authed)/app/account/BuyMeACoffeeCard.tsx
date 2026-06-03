@@ -4,12 +4,8 @@ export function BuyMeACoffeeCard() {
   return (
     <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
       <div className="flex flex-col gap-1">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Tip jar
-        </p>
-        <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">
-          Buy me a coffee
-        </h2>
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Tip jar</p>
+        <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">Buy me a coffee</h2>
         <p className="text-[12px] text-zinc-500">
           BrickThink is free and always will be. If it&rsquo;s saved you time, a coffee keeps the
           lights on and is genuinely appreciated.

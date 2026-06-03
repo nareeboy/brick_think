@@ -71,9 +71,7 @@ export function ScenarioPanel({ scenario }: Props) {
         </button>
       </div>
 
-      <h2 className="mt-2 font-serif text-[15px] leading-tight text-zinc-900">
-        {scenario.title}
-      </h2>
+      <h2 className="mt-2 font-serif text-[15px] leading-tight text-zinc-900">{scenario.title}</h2>
       <p className="mt-2 max-h-[40vh] overflow-y-auto whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-700">
         {scenario.body}
       </p>

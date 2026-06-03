@@ -17,7 +17,9 @@ export type ConsentDecision = {
 function isDecision(value: unknown): value is ConsentDecision {
   if (!value || typeof value !== 'object') return false;
   const v = value as Record<string, unknown>;
-  return v.v === CONSENT_VERSION && typeof v.decidedAt === 'string' && typeof v.analytics === 'boolean';
+  return (
+    v.v === CONSENT_VERSION && typeof v.decidedAt === 'string' && typeof v.analytics === 'boolean'
+  );
 }
 
 export function readConsent(): ConsentDecision | null {

@@ -70,8 +70,8 @@ export function Footer() {
             <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
           </Link>
           <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-zinc-600">
-            A remote-native platform for the five-stage LEGO® SERIOUS PLAY® methodology. Built on Next.js,
-            Supabase and Claude.
+            A remote-native platform for the five-stage LEGO® SERIOUS PLAY® methodology. Built on
+            Next.js, Supabase and Claude.
           </p>
           <div className="mt-5 flex items-center gap-2">
             <a
@@ -189,11 +189,13 @@ export function Footer() {
       <div className="border-t border-zinc-900/10">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-6 py-5 text-[12px] text-zinc-500 md:flex-row md:items-center">
           <div className="max-w-3xl space-y-1">
-            <p>© BrickThink. The LEGO® SERIOUS PLAY® methodology is referenced under CC BY-SA 3.0.</p>
             <p>
-              LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations
-              are trademarks of the LEGO Group, which does not sponsor, authorize or endorse this
-              product.
+              © BrickThink. The LEGO® SERIOUS PLAY® methodology is referenced under CC BY-SA 3.0.
+            </p>
+            <p>
+              LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob
+              configurations are trademarks of the LEGO Group, which does not sponsor, authorize or
+              endorse this product.
             </p>
           </div>
           <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5 gap-y-1">
@@ -277,11 +279,41 @@ export function ArrowUpRight({ className = '' }: { className?: string }) {
 }
 
 const CTA_BRICKS: { src: string; left: string; top: string; width: string; ratio: number }[] = [
-  { src: '/bricks/flat-3-orange-medium-left.png', left: '4%', top: '12%', width: '46%', ratio: 1268 / 902 },
-  { src: '/bricks/block-navy-medium-left.png', left: '70%', top: '22%', width: '22%', ratio: 1059 / 918 },
-  { src: '/bricks/block-yellow-medium.png', left: '36%', top: '44%', width: '24%', ratio: 1051 / 913 },
-  { src: '/bricks/block-green-medium-left.png', left: '8%', top: '68%', width: '26%', ratio: 1059 / 917 },
-  { src: '/bricks/flat-1-black-large-left.png', left: '50%', top: '70%', width: '42%', ratio: 1760 / 1112 },
+  {
+    src: '/bricks/flat-3-orange-medium-left.png',
+    left: '4%',
+    top: '12%',
+    width: '46%',
+    ratio: 1268 / 902,
+  },
+  {
+    src: '/bricks/block-navy-medium-left.png',
+    left: '70%',
+    top: '22%',
+    width: '22%',
+    ratio: 1059 / 918,
+  },
+  {
+    src: '/bricks/block-yellow-medium.png',
+    left: '36%',
+    top: '44%',
+    width: '24%',
+    ratio: 1051 / 913,
+  },
+  {
+    src: '/bricks/block-green-medium-left.png',
+    left: '8%',
+    top: '68%',
+    width: '26%',
+    ratio: 1059 / 917,
+  },
+  {
+    src: '/bricks/flat-1-black-large-left.png',
+    left: '50%',
+    top: '70%',
+    width: '42%',
+    ratio: 1760 / 1112,
+  },
 ];
 
 export function CtaBricks() {

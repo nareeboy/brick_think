@@ -95,7 +95,9 @@ interface PublicAuthor {
 // email — email is used solely as the key into `AUTHOR_LINKS` (see
 // lib/articles/authors.ts) and never leaves this function. Profile ids
 // without a row resolve to nulls.
-async function loadPublicAuthors(profileIds: readonly string[]): Promise<Map<string, PublicAuthor>> {
+async function loadPublicAuthors(
+  profileIds: readonly string[],
+): Promise<Map<string, PublicAuthor>> {
   const unique = Array.from(new Set(profileIds.filter((id): id is string => Boolean(id))));
   if (unique.length === 0) return new Map();
   const admin = createServiceRoleSupabaseClient();

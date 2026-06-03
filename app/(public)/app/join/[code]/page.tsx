@@ -70,7 +70,8 @@ function NotAvailable({
     session_completed: sessionTitle
       ? `"${sessionTitle}" has ended. Ask the facilitator for the report when it's ready.`
       : 'The session has ended.',
-    removed_by_facilitator: 'If this looks like a mistake, ask the facilitator to restore you and they\'ll send a new invite.',
+    removed_by_facilitator:
+      "If this looks like a mistake, ask the facilitator to restore you and they'll send a new invite.",
   };
   return (
     <main id="main" className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 px-6">

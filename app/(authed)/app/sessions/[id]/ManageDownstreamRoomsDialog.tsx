@@ -136,8 +136,8 @@ export function ManageDownstreamRoomsDialog({
             role="status"
             className="mt-5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-900"
           >
-            No {upstreamStageLabel.toLowerCase()} rooms exist yet. Create them first on the
-            {' '}{upstreamStageLabel.toLowerCase()} stage.
+            No {upstreamStageLabel.toLowerCase()} rooms exist yet. Create them first on the{' '}
+            {upstreamStageLabel.toLowerCase()} stage.
           </p>
         ) : (
           <div className="mt-5 flex flex-col gap-3">

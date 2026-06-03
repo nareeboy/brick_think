@@ -35,14 +35,22 @@ const CHANNELS: Channel[] = [
     title: 'Workshops, agencies, big teams.',
     description:
       'Certified LSP facilitators running paid workshops. Agencies using us as their tool. HR teams trying us inside a bigger company.',
-    action: { kind: 'mailto', href: 'mailto:partners@brickthink.io', label: 'partners@brickthink.io' },
+    action: {
+      kind: 'mailto',
+      href: 'mailto:partners@brickthink.io',
+      label: 'partners@brickthink.io',
+    },
   },
   {
     label: 'Security',
     title: 'Found a security bug?',
     description:
       'Send security bugs here, not to a public GitHub issue. We look at it within one working day. We fix it before talking about it.',
-    action: { kind: 'mailto', href: 'mailto:security@brickthink.io', label: 'security@brickthink.io' },
+    action: {
+      kind: 'mailto',
+      href: 'mailto:security@brickthink.io',
+      label: 'security@brickthink.io',
+    },
     detail: 'PGP available on request.',
   },
   {
@@ -144,12 +152,17 @@ function ChannelsSection() {
         <ul className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-12 md:gap-5">
           {CHANNELS.map((c, i) => {
             const span =
-              i === 0 ? 'md:col-span-7' :
-              i === 1 ? 'md:col-span-5' :
-              i === 2 ? 'md:col-span-5' :
-              i === 3 ? 'md:col-span-7' :
-              i === 4 ? 'md:col-span-7' :
-              'md:col-span-5';
+              i === 0
+                ? 'md:col-span-7'
+                : i === 1
+                  ? 'md:col-span-5'
+                  : i === 2
+                    ? 'md:col-span-5'
+                    : i === 3
+                      ? 'md:col-span-7'
+                      : i === 4
+                        ? 'md:col-span-7'
+                        : 'md:col-span-5';
             return (
               <li key={c.label} className={`flex ${span}`}>
                 <ChannelCard channel={c} />
@@ -211,9 +224,9 @@ function DetailsSection() {
             Most conversations happen in public.
           </h2>
           <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-700">
-            Roadmap talks, design choices, bug triage, and release notes all live on GitHub. If
-            your question is not about money or security, post it there. It helps the next
-            facilitator with the same question.
+            Roadmap talks, design choices, bug triage, and release notes all live on GitHub. If your
+            question is not about money or security, post it there. It helps the next facilitator
+            with the same question.
           </p>
         </div>
         <div className="md:col-span-7">
@@ -224,7 +237,10 @@ function DetailsSection() {
               ['Discussions', 'github.com/brickthink/discussions'],
               ['Status page', 'status.brickthink.io'],
             ].map(([label, value]) => (
-              <li key={label} className="flex flex-col gap-1 py-5 md:flex-row md:items-baseline md:gap-8">
+              <li
+                key={label}
+                className="flex flex-col gap-1 py-5 md:flex-row md:items-baseline md:gap-8"
+              >
                 <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-500 md:w-40">
                   {label}
                 </span>

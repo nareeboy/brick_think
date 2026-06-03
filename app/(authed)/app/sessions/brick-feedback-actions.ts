@@ -117,9 +117,7 @@ export type SoftDeleteCommentResult =
  * already deleted) is surfaced with a distinct code so the UI can pick the
  * right message.
  */
-export async function softDeleteCommentAction(
-  commentId: string,
-): Promise<SoftDeleteCommentResult> {
+export async function softDeleteCommentAction(commentId: string): Promise<SoftDeleteCommentResult> {
   const userSupabase = await createServerSupabaseClient();
   const {
     data: { user },

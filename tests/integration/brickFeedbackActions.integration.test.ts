@@ -264,7 +264,7 @@ describe('softDeleteCommentAction', () => {
     expect(row.data?.deleted_at).not.toBeNull();
   });
 
-  test('a different room member cannot delete someone else\'s comment', async () => {
+  test("a different room member cannot delete someone else's comment", async () => {
     const commentId = await seedComment(fx.member);
 
     // otherMember is in the same room as the author, so RLS lets them READ

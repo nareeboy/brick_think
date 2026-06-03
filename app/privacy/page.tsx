@@ -238,8 +238,8 @@ export default function PrivacyPage() {
                 You can change your choice at any time using the &ldquo;Cookies&rdquo; link in any
                 page footer. Withdrawing consent stops the relevant scripts from loading on
                 subsequent page views. By using our website or registering an account, you consent
-                to the parts of this Privacy Policy that describe essential processing necessary
-                to provide the Service to you.
+                to the parts of this Privacy Policy that describe essential processing necessary to
+                provide the Service to you.
               </P>
             </Section>
 
@@ -266,8 +266,8 @@ export default function PrivacyPage() {
 
               <SubHeading>Essential cookies (always on)</SubHeading>
               <P>
-                Essential cookies are required for the Service to function. They keep you signed
-                in, preserve session state across page loads, protect against cross-site request
+                Essential cookies are required for the Service to function. They keep you signed in,
+                preserve session state across page loads, protect against cross-site request
                 forgery, and remember the cookie-consent choice you made on the banner. Without
                 these cookies, you would be unable to sign in, save work, or move between pages
                 while logged in. These cookies do not track you across other websites and are not
@@ -372,21 +372,20 @@ export default function PrivacyPage() {
                   browser characteristics.
                 </li>
                 <li>
-                  <Em>Legal basis:</Em> Your explicit consent, given via the cookie banner
-                  (GDPR Art. 6(1)(a) / FADP Art. 6).
+                  <Em>Legal basis:</Em> Your explicit consent, given via the cookie banner (GDPR
+                  Art. 6(1)(a) / FADP Art. 6).
                 </li>
                 <li>
                   <Em>International transfer:</Em> Google processes this data in the United States.
                   Google LLC is certified under the EU&ndash;US Data Privacy Framework and the
-                  Swiss&ndash;US Data Privacy Framework, which the European Commission and the
-                  Swiss Federal Council have recognised as providing an adequate level of data
-                  protection.
+                  Swiss&ndash;US Data Privacy Framework, which the European Commission and the Swiss
+                  Federal Council have recognised as providing an adequate level of data protection.
                 </li>
                 <li>
                   <Em>Retention:</Em> User- and event-level data is retained by Google for the
                   shortest period the GA4 product allows for the property (we have configured the
-                  retention window to the minimum available; aggregated reports persist
-                  indefinitely in non-identifiable form).
+                  retention window to the minimum available; aggregated reports persist indefinitely
+                  in non-identifiable form).
                 </li>
                 <li>
                   <Em>How to opt out:</Em> Use the &ldquo;Cookies&rdquo; link in any page footer to

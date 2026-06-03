@@ -72,11 +72,7 @@ async function cleanupParticipant(
   await participant.context.close();
 }
 
-async function completeSession(
-  page: Page,
-  sessionId: string,
-  callerEmail: string,
-): Promise<void> {
+async function completeSession(page: Page, sessionId: string, callerEmail: string): Promise<void> {
   const res = await page.request.post('/api/test/complete-session', {
     data: { sessionId, callerEmail },
   });
@@ -144,9 +140,7 @@ test.describe('Session PDF report button', () => {
 
     // Sanity-check: the facilitator sees the button on the completed session.
     await facilitatorPage.goto(`/app/sessions/${seededSession.sessionId}`);
-    await expect(
-      facilitatorPage.getByRole('button', { name: /generate report/i }),
-    ).toBeVisible();
+    await expect(facilitatorPage.getByRole('button', { name: /generate report/i })).toBeVisible();
 
     // Add a second member to the org (not facilitator) and load the session
     // in their tab — the button must be absent.
@@ -158,9 +152,9 @@ test.describe('Session PDF report button', () => {
     try {
       await participant.page.goto(`/app/sessions/${seededSession.sessionId}`);
       await expect(participant.page.getByTestId('session-title')).toBeVisible();
-      await expect(
-        participant.page.getByRole('button', { name: /generate report/i }),
-      ).toHaveCount(0);
+      await expect(participant.page.getByRole('button', { name: /generate report/i })).toHaveCount(
+        0,
+      );
     } finally {
       await cleanupParticipant(facilitatorPage, participant);
     }

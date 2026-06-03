@@ -17,7 +17,9 @@ export function Closing(props: Props) {
       <Text style={styles.h2}>Where to from here</Text>
       <View style={styles.divider} />
       {paragraphs.map((p, i) => (
-        <Text key={i} style={styles.paragraph}>{p}</Text>
+        <Text key={i} style={styles.paragraph}>
+          {p}
+        </Text>
       ))}
       <PageFooter title={props.sessionTitle} page={props.pageNumber} total={props.totalPages} />
     </Page>

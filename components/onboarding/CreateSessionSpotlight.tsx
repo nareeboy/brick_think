@@ -126,10 +126,7 @@ export function CreateSessionSpotlight() {
   if (tooltipLeft < 16) tooltipLeft = 16;
 
   return (
-    <div
-      data-testid="create-session-spotlight"
-      className="pointer-events-none fixed inset-0 z-30"
-    >
+    <div data-testid="create-session-spotlight" className="pointer-events-none fixed inset-0 z-30">
       <svg
         aria-hidden="true"
         className="absolute inset-0 h-full w-full motion-safe:transition-opacity"

@@ -78,12 +78,16 @@ export function ManageRoomsDialog({ stageId, orgMembers, initialRooms, onClose }
 
   function moveMember(profileId: string, target: number | null) {
     setRooms((prev) =>
-      prev.map((room) => ({
-        ...room,
-        memberIds: room.memberIds.filter((id) => id !== profileId),
-      })).map((room, idx) =>
-        target !== null && idx === target ? { ...room, memberIds: [...room.memberIds, profileId] } : room,
-      ),
+      prev
+        .map((room) => ({
+          ...room,
+          memberIds: room.memberIds.filter((id) => id !== profileId),
+        }))
+        .map((room, idx) =>
+          target !== null && idx === target
+            ? { ...room, memberIds: [...room.memberIds, profileId] }
+            : room,
+        ),
     );
   }
 
@@ -127,8 +131,8 @@ export function ManageRoomsDialog({ stageId, orgMembers, initialRooms, onClose }
           Manage rooms
         </h2>
         <p className="mt-1 text-[13px] text-zinc-600">
-          Partition participants into breakout rooms. Each room gets a shared canvas seeded with
-          its members&rsquo; individual models, laid out side by side.
+          Partition participants into breakout rooms. Each room gets a shared canvas seeded with its
+          members&rsquo; individual models, laid out side by side.
         </p>
 
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-[260px,1fr]">
@@ -236,7 +240,10 @@ export function ManageRoomsDialog({ stageId, orgMembers, initialRooms, onClose }
         </div>
 
         {error ? (
-          <p role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700">
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-red-700"
+          >
             {error}
           </p>
         ) : null}

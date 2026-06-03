@@ -97,9 +97,7 @@ beforeEach(async () => {
   currentClient = await signInAs(fx.facilitator);
 });
 
-async function makeSession(args: {
-  status: 'draft' | 'live' | 'completed';
-}): Promise<TestSession> {
+async function makeSession(args: { status: 'draft' | 'live' | 'completed' }): Promise<TestSession> {
   return createTestSession({
     orgId: fx.org.id,
     facilitatorId: fx.facilitator.id,
@@ -110,7 +108,12 @@ async function makeSession(args: {
 
 async function insertModel(args: {
   session: TestSession;
-  stageType: 'individual_model' | 'shared_model' | 'system_model' | 'guiding_principles' | 'skill_building';
+  stageType:
+    | 'individual_model'
+    | 'shared_model'
+    | 'system_model'
+    | 'guiding_principles'
+    | 'skill_building';
   title: string;
   canvas?: CanvasState;
 }): Promise<string> {
@@ -275,9 +278,7 @@ describe('generateSessionReport (integration)', () => {
 
     const row = await readReportRow(session.id);
     expect(row?.generation_status).toBe('succeeded');
-    expect(row?.pdf_path).toMatch(
-      new RegExp(`^${fx.org.id}/${session.id}/\\d+\\.pdf$`),
-    );
+    expect(row?.pdf_path).toMatch(new RegExp(`^${fx.org.id}/${session.id}/\\d+\\.pdf$`));
     const artifacts = row?.included_artifacts as { models: string[] };
     expect([...artifacts.models].sort()).toEqual([m1, m2].sort());
   });

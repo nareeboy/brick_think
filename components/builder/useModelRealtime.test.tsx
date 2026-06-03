@@ -94,7 +94,10 @@ describe('useModelRealtime', () => {
     });
     await waitFor(() => expect(singleFetch).toHaveBeenCalledTimes(1));
     await waitFor(() =>
-      expect(onUpdate).toHaveBeenCalledWith({ title: 'snap', canvas_state: { groups: [], bricks: [] } }),
+      expect(onUpdate).toHaveBeenCalledWith({
+        title: 'snap',
+        canvas_state: { groups: [], bricks: [] },
+      }),
     );
   });
 

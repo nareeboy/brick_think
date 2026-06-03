@@ -16,15 +16,13 @@ const STAGES = [
     duration: '15 min',
     blurb:
       'Hands learn before heads. Build a tower. Build a duck. Build a thing that means hope. Get past feeling shy with the bricks.',
-    detail:
-      'No deep meaning yet. Just get used to the bricks. Get used to thinking by building.',
+    detail: 'No deep meaning yet. Just get used to the bricks. Get used to thinking by building.',
   },
   {
     n: '02',
     name: 'Individual model',
     duration: '13 min',
-    blurb:
-      'Each person builds their own answer to one clear question. Alone. With no one talking.',
+    blurb: 'Each person builds their own answer to one clear question. Alone. With no one talking.',
     detail:
       'The model is the answer. Not a draft. Not a picture of an answer. Then each person tells the room what each brick means.',
   },
@@ -52,8 +50,7 @@ const STAGES = [
     duration: '20 min',
     blurb:
       'Pull out clear rules. Each one points to bricks that back it up. Take the rules home. Leave the bricks behind.',
-    detail:
-      'A rule that can’t point back to a brick does not make the final cut.',
+    detail: 'A rule that can’t point back to a brick does not make the final cut.',
   },
 ];
 
@@ -159,8 +156,8 @@ function ThesisSection() {
           <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[34px]">
             Most of what your team knows about its work, they{' '}
             <span className="text-[#d8a85d]">can’t put into words</span>. Normal meetings only catch
-            what people are willing to say on the spot. That is the safe part. LSP gets the rest
-            out — because people build first and talk second.
+            what people are willing to say on the spot. That is the safe part. LSP gets the rest out
+            — because people build first and talk second.
           </p>
         </div>
       </div>
@@ -181,8 +178,8 @@ function StagesSection() {
               The order is the method.
             </h2>
             <p className="mt-5 max-w-md text-[15px] leading-relaxed text-zinc-600">
-              You can run one stage. You can run a few. But out of order, or with no story step,
-              you are just running a workshop with bricks. That is not LSP.
+              You can run one stage. You can run a few. But out of order, or with no story step, you
+              are just running a workshop with bricks. That is not LSP.
             </p>
           </div>
           <ol className="md:col-span-8">
@@ -326,9 +323,7 @@ function TrademarkSection() {
             BrickThink uses the method under the open licence. We do not use the LEGO® names, brick
             designs, or figures. Our 52 tiles are our own — different names, different look.
           </p>
-          <p>
-            The LEGO Group does not sponsor, authorize, or endorse this product.
-          </p>
+          <p>The LEGO Group does not sponsor, authorize, or endorse this product.</p>
         </div>
       </div>
     </section>

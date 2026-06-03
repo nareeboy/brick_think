@@ -74,7 +74,10 @@ function buildUserBlock(s: CollectedSession): string {
 
 function extractJson(raw: string): unknown {
   // Tolerate accidental code fences.
-  const stripped = raw.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+  const stripped = raw
+    .replace(/^```json\s*/i, '')
+    .replace(/```$/, '')
+    .trim();
   return JSON.parse(stripped);
 }
 

@@ -4,10 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import {
-  ALLOWED_PRE_SESSION_KEYS,
-  type PreSessionCheckKey,
-} from '@/lib/sessions/preSessionCheck';
+import { ALLOWED_PRE_SESSION_KEYS, type PreSessionCheckKey } from '@/lib/sessions/preSessionCheck';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -57,9 +54,7 @@ export async function setStageScenarioAction(
   // RLS-scoped read; org outsiders see no row → stage_not_found.
   const stageRes = await supabase
     .from('stages')
-    .select(
-      'id, session_id, stage_type, sessions!stages_session_id_fkey ( id, facilitator_id )',
-    )
+    .select('id, session_id, stage_type, sessions!stages_session_id_fkey ( id, facilitator_id )')
     .eq('id', stageId)
     .maybeSingle();
   if (stageRes.error) {
@@ -185,10 +180,7 @@ export async function updatePreSessionCheckAction(
   const merged = { ...previous, [key]: value };
 
   const svc = getServiceSupabaseClient();
-  const upd = await svc
-    .from('sessions')
-    .update({ pre_session_check: merged })
-    .eq('id', sessionId);
+  const upd = await svc.from('sessions').update({ pre_session_check: merged }).eq('id', sessionId);
   if (upd.error) throw new Error(`updatePreSessionCheck update failed: ${upd.error.message}`);
 
   revalidatePath(`/app/sessions/${sessionId}`);

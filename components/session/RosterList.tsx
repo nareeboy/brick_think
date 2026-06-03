@@ -66,14 +66,21 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
 
       // Create a map of profiles by id for fast lookup
       const profileMap = new Map(
-        (profiles || []).map((p: { id: string; full_name: string | null; email: string; avatar_url: string | null }) => [
-          p.id,
-          {
-            full_name: p.full_name ?? null,
-            email: p.email,
-            avatar_url: p.avatar_url ?? null,
-          },
-        ]),
+        (profiles || []).map(
+          (p: {
+            id: string;
+            full_name: string | null;
+            email: string;
+            avatar_url: string | null;
+          }) => [
+            p.id,
+            {
+              full_name: p.full_name ?? null,
+              email: p.email,
+              avatar_url: p.avatar_url ?? null,
+            },
+          ],
+        ),
       );
 
       // Flatten and merge
@@ -132,9 +139,7 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-semibold text-zinc-900">
-        In the session ({rows.length})
-      </h3>
+      <h3 className="text-sm font-semibold text-zinc-900">In the session ({rows.length})</h3>
 
       {rows.length === 0 ? (
         <div className="text-sm text-zinc-500">No participants yet</div>
@@ -148,11 +153,7 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
                 key={row.profile_id}
                 className="relative flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-zinc-50"
               >
-                <Avatar
-                  url={row.avatar_url}
-                  name={displayName(row)}
-                  size="sm"
-                />
+                <Avatar url={row.avatar_url} name={displayName(row)} size="sm" />
 
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-zinc-900 truncate">
@@ -164,9 +165,7 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
                     )}
                   </div>
                   {row.full_name && (
-                    <div className="text-xs text-zinc-500 truncate">
-                      {row.email}
-                    </div>
+                    <div className="text-xs text-zinc-500 truncate">{row.email}</div>
                   )}
                 </div>
 

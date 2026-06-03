@@ -133,7 +133,11 @@ export function RosterRemovedList({ sessionId }: Props) {
         disabled={rows.length === 0}
         className="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700 transition-colors disabled:cursor-default disabled:text-zinc-500 disabled:hover:text-zinc-500"
         aria-expanded={!collapsed}
-        aria-label={collapsed ? `Expand removed participants (${rows.length})` : `Collapse removed participants (${rows.length})`}
+        aria-label={
+          collapsed
+            ? `Expand removed participants (${rows.length})`
+            : `Collapse removed participants (${rows.length})`
+        }
       >
         Removed ({rows.length})
         {rows.length > 0 ? <span className="text-xs">{collapsed ? '▶' : '▼'}</span> : null}
@@ -147,20 +151,14 @@ export function RosterRemovedList({ sessionId }: Props) {
               className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-zinc-50 transition-colors"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                <Avatar
-                  url={null}
-                  name={displayName(row)}
-                  size="sm"
-                />
+                <Avatar url={null} name={displayName(row)} size="sm" />
 
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-zinc-900 truncate">
                     {displayName(row)}
                   </div>
                   {row.full_name && (
-                    <div className="text-xs text-zinc-500 truncate">
-                      {row.email}
-                    </div>
+                    <div className="text-xs text-zinc-500 truncate">{row.email}</div>
                   )}
                 </div>
               </div>

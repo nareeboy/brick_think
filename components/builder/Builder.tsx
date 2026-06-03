@@ -366,10 +366,7 @@ function CanvasStage({
     peopleStripRight = Math.max(peopleStripRight, notesRight + NOTES_BTN_WIDTH + STRIP_GAP);
   }
   if (feedbackToggleRight !== null) {
-    peopleStripRight = Math.max(
-      peopleStripRight,
-      feedbackToggleRight + ICON_BTN_WIDTH + STRIP_GAP,
-    );
+    peopleStripRight = Math.max(peopleStripRight, feedbackToggleRight + ICON_BTN_WIDTH + STRIP_GAP);
   }
 
   return (

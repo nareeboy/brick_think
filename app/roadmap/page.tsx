@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-import {
-  ArrowRight,
-  CtaBricks,
-  MarketingShell,
-} from '@/components/marketing/MarketingChrome';
+import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/MarketingChrome';
 
 export const metadata: Metadata = {
   title: 'Roadmap',
@@ -179,9 +175,7 @@ function Timeline() {
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${STATUS_STYLES[phase.status]}`}
                   >
-                    {isNow && (
-                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white" />
-                    )}
+                    {isNow && <span className="inline-flex h-1.5 w-1.5 rounded-full bg-white" />}
                     {phase.status}
                   </span>
                   <h3 className="mt-4 font-display text-[24px] font-medium leading-tight tracking-tight text-zinc-950 md:text-[28px]">
@@ -238,8 +232,8 @@ function CtaBand() {
               Run a session. Tell us what breaks.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              Phase 1 is about you. Real facilitators, real sessions, real feedback. What you tell us
-              now is what shapes Phase 2.
+              Phase 1 is about you. Real facilitators, real sessions, real feedback. What you tell
+              us now is what shapes Phase 2.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link

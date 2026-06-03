@@ -68,9 +68,8 @@ export function IntegrationsCard({ existingLast4, existingUpdatedAt }: Props) {
         Anthropic API key
       </h2>
       <p className="mt-1 text-[13px] text-zinc-600">
-        Used to generate session reports. Stored encrypted; never exposed to the
-        browser. Generation cost (~$0.05 per report) is billed directly to your
-        Anthropic account.
+        Used to generate session reports. Stored encrypted; never exposed to the browser. Generation
+        cost (~$0.05 per report) is billed directly to your Anthropic account.
       </p>
 
       {existingLast4 ? (

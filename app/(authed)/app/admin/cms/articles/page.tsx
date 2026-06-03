@@ -30,9 +30,7 @@ export default async function ArticlesIndexPage() {
     <div className="space-y-6">
       <header className="flex items-end justify-between gap-4">
         <div className="space-y-1">
-          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            CMS
-          </div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">CMS</div>
           <h1 className="font-serif text-3xl tracking-tight text-zinc-900">Articles</h1>
           <p className="text-[14px] text-zinc-600">
             Drafts stay invisible to the public until you publish. Published articles are readable

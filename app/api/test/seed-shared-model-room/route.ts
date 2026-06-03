@@ -71,8 +71,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!Array.isArray(body.memberProfileIds) || body.memberProfileIds.length === 0) {
     return NextResponse.json({ error: 'invalid_members' }, { status: 400 });
   }
-  const memberIds = body.memberProfileIds
-    .filter((v): v is string => typeof v === 'string' && UUID_PATTERN.test(v));
+  const memberIds = body.memberProfileIds.filter(
+    (v): v is string => typeof v === 'string' && UUID_PATTERN.test(v),
+  );
   if (memberIds.length !== body.memberProfileIds.length) {
     return NextResponse.json({ error: 'invalid_members' }, { status: 400 });
   }

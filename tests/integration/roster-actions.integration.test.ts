@@ -74,17 +74,15 @@ let fx: Fixture;
  */
 async function ensureActiveParticipant(user: TestUser): Promise<void> {
   const admin = getAdminClient();
-  const res = await admin
-    .from('session_participants')
-    .upsert(
-      {
-        session_id: fx.session.id,
-        profile_id: user.id,
-        removed_at: null,
-        removed_by_profile_id: null,
-      },
-      { onConflict: 'session_id,profile_id' },
-    );
+  const res = await admin.from('session_participants').upsert(
+    {
+      session_id: fx.session.id,
+      profile_id: user.id,
+      removed_at: null,
+      removed_by_profile_id: null,
+    },
+    { onConflict: 'session_id,profile_id' },
+  );
   if (res.error) throw new Error(`ensureActiveParticipant failed: ${res.error.message}`);
 }
 
@@ -100,7 +98,11 @@ async function softDeleteParticipant(user: TestUser): Promise<void> {
 }
 
 /** Seed a stage_rooms row + a stage_room_members row pinning `user` to it. */
-async function seedRoomMembership(user: TestUser, stageId: string, position: number): Promise<string> {
+async function seedRoomMembership(
+  user: TestUser,
+  stageId: string,
+  position: number,
+): Promise<string> {
   const admin = getAdminClient();
   const roomRes = await admin
     .from('stage_rooms')
@@ -407,10 +409,7 @@ describe('resolveSpotlightTargetModelAction', () => {
 
   test('returns no_current_stage when the session has no current stage set', async () => {
     currentClient = await signInAs(fx.facilitator);
-    const result = await resolveSpotlightTargetModelAction(
-      fx.blankStageSession.id,
-      fx.alice.id,
-    );
+    const result = await resolveSpotlightTargetModelAction(fx.blankStageSession.id, fx.alice.id);
     expect(result).toEqual({ ok: false, code: 'no_current_stage' });
   });
 
@@ -634,7 +633,11 @@ describe('cancelInvitationAction', () => {
     const admin = getAdminClient();
     const insertRes = await admin
       .from('session_invitations')
-      .insert({ session_id: fx.session.id, email: freshInviteEmail(), invited_by: fx.facilitator.id })
+      .insert({
+        session_id: fx.session.id,
+        email: freshInviteEmail(),
+        invited_by: fx.facilitator.id,
+      })
       .select('id')
       .single();
     if (insertRes.error || !insertRes.data) {

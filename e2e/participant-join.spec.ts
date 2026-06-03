@@ -56,10 +56,7 @@ interface ContextSetup {
   userId: string;
 }
 
-async function newSignedInContext(
-  facilitatorPage: Page,
-  label: string,
-): Promise<ContextSetup> {
+async function newSignedInContext(facilitatorPage: Page, label: string): Promise<ContextSetup> {
   const browser = facilitatorPage.context().browser();
   if (!browser) throw new Error('browser missing');
   const context = await browser.newContext();

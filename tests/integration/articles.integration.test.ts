@@ -80,10 +80,7 @@ beforeAll(async () => {
     outsider: await createTestUser(),
   };
   const admin = getAdminClient();
-  const flip = await admin
-    .from('profiles')
-    .update({ is_site_admin: true })
-    .eq('id', fx.admin.id);
+  const flip = await admin.from('profiles').update({ is_site_admin: true }).eq('id', fx.admin.id);
   if (flip.error) throw new Error(`Could not flip is_site_admin: ${flip.error.message}`);
 });
 
@@ -260,11 +257,7 @@ describe('non-admin direct DB writes are blocked by RLS', () => {
 
   test('outsider DELETE is refused or affects zero rows', async () => {
     const admin = getAdminClient();
-    const row = await admin
-      .from('articles')
-      .select('id')
-      .eq('slug', 'first-article')
-      .single();
+    const row = await admin.from('articles').select('id').eq('slug', 'first-article').single();
     const id = row.data!.id as string;
 
     const outsider = await signInAs(fx.outsider);
@@ -279,11 +272,7 @@ describe('non-admin direct DB writes are blocked by RLS', () => {
 describe('updateArticleAction', () => {
   test('admin can update title and body', async () => {
     const admin = getAdminClient();
-    const row = await admin
-      .from('articles')
-      .select('id')
-      .eq('slug', 'first-article')
-      .single();
+    const row = await admin.from('articles').select('id').eq('slug', 'first-article').single();
     const id = row.data!.id as string;
 
     currentClient = await signInAs(fx.admin);
@@ -307,11 +296,7 @@ describe('updateArticleAction', () => {
 
   test('non-admin update via action is rejected with forbidden', async () => {
     const admin = getAdminClient();
-    const row = await admin
-      .from('articles')
-      .select('id')
-      .eq('slug', 'first-article')
-      .single();
+    const row = await admin.from('articles').select('id').eq('slug', 'first-article').single();
     const id = row.data!.id as string;
 
     currentClient = await signInAs(fx.outsider);
@@ -325,11 +310,7 @@ describe('updateArticleAction', () => {
 describe('deleteArticleAction', () => {
   test('non-admin delete is rejected; row survives', async () => {
     const admin = getAdminClient();
-    const row = await admin
-      .from('articles')
-      .select('id')
-      .eq('slug', 'first-article')
-      .single();
+    const row = await admin.from('articles').select('id').eq('slug', 'first-article').single();
     const id = row.data!.id as string;
 
     currentClient = await signInAs(fx.outsider);
@@ -343,11 +324,7 @@ describe('deleteArticleAction', () => {
 
   test('admin delete removes the row', async () => {
     const admin = getAdminClient();
-    const row = await admin
-      .from('articles')
-      .select('id')
-      .eq('slug', 'first-article')
-      .single();
+    const row = await admin.from('articles').select('id').eq('slug', 'first-article').single();
     const id = row.data!.id as string;
 
     currentClient = await signInAs(fx.admin);
@@ -389,16 +366,20 @@ describe('updateArticleAction — editable published date', () => {
     expect(pub.ok).toBe(true);
 
     const result = await updateArticleAction(
-      fdFor({ id: createdId, title: 'Date Edit', slug: 'date-edit', body: 'x', publishedDate: '2020-01-15' }),
+      fdFor({
+        id: createdId,
+        title: 'Date Edit',
+        slug: 'date-edit',
+        body: 'x',
+        publishedDate: '2020-01-15',
+      }),
     );
     expect(result.ok).toBe(true);
 
-    const verify = await admin
-      .from('articles')
-      .select('published_at')
-      .eq('id', createdId)
-      .single();
-    expect(new Date(verify.data!.published_at as string).toISOString()).toBe('2020-01-15T12:00:00.000Z');
+    const verify = await admin.from('articles').select('published_at').eq('id', createdId).single();
+    expect(new Date(verify.data!.published_at as string).toISOString()).toBe(
+      '2020-01-15T12:00:00.000Z',
+    );
   });
 
   test('ignores publishedDate on a draft (published_at stays null)', async () => {
@@ -414,7 +395,13 @@ describe('updateArticleAction — editable published date', () => {
     createdArticleIds.push(id);
 
     const result = await updateArticleAction(
-      fdFor({ id, title: 'Draft Date', slug: 'draft-date', body: 'x', publishedDate: '2020-01-15' }),
+      fdFor({
+        id,
+        title: 'Draft Date',
+        slug: 'draft-date',
+        body: 'x',
+        publishedDate: '2020-01-15',
+      }),
     );
     expect(result.ok).toBe(true);
 
@@ -464,11 +451,7 @@ describe('updateArticleAction — editable published date', () => {
     );
     expect(result.ok).toBe(true);
 
-    const after = await admin
-      .from('articles')
-      .select('title, published_at')
-      .eq('id', id)
-      .single();
+    const after = await admin.from('articles').select('title, published_at').eq('id', id).single();
     expect(after.data!.published_at).toBe(originalPublishedAt);
     expect(after.data!.title).toBe('Keep Date (edited)');
   });

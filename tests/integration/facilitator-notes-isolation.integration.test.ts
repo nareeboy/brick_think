@@ -13,7 +13,8 @@ const ALLOWLIST = new Set<string>([
 async function walk(dir: string, out: string[] = []): Promise<string[]> {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   for (const entry of entries) {
-    if (entry.name === 'node_modules' || entry.name === '.next' || entry.name.startsWith('.')) continue;
+    if (entry.name === 'node_modules' || entry.name === '.next' || entry.name.startsWith('.'))
+      continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) await walk(full, out);
     else if (/\.(tsx|ts)$/.test(entry.name)) out.push(full);

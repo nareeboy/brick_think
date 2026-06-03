@@ -42,8 +42,8 @@ function Hero({ count }: { count: number }) {
             <span className="text-[#c0613d]">workshop floor</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
-            Short pieces on LEGO® SERIOUS PLAY®, remote facilitation, and how this product is built. No
-            growth hacks. No SEO loops. Just things we&apos;ve learned and want to share.
+            Short pieces on LEGO® SERIOUS PLAY®, remote facilitation, and how this product is built.
+            No growth hacks. No SEO loops. Just things we&apos;ve learned and want to share.
           </p>
         </div>
         <aside className="md:col-span-4">

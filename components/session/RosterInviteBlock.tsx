@@ -12,9 +12,7 @@ interface Props {
 }
 
 function getSiteUrl(): string {
-  return typeof window !== 'undefined'
-    ? window.location.origin
-    : 'https://www.brickthink.io';
+  return typeof window !== 'undefined' ? window.location.origin : 'https://www.brickthink.io';
 }
 
 export function RosterInviteBlock({ sessionId, joinCode }: Props) {
@@ -22,9 +20,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
   const [emails, setEmails] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [copied, setCopied] = useState(false);
-  const [results, setResults] = useState<
-    Array<{ email: string; status: string }> | null
-  >(null);
+  const [results, setResults] = useState<Array<{ email: string; status: string }> | null>(null);
   const [pending, startTransition] = useTransition();
   const [rotateConfirming, setRotateConfirming] = useState(false);
   const [rotatePending, setRotatePending] = useState(false);
@@ -94,9 +90,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
     });
   }
 
-  function friendlyStatusLabel(
-    status: string,
-  ): string {
+  function friendlyStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       sent_invite: 'sent invite',
       sent_magiclink: 'sent magic link',
@@ -144,7 +138,16 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
             title="Generate a new code — any pending email invites stop working"
             className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
           >
-            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
               <path d="M3 12a9 9 0 0 1 15.5-6.36L21 8" />
               <path d="M21 3v5h-5" />
               <path d="M21 12a9 9 0 0 1-15.5 6.36L3 16" />
@@ -160,10 +163,10 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
           title="Rotate join code?"
           description={
             <>
-              A new code will replace <span className="font-mono font-semibold text-zinc-900">{joinCode}</span>.
-              Any previously-shared invite links and unclaimed email invites
-              will stop working. You can resend invites with the new code
-              afterwards.
+              A new code will replace{' '}
+              <span className="font-mono font-semibold text-zinc-900">{joinCode}</span>. Any
+              previously-shared invite links and unclaimed email invites will stop working. You can
+              resend invites with the new code afterwards.
             </>
           }
           confirmLabel="Rotate code"
@@ -178,8 +181,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
       <div className="flex flex-col gap-2">
         <p className="text-[13px] font-semibold text-zinc-700">Invite by email</p>
         <p className="text-[12px] text-zinc-500">
-          Anyone with the code can join. Or send a magic-link invite to specific
-          emails.
+          Anyone with the code can join. Or send a magic-link invite to specific emails.
         </p>
 
         {/* Chip list + input */}

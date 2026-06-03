@@ -1,8 +1,4 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-} from 'node:crypto';
+import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 const KEY_LENGTH = 32;
 const NONCE_LENGTH = 12;

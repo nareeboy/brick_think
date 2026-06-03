@@ -227,11 +227,7 @@ describe('setDownstreamStageRooms (integration)', () => {
     const sysRoomId = sysRes.data.roomIds[0]!;
 
     const admin = getAdminClient();
-    const sysModelRes = await admin
-      .from('models')
-      .select('id')
-      .eq('room_id', sysRoomId)
-      .single();
+    const sysModelRes = await admin.from('models').select('id').eq('room_id', sysRoomId).single();
     const sysModelId = sysModelRes.data?.id as string;
 
     const aliceCheck = await admin.rpc('can_edit_room', {
@@ -265,11 +261,7 @@ describe('setDownstreamStageRooms (integration)', () => {
     const gpRoomId = gpRes.data.roomIds[0]!;
 
     const admin = getAdminClient();
-    const gpModelRes = await admin
-      .from('models')
-      .select('id')
-      .eq('room_id', gpRoomId)
-      .single();
+    const gpModelRes = await admin.from('models').select('id').eq('room_id', gpRoomId).single();
     const gpModelId = gpModelRes.data?.id as string;
 
     const aliceCheck = await admin.rpc('can_edit_room', {

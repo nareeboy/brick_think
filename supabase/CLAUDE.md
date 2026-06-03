@@ -25,7 +25,6 @@ Four migrations (`20260518120000_stage_runtime_state`, `20260518130000_stages_re
 - `stages` + `sessions` are added to the `supabase_realtime` publication with `REPLICA IDENTITY FULL` so `postgres_changes` UPDATE payloads carry the full row through the participant's RLS filter. **Anything new that needs Realtime row-filtering on UPDATE must also set REPLICA IDENTITY FULL** — without it the OLD record is PK-only and RLS gates can't evaluate.
 - Default per-stage durations come from `STAGE_DEFAULT_DURATIONS_SECONDS` in [lib/sessions/stage-labels.ts](../lib/sessions/stage-labels.ts), applied at `createSession` and `/api/test/seed-session` insert time. The backfill migration patched any pre-existing NULL rows once.
 
-
 ## session_participants + session_invitations + join_code
 
 [migrations/20260520020000_session_participants.sql](migrations/20260520020000_session_participants.sql) and follow-ups introduce the join-code accept flow and facilitator-managed roster for session-level participant discovery.
@@ -47,6 +46,7 @@ Four migrations (`20260518120000_stage_runtime_state`, `20260518130000_stages_re
 
 - `participant_joined` — fired by `redeemJoinCodeAction` when a new participant joins (the facilitator is notified).
 - `session_invitation_claimed` — fired by the auth callback when someone clicks a magic-link in a session invite email and claims the code.
+
 ## Stage rooms data model
 
 [migrations/20260519130000_stage_rooms.sql](migrations/20260519130000_stage_rooms.sql) introduces breakout-group rooms on `shared_model`, `system_model`, and `guiding_principles`. The full UI / server-action surface is documented in [(authed)/CLAUDE.md "Stage rooms (breakout groups)"](<../app/(authed)/CLAUDE.md>); this section covers the schema invariants only.
@@ -108,7 +108,7 @@ Fix: `docker restart supabase_kong_brick_think` to force Kong to re-resolve upst
 
 All email-delivered auth links — magic links, invites, signup confirmation — flow through [/auth/confirm](../app/auth/confirm/route.ts) carrying `?token_hash=…&type=…&next=…`. That route calls `supabase.auth.verifyOtp({ token_hash, type })`, which has no client-side state requirement and so works even when the email is opened in a browser that didn't initiate the flow (mobile in-app webview from a mail client, phone clicking a link sent from a laptop, different browser profile, strict cookie blockers). The legacy `?code=…` PKCE flow on [/auth/callback](../app/auth/callback/route.ts) is now reserved for OAuth only (Google), where the browser context never changes.
 
-**Send-side**: every server-side caller of `signInWithOtp` / `inviteUserByEmail` MUST point its `emailRedirectTo` / `redirectTo` at `${origin}/auth/confirm?next=<encoded path>`, never `/auth/callback`. The email template appends `&token_hash=…&type=…` to whatever URL the caller passed, so the caller controls the `next` query parameter and the template controls the auth-verification parameters. Current callers: [app/sign-in/actions.ts](../app/sign-in/actions.ts), [app/(authed)/app/orgs/actions.ts](../app/\(authed\)/app/orgs/actions.ts), [app/(authed)/app/sessions/roster-actions.ts](../app/\(authed\)/app/sessions/roster-actions.ts).
+**Send-side**: every server-side caller of `signInWithOtp` / `inviteUserByEmail` MUST point its `emailRedirectTo` / `redirectTo` at `${origin}/auth/confirm?next=<encoded path>`, never `/auth/callback`. The email template appends `&token_hash=…&type=…` to whatever URL the caller passed, so the caller controls the `next` query parameter and the template controls the auth-verification parameters. Current callers: [app/sign-in/actions.ts](../app/sign-in/actions.ts), [app/(authed)/app/orgs/actions.ts](<../app/(authed)/app/orgs/actions.ts>), [app/(authed)/app/sessions/roster-actions.ts](<../app/(authed)/app/sessions/roster-actions.ts>).
 
 **Custom email templates** live in [supabase/templates/](templates/) and are wired into the local stack via `[auth.email.template.*]` blocks in [config.toml](config.toml). They render `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=…` as the link href.
 
@@ -138,7 +138,7 @@ Fix, easiest first:
 
 Added 2026-05-19 ([migrations/20260519150000_session_prep_columns.sql](migrations/20260519150000_session_prep_columns.sql)). `jsonb not null default '{}'::jsonb`. Stores explicit facilitator acknowledgments for the pre-session checklist (PRD §5.3).
 
-**Whitelisted keys** — enforced by `updatePreSessionCheckAction` in [../app/(authed)/app/sessions/scenario-actions.ts](../app/\(authed\)/app/sessions/scenario-actions.ts), not at the DB layer. The runtime allowlist lives in [../lib/sessions/preSessionCheck.ts](../lib/sessions/preSessionCheck.ts) so the action file can stay async-only (Next.js `'use server'` disallows non-async exports).
+**Whitelisted keys** — enforced by `updatePreSessionCheckAction` in [../app/(authed)/app/sessions/scenario-actions.ts](<../app/(authed)/app/sessions/scenario-actions.ts>), not at the DB layer. The runtime allowlist lives in [../lib/sessions/preSessionCheck.ts](../lib/sessions/preSessionCheck.ts) so the action file can stay async-only (Next.js `'use server'` disallows non-async exports).
 
 - `a11y_reviewed: boolean` — facilitator confirms they reviewed their accessibility preferences before the workshop.
 
@@ -146,7 +146,7 @@ Added 2026-05-19 ([migrations/20260519150000_session_prep_columns.sql](migration
 
 - `consent_collected: boolean` — recording / story-capture consent confirmed by all participants.
 
-When adding a key: extend `ALLOWED_PRE_SESSION_KEYS` in `lib/sessions/preSessionCheck.ts`, add a row above, and update the matching ChecklistRow in [`PreSessionChecklist.tsx`](../app/\(authed\)/app/sessions/[id]/PreSessionChecklist.tsx). DB-level type checks are intentionally deferred — `jsonb` keeps the bag forward-compatible without per-key migrations.
+When adding a key: extend `ALLOWED_PRE_SESSION_KEYS` in `lib/sessions/preSessionCheck.ts`, add a row above, and update the matching ChecklistRow in [`PreSessionChecklist.tsx`](<../app/(authed)/app/sessions/[id]/PreSessionChecklist.tsx>). DB-level type checks are intentionally deferred — `jsonb` keeps the bag forward-compatible without per-key migrations.
 
 ## `sessions.facilitator_notes` privacy
 
@@ -155,7 +155,7 @@ Single `text` column on `sessions` (`null`able, CHECK `char_length ≤ 8000`) ad
 **Privacy is enforced at the data-access layer, not by RLS.** The existing `sessions` SELECT policy grants any org member the ability to read the row (org members need to see session title / status / current_stage_id to render the page); Postgres can't gate column visibility row-by-row through `select *`. Instead:
 
 - The single read helper [`getFacilitatorNotes(sessionId)`](../lib/sessions/facilitatorNotes.ts) is the **only** function in the codebase that projects `facilitator_notes` from `sessions`. It uses the service-role client, re-asserts `data.facilitator_id === user.id`, and returns `null` for any non-facilitator caller — including org owners and admins.
-- The write path is the equally narrow [`updateFacilitatorNotesAction`](../app/\(authed\)/app/sessions/notes-actions.ts) which re-asserts the same facilitator gate before UPDATE.
+- The write path is the equally narrow [`updateFacilitatorNotesAction`](<../app/(authed)/app/sessions/notes-actions.ts>) which re-asserts the same facilitator gate before UPDATE.
 - A source-grep invariant in [tests/integration/facilitator-notes-isolation.integration.test.ts](../tests/integration/facilitator-notes-isolation.integration.test.ts) walks the repo and asserts that only a small allowlist of files (the helper, the action, `NotesEditor`, and the two surface components) references the `facilitator_notes` literal. If you add a new caller that needs notes, route it through `getFacilitatorNotes` rather than reintroducing the column on a generic `.select()` call — and **never `select('*')` on `sessions`**, the column would tag along (and the source-grep doesn't catch `'*'` directly, so this is on you).
 
 The 8000-char CHECK matches the client `maxLength` in [NotesEditor.tsx](../components/session/NotesEditor.tsx) / [lib/sessions/facilitatorNotesConstants.ts](../lib/sessions/facilitatorNotesConstants.ts) — if you raise one, raise both (and add a migration that drops + re-adds the CHECK with the new cap).
@@ -175,11 +175,11 @@ Two nullable text columns on `stages` let facilitators tailor the canonical prom
 - `stages.scenario_title_override text` (CHECK ≤ 120) — added [migrations/20260520140000_stage_scenario_title_override.sql](migrations/20260520140000_stage_scenario_title_override.sql).
 - `stages.scenario_body_override text` (CHECK ≤ 4000) — added [migrations/20260520120000_stage_scenario_body_override.sql](migrations/20260520120000_stage_scenario_body_override.sql).
 
-Both written atomically by `updateStageScenarioOverridesAction({ title, body })` in [../app/(authed)/app/sessions/scenario-actions.ts](../app/\(authed\)/app/sessions/scenario-actions.ts). The action normalises empty / whitespace / canonical-matching inputs to `NULL` so the override only persists when the facilitator's text genuinely differs from the seed.
+Both written atomically by `updateStageScenarioOverridesAction({ title, body })` in [../app/(authed)/app/sessions/scenario-actions.ts](<../app/(authed)/app/sessions/scenario-actions.ts>). The action normalises empty / whitespace / canonical-matching inputs to `NULL` so the override only persists when the facilitator's text genuinely differs from the seed.
 
 ## Session reports (PDF generation)
 
-After a session ends, the facilitator can generate a branded PDF report on `/app/sessions/<id>` via the `Generate report` button. The pipeline (server action `generateSessionReport` in [../app/(authed)/app/sessions/report-actions.ts](../app/\(authed\)/app/sessions/report-actions.ts)) collects all `models` rows for the session grouped by stage, calls Anthropic Sonnet 4.6 for an exec-summary + per-model descriptions + closing synthesis, renders to PDF via `@react-pdf/renderer` using the brand stylesheet in [../lib/reports/pdf/](../lib/reports/pdf/), uploads to Storage, and returns a 1h signed URL.
+After a session ends, the facilitator can generate a branded PDF report on `/app/sessions/<id>` via the `Generate report` button. The pipeline (server action `generateSessionReport` in [../app/(authed)/app/sessions/report-actions.ts](<../app/(authed)/app/sessions/report-actions.ts>)) collects all `models` rows for the session grouped by stage, calls Anthropic Sonnet 4.6 for an exec-summary + per-model descriptions + closing synthesis, renders to PDF via `@react-pdf/renderer` using the brand stylesheet in [../lib/reports/pdf/](../lib/reports/pdf/), uploads to Storage, and returns a 1h signed URL.
 
 **`public.session_reports`** ([migrations/20260520151000_session_reports.sql](migrations/20260520151000_session_reports.sql)) tracks one row per session with PK `session_id`. Columns: `generation_status` (`pending`/`succeeded`/`failed`), `claude_model`, `pdf_path` (Storage path), `error_code`/`error_message` for failed runs, `included_artifacts jsonb` (forward-compatible manifest — currently `{ models: [], recordings: [], prompts: [] }` so adding recordings/prompts later doesn't require a column migration), `generated_at`, `generated_by` (`profiles.id`, **nullable** with `ON DELETE SET NULL` so the row survives account deletion — see [migrations/20260516120000_profile_fk_set_null.sql](migrations/20260516120000_profile_fk_set_null.sql) for the convention). PK on `session_id` means **regenerate overwrites**: there's no history of past reports, just the latest. RLS: facilitator-of-session reads; service-role writes.
 
@@ -189,12 +189,12 @@ The action runs synchronously inside the Next.js request (10–90s typical). Ant
 
 ## BYO Anthropic key (`user_integrations`)
 
-Per-user Anthropic API key for the report-generation pipeline. Each facilitator pastes their own `sk-ant-…` on [`/app/account`](../app/\(authed\)/app/account/page.tsx) via the IntegrationsCard; the action stores it encrypted under the server-only env var `BRICKTHINK_ENCRYPTION_KEY` (32-byte hex, AES-256-GCM with random 12-byte nonce per row).
+Per-user Anthropic API key for the report-generation pipeline. Each facilitator pastes their own `sk-ant-…` on [`/app/account`](<../app/(authed)/app/account/page.tsx>) via the IntegrationsCard; the action stores it encrypted under the server-only env var `BRICKTHINK_ENCRYPTION_KEY` (32-byte hex, AES-256-GCM with random 12-byte nonce per row).
 
 Two storage gotchas the codebase has been bitten by — keep these in mind for any future encrypted-blob column:
 
 - **Use `text` columns, not `bytea`, for ciphertext + nonce.** The original schema used `bytea` and supabase-js JSON-serialised the `Buffer` values as `{"type":"Buffer","data":[…]}` which got stored as raw ASCII in the bytea column. Decrypt then silently failed on read. Fixed in [migrations/20260520170000_user_integrations_text_columns.sql](migrations/20260520170000_user_integrations_text_columns.sql) by switching to text columns storing base64. Encode at the supabase-js boundary with `Buffer.toString('base64')` on write, `Buffer.from(str, 'base64')` on read.
-- **Surface `decrypt_failed` separately from `no_claude_key`** in any caller. Collapsing both into "no key" hides the real failure mode (almost always: `BRICKTHINK_ENCRYPTION_KEY` rotated between save and read). See `GenerateReportResult` in [../app/(authed)/app/sessions/report-actions.ts](../app/\(authed\)/app/sessions/report-actions.ts).
+- **Surface `decrypt_failed` separately from `no_claude_key`** in any caller. Collapsing both into "no key" hides the real failure mode (almost always: `BRICKTHINK_ENCRYPTION_KEY` rotated between save and read). See `GenerateReportResult` in [../app/(authed)/app/sessions/report-actions.ts](<../app/(authed)/app/sessions/report-actions.ts>).
 
 RLS: a user can read/write their own `user_integrations` row only (`profile_id = auth.uid()`). Service-role bypass is used by the report action's lookup (`getAnthropicClientForProfile` in [../lib/integrations/anthropic.ts](../lib/integrations/anthropic.ts)) — the plaintext key is constructed only there and never logged.
 

@@ -40,7 +40,11 @@ import type { OrgMemberSummary } from './ManageRoomsDialog';
 import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
 import type { Scenario } from '@/lib/scenarios/types';
 
-const ROOM_AWARE_STAGES: Set<StageType> = new Set(['shared_model', 'system_model', 'guiding_principles']);
+const ROOM_AWARE_STAGES: Set<StageType> = new Set([
+  'shared_model',
+  'system_model',
+  'guiding_principles',
+]);
 
 export interface ParticipantModel {
   id: string;
@@ -451,9 +455,7 @@ function ParticipantsPanel({
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
         (payload) => {
-          setSpotlightTargetId(
-            (payload.new?.spotlight_target_profile_id as string | null) ?? null,
-          );
+          setSpotlightTargetId((payload.new?.spotlight_target_profile_id as string | null) ?? null);
         },
       )
       .subscribe();
@@ -730,8 +732,7 @@ function StageTimerControls({
              *  facilitator can cut a stage short. Hidden when the expiry banner
              *  above is already promoting the same action, and on the last stage
              *  (no next stage to advance into). */}
-            {!isLastStage &&
-            !(status === 'active' && remainingMs !== null && remainingMs <= 0) ? (
+            {!isLastStage && !(status === 'active' && remainingMs !== null && remainingMs <= 0) ? (
               <button
                 type="button"
                 onClick={wrap(() => STAGE_ACTIONS.advance(stage.id))}

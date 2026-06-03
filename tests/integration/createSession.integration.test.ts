@@ -98,11 +98,7 @@ describe('createSession', () => {
     const sessionId = match[1] as string;
 
     const admin = getAdminClient();
-    const row = await admin
-      .from('sessions')
-      .select('join_code')
-      .eq('id', sessionId)
-      .single();
+    const row = await admin.from('sessions').select('join_code').eq('id', sessionId).single();
     expect(row.error).toBeNull();
     expect(row.data?.join_code).not.toBeNull();
     // generate_join_code emits a 6-char Crockford-style base32 string

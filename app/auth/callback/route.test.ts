@@ -6,9 +6,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { GET } from './route';
 
-type ExchangeFn = (
-  code: string,
-) => Promise<{ error: { message: string } | null }>;
+type ExchangeFn = (code: string) => Promise<{ error: { message: string } | null }>;
 
 function mockSupabase(exchange: ExchangeFn): void {
   (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -80,9 +78,7 @@ describe('GET /auth/callback — error code classification', () => {
     const exchange = vi.fn();
     mockSupabase(exchange);
 
-    const res = await GET(
-      makeRequest('?error_description=PKCE+code+verifier+not+found') as never,
-    );
+    const res = await GET(makeRequest('?error_description=PKCE+code+verifier+not+found') as never);
 
     expect(exchange).not.toHaveBeenCalled();
     expect(res.headers.get('location')).toBe(

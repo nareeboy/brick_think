@@ -147,9 +147,7 @@ test.describe('facilitator notes — card + drawer + cross-page persistence', ()
       // Session title is visible to org members…
       await expect(participant.page.getByTestId('session-title')).toBeVisible();
       // …but the private-notes heading is facilitator-only.
-      await expect(
-        participant.page.getByRole('heading', { name: 'Private notes' }),
-      ).toHaveCount(0);
+      await expect(participant.page.getByRole('heading', { name: 'Private notes' })).toHaveCount(0);
 
       // And the drawer trigger never mounts on the participant's view of the
       // facilitator-owned canvas either (they're read-only, not the
