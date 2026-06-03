@@ -53,7 +53,10 @@ export function StageTimer({ stage }: Props) {
         {labelText}
       </span>
       {showDigits ? (
-        <span className={`font-mono tabular-nums text-2xl leading-none ${TIMER_CLASSES[variant]}`}>
+        <span
+          suppressHydrationWarning
+          className={`font-mono tabular-nums text-2xl leading-none ${TIMER_CLASSES[variant]}`}
+        >
           {formatRemaining(remaining)}
         </span>
       ) : null}

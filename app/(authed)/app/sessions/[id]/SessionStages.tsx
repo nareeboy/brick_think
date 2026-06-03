@@ -190,7 +190,10 @@ export function SessionStages({
                 Now · Stage {activeStage.position + 1} · {activeLabel}
               </span>
               {activeRemaining !== null ? (
-                <span className="font-mono tabular-nums text-[12px] font-medium text-zinc-900">
+                <span
+                  suppressHydrationWarning
+                  className="font-mono tabular-nums text-[12px] font-medium text-zinc-900"
+                >
                   {formatRemaining(activeRemaining)}
                 </span>
               ) : null}
@@ -1051,6 +1054,7 @@ function Timer({ remainingMs, variant }: { remainingMs: number; variant: TimerVa
   }[variant];
   return (
     <span
+      suppressHydrationWarning
       aria-live={variant === 'active' ? 'polite' : 'off'}
       className={`font-mono tabular-nums text-2xl leading-none ${cls}`}
     >
