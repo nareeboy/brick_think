@@ -317,13 +317,13 @@ function TrademarkSection() {
             The LSP method is open under{' '}
             <span className="font-mono text-[13px] text-[#c0613d]">CC BY-SA 3.0</span>. Anyone can
             teach it. Anyone can build on it. The names{' '}
-            <em className="not-italic font-medium">LEGO</em>,{' '}
-            <em className="not-italic font-medium">SERIOUS PLAY</em>,{' '}
+            <em className="not-italic font-medium">LEGO®</em>,{' '}
+            <em className="not-italic font-medium">SERIOUS PLAY®</em>,{' '}
             <em className="not-italic font-medium">IMAGINOPEDIA</em>, the Minifigure, and the Brick
             and Knob shapes belong to the LEGO Group.
           </p>
           <p>
-            BrickThink uses the method under the open licence. We do not use the LEGO names, brick
+            BrickThink uses the method under the open licence. We do not use the LEGO® names, brick
             designs, or figures. Our 52 tiles are our own — different names, different look.
           </p>
           <p>

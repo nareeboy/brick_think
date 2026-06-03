@@ -68,7 +68,7 @@ export function Footer() {
             <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
           </Link>
           <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-zinc-600">
-            A remote-native platform for the five-stage Serious Play methodology. Built on Next.js,
+            A remote-native platform for the five-stage LEGO® SERIOUS PLAY® methodology. Built on Next.js,
             Supabase and Claude.
           </p>
           <div className="mt-5 flex items-center gap-2">
@@ -169,9 +169,9 @@ export function Footer() {
       <div className="border-t border-zinc-900/10">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-6 py-5 text-[12px] text-zinc-500 md:flex-row md:items-center">
           <div className="max-w-3xl space-y-1">
-            <p>© BrickThink. The Serious Play methodology is referenced under CC BY-SA 3.0.</p>
+            <p>© BrickThink. The LEGO® SERIOUS PLAY® methodology is referenced under CC BY-SA 3.0.</p>
             <p>
-              LEGO, SERIOUS PLAY, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations
+              LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations
               are trademarks of the LEGO Group, which does not sponsor, authorize or endorse this
               product.
             </p>

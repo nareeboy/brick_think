@@ -45,7 +45,7 @@ const ORIGINS = [
   },
   {
     label: 'The bet',
-    body: 'A timed five-stage flow plus a flat brick canvas keeps the method whole. No LEGO bricks. No LEGO name. Same outcomes.',
+    body: 'A timed five-stage flow plus a flat brick canvas keeps the method whole. No LEGO® bricks. No LEGO® name. Same outcomes.',
   },
   {
     label: 'Where we are',
