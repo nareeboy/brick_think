@@ -1,0 +1,66 @@
+name: DB migrate
+
+# Applies supabase/migrations/* to the right Supabase project on merge.
+#
+#   main    -> production project (wreypwrvfpzjyijpyhkb), behind the
+#              `production` GitHub Environment approval gate.
+#   staging -> shared non-prod project (fzlyvqcwjadpmrgprfov), auto.
+#   test    -> shared non-prod project (fzlyvqcwjadpmrgprfov), auto.
+#
+# test and staging share ONE Supabase project, so a push to either branch
+# re-runs `supabase db push` against the same DB (idempotent — already-applied
+# migrations are skipped).
+#
+# Required GitHub secrets (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_ACCESS_TOKEN          PAT for the brick-think Supabase account
+#   SUPABASE_DB_PASSWORD_NONPROD   DB password for fzlyvqcwjadpmrgprfov
+#   SUPABASE_DB_PASSWORD_PROD      DB password for wreypwrvfpzjyijpyhkb
+#
+# The `production` Environment (Settings -> Environments) must have
+# "Required reviewers" enabled — that is the approval gate. Without it the
+# prod job would run unattended, which violates the no-autonomous-prod-push
+# rule in CLAUDE.md.
+
+on:
+  push:
+    branches: [main, staging, test]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  migrate-nonprod:
+    name: Push migrations (test/staging)
+    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_NONPROD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Link to shared non-prod project
+        run: supabase link --project-ref fzlyvqcwjadpmrgprfov
+      - name: Push migrations
+        run: supabase db push
+
+  migrate-prod:
+    name: Push migrations (production)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production # approval gate — required reviewers must approve
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_PROD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Link to production project
+        run: supabase link --project-ref wreypwrvfpzjyijpyhkb
+      - name: Push migrations
+        run: supabase db push
