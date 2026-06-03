@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -6,6 +7,7 @@ import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
 export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 export const LINKEDIN_URL = 'https://www.linkedin.com/company/brickthink';
 export const LEGO_SERIOUS_PLAY_URL = 'https://www.lego.com/en-ch/themes/serious-play';
+export const LSP_DACH_COMMUNITY_URL = 'https://seriousplay.community/dach/';
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
@@ -164,6 +166,24 @@ export function Footer() {
           <p className="mt-2 text-[13px] text-zinc-600">
             WCAG 2.2 AA. GDPR-aligned. EU data residency. Always free.
           </p>
+          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Featured on
+          </p>
+          <a
+            href={LSP_DACH_COMMUNITY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
+          >
+            <Image
+              src="/dach-logo.png"
+              alt="LEGO® SERIOUS PLAY® Community DACH"
+              width={596}
+              height={216}
+              className="h-9 w-auto"
+            />
+            <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
+          </a>
         </div>
       </div>
       <div className="border-t border-zinc-900/10">
