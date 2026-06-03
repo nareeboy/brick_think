@@ -180,7 +180,7 @@ export function Footer() {
               alt="LEGO® SERIOUS PLAY® Community DACH"
               width={596}
               height={216}
-              className="h-9 w-auto"
+              className="h-20 w-56 object-contain"
             />
             <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
           </a>
