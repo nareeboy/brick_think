@@ -327,12 +327,16 @@ function CanvasStage({
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   const [feedbackVisible, toggleFeedback] = useFeedbackVisible();
 
-  // Chrome buttons sit absolutely positioned in the canvas top-right.
-  // Pieces always anchors at right-5; the rest fill slots 72px / 124px /
-  // 176px from the right edge in order. Computing visibility + offsets
-  // here (rather than letting each component hard-code its slot) so a
-  // hidden button — Share on legacy org-shared designs is the only case —
-  // doesn't leave an empty gap; the remaining buttons slide in.
+  // Chrome buttons sit absolutely positioned in the canvas top-right, laid
+  // out right-to-left from a fixed gutter that clears the always-present
+  // Pieces button (right-5). `right` is the distance of a button's right
+  // edge from the container edge, so each one extends leftward by its own
+  // width. We advance a cursor by each button's *real* width (+ gap) rather
+  // than a fixed step, so a wide pill — the facilitator Notes button is
+  // 132px vs 44px for icon-only chrome — pushes its left neighbour fully
+  // clear instead of being overlapped by it. Hidden buttons (Share on
+  // legacy org-shared designs is the only case) consume no space, so the
+  // remaining buttons slide toward the edge with no gap.
   //
   // Share is shown on every session-scoped design (orgId === null) for
   // both owners and viewers; the ShareModal itself owns who can mint links.
@@ -340,34 +344,28 @@ function CanvasStage({
   const showExport = modelId !== null;
   const showNotes = isSessionFacilitator && sessionContext !== null;
   const showFeedbackToggle = reactionsEnabled || commentsEnabled;
-  const SLOT_BASE = 72;
-  const SLOT_STEP = 52;
-  let chromeSlot = 0;
-  const shareRight = showShare ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
-  const exportRight = showExport ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
-  const notesRight = showNotes ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
-  const feedbackToggleRight = showFeedbackToggle ? SLOT_BASE + SLOT_STEP * chromeSlot++ : null;
+  const SLOT_BASE = 72; // clears the Pieces button at right-5 + gap
+  const SLOT_GAP = 8;
+  const ICON_BTN_WIDTH = 44; // h-11 w-11 icon-only chrome
+  const NOTES_BTN_WIDTH = 144; // h-11 pill: px-3.5 + 16px icon + gap-2 + "Private Notes" label
+  let chromeCursor = SLOT_BASE;
+  const placeChrome = (visible: boolean, width: number) => {
+    if (!visible) return null;
+    const right = chromeCursor;
+    chromeCursor += width + SLOT_GAP;
+    return right;
+  };
+  const shareRight = placeChrome(showShare, ICON_BTN_WIDTH);
+  const exportRight = placeChrome(showExport, ICON_BTN_WIDTH);
+  const notesRight = placeChrome(showNotes, NOTES_BTN_WIDTH);
+  const feedbackToggleRight = placeChrome(showFeedbackToggle, ICON_BTN_WIDTH);
 
   // Live-presence avatar strip sits in the same row as the chrome buttons,
-  // just to the left of the leftmost button so it never sits behind them.
-  // Icon-only chrome is 44px wide (h-11 w-11); the Notes pill is wider.
-  const PIECES_RIGHT = 20; // right-5
-  const ICON_BTN_WIDTH = 44;
-  const NOTES_BTN_WIDTH = 132; // h-11 pill with icon + "Private Notes"
+  // just to the left of the leftmost one so it never sits behind them. After
+  // placement the cursor is one gap past the leftmost button's left edge, so
+  // swap that gap for the wider strip gap.
   const STRIP_GAP = 12;
-  let peopleStripRight = PIECES_RIGHT + ICON_BTN_WIDTH + STRIP_GAP;
-  if (shareRight !== null) {
-    peopleStripRight = Math.max(peopleStripRight, shareRight + ICON_BTN_WIDTH + STRIP_GAP);
-  }
-  if (exportRight !== null) {
-    peopleStripRight = Math.max(peopleStripRight, exportRight + ICON_BTN_WIDTH + STRIP_GAP);
-  }
-  if (notesRight !== null) {
-    peopleStripRight = Math.max(peopleStripRight, notesRight + NOTES_BTN_WIDTH + STRIP_GAP);
-  }
-  if (feedbackToggleRight !== null) {
-    peopleStripRight = Math.max(peopleStripRight, feedbackToggleRight + ICON_BTN_WIDTH + STRIP_GAP);
-  }
+  const peopleStripRight = chromeCursor - SLOT_GAP + STRIP_GAP;
 
   return (
     <DragPieceProvider>
