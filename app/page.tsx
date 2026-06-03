@@ -1,5 +1,6 @@
 // marketing landing — root route. cache-bust marker: bt-marketing-2026-05-19
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
@@ -17,6 +18,8 @@ export const metadata: Metadata = { title: 'BrickThink' };
 
 const LSP_DACH_EVENT_URL =
   'https://www.linkedin.com/events/2-treffenderlego-seriousplay-co7467623386521821185/';
+
+const LSP_DACH_COMMUNITY_URL = 'https://seriousplay.community/dach/';
 
 const STAGES = [
   {
@@ -89,6 +92,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <EventBanner />
       <main id="main">
         <Hero />
+        <FeaturedOnBanner />
         <MethodologySection />
         <FeatureBento />
         <PersonasSection />
@@ -225,6 +229,37 @@ function Hero() {
             ))}
           </dl>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function FeaturedOnBanner() {
+  return (
+    <section
+      aria-label="Featured on"
+      className="border-b border-zinc-900/5 bg-[#FAF7F1]"
+    >
+      <div className="mx-auto flex max-w-7xl flex-col items-center gap-5 px-6 py-12 md:py-14">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+          Featured on
+        </p>
+        <a
+          href={LSP_DACH_COMMUNITY_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-4 focus-visible:ring-offset-[#FAF7F1]"
+        >
+          <Image
+            src="/dach-logo.png"
+            alt="LEGO® SERIOUS PLAY® Community DACH"
+            width={596}
+            height={216}
+            className="h-12 w-auto md:h-14"
+            priority
+          />
+          <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
+        </a>
       </div>
     </section>
   );
