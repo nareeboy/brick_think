@@ -30,6 +30,9 @@ describe('facilitator_notes column isolation', () => {
     for (const file of files) {
       const rel = path.relative(root, file);
       if (rel.startsWith('tests/')) continue;
+      // e2e specs are test code (like tests/), not production paths that could
+      // leak the column — they reference the literal only in prose/assertions.
+      if (rel.startsWith('e2e/')) continue;
       if (rel.startsWith('lib/db/types.generated.ts')) continue;
       if (rel.startsWith('supabase/migrations/')) continue;
       if (rel.startsWith('docs/')) continue;
