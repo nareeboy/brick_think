@@ -195,6 +195,46 @@ describe('setSharedModelRooms (integration)', () => {
     expect(bobCanEdit.data).toBe(false);
   });
 
+  test('session facilitator can edit every room even when not a room member', async () => {
+    await wipeRooms();
+    currentClient = await signInAs(fx.facilitator);
+    const res = await setSharedModelRooms({
+      stageId: fx.session.stageIds.shared_model,
+      rooms: [{ profileIds: [fx.alice.id] }, { profileIds: [fx.bob.id] }],
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const admin = getAdminClient();
+    const modelsRes = await admin
+      .from('models')
+      .select('id, room_id')
+      .in('room_id', res.data.roomIds);
+    expect(modelsRes.data).toHaveLength(2);
+
+    // The facilitator partitioned alice and bob into rooms but never added
+    // themselves to either — they are not in stage_room_members at all.
+    const memRes = await admin
+      .from('stage_room_members')
+      .select('profile_id')
+      .in('room_id', res.data.roomIds)
+      .eq('profile_id', fx.facilitator.id);
+    expect(memRes.data).toHaveLength(0);
+
+    // Yet the facilitator must still be able to live-edit every room canvas in
+    // their session — they orchestrate all rooms. can_edit_room is the gate
+    // both the design page (liveMode) and the Yjs worker (WS upgrade) consult,
+    // so it must grant the session facilitator.
+    for (const m of modelsRes.data ?? []) {
+      const facCanEdit = await admin.rpc('can_edit_room', {
+        p_profile_id: fx.facilitator.id,
+        p_model_id: m.id,
+      });
+      expect(facCanEdit.error).toBeNull();
+      expect(facCanEdit.data).toBe(true);
+    }
+  });
+
   test('subsequent call replaces prior rooms entirely', async () => {
     await wipeRooms();
     currentClient = await signInAs(fx.facilitator);
