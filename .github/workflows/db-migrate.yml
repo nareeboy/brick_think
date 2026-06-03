@@ -11,10 +11,17 @@ name: DB migrate
 # re-runs `supabase db push` against the same DB (idempotent — already-applied
 # migrations are skipped).
 #
-# Required GitHub secrets (Settings -> Secrets and variables -> Actions):
-#   SUPABASE_ACCESS_TOKEN          PAT for the brick-think Supabase account
-#   SUPABASE_DB_PASSWORD_NONPROD   DB password for fzlyvqcwjadpmrgprfov
-#   SUPABASE_DB_PASSWORD_PROD      DB password for wreypwrvfpzjyijpyhkb
+# Connection: we push via the project's Session Pooler URL (--db-url), NOT
+# `supabase link` + direct connection. Supabase direct connections
+# (db.<ref>.supabase.co:5432) are IPv6-only, and GitHub-hosted runners have
+# no IPv6 — `supabase db push --linked` fails with "IPv6 is not supported on
+# your current network". The Session Pooler (aws-<n>-<region>.pooler.supabase.com:5432)
+# is IPv4. Same rationale as WORKER_DATABASE_URL in CLAUDE.md.
+#
+# Required GitHub secrets (Settings -> Secrets and variables -> Actions) —
+# each is a full Session Pooler connection string (port 5432, password embedded):
+#   SUPABASE_DB_URL_NONPROD   pooler URL for fzlyvqcwjadpmrgprfov
+#   SUPABASE_DB_URL_PROD      pooler URL for wreypwrvfpzjyijpyhkb
 #
 # The `production` Environment (Settings -> Environments) must have
 # "Required reviewers" enabled — that is the approval gate. Without it the
@@ -34,33 +41,27 @@ jobs:
     name: Push migrations (test/staging)
     if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test'
     runs-on: ubuntu-latest
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_NONPROD }}
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Link to shared non-prod project
-        run: supabase link --project-ref fzlyvqcwjadpmrgprfov
-      - name: Push migrations
-        run: supabase db push
+      - name: Push migrations (via IPv4 session pooler)
+        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_NONPROD }}
 
   migrate-prod:
     name: Push migrations (production)
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production # approval gate — required reviewers must approve
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD_PROD }}
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Link to production project
-        run: supabase link --project-ref wreypwrvfpzjyijpyhkb
-      - name: Push migrations
-        run: supabase db push
+      - name: Push migrations (via IPv4 session pooler)
+        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_PROD }}
