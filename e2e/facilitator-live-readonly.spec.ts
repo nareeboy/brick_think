@@ -173,9 +173,7 @@ test.describe('facilitator live read-only view', () => {
       // !readOnly so a facilitator can observe but never move or remove pieces.
       await facBrick.focus();
       await facilitatorPage.keyboard.press('Enter'); // select the brick
-      await expect(
-        facilitatorPage.getByRole('button', { name: /delete piece/i }),
-      ).toHaveCount(0);
+      await expect(facilitatorPage.getByRole('button', { name: /delete piece/i })).toHaveCount(0);
 
       // Pressing Delete on the selected brick must be a no-op — the piece stays.
       await facBrick.focus();
