@@ -30,6 +30,8 @@ import { ExportMenu } from '@/components/exports/ExportMenu';
 import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
 import type { CommentRow, ReactionRow } from '@/lib/brickFeedback/loadInitial';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
+import { canShareDesign } from '@/lib/share/canShareDesign';
+import { canSaveModelVersion } from '@/lib/models/canSaveModelVersion';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
@@ -125,6 +127,7 @@ export function Builder({
                 readOnly={readOnly}
                 ownerLabel={ownerLabel}
                 sessionContext={sessionContext}
+                canSaveVersion={canSaveModelVersion({ roomBacked, isSessionFacilitator })}
               />
               <CanvasStage
                 orgId={orgId}
@@ -153,10 +156,12 @@ function UnifiedSidebar({
   readOnly,
   ownerLabel,
   sessionContext,
+  canSaveVersion,
 }: {
   readOnly: boolean;
   ownerLabel: string | null;
   sessionContext: SessionContext | null;
+  canSaveVersion: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -210,19 +215,23 @@ function UnifiedSidebar({
         </div>
         <LayersPanel />
         <BringInPreviousModelReopenButton />
-        <SaveBuildButton />
+        <SaveBuildButton canSaveVersion={canSaveVersion} />
       </div>
     </aside>
   );
 }
 
-function SaveBuildButton() {
+function SaveBuildButton({ canSaveVersion }: { canSaveVersion: boolean }) {
   const { modelId, groups, bricks, readOnly } = useBuilderState();
   const [open, setOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
 
   if (!modelId) return null;
   if (readOnly) return null;
+  // Saving a version is owner-only at the RLS layer. On a room-backed canvas
+  // attendees can edit live but can't write a version (the insert 500s), so the
+  // button is hidden for everyone but the facilitator there.
+  if (!canSaveVersion) return null;
 
   return (
     <>
@@ -346,12 +355,17 @@ function CanvasStage({
   // than a fixed step, so a wide pill — the facilitator Notes button is
   // 132px vs 44px for icon-only chrome — pushes its left neighbour fully
   // clear instead of being overlapped by it. Hidden buttons (Share on
-  // legacy org-shared designs is the only case) consume no space, so the
+  // org-shared and session-scoped designs) consume no space, so the
   // remaining buttons slide toward the edge with no gap.
   //
-  // Share is shown on every session-scoped design (orgId === null) for
-  // both owners and viewers; the ShareModal itself owns who can mint links.
-  const showShare = modelId !== null && orgId === null;
+  // Share links exist for personal designs only. Org-shared and session-scoped
+  // designs are not externally shareable — `createShareLink` throws on both —
+  // so the button stays hidden there to avoid a guaranteed error on click.
+  const showShare = canShareDesign({
+    hasModel: modelId !== null,
+    orgId,
+    inSession: sessionContext !== null,
+  });
   const showExport = modelId !== null;
   const showNotes = isSessionFacilitator && sessionContext !== null;
   const showFeedbackToggle = reactionsEnabled || commentsEnabled;
