@@ -38,10 +38,7 @@ vi.mock('@/lib/db/server', () => ({
 }));
 
 import { updateFacilitatorNotesAction } from '@/app/(authed)/app/sessions/notes-actions';
-import {
-  FACILITATOR_NOTES_MAX,
-  getFacilitatorNotes,
-} from '@/lib/sessions/facilitatorNotes';
+import { FACILITATOR_NOTES_MAX, getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
 
 interface Fixture {
   facilitator: TestUser;
@@ -104,10 +101,7 @@ describe('updateFacilitatorNotesAction + getFacilitatorNotes', () => {
 
   test('whitespace-only string normalises to null', async () => {
     const admin = getAdminClient();
-    await admin
-      .from('sessions')
-      .update({ facilitator_notes: 'something' })
-      .eq('id', fx.session.id);
+    await admin.from('sessions').update({ facilitator_notes: 'something' }).eq('id', fx.session.id);
 
     currentClient = await signInAs(fx.facilitator);
     expect(await updateFacilitatorNotesAction(fx.session.id, '   \n\t  ')).toEqual({ ok: true });
@@ -198,10 +192,7 @@ describe('updateFacilitatorNotesAction + getFacilitatorNotes', () => {
 
   test('unknown session id: action returns session_not_found', async () => {
     currentClient = await signInAs(fx.facilitator);
-    const result = await updateFacilitatorNotesAction(
-      '00000000-0000-0000-0000-000000000000',
-      'x',
-    );
+    const result = await updateFacilitatorNotesAction('00000000-0000-0000-0000-000000000000', 'x');
     expect(result).toEqual({ ok: false, code: 'session_not_found' });
   });
 

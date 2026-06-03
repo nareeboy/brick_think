@@ -205,11 +205,7 @@ export default async function SessionDetailPage({
     let roomSources: { room_id: string; source_room_id: string }[] = [];
     if (roomIds.length > 0) {
       const [modelsForRooms, membersForRooms, sourcesForRooms] = await Promise.all([
-        supabase
-          .from('models')
-          .select('id, room_id')
-          .in('room_id', roomIds)
-          .is('deleted_at', null),
+        supabase.from('models').select('id, room_id').in('room_id', roomIds).is('deleted_at', null),
         supabase.from('stage_room_members').select('room_id, profile_id').in('room_id', roomIds),
         supabase
           .from('stage_room_sources')
@@ -340,9 +336,7 @@ export default async function SessionDetailPage({
     throw new Error(`Failed to load org members: ${orgMembersRes.error.message}`);
   }
   if (sessionParticipantsRes.error) {
-    throw new Error(
-      `Failed to load session participants: ${sessionParticipantsRes.error.message}`,
-    );
+    throw new Error(`Failed to load session participants: ${sessionParticipantsRes.error.message}`);
   }
   const memberById = new Map<string, OrgMemberSummary>();
   const addRow = (row: {
@@ -393,7 +387,7 @@ export default async function SessionDetailPage({
   const pickedScenarioByStageId: Record<string, Scenario | null> = {};
   for (const stage of stages) {
     pickedScenarioByStageId[stage.id] = stage.scenario_id
-      ? scenarioById.get(stage.scenario_id) ?? null
+      ? (scenarioById.get(stage.scenario_id) ?? null)
       : null;
   }
 
@@ -468,9 +462,7 @@ export default async function SessionDetailPage({
                 {session.status === 'completed' ? (
                   <GenerateReportButton
                     sessionId={session.id}
-                    initialPdfUrl={
-                      reportLatest && reportLatest.ok ? reportLatest.pdfUrl : null
-                    }
+                    initialPdfUrl={reportLatest && reportLatest.ok ? reportLatest.pdfUrl : null}
                     initialGeneratedAt={
                       reportLatest && reportLatest.ok ? reportLatest.generatedAt : null
                     }

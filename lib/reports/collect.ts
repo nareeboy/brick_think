@@ -30,11 +30,13 @@ export async function collectSession(
 ): Promise<CollectedSession | null> {
   const { data: session, error: sErr } = await svc
     .from('sessions')
-    .select(`
+    .select(
+      `
       id, title, org_id, created_at,
       org:organisations!sessions_org_id_fkey ( name ),
       facilitator:profiles!sessions_facilitator_id_fkey ( full_name )
-    `)
+    `,
+    )
     .eq('id', sessionId)
     .single();
   if (sErr || !session) return null;
@@ -46,18 +48,23 @@ export async function collectSession(
   if (stErr) throw new Error(stErr.message);
 
   const stageTypeById = new Map<string, StageType>(
-    (stages ?? []).map((s: { id: string; stage_type: string }) => [s.id, s.stage_type as StageType]),
+    (stages ?? []).map((s: { id: string; stage_type: string }) => [
+      s.id,
+      s.stage_type as StageType,
+    ]),
   );
 
   const { data: models, error: mErr } = await svc
     .from('models')
-    .select(`
+    .select(
+      `
       id, title, canvas_state, thumbnail_path, stage_id, room_id, owner_profile_id,
       profile:profiles!models_owner_profile_id_fkey ( full_name ),
       room:stage_rooms ( id, title,
         members:stage_room_members ( profile:profiles ( full_name ) )
       )
-    `)
+    `,
+    )
     .eq('session_id', sessionId);
   if (mErr) throw new Error(mErr.message);
 
@@ -118,7 +125,7 @@ export async function collectSession(
       stageType,
       title: m.title ?? 'Untitled',
       canvasState,
-      thumbnailUrl: m.thumbnail_path ? urlByPath.get(m.thumbnail_path) ?? null : null,
+      thumbnailUrl: m.thumbnail_path ? (urlByPath.get(m.thumbnail_path) ?? null) : null,
       ownerLabel,
       extractedText,
     });
@@ -132,7 +139,8 @@ export async function collectSession(
 
   const orgName = (session.org as unknown as { name: string } | null)?.name ?? 'Unknown org';
   const facilitatorName =
-    (session.facilitator as unknown as { full_name: string | null } | null)?.full_name ?? 'Facilitator';
+    (session.facilitator as unknown as { full_name: string | null } | null)?.full_name ??
+    'Facilitator';
 
   return {
     sessionId: session.id,

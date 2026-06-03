@@ -44,9 +44,7 @@ export function PreSessionChecklist({
   scenariosByStageType,
 }: Props) {
   const [draftBrief, setDraftBrief] = useState(briefText);
-  const [a11yReviewed, setA11yReviewed] = useState<boolean>(
-    preSessionCheck.a11y_reviewed === true,
-  );
+  const [a11yReviewed, setA11yReviewed] = useState<boolean>(preSessionCheck.a11y_reviewed === true);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<string | null>('brief');
@@ -87,7 +85,7 @@ export function PreSessionChecklist({
     });
   }
 
-  const pickerStage = pickerStageId ? stages.find((s) => s.id === pickerStageId) ?? null : null;
+  const pickerStage = pickerStageId ? (stages.find((s) => s.id === pickerStageId) ?? null) : null;
 
   return (
     <section
@@ -187,8 +185,8 @@ export function PreSessionChecklist({
             >
               accessibility preferences
             </Link>{' '}
-            before the workshop. Colourblind mode is available now; captions and timer pacing
-            arrive with Phase 2.
+            before the workshop. Colourblind mode is available now; captions and timer pacing arrive
+            with Phase 2.
           </p>
         </ChecklistRow>
       </ul>

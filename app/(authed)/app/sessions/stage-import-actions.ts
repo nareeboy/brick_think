@@ -145,11 +145,7 @@ export async function bringInPreviousModel(targetModelId: string): Promise<Bring
 
   // Autosave-backed branch (individual_model | system_model | guiding_principles).
   // Re-read target canvas under service-role; assert emptiness.
-  const recheck = await svc
-    .from('models')
-    .select('canvas_state')
-    .eq('id', targetModelId)
-    .single();
+  const recheck = await svc.from('models').select('canvas_state').eq('id', targetModelId).single();
   if (recheck.error || !recheck.data) {
     throw new Error(`bringInPreviousModel: target recheck failed: ${recheck.error?.message}`);
   }

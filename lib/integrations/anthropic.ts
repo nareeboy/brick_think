@@ -7,9 +7,7 @@ export type AnthropicLookupFailure =
   | { ok: false; code: 'no_claude_key' }
   | { ok: false; code: 'decrypt_failed'; message: string };
 
-export type AnthropicLookupResult =
-  | { ok: true; client: Anthropic }
-  | AnthropicLookupFailure;
+export type AnthropicLookupResult = { ok: true; client: Anthropic } | AnthropicLookupFailure;
 
 /**
  * Look up the profile's encrypted Anthropic key, decrypt it, and return a
@@ -54,9 +52,9 @@ export async function getAnthropicClientForProfile(
  * Quick live-test of a raw key — used by the account UI to validate before
  * persisting. Sends a 1-token Haiku call (cheapest possible round-trip).
  */
-export async function testAnthropicKey(apiKey: string): Promise<
-  { ok: true } | { ok: false; code: 'invalid_key' | 'network_error'; message: string }
-> {
+export async function testAnthropicKey(
+  apiKey: string,
+): Promise<{ ok: true } | { ok: false; code: 'invalid_key' | 'network_error'; message: string }> {
   const client = new Anthropic({ apiKey });
   try {
     await client.messages.create({

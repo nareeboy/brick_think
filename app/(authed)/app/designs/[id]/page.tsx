@@ -81,9 +81,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         .maybeSingle(),
       supabase
         .from('stages')
-        .select(
-          'id, stage_type, scenario_id, scenario_title_override, scenario_body_override',
-        )
+        .select('id, stage_type, scenario_id, scenario_title_override, scenario_body_override')
         .eq('id', data.stage_id)
         .maybeSingle(),
     ]);
@@ -106,7 +104,8 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
           const bodyOverride = stageRes.data.scenario_body_override?.trim();
           scenario = {
             stageType: stageRes.data.stage_type as StageType,
-            title: titleOverride && titleOverride.length > 0 ? titleOverride : scenarioRes.data.title,
+            title:
+              titleOverride && titleOverride.length > 0 ? titleOverride : scenarioRes.data.title,
             body: bodyOverride && bodyOverride.length > 0 ? bodyOverride : scenarioRes.data.body,
           };
         }
@@ -183,7 +182,9 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      {data.session_id && user && <SpotlightBanner sessionId={data.session_id} viewerProfileId={user.id} />}
+      {data.session_id && user && (
+        <SpotlightBanner sessionId={data.session_id} viewerProfileId={user.id} />
+      )}
       <Builder
         initialModel={initialModel}
         readOnly={readOnly}

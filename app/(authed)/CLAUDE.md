@@ -21,8 +21,8 @@ Site-admin-only blogging surface. Reached via the admin area at `/app/admin` ([A
 - **Public surface.** [/articles](../articles/page.tsx) (index, ordered `published_at DESC`) and [/articles/[slug]](../articles/[slug]/page.tsx). Anon can read `status='published'` rows only (RLS). Published date renders **date-only** `en-GB` via [../../lib/articles/format.ts](../../lib/articles/format.ts) `formatPublishedDate`.
 - **Server actions** ([actions.ts](app/admin/cms/articles/actions.ts)) — all gated by `requireAdmin()` (defence-in-depth on top of RLS), returning the discriminated `ArticleActionResult` union; the editor maps `result.code` → copy via `CODE_MESSAGES`. `createArticleAction` (inserts a `draft`, redirects to the editor), `updateArticleAction`, `publishArticleAction` (sets `status='published'` + `published_at=now()` on first publish), `unpublishArticleAction` (flips status back, **keeps** `published_at`), `deleteArticleAction`, `uploadCoverImageAction` / `removeCoverImageAction`.
 - **Body is Markdown.** Plain `<textarea>` (no rich-text, no image upload). Rendered through a hand-rolled safe subset in [../../lib/articles/markdown.ts](../../lib/articles/markdown.ts) (headings, lists, blockquotes, fenced/inline code, bold/italic, links — everything else escaped, so `dangerouslySetInnerHTML` on trusted admin content is safe). Images/tables are a deliberate follow-up.
-- **Cover image** ([CoverImageField](app/admin/cms/articles/CoverImageField.tsx)). Accepts **PNG or JPG** ≤ 2 MB; the action validates MIME *and* sniffs magic bytes ([../../lib/images/validatePng.ts](../../lib/images/validatePng.ts) / [validateJpeg.ts](../../lib/images/validateJpeg.ts)) before upserting to `article-covers/${userId}/${id}.${ext}` with `cacheControl: '0'`. Optional photographer / source attribution (`cover_credit_*` columns) renders under the cover on the public page; credit URLs must be absolute http(s).
-  - **Server Action body limit gotcha.** The 2 MB cover cap only works because [../../next.config.ts](../../next.config.ts) sets `experimental.serverActions.bodySizeLimit: '4mb'`. Next.js defaults Server Action request bodies to **1 MB** — without the override, a 1–2 MB cover (typical photo JPG) is rejected by the runtime *before* `uploadCoverImageAction` runs, surfacing as a hard **500** on the POST ("An error occurred in the Server Components render"), not the action's graceful `invalid_cover` result. Smaller PNGs slip under 1 MB, which makes it look JPG-specific when it isn't. Keep `bodySizeLimit` above `ARTICLE_COVER_MAX_BYTES` (with multipart-overhead headroom) if you change either. The limit is baked at build time — a change needs a fresh Railway deploy to take effect.
+- **Cover image** ([CoverImageField](app/admin/cms/articles/CoverImageField.tsx)). Accepts **PNG or JPG** ≤ 2 MB; the action validates MIME _and_ sniffs magic bytes ([../../lib/images/validatePng.ts](../../lib/images/validatePng.ts) / [validateJpeg.ts](../../lib/images/validateJpeg.ts)) before upserting to `article-covers/${userId}/${id}.${ext}` with `cacheControl: '0'`. Optional photographer / source attribution (`cover_credit_*` columns) renders under the cover on the public page; credit URLs must be absolute http(s).
+  - **Server Action body limit gotcha.** The 2 MB cover cap only works because [../../next.config.ts](../../next.config.ts) sets `experimental.serverActions.bodySizeLimit: '4mb'`. Next.js defaults Server Action request bodies to **1 MB** — without the override, a 1–2 MB cover (typical photo JPG) is rejected by the runtime _before_ `uploadCoverImageAction` runs, surfacing as a hard **500** on the POST ("An error occurred in the Server Components render"), not the action's graceful `invalid_cover` result. Smaller PNGs slip under 1 MB, which makes it look JPG-specific when it isn't. Keep `bodySizeLimit` above `ARTICLE_COVER_MAX_BYTES` (with multipart-overhead headroom) if you change either. The limit is baked at build time — a change needs a fresh Railway deploy to take effect.
 - **Editable published date** (published articles only). The editor shows a `<input type="date">` (seeded from `publishedAt.slice(0,10)`) **only when `status==='published'`**; saving submits a `publishedDate` form field. `updateArticleAction` re-reads the row's `status` server-side and applies `published_at` only for published rows, converting the date to a **noon-UTC** instant via [../../lib/articles/publishedDate.ts](../../lib/articles/publishedDate.ts) `publishedDateToInstant`. An empty/absent date is a **no-op** — `published_at` is never set to `null` (that would violate the `articles_published_has_timestamp` CHECK and silently wipe the date). Drafts have no date field and ignore any stray value. Noon-UTC keeps the displayed calendar day stable across timezones and preserves `published_at DESC` ordering. Validation helper `isValidPublishedDateInput` (empty ⇒ valid; else strict real-calendar `YYYY-MM-DD`) → `invalid_published_date`.
 - **`lib/articles/` helpers.** [queries.ts](../../lib/articles/queries.ts) (public + admin reads, the `ArticleRow → ArticleDetail/ListItem` mappers), [types.ts](../../lib/articles/types.ts), [slug.ts](../../lib/articles/slug.ts) (`isValidSlug` / `slugify`; `slug_taken` surfaces a 23505), [storage.ts](../../lib/articles/storage.ts) (`ARTICLE_COVERS_BUCKET`, public-URL resolver), [constants.ts](../../lib/articles/constants.ts) (title 200 / excerpt 400 / body 200k / cover 2 MB caps), [admin.ts](../../lib/articles/admin.ts) (`isCallerSiteAdmin`), and [authors.ts](../../lib/articles/authors.ts) (per-author byline config keyed by lowercased email — add a contributor's links here, nothing else changes). Integration coverage in [../../tests/integration/articles.integration.test.ts](../../tests/integration/articles.integration.test.ts); unit tests for slug, markdown, and published-date helpers sit beside their sources.
 
@@ -174,12 +174,12 @@ Per PRD §4.3 / §4.4 — when a session advances and the participant lands on a
 
 **Whitelist** ([lib/sessions/stage-import.ts](../../lib/sessions/stage-import.ts) `IMPORT_RULES`). Every stage except `skill_building` is a valid target. Source is per-stage:
 
-| Target              | Source             | Source scope    |
-|---------------------|--------------------|-----------------|
-| `individual_model`  | `skill_building`   | caller_own      |
-| `shared_model`      | `individual_model` | caller_own      |
-| `system_model`      | `shared_model`     | session_shared  |
-| `guiding_principles`| `system_model`     | caller_own      |
+| Target               | Source             | Source scope   |
+| -------------------- | ------------------ | -------------- |
+| `individual_model`   | `skill_building`   | caller_own     |
+| `shared_model`       | `individual_model` | caller_own     |
+| `system_model`       | `shared_model`     | session_shared |
+| `guiding_principles` | `system_model`     | caller_own     |
 
 `isImportTarget()` is the single guard used by the page (to know whether to render the affordance) and the server action (to refuse non-target stages). When `CANONICAL_STAGE_TYPES` gains a new stage, `IMPORT_RULES` and the exhaustive unit tests will force-fail until the new row is decided.
 
@@ -251,13 +251,13 @@ When a card carries two related metadata points (org name + session title), put 
 
 Distinct from the categorical badge above: the **runtime** status pill on session stage cards uses a per-status colour family so a facilitator can scan a long stage list and pick out the live stage, the paused stage, and the run-up at a glance. The palette is duplicated in two places that must stay in sync — [SessionStages.tsx](app/sessions/[id]/SessionStages.tsx) (`STATUS_PILL_CLASSES` / `STATUS_DOT_COLOURS`, facilitator view) and [components/session/StageTimer.tsx](../../components/session/StageTimer.tsx) (`PILL_CLASSES` / `DOT_COLOURS`, participant-sidebar mirror). When you change one, change both.
 
-| Status      | Background    | Text          | Ring             | Dot            | Meaning                                  |
-| ----------- | ------------- | ------------- | ---------------- | -------------- | ---------------------------------------- |
-| `pending`   | `yellow-50`   | `yellow-700`  | `yellow-200/70`  | `yellow-500`   | Waiting to start — warm but quiet        |
-| `active`    | `emerald-50`  | `emerald-800` | `emerald-200`    | `emerald-500`  | Live — the "now" signal                  |
-| `paused`    | `amber-100`   | `amber-900`   | `amber-300`      | `amber-600`    | Needs facilitator attention — hotter     |
-| `completed` | `sky-50`      | `sky-800`     | `sky-200`        | `sky-600`      | Finished — cool counterpoint to warm     |
-| `critical`  | `red-50`      | `red-800`     | `red-200`        | `red-500`      | `StageTimer.tsx` only — < 30 s remaining |
+| Status      | Background   | Text          | Ring            | Dot           | Meaning                                  |
+| ----------- | ------------ | ------------- | --------------- | ------------- | ---------------------------------------- |
+| `pending`   | `yellow-50`  | `yellow-700`  | `yellow-200/70` | `yellow-500`  | Waiting to start — warm but quiet        |
+| `active`    | `emerald-50` | `emerald-800` | `emerald-200`   | `emerald-500` | Live — the "now" signal                  |
+| `paused`    | `amber-100`  | `amber-900`   | `amber-300`     | `amber-600`   | Needs facilitator attention — hotter     |
+| `completed` | `sky-50`     | `sky-800`     | `sky-200`       | `sky-600`     | Finished — cool counterpoint to warm     |
+| `critical`  | `red-50`     | `red-800`     | `red-200`       | `red-500`     | `StageTimer.tsx` only — < 30 s remaining |
 
 Design notes:
 
@@ -302,13 +302,13 @@ Verification harness:
 
 Stage-type chips on scenario cards and pickers are **categorical**, not status. Distinct from the runtime stage status palette in [SessionStages.tsx](app/sessions/[id]/SessionStages.tsx). Source of truth: [`lib/scenarios/stageChip.ts`](../../lib/scenarios/stageChip.ts). All combinations clear WCAG 2.2 AA on white.
 
-| Stage type | Background | Text |
-| --- | --- | --- |
-| `skill_building` | `bg-violet-50` | `text-violet-800` |
-| `individual_model` | `bg-sky-50` | `text-sky-800` |
-| `shared_model` | `bg-emerald-50` | `text-emerald-800` |
-| `system_model` | `bg-amber-50` | `text-amber-900` |
-| `guiding_principles` | `bg-rose-50` | `text-rose-800` |
+| Stage type           | Background      | Text               |
+| -------------------- | --------------- | ------------------ |
+| `skill_building`     | `bg-violet-50`  | `text-violet-800`  |
+| `individual_model`   | `bg-sky-50`     | `text-sky-800`     |
+| `shared_model`       | `bg-emerald-50` | `text-emerald-800` |
+| `system_model`       | `bg-amber-50`   | `text-amber-900`   |
+| `guiding_principles` | `bg-rose-50`    | `text-rose-800`    |
 
 Reuses the badge pill shape (`rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em]`) from the existing badge convention above. Don't reach for these tones for status indication (timer / pending / paused); the runtime palette section above owns that vocabulary.
 

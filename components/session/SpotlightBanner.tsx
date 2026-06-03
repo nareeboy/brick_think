@@ -69,7 +69,11 @@ export function SpotlightBanner({ sessionId, viewerProfileId }: Props) {
         .select('id, full_name, email')
         .in('id', [fId, tId]);
 
-      const profiles = profilesRaw as Array<{ id: string; full_name: string | null; email: string | null }> | null;
+      const profiles = profilesRaw as Array<{
+        id: string;
+        full_name: string | null;
+        email: string | null;
+      }> | null;
 
       if (!active || profileErr || !profiles) return;
 
@@ -82,7 +86,11 @@ export function SpotlightBanner({ sessionId, viewerProfileId }: Props) {
       setTarget({
         profileId: tId,
         name: getDisplayName(targetProfile.full_name, targetProfile.email, 'A participant'),
-        facilitatorName: getDisplayName(facilitatorProfile.full_name, facilitatorProfile.email, 'Facilitator'),
+        facilitatorName: getDisplayName(
+          facilitatorProfile.full_name,
+          facilitatorProfile.email,
+          'Facilitator',
+        ),
       });
     };
 

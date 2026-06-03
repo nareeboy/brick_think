@@ -65,15 +65,21 @@ describe('filterScenarios', () => {
   });
 
   test('search matches title (case-insensitive)', () => {
-    expect(filterScenarios(sample, { stage: 'all', duration: 'any', search: 'TOWER' })).toHaveLength(1);
+    expect(
+      filterScenarios(sample, { stage: 'all', duration: 'any', search: 'TOWER' }),
+    ).toHaveLength(1);
   });
 
   test('search matches body text', () => {
-    expect(filterScenarios(sample, { stage: 'all', duration: 'any', search: 'merge' })).toHaveLength(1);
+    expect(
+      filterScenarios(sample, { stage: 'all', duration: 'any', search: 'merge' }),
+    ).toHaveLength(1);
   });
 
   test('search matches a tag substring', () => {
-    expect(filterScenarios(sample, { stage: 'all', duration: 'any', search: 'warm' })).toHaveLength(1);
+    expect(filterScenarios(sample, { stage: 'all', duration: 'any', search: 'warm' })).toHaveLength(
+      1,
+    );
   });
 
   test('combined filters AND together', () => {
@@ -83,7 +89,9 @@ describe('filterScenarios', () => {
   });
 
   test('empty result preserves array shape', () => {
-    expect(filterScenarios(sample, { stage: 'system_model', duration: 'any', search: '' })).toEqual([]);
+    expect(filterScenarios(sample, { stage: 'system_model', duration: 'any', search: '' })).toEqual(
+      [],
+    );
   });
 
   test('DURATION_BUCKETS exposes the four labels in order', () => {

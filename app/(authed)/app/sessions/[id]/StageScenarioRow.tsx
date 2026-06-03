@@ -33,10 +33,8 @@ export function StageScenarioRow({
   // pre-session checklist row above (PreSessionChecklist.tsx).
   if (!pickedScenario) return null;
 
-  const titleIsOverridden =
-    titleOverride !== null && titleOverride.trim().length > 0;
-  const bodyIsOverridden =
-    bodyOverride !== null && bodyOverride.trim().length > 0;
+  const titleIsOverridden = titleOverride !== null && titleOverride.trim().length > 0;
+  const bodyIsOverridden = bodyOverride !== null && bodyOverride.trim().length > 0;
   const isCustomised = titleIsOverridden || bodyIsOverridden;
 
   const displayedTitle = titleIsOverridden ? (titleOverride as string) : pickedScenario.title;
@@ -192,9 +190,7 @@ function ScenarioEditor({
           placeholder={canonicalTitle}
         />
       </label>
-      <p className="mt-1 text-[11px] text-zinc-500">
-        {titleDraft.trim().length} / 120 characters
-      </p>
+      <p className="mt-1 text-[11px] text-zinc-500">{titleDraft.trim().length} / 120 characters</p>
 
       <label className="mt-3 block text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500">
         Body

@@ -142,10 +142,7 @@ describe('setSharedModelRooms (integration)', () => {
     currentClient = await signInAs(fx.facilitator);
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
-      rooms: [
-        { title: 'Team A', profileIds: [fx.alice.id] },
-        { profileIds: [fx.bob.id] },
-      ],
+      rooms: [{ title: 'Team A', profileIds: [fx.alice.id] }, { profileIds: [fx.bob.id] }],
     });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -223,10 +220,7 @@ describe('setSharedModelRooms (integration)', () => {
 
     // The first call's room_ids should be gone.
     if (first.ok) {
-      const prior = await admin
-        .from('stage_rooms')
-        .select('id')
-        .in('id', first.data.roomIds);
+      const prior = await admin.from('stage_rooms').select('id').in('id', first.data.roomIds);
       expect(prior.data).toHaveLength(0);
     }
   });

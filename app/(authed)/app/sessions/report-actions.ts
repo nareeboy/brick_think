@@ -33,9 +33,7 @@ export type GenerateReportResult =
       message?: string;
     };
 
-export async function generateSessionReport(
-  sessionId: string,
-): Promise<GenerateReportResult> {
+export async function generateSessionReport(sessionId: string): Promise<GenerateReportResult> {
   if (!UUID_RE.test(sessionId)) return { ok: false, code: 'invalid_uuid' };
 
   const supabase = await createServerSupabaseClient();
@@ -103,17 +101,14 @@ export async function generateSessionReport(
           thumbnailUrl: m.thumbnailUrl,
           canvasState: m.canvasState,
         });
-        const imageDataUri = buf
-          ? `data:image/png;base64,${buf.toString('base64')}`
-          : null;
+        const imageDataUri = buf ? `data:image/png;base64,${buf.toString('base64')}` : null;
         return {
           id: m.id,
           title: m.title,
           ownerLabel: m.ownerLabel,
           imageDataUri,
           description:
-            synthesis.modelDescriptions[m.id] ??
-            'No description was generated for this model.',
+            synthesis.modelDescriptions[m.id] ?? 'No description was generated for this model.',
         };
       }),
     );
@@ -150,9 +145,7 @@ export async function generateSessionReport(
   const prefix = `${session.org_id}/${sessionId}/`;
   const { data: existing } = await svc.storage.from(STORAGE_BUCKET).list(prefix);
   if (existing && existing.length > 0) {
-    await svc.storage
-      .from(STORAGE_BUCKET)
-      .remove(existing.map((f) => `${prefix}${f.name}`));
+    await svc.storage.from(STORAGE_BUCKET).remove(existing.map((f) => `${prefix}${f.name}`));
   }
 
   const ts = Date.now();
@@ -205,9 +198,7 @@ export type LatestReportResult =
     }
   | { ok: false; code: 'invalid_uuid' | 'unauthenticated' | 'not_facilitator' | 'no_report' };
 
-export async function getLatestSessionReport(
-  sessionId: string,
-): Promise<LatestReportResult> {
+export async function getLatestSessionReport(sessionId: string): Promise<LatestReportResult> {
   if (!UUID_RE.test(sessionId)) return { ok: false, code: 'invalid_uuid' };
 
   const supabase = await createServerSupabaseClient();
@@ -261,21 +252,19 @@ async function upsertReportRow(
     modelIds: string[];
   },
 ) {
-  const { error } = await svc
-    .from('session_reports')
-    .upsert(
-      {
-        session_id: args.sessionId,
-        generation_status: args.status,
-        claude_model: CLAUDE_MODEL,
-        pdf_path: args.pdfPath,
-        error_code: args.errorCode,
-        error_message: args.errorMessage,
-        included_artifacts: { models: args.modelIds, recordings: [], prompts: [] },
-        generated_at: new Date().toISOString(),
-        generated_by: args.userId,
-      },
-      { onConflict: 'session_id' },
-    );
+  const { error } = await svc.from('session_reports').upsert(
+    {
+      session_id: args.sessionId,
+      generation_status: args.status,
+      claude_model: CLAUDE_MODEL,
+      pdf_path: args.pdfPath,
+      error_code: args.errorCode,
+      error_message: args.errorMessage,
+      included_artifacts: { models: args.modelIds, recordings: [], prompts: [] },
+      generated_at: new Date().toISOString(),
+      generated_by: args.userId,
+    },
+    { onConflict: 'session_id' },
+  );
   if (error) throw new Error(`session_reports upsert: ${error.message}`);
 }

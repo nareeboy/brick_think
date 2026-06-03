@@ -45,7 +45,10 @@ vi.mock('@/lib/db/server', () => ({
   }),
 }));
 
-import { redeemJoinCodeAction, rotateJoinCodeAction } from '@/app/(authed)/app/sessions/join-actions';
+import {
+  redeemJoinCodeAction,
+  rotateJoinCodeAction,
+} from '@/app/(authed)/app/sessions/join-actions';
 
 interface Fixture {
   facilitator: TestUser;

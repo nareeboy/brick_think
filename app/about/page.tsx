@@ -120,10 +120,9 @@ function ThesisBand() {
         </div>
         <div className="md:col-span-8">
           <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[34px]">
-            LSP works online —{' '}
-            <span className="text-[#d8a85d]">only if</span> the tool stops trying to be a
-            whiteboard. The canvas, the story, the order, and the timer all have to be built in.
-            What we leave out matters more than what we put in.
+            LSP works online — <span className="text-[#d8a85d]">only if</span> the tool stops trying
+            to be a whiteboard. The canvas, the story, the order, and the timer all have to be built
+            in. What we leave out matters more than what we put in.
           </p>
         </div>
       </div>

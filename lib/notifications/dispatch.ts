@@ -5,7 +5,11 @@ import { resolveActorDisplay } from './actorDisplay';
 
 export { resolveActorDisplay };
 
-export type NotificationKind = 'org_added' | 'session_started' | 'participant_joined' | 'session_invitation_claimed';
+export type NotificationKind =
+  | 'org_added'
+  | 'session_started'
+  | 'participant_joined'
+  | 'session_invitation_claimed';
 
 interface DispatchOrgAddedArgs {
   recipientProfileId: string;

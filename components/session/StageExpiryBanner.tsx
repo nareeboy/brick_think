@@ -52,7 +52,8 @@ export function StageExpiryBanner({ stageId, isLastStage, actions, messageForCod
       <div className="flex items-center gap-2">
         <span aria-hidden="true" className="inline-block size-2 rounded-full bg-red-500" />
         <p className="text-[13px] font-medium text-red-900">
-          Time&apos;s up. {isLastStage ? 'End the session when you’re ready.' : 'Extend or move on.'}
+          Time&apos;s up.{' '}
+          {isLastStage ? 'End the session when you’re ready.' : 'Extend or move on.'}
         </p>
       </div>
       <div className="flex flex-wrap items-center gap-2">

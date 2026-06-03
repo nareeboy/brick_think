@@ -62,9 +62,7 @@ export function BringInPreviousModelProvider({
 function useBringInState(): BringInContextValue {
   const ctx = useContext(BringInContext);
   if (!ctx) {
-    throw new Error(
-      'BringIn components must be wrapped in <BringInPreviousModelProvider>',
-    );
+    throw new Error('BringIn components must be wrapped in <BringInPreviousModelProvider>');
   }
   return ctx;
 }

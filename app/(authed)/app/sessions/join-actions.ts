@@ -107,7 +107,10 @@ export async function redeemJoinCodeAction(code: string): Promise<RedeemJoinCode
       if (sessionRowRes.error) {
         // Should not happen — we just resolved the row via the RPC. Log
         // and continue without notifying.
-        console.error('redeemJoinCodeAction: sessions read after insert failed', sessionRowRes.error);
+        console.error(
+          'redeemJoinCodeAction: sessions read after insert failed',
+          sessionRowRes.error,
+        );
       } else if (sessionRowRes.data?.facilitator_id) {
         const facilitatorId = sessionRowRes.data.facilitator_id;
         const sessionTitle = sessionRowRes.data.title;

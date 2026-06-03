@@ -4,28 +4,26 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import {
-  getAnthropicClientForProfile,
-  testAnthropicKey,
-} from '@/lib/integrations/anthropic';
+import { getAnthropicClientForProfile, testAnthropicKey } from '@/lib/integrations/anthropic';
 import { encryptApiKey } from '@/lib/integrations/crypto';
 
 const KEY_FORMAT_RE = /^sk-ant-[A-Za-z0-9_-]{20,}$/;
 
 export type IntegrationsActionResult =
   | { ok: true }
-  | { ok: false; code:
-      | 'unauthenticated'
-      | 'invalid_key_format'
-      | 'invalid_key'
-      | 'network_error';
-      message?: string };
+  | {
+      ok: false;
+      code: 'unauthenticated' | 'invalid_key_format' | 'invalid_key' | 'network_error';
+      message?: string;
+    };
 
 async function requireUserId(): Promise<
   { error: IntegrationsActionResult & { ok: false } } | { userId: string }
 > {
   const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return { error: { ok: false, code: 'unauthenticated' } };
   return { userId: user.id };
 }
@@ -49,15 +47,16 @@ export async function saveAnthropicKey(apiKey: string): Promise<IntegrationsActi
   // ciphertext + nonce are stored as base64 in text columns (see migration
   // 20260520170000) — bytea round-trip through supabase-js was unreliable
   // because Buffer JSON-serialised as {type:'Buffer',data:[...]}.
-  const upsert = await svc
-    .from('user_integrations')
-    .upsert({
+  const upsert = await svc.from('user_integrations').upsert(
+    {
       profile_id: ctx.userId,
       anthropic_api_key_ciphertext: ciphertext.toString('base64'),
       anthropic_api_key_nonce: nonce.toString('base64'),
       anthropic_api_key_last4: last4,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'profile_id' });
+    },
+    { onConflict: 'profile_id' },
+  );
   if (upsert.error) throw new Error(`user_integrations upsert: ${upsert.error.message}`);
 
   revalidatePath('/app/account');

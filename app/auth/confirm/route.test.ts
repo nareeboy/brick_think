@@ -38,7 +38,9 @@ describe('GET /auth/confirm', () => {
     const verifyOtp = vi.fn<VerifyOtpFn>().mockResolvedValue({ error: null });
     mockSupabase(verifyOtp);
 
-    const res = await GET(makeRequest('?token_hash=abc123&type=magiclink&next=/app/sessions') as never);
+    const res = await GET(
+      makeRequest('?token_hash=abc123&type=magiclink&next=/app/sessions') as never,
+    );
 
     expect(verifyOtp).toHaveBeenCalledWith({ token_hash: 'abc123', type: 'magiclink' });
     expect(res.status).toBeGreaterThanOrEqual(300);

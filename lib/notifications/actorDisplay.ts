@@ -14,7 +14,11 @@ interface ResolveActorDisplayArgs {
  * pure helper is referenced from contexts (tests, future client-side previews)
  * that mustn't pull in server-only deps.
  */
-export function resolveActorDisplay({ fullName, email, fallback = 'Someone' }: ResolveActorDisplayArgs): string {
+export function resolveActorDisplay({
+  fullName,
+  email,
+  fallback = 'Someone',
+}: ResolveActorDisplayArgs): string {
   const trimmedName = fullName?.trim() || null;
   const emailLocalPart = email?.split('@')[0]?.toLowerCase() ?? null;
   const looksLikePrefix =

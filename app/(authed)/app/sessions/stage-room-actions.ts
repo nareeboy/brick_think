@@ -153,10 +153,7 @@ export async function setSharedModelRooms(input: {
   // for the per-lane Layers-panel rename.
   const profileRes =
     seenProfiles.size > 0
-      ? await svc
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', Array.from(seenProfiles))
+      ? await svc.from('profiles').select('id, full_name, email').in('id', Array.from(seenProfiles))
       : { data: [] as { id: string; full_name: string | null; email: string }[], error: null };
   if (profileRes.error) {
     throw new Error(`setSharedModelRooms: profiles fetch failed: ${profileRes.error.message}`);
@@ -179,7 +176,9 @@ export async function setSharedModelRooms(input: {
       .is('deleted_at', null)
       .in('owner_profile_id', Array.from(seenProfiles));
     if (srcRes.error) {
-      throw new Error(`setSharedModelRooms: individual_model fetch failed: ${srcRes.error.message}`);
+      throw new Error(
+        `setSharedModelRooms: individual_model fetch failed: ${srcRes.error.message}`,
+      );
     }
     for (const row of srcRes.data ?? []) {
       canvasByProfile.set(row.owner_profile_id as string, parseCanvasState(row.canvas_state));
@@ -338,10 +337,15 @@ export async function setDownstreamStageRooms(input: {
     .in('id', Array.from(sourceIds))
     .eq('stage_id', upstreamStageId);
   if (srcRoomsRes.error) {
-    throw new Error(`setDownstreamStageRooms: source rooms check failed: ${srcRoomsRes.error.message}`);
+    throw new Error(
+      `setDownstreamStageRooms: source rooms check failed: ${srcRoomsRes.error.message}`,
+    );
   }
   const srcRoomById = new Map(
-    (srcRoomsRes.data ?? []).map((r) => [r.id as string, { position: r.position as number, title: (r.title as string | null) ?? null }]),
+    (srcRoomsRes.data ?? []).map((r) => [
+      r.id as string,
+      { position: r.position as number, title: (r.title as string | null) ?? null },
+    ]),
   );
   for (const id of sourceIds) {
     if (!srcRoomById.has(id)) return { ok: false, code: 'unknown_source_room' };
@@ -356,7 +360,9 @@ export async function setDownstreamStageRooms(input: {
     .in('room_id', Array.from(sourceIds))
     .is('deleted_at', null);
   if (srcModelsRes.error) {
-    throw new Error(`setDownstreamStageRooms: source models fetch failed: ${srcModelsRes.error.message}`);
+    throw new Error(
+      `setDownstreamStageRooms: source models fetch failed: ${srcModelsRes.error.message}`,
+    );
   }
   const canvasByRoomId = new Map<string, ReturnType<typeof parseCanvasState>>();
   for (const row of srcModelsRes.data ?? []) {
@@ -421,7 +427,9 @@ export async function setDownstreamStageRooms(input: {
     }));
     const sourcesRes = await svc.from('stage_room_sources').insert(sourceRows);
     if (sourcesRes.error) {
-      throw new Error(`setDownstreamStageRooms: sources insert failed: ${sourcesRes.error.message}`);
+      throw new Error(
+        `setDownstreamStageRooms: sources insert failed: ${sourcesRes.error.message}`,
+      );
     }
     i++;
   }
@@ -449,9 +457,11 @@ export async function deleteSharedModelRoom(
     .maybeSingle();
   if (roomRes.error || !roomRes.data) return { ok: false, code: 'stage_not_found' };
 
-  const stage = (roomRes.data as unknown as {
-    stages: { session_id: string; sessions: { facilitator_id: string } };
-  }).stages;
+  const stage = (
+    roomRes.data as unknown as {
+      stages: { session_id: string; sessions: { facilitator_id: string } };
+    }
+  ).stages;
   const sessionId = stage.session_id;
   if (stage.sessions.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
 

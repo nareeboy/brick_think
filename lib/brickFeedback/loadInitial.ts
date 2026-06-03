@@ -27,10 +27,7 @@ export async function loadInitialBrickFeedback(
 ): Promise<{ reactions: ReactionRow[]; comments: CommentRow[] }> {
   const supabase = await createServerSupabaseClient();
   const [reactionsRes, commentsRes] = await Promise.all([
-    supabase
-      .from('brick_reactions')
-      .select('brick_id, profile_id, emoji')
-      .eq('model_id', modelId),
+    supabase.from('brick_reactions').select('brick_id, profile_id, emoji').eq('model_id', modelId),
     supabase
       .from('brick_comments')
       .select('id, brick_id, profile_id, body, created_at, profiles(full_name)')

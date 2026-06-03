@@ -385,7 +385,9 @@ export async function inviteParticipantsByEmailAction(
     .eq('id', sessionId)
     .maybeSingle();
   if (sessionErr) {
-    throw new Error(`inviteParticipantsByEmailAction sessions select failed: ${sessionErr.message}`);
+    throw new Error(
+      `inviteParticipantsByEmailAction sessions select failed: ${sessionErr.message}`,
+    );
   }
   if (!session?.join_code) {
     // Defensive: post-backfill every session has a join_code, but if a
@@ -428,7 +430,10 @@ export async function inviteParticipantsByEmailAction(
       .eq('email', email)
       .maybeSingle();
     if (profileErr) {
-      console.error('inviteParticipantsByEmailAction: profiles lookup failed', { email, error: profileErr });
+      console.error('inviteParticipantsByEmailAction: profiles lookup failed', {
+        email,
+        error: profileErr,
+      });
       results.push({ email, status: 'failed' });
       continue;
     }
@@ -467,7 +472,10 @@ export async function inviteParticipantsByEmailAction(
         options: { emailRedirectTo: confirmRedirect, shouldCreateUser: false },
       });
       if (otpErr) {
-        console.error('inviteParticipantsByEmailAction: signInWithOtp failed', { email, error: otpErr });
+        console.error('inviteParticipantsByEmailAction: signInWithOtp failed', {
+          email,
+          error: otpErr,
+        });
         results.push({ email, status: 'failed' });
         continue;
       }
@@ -480,7 +488,10 @@ export async function inviteParticipantsByEmailAction(
         redirectTo: confirmRedirect,
       });
       if (inviteErr) {
-        console.error('inviteParticipantsByEmailAction: inviteUserByEmail failed', { email, error: inviteErr });
+        console.error('inviteParticipantsByEmailAction: inviteUserByEmail failed', {
+          email,
+          error: inviteErr,
+        });
         results.push({ email, status: 'failed' });
         continue;
       }
@@ -517,11 +528,7 @@ export type CancelInvitationResult =
   | { ok: true }
   | {
       ok: false;
-      code:
-        | 'unauthenticated'
-        | 'not_facilitator'
-        | 'invitation_not_found'
-        | 'already_claimed';
+      code: 'unauthenticated' | 'not_facilitator' | 'invitation_not_found' | 'already_claimed';
     };
 
 /**
@@ -529,7 +536,9 @@ export type CancelInvitationResult =
  * participant has already redeemed it; cancellation now would be misleading
  * — the facilitator should `removeParticipantAction` instead).
  */
-export async function cancelInvitationAction(invitationId: string): Promise<CancelInvitationResult> {
+export async function cancelInvitationAction(
+  invitationId: string,
+): Promise<CancelInvitationResult> {
   const service = getServiceSupabaseClient();
   const inviteRes = await service
     .from('session_invitations')
@@ -583,7 +592,9 @@ export type ResendInvitationResult =
  * invite (already redeemed) and on the same auth + facilitator gates as
  * the underlying action.
  */
-export async function resendInvitationAction(invitationId: string): Promise<ResendInvitationResult> {
+export async function resendInvitationAction(
+  invitationId: string,
+): Promise<ResendInvitationResult> {
   const service = getServiceSupabaseClient();
   const inviteRes = await service
     .from('session_invitations')

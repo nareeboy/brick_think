@@ -14,11 +14,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { decryptApiKey, encryptApiKey } from '@/lib/integrations/crypto';
-import {
-  cleanupTestUser,
-  createTestUser,
-  type TestUser,
-} from '@/lib/testing/supabase-test-client';
+import { cleanupTestUser, createTestUser, type TestUser } from '@/lib/testing/supabase-test-client';
 
 let user: TestUser;
 

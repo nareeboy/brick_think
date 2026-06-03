@@ -7,7 +7,7 @@ export const REACTION_PALETTE = [
   { emoji: '⭐', label: 'Standout' },
 ] as const;
 
-export type ReactionEmoji = typeof REACTION_PALETTE[number]['emoji'];
+export type ReactionEmoji = (typeof REACTION_PALETTE)[number]['emoji'];
 
 export function isValidReactionEmoji(value: string): value is ReactionEmoji {
   return REACTION_PALETTE.some((p) => p.emoji === value);

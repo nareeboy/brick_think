@@ -67,7 +67,10 @@ function isValidExternalUrl(value: string): boolean {
   }
 }
 
-async function requireAdmin(): Promise<{ supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>; userId: string } | ArticleActionResult> {
+async function requireAdmin(): Promise<
+  | { supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>; userId: string }
+  | ArticleActionResult
+> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -370,9 +373,7 @@ export async function removeCoverImageAction(id: string): Promise<ArticleActionR
   if (!existingRes.data) return { ok: false, code: 'not_found' };
 
   if (existingRes.data.cover_image_path) {
-    await supabase.storage
-      .from(ARTICLE_COVERS_BUCKET)
-      .remove([existingRes.data.cover_image_path]);
+    await supabase.storage.from(ARTICLE_COVERS_BUCKET).remove([existingRes.data.cover_image_path]);
   }
 
   const update = await supabase

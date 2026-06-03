@@ -60,7 +60,12 @@ export function RosterButton({ sessionId, joinCode }: { sessionId: string; joinC
       >
         Invite Members{count !== null ? ` (${count})` : ''}
       </button>
-      <RosterModal sessionId={sessionId} joinCode={joinCode} open={open} onClose={() => setOpen(false)} />
+      <RosterModal
+        sessionId={sessionId}
+        joinCode={joinCode}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
     </>
   );
 }

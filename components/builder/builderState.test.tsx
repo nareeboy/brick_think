@@ -479,7 +479,18 @@ describe('BuilderProvider live read-only', () => {
         canvas_state: {
           groups: [{ id: 'g', name: 'g', collapsed: false, visible: true }],
           bricks: [
-            { id: 'b1', groupId: 'g', code: 'b1x1', image: '', width: 1, height: 1, x: 0, y: 0, rotation: 0, visible: true },
+            {
+              id: 'b1',
+              groupId: 'g',
+              code: 'b1x1',
+              image: '',
+              width: 1,
+              height: 1,
+              x: 0,
+              y: 0,
+              rotation: 0,
+              visible: true,
+            },
           ],
         },
       });

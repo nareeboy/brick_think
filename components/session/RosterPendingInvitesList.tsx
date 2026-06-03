@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { getBrowserSupabaseClient } from '@/lib/db/client';
-import { cancelInvitationAction, resendInvitationAction } from '@/app/(authed)/app/sessions/roster-actions';
+import {
+  cancelInvitationAction,
+  resendInvitationAction,
+} from '@/app/(authed)/app/sessions/roster-actions';
 
 interface Row {
   id: string;
@@ -114,7 +117,11 @@ export function RosterPendingInvitesList({ sessionId }: Props) {
         onClick={() => setCollapsed(!collapsed)}
         className="flex items-center gap-2 text-sm font-semibold text-zinc-900 hover:text-zinc-700 transition-colors"
         aria-expanded={!collapsed}
-        aria-label={collapsed ? `Expand pending invites (${rows.length})` : `Collapse pending invites (${rows.length})`}
+        aria-label={
+          collapsed
+            ? `Expand pending invites (${rows.length})`
+            : `Collapse pending invites (${rows.length})`
+        }
       >
         <span className="text-xs">{collapsed ? '▶' : '▼'}</span>
         Pending invites ({rows.length})
@@ -128,12 +135,8 @@ export function RosterPendingInvitesList({ sessionId }: Props) {
               className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 hover:bg-zinc-50 transition-colors"
             >
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-zinc-900 truncate">
-                  {row.email}
-                </div>
-                <div className="text-xs text-zinc-500">
-                  Invited {relativeTime(row.invited_at)}
-                </div>
+                <div className="text-sm font-medium text-zinc-900 truncate">{row.email}</div>
+                <div className="text-xs text-zinc-500">Invited {relativeTime(row.invited_at)}</div>
               </div>
 
               <div className="flex gap-1 shrink-0">

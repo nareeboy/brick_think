@@ -69,9 +69,7 @@ export default function GenerateReportButton({
         </button>
       )}
       {generatedAt ? (
-        <p className="text-xs text-zinc-500">
-          Generated {new Date(generatedAt).toLocaleString()}
-        </p>
+        <p className="text-xs text-zinc-500">Generated {new Date(generatedAt).toLocaleString()}</p>
       ) : null}
       {error ? (
         <p className="text-xs text-red-700" role="status">
@@ -94,7 +92,7 @@ function messageForCode(code: string, fallback?: string): string {
     case 'no_models':
       return 'This session has no models to include.';
     case 'decrypt_failed':
-      return 'Your stored key can\'t be decrypted (encryption key changed?). Re-paste it on /app/account.';
+      return "Your stored key can't be decrypted (encryption key changed?). Re-paste it on /app/account.";
     case 'claude_api_error':
       return `Anthropic error: ${fallback ?? 'unknown'}.`;
     case 'render_failed':

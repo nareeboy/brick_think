@@ -75,9 +75,7 @@ export async function createSession(formData: FormData): Promise<void> {
   // /api/test/seed-session/route.ts.
   const joinCodeRes = await supabase.rpc('generate_join_code');
   if (joinCodeRes.error || !joinCodeRes.data) {
-    throw new Error(
-      `Failed to generate join code: ${joinCodeRes.error?.message ?? 'unknown'}`,
-    );
+    throw new Error(`Failed to generate join code: ${joinCodeRes.error?.message ?? 'unknown'}`);
   }
   const joinCode = joinCodeRes.data as string;
 
@@ -229,10 +227,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
   //    public.can_edit_room). If no rooms exist, fall through to the legacy
   //    per-participant personal-canvas flow.
   if (stageType === 'system_model' || stageType === 'guiding_principles') {
-    const stageRoomsRes = await supabase
-      .from('stage_rooms')
-      .select('id')
-      .eq('stage_id', stageId);
+    const stageRoomsRes = await supabase.from('stage_rooms').select('id').eq('stage_id', stageId);
     if (stageRoomsRes.error) {
       throw new Error(`Room lookup failed: ${stageRoomsRes.error.message}`);
     }
@@ -265,7 +260,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
       }
       if (!targetModelId) {
         throw new Error(
-          'No room assigned yet — the facilitator needs to add you to one of this stage\'s rooms.',
+          "No room assigned yet — the facilitator needs to add you to one of this stage's rooms.",
         );
       }
       revalidatePath(`/app/sessions/${sessionId}`);

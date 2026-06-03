@@ -57,9 +57,7 @@ describe('PreSessionChecklist', () => {
   test('scenarios item ticks when every stage has scenario_id', () => {
     const stages = baseStages.map((s) => ({ ...s, scenarioId: 'scen-x' }));
     render(<PreSessionChecklist {...defaultProps} stages={stages} />);
-    expect(screen.getByTestId('checklist-item-scenarios').getAttribute('data-status')).toBe(
-      'done',
-    );
+    expect(screen.getByTestId('checklist-item-scenarios').getAttribute('data-status')).toBe('done');
   });
 
   test('a11y manual toggle ticks when pre_session_check.a11y_reviewed === true', () => {
@@ -86,9 +84,8 @@ describe('PreSessionChecklist', () => {
   });
 
   test('toggling a11y calls updatePreSessionCheckAction', async () => {
-    const { updatePreSessionCheckAction } = await import(
-      '@/app/(authed)/app/sessions/scenario-actions'
-    );
+    const { updatePreSessionCheckAction } =
+      await import('@/app/(authed)/app/sessions/scenario-actions');
     render(<PreSessionChecklist {...defaultProps} />);
     await userEvent.click(screen.getByRole('checkbox', { name: /Review accessibility/i }));
     expect(updatePreSessionCheckAction).toHaveBeenCalledWith('sess-1', 'a11y_reviewed', true);

@@ -52,11 +52,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
       <article>
         <Header article={article} minutes={minutes} />
         {article.coverImageUrl ? (
-          <Cover
-            url={article.coverImageUrl}
-            alt={article.title}
-            credit={article.coverCredit}
-          />
+          <Cover url={article.coverImageUrl} alt={article.title} credit={article.coverCredit} />
         ) : null}
         <Body markdown={article.bodyMarkdown} />
         <ArticleAuthorByline

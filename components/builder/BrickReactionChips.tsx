@@ -26,9 +26,7 @@ export function BrickReactionChips({
   disabled,
 }: Props) {
   const [pickerOpen, setPickerOpen] = useState(false);
-  const entries = reactions
-    ? Object.entries(reactions).filter(([, v]) => v.count > 0)
-    : [];
+  const entries = reactions ? Object.entries(reactions).filter(([, v]) => v.count > 0) : [];
 
   // Hide the cluster entirely when nothing is reacted and the user can't add
   // (read-only). The `+` opener would be a confusing no-op.
