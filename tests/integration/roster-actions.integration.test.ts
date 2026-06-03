@@ -341,6 +341,38 @@ describe('setSpotlightAction', () => {
     expect(result).toEqual({ ok: false, code: 'target_not_participant' });
   });
 
+  test('writes spotlight when target owns a model in the session but has no participant row', async () => {
+    // The facilitator's ParticipantsPanel lists model owners (org members),
+    // not just join-code participants. An org member who built a canvas
+    // without ever redeeming a join code has no session_participants row,
+    // yet still appears in the panel and must be spotlightable.
+    const admin = getAdminClient();
+    await admin
+      .from('session_participants')
+      .delete()
+      .eq('session_id', fx.session.id)
+      .eq('profile_id', fx.alice.id);
+    await admin
+      .from('models')
+      .delete()
+      .eq('session_id', fx.session.id)
+      .eq('owner_profile_id', fx.alice.id);
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await setSpotlightAction(fx.session.id, fx.alice.id);
+    expect(result).toEqual({ ok: true });
+
+    const sessRes = await admin
+      .from('sessions')
+      .select('spotlight_target_profile_id')
+      .eq('id', fx.session.id)
+      .single();
+    expect(sessRes.data?.spotlight_target_profile_id).toBe(fx.alice.id);
+
+    await admin.from('models').delete().eq('id', modelId);
+  });
+
   test('rejects when target is soft-deleted (treated as not a participant)', async () => {
     await ensureActiveParticipant(fx.bob);
     await softDeleteParticipant(fx.bob);
