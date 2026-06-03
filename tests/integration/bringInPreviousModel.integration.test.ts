@@ -66,8 +66,8 @@ const POPULATED_CANVAS: CanvasState = {
     {
       id: 'b_seed',
       groupId: 'g_seed',
-      code: 'red-2x2',
-      image: '/bricks/red-2x2.png',
+      code: 'block-red-medium-left',
+      image: '/bricks/block-red-medium-left.png',
       width: 64,
       height: 64,
       x: 100,
