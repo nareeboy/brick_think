@@ -2,7 +2,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-A virtual way to allow your teams to remotely conduct Serious Play. The hosted instance lives at [https://www.brickthink.io](https://www.brickthink.io).
+A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®. The hosted instance lives at [https://www.brickthink.io](https://www.brickthink.io).
 
 Stack: Next.js 15 App Router, React 19, Supabase (Postgres + Auth + Storage + RLS), TypeScript, pnpm.
 
@@ -297,4 +297,4 @@ BrickThink is licensed under the [Apache License 2.0](LICENSE). Third-party attr
 
 ## Trademark
 
-LEGO, SERIOUS PLAY, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations are trademarks of the LEGO Group, which does not sponsor, authorize or endorse this product.
+LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations are trademarks of the LEGO Group, which does not sponsor, authorize or endorse this product.

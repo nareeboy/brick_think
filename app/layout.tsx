@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     default: 'BrickThink',
     template: '%s · BrickThink',
   },
-  description: 'A virtual way to allow your teams to remotely conduct Serious Play.',
+  description: 'A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®.',
   applicationName: 'BrickThink',
 };
 
