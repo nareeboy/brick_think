@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -14,6 +15,7 @@ import {
 } from '@/components/marketing/MarketingChrome';
 import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
 import { ProductHuntBadge } from '@/components/marketing/ProductHuntBadge';
+import { SaasHubBadge } from '@/components/marketing/SaasHubBadge';
 import { SourceForgeBadge } from '@/components/marketing/SourceForgeBadge';
 import { StartupFameBadge } from '@/components/marketing/StartupFameBadge';
 
@@ -250,8 +252,10 @@ function LaunchBar() {
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
           <ProductHuntBadge />
           <StartupFameBadge />
+          <LaunchIgniterBadge />
           <SourceForgeBadge imgClassName="h-[calc(var(--spacing)*27)] w-auto" />
           <PeerlistBadge />
+          <SaasHubBadge />
         </div>
       </div>
     </section>
