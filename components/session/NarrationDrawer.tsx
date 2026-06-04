@@ -7,12 +7,14 @@ import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 import { usePrefersReducedMotion } from '@/lib/a11y/usePrefersReducedMotion';
 import { useSpeechNarration } from '@/components/builder/useSpeechNarration';
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
+import { broadcastNarrationSaved } from '@/components/session/narrationRealtime';
 import type { ModelNarration } from '@/lib/sessions/modelNarration';
 
 const NOTICE_KEY = 'bt_narration_notice_seen';
 
 interface Props {
   modelId: string;
+  sessionId: string;
   canRecord: boolean;
   initialNarration: ModelNarration | null;
   open: boolean;
@@ -21,7 +23,14 @@ interface Props {
 
 type SaveState = 'idle' | 'saving' | 'error';
 
-export function NarrationDrawer({ modelId, canRecord, initialNarration, open, onClose }: Props) {
+export function NarrationDrawer({
+  modelId,
+  sessionId,
+  canRecord,
+  initialNarration,
+  open,
+  onClose,
+}: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
   const reducedMotion = usePrefersReducedMotion();
@@ -102,6 +111,9 @@ export function NarrationDrawer({ modelId, canRecord, initialNarration, open, on
     // M-2: clear fallback textarea on successful save so re-opening the
     // drawer doesn't pre-populate the old text.
     setFallbackText('');
+    // Nudge the facilitator's session page to refresh so the Transcript button
+    // (and combined room transcripts) appear without a manual refresh.
+    void broadcastNarrationSaved(sessionId);
   }
 
   // Anchored left, no dark backdrop (the model stays visible on the right), and

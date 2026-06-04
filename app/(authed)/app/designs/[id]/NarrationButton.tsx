@@ -7,6 +7,7 @@ import type { ModelNarration } from '@/lib/sessions/modelNarration';
 
 interface Props {
   modelId: string;
+  sessionId: string;
   canRecord: boolean;
   initialNarration: ModelNarration | null;
 }
@@ -14,7 +15,7 @@ interface Props {
 // Canvas-header trigger for the narration drawer. Rendered only when the
 // design belongs to a session stage that supports voice narration (gated
 // server-side in the design page).
-export function NarrationButton({ modelId, canRecord, initialNarration }: Props) {
+export function NarrationButton({ modelId, sessionId, canRecord, initialNarration }: Props) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -30,6 +31,7 @@ export function NarrationButton({ modelId, canRecord, initialNarration }: Props)
       </button>
       <NarrationDrawer
         modelId={modelId}
+        sessionId={sessionId}
         canRecord={canRecord}
         initialNarration={initialNarration}
         open={open}
