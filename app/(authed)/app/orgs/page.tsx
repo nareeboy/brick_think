@@ -112,12 +112,6 @@ export default async function OrgsPage() {
                       decoding="async"
                       className="absolute inset-0 h-full w-full object-cover"
                     />
-                    <span
-                      aria-hidden="true"
-                      className="absolute bottom-2 left-2 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-[14px] font-semibold text-[#c0613d] shadow-[0_8px_20px_-12px_rgba(0,0,0,0.45)] backdrop-blur"
-                    >
-                      {o.name.charAt(0).toUpperCase()}
-                    </span>
                   </div>
                   <div className="flex max-w-full items-center gap-1.5">
                     <span className="inline-block max-w-full truncate rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
