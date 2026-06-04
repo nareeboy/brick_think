@@ -56,6 +56,28 @@ export async function POST(request: Request) {
   const fileError = validateCvFile({ type: file.type, size: file.size });
   if (fileError) return bad(fileError);
 
+  try {
+    return await persistApplication(roleId, fields, file);
+  } catch (err) {
+    // e.g. a missing service-role env would throw here — log it rather than
+    // letting Next return an opaque 500 with no JSON body.
+    console.error('[careers/apply] unexpected error', err);
+    return bad('unknown', 500);
+  }
+}
+
+async function persistApplication(
+  roleId: string,
+  fields: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    address: string;
+    phone: string;
+    linkedinUrl: string;
+  },
+  file: File,
+): Promise<NextResponse> {
   const supabase = createServiceRoleSupabaseClient();
 
   // Confirm the role exists and is open before accepting an application.
@@ -80,7 +102,10 @@ export async function POST(request: Request) {
     })
     .select('id')
     .single();
-  if (insertRes.error || !insertRes.data) return bad('unknown', 500);
+  if (insertRes.error || !insertRes.data) {
+    console.error('[careers/apply] insert failed', insertRes.error);
+    return bad('unknown', 500);
+  }
 
   const applicationId = insertRes.data.id;
   const ext = CV_ALLOWED_TYPES[file.type];
@@ -92,6 +117,7 @@ export async function POST(request: Request) {
     .upload(path, file, { contentType: file.type, upsert: false });
 
   if (uploadRes.error) {
+    console.error('[careers/apply] CV upload failed', uploadRes.error);
     // Roll back the orphaned row so we never keep a CV-less application.
     await supabase.from('careers_applications').delete().eq('id', applicationId);
     return bad('unknown', 500);
@@ -102,6 +128,7 @@ export async function POST(request: Request) {
     .update({ cv_path: path, cv_filename: file.name.slice(0, 255) })
     .eq('id', applicationId);
   if (patchRes.error) {
+    console.error('[careers/apply] cv_path patch failed', patchRes.error);
     await supabase.storage.from(CAREERS_CV_BUCKET).remove([path]);
     await supabase.from('careers_applications').delete().eq('id', applicationId);
     return bad('unknown', 500);
