@@ -53,10 +53,11 @@ export function validateApplicationFields(
   const address = input.address.trim();
   if (address.length === 0 || address.length > APP_ADDRESS_MAX) return 'invalid_address';
 
-  // Phone is a composed +<code><number> string. Require leading + and digits.
+  // Phone is a composed +<code><number> string. Require leading + then digits
+  // and spaces only (matches what PhoneInput emits — never tabs/newlines).
   const phone = input.phone.trim();
   if (phone.length < APP_PHONE_MIN || phone.length > APP_PHONE_MAX) return 'invalid_phone';
-  if (!/^\+[0-9][0-9\s]*$/.test(phone)) return 'invalid_phone';
+  if (!/^\+[0-9][0-9 ]*$/.test(phone)) return 'invalid_phone';
 
   const linkedin = input.linkedinUrl.trim();
   if (linkedin.length === 0 || linkedin.length > APP_LINKEDIN_MAX) return 'invalid_linkedin';
@@ -65,7 +66,9 @@ export function validateApplicationFields(
   return null;
 }
 
-export function validateCvFile(file: { type: string; size: number }): CvCode | null {
+export function validateCvFile(
+  file: { type: string; size: number } | null | undefined,
+): CvCode | null {
   if (!file || file.size === 0) return 'cv_missing';
   if (file.size > CV_MAX_BYTES) return 'cv_too_large';
   if (!CV_ALLOWED_TYPES[file.type]) return 'cv_bad_type';
