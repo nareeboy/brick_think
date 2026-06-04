@@ -38,7 +38,10 @@ export default function GenerateReportButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    // `relative` + absolutely-positioned messages keep this column's width equal
+    // to the button alone. Otherwise a long error/generated-at line would widen
+    // the flex item and shove the sibling header buttons to the left.
+    <div className="relative flex flex-col items-end">
       {pdfUrl ? (
         <div className="flex items-center gap-2">
           <a
@@ -68,18 +71,24 @@ export default function GenerateReportButton({
           {pending ? 'Generating…' : 'Generate report'}
         </button>
       )}
-      {generatedAt ? (
-        <p className="text-xs text-zinc-500">Generated {new Date(generatedAt).toLocaleString()}</p>
-      ) : null}
-      {error ? (
-        <p className="text-xs text-red-700" role="status">
-          {error}{' '}
-          {error.includes('no Anthropic key') ? (
-            <a href="/app/account" className="underline">
-              Add one
-            </a>
+      {generatedAt || error ? (
+        <div className="absolute right-0 top-full z-10 mt-1 flex max-w-[280px] flex-col items-end gap-1 text-right">
+          {generatedAt ? (
+            <p className="text-xs text-zinc-500">
+              Generated {new Date(generatedAt).toLocaleString()}
+            </p>
           ) : null}
-        </p>
+          {error ? (
+            <p className="text-xs text-red-700" role="status">
+              {error}{' '}
+              {error.includes('no Anthropic key') ? (
+                <a href="/app/account" className="underline">
+                  Add one
+                </a>
+              ) : null}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
