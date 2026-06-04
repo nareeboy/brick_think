@@ -126,6 +126,18 @@ describe('setSharedModelRooms (integration)', () => {
     expect(res).toEqual({ ok: false, code: 'unknown_member' });
   });
 
+  test('assigning the facilitator to a room is refused', async () => {
+    // The facilitator is an org member (org owner), so this isn't caught by
+    // the unknown_member gate — it must be rejected by the dedicated guard
+    // because the facilitator observes rooms read-only and never builds.
+    currentClient = await signInAs(fx.facilitator);
+    const res = await setSharedModelRooms({
+      stageId: fx.session.stageIds.shared_model,
+      rooms: [{ profileIds: [fx.facilitator.id] }],
+    });
+    expect(res).toEqual({ ok: false, code: 'facilitator_not_assignable' });
+  });
+
   test('empty rooms list is refused', async () => {
     currentClient = await signInAs(fx.facilitator);
     const res = await setSharedModelRooms({

@@ -36,6 +36,8 @@ function errorMessage(code: StageRoomError): string {
       return 'Rooms are only available on the shared model stage.';
     case 'not_facilitator':
       return 'Only the session facilitator can manage rooms.';
+    case 'facilitator_not_assignable':
+      return 'The facilitator observes rooms read-only and cannot be assigned to one.';
     case 'duplicate_member':
       return 'A participant cannot be in two rooms at once.';
     case 'empty_partition':
