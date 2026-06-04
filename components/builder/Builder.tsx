@@ -402,7 +402,7 @@ function CanvasStage({
   // gates recording; viewers who can only read still see the button when a
   // transcript exists, opening a read-only view.
   const showNarrate = sessionContext !== null && (canNarrate || initialNarration !== null);
-  const NARRATE_BTN_WIDTH = 128; // h-11 pill: px-3.5 + icon + gap-2 + "Narrate"
+  const NARRATE_BTN_WIDTH = 102; // measured rendered width of the h-11 "🎙 Narrate" pill
   const narrateRight = placeChrome(showNarrate, NARRATE_BTN_WIDTH);
   const feedbackToggleRight = placeChrome(showFeedbackToggle, ICON_BTN_WIDTH);
 
