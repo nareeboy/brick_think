@@ -123,12 +123,33 @@ async function svcPatch(
   }
 }
 
+// Direct PostgREST insert helper; returns the created rows (representation).
+async function svcPost(
+  page: Page,
+  path: string,
+  body: Record<string, unknown>,
+): Promise<Array<Record<string, unknown>>> {
+  const res = await page.request.post(`${LOCAL_SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      apikey: LOCAL_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${LOCAL_SERVICE_ROLE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=representation',
+    },
+    data: body,
+  });
+  if (!res.ok()) {
+    throw new Error(`svc post ${path} failed (${res.status()}): ${await res.text()}`);
+  }
+  return (await res.json()) as Array<Record<string, unknown>>;
+}
+
 test.describe('participant join + spotlight + kick + restore', () => {
   test('full loop: join, spotlight, kick, restore, re-join', async ({
     signedInPage: facPage,
     seededSession,
   }) => {
-    const { sessionId, joinCode } = seededSession;
+    const { sessionId, joinCode, stageIds } = seededSession;
     const joinUrl = `/join/${joinCode}`;
     const participantA = await newSignedInContext(facPage, 'participant-a');
     const participantB = await newSignedInContext(facPage, 'participant-b');
@@ -149,23 +170,35 @@ test.describe('participant join + spotlight + kick + restore', () => {
       await participantB.page.waitForURL(`**/app/sessions/${sessionId}`, { timeout: 10_000 });
       await expect(participantB.page.getByText(/Test session/i).first()).toBeVisible();
 
-      // ── 2. Spotlight participant A directly via service-role REST.
-      //    Tightening this to the kebab menu requires the Roster modal's
-      //    realtime channel to deliver the freshly-joined participant row
-      //    through the session_participants RLS filter — which requires
-      //    supabase.realtime.setAuth(token) wiring that's still pending
-      //    (see RosterList.tsx FOLLOW-UP comment). The contractually
-      //    meaningful assertions below — the spotlight target landed AND
-      //    participant B's banner can resolve participant A's name —
+      // ── 2. Spotlight participant A's canvas directly via service-role REST.
+      //    Spotlight targets a *model* (not a profile), so first seed a
+      //    participant-A-owned canvas on the individual_model stage, then point
+      //    sessions.spotlight_target_model_id at it. Tightening this to the
+      //    kebab menu requires the Roster modal's realtime channel to deliver
+      //    the freshly-joined participant row through the session_participants
+      //    RLS filter — which requires supabase.realtime.setAuth(token) wiring
+      //    that's still pending (see RosterList.tsx FOLLOW-UP comment). The
+      //    contractually meaningful assertions below — the spotlight target
+      //    landed AND participant B can resolve participant A's profile —
       //    don't depend on the modal rendering.
+      const createdModels = await svcPost(facPage, 'models', {
+        owner_profile_id: participantA.userId,
+        session_id: sessionId,
+        stage_id: stageIds.individual_model,
+        title: 'participant A canvas',
+        canvas_state: { groups: [], bricks: [] },
+      });
+      const participantAModelId = createdModels[0]?.id as string;
+      expect(participantAModelId).toBeTruthy();
+
       await svcPatch(
         facPage,
         'sessions',
         { id: `eq.${sessionId}` },
-        { spotlight_target_profile_id: participantA.userId },
+        { spotlight_target_model_id: participantAModelId },
       );
       const spotlightRead = await facPage.request.get(
-        `${LOCAL_SUPABASE_URL}/rest/v1/sessions?select=spotlight_target_profile_id&id=eq.${sessionId}`,
+        `${LOCAL_SUPABASE_URL}/rest/v1/sessions?select=spotlight_target_model_id&id=eq.${sessionId}`,
         {
           headers: {
             apikey: LOCAL_SERVICE_ROLE_KEY,
@@ -174,9 +207,9 @@ test.describe('participant join + spotlight + kick + restore', () => {
         },
       );
       const spotlightRows = (await spotlightRead.json()) as Array<{
-        spotlight_target_profile_id: string | null;
+        spotlight_target_model_id: string | null;
       }>;
-      expect(spotlightRows[0]?.spotlight_target_profile_id).toBe(participantA.userId);
+      expect(spotlightRows[0]?.spotlight_target_model_id).toBe(participantAModelId);
 
       // ── 2b. Profiles RLS — participant B should now be able to read
       //    participant A's profile row through the shared

@@ -853,7 +853,7 @@ export type Database = {
           org_id: string
           pre_session_check: Json
           scheduled_for: string | null
-          spotlight_target_profile_id: string | null
+          spotlight_target_model_id: string | null
           status: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at: string
@@ -871,7 +871,7 @@ export type Database = {
           org_id: string
           pre_session_check?: Json
           scheduled_for?: string | null
-          spotlight_target_profile_id?: string | null
+          spotlight_target_model_id?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title: string
           updated_at?: string
@@ -889,7 +889,7 @@ export type Database = {
           org_id?: string
           pre_session_check?: Json
           scheduled_for?: string | null
-          spotlight_target_profile_id?: string | null
+          spotlight_target_model_id?: string | null
           status?: Database["public"]["Enums"]["session_status"]
           title?: string
           updated_at?: string
@@ -917,10 +917,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sessions_spotlight_target_profile_id_fkey"
-            columns: ["spotlight_target_profile_id"]
+            foreignKeyName: "sessions_spotlight_target_model_id_fkey"
+            columns: ["spotlight_target_model_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "models"
             referencedColumns: ["id"]
           },
         ]

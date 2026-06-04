@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
+import { useSpotlightTarget } from '@/components/session/useSpotlightTarget';
 
 import { ManageRoomsDialog, type OrgMemberSummary } from './ManageRoomsDialog';
 import {
@@ -24,6 +25,7 @@ export interface StageRoomSummary {
 }
 
 interface Props {
+  sessionId: string;
   stageId: string;
   stageType: StageType;
   rooms: StageRoomSummary[];
@@ -40,6 +42,7 @@ interface Props {
 }
 
 export function RoomsPanel({
+  sessionId,
   stageId,
   stageType,
   rooms,
@@ -50,6 +53,9 @@ export function RoomsPanel({
   myRoomId,
 }: Props) {
   const [editing, setEditing] = useState(false);
+  // Spotlight targets the room's canvas (model id) so the facilitator can
+  // invite everyone to a room's model — including after the timer stops.
+  const { targetModelId, pendingModelId, toggle } = useSpotlightTarget(sessionId);
 
   const isDownstream = stageType === 'system_model' || stageType === 'guiding_principles';
   const myRoom = rooms.find((r) => r.id === myRoomId) ?? null;
@@ -100,12 +106,39 @@ export function RoomsPanel({
                     : `${room.memberIds.length} members`}
                 </p>
               </div>
-              <Link
-                href={`/app/designs/${room.modelId}`}
-                className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 hover:bg-zinc-900/5"
-              >
-                Open
-              </Link>
+              <div className="flex shrink-0 items-center gap-2">
+                {(() => {
+                  const isSpotlit = targetModelId === room.modelId;
+                  const busy = pendingModelId === room.modelId;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => void toggle(room.modelId)}
+                      disabled={busy}
+                      title={
+                        isSpotlit
+                          ? 'Stop spotlighting this room'
+                          : "Spotlight this room — everyone else sees a banner inviting them to view this room's canvas"
+                      }
+                      aria-pressed={isSpotlit}
+                      data-testid={`spotlight-room-${room.position}`}
+                      className={`inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border px-3 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        isSpotlit
+                          ? 'border-[#c0613d] bg-[#c0613d] text-white hover:bg-[#a8543a]'
+                          : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
+                      }`}
+                    >
+                      {isSpotlit ? 'Remove spotlight' : 'Spotlight'}
+                    </button>
+                  );
+                })()}
+                <Link
+                  href={`/app/designs/${room.modelId}`}
+                  className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 hover:bg-zinc-900/5"
+                >
+                  Open
+                </Link>
+              </div>
             </li>
           ))}
         </ul>

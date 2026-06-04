@@ -12,9 +12,9 @@ import { getServiceSupabaseClient } from '@/lib/db/service';
 // any INSERT/UPDATE/DELETE policies (writes only happen via these
 // actions, join-actions.ts, and handle_new_user invite claims).
 //
-// resolveSpotlightTargetModelAction is the one outlier: it's a read for
-// any signed-in viewer (the spotlight banner is shown to everyone), and
-// it returns a model URL to navigate to rather than mutating anything.
+// getSpotlightBannerAction is the one outlier: it's a read for any
+// signed-in viewer (the spotlight banner is shown to everyone), resolving
+// the spotlit canvas into banner copy rather than mutating anything.
 
 /**
  * Internal — verify the caller is the session's facilitator. Returns the
@@ -194,24 +194,24 @@ export async function restoreParticipantAction(
 
 export type SetSpotlightResult =
   | { ok: true }
-  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'target_not_participant' };
+  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'target_not_in_session' };
 
 /**
- * Point the session's spotlight at a participant's canvas, or clear it
- * (`targetProfileId = null`). Realtime-published via the existing
- * `sessions` publication (REPLICA IDENTITY FULL) so every participant's
- * banner updates without a refresh.
+ * Point the session's spotlight at a *canvas* (`models` row), or clear it
+ * (`targetModelId = null`). Realtime-published via the existing `sessions`
+ * publication (REPLICA IDENTITY FULL) so every viewer's banner updates
+ * without a refresh.
  *
- * A valid target is anyone the facilitator's ParticipantsPanel actually
- * lists, which is built from model ownership (see session page.tsx) — i.e.
- * any org member who owns a canvas in this session, NOT just join-code
- * participants. So the target is accepted when it is either an active
- * (non-removed) `session_participants` row OR owns a model in the session.
- * Soft-deleted participants who own no model still refuse.
+ * The spotlight targets a model rather than a participant so it works on
+ * every stage type — a participant's per-stage canvas (`p.id` in the
+ * Participants panel) AND a room canvas (`room.modelId` in the Rooms panel,
+ * owned by the facilitator) — and stays valid after a stage finishes or the
+ * session ends (it no longer depends on the current stage). A valid target
+ * is any non-deleted model belonging to this session.
  */
 export async function setSpotlightAction(
   sessionId: string,
-  targetProfileId: string | null,
+  targetModelId: string | null,
 ): Promise<SetSpotlightResult> {
   const actor = await assertFacilitator(sessionId);
   if (!actor) {
@@ -224,38 +224,23 @@ export async function setSpotlightAction(
   }
 
   const service = getServiceSupabaseClient();
-  if (targetProfileId !== null) {
-    const partRes = await service
-      .from('session_participants')
-      .select('removed_at')
+  if (targetModelId !== null) {
+    const modelRes = await service
+      .from('models')
+      .select('id')
+      .eq('id', targetModelId)
       .eq('session_id', sessionId)
-      .eq('profile_id', targetProfileId)
-      .is('removed_at', null)
+      .is('deleted_at', null)
       .maybeSingle();
-    if (partRes.error) {
-      throw new Error(`session_participants probe failed: ${partRes.error.message}`);
+    if (modelRes.error) {
+      throw new Error(`models probe failed: ${modelRes.error.message}`);
     }
-    if (!partRes.data) {
-      // Not on the join-code roster — fall back to model ownership, which is
-      // what the facilitator's panel is actually built from. Org members who
-      // built a canvas without redeeming a join code have no participant row.
-      const modelRes = await service
-        .from('models')
-        .select('id')
-        .eq('session_id', sessionId)
-        .eq('owner_profile_id', targetProfileId)
-        .limit(1)
-        .maybeSingle();
-      if (modelRes.error) {
-        throw new Error(`models probe failed: ${modelRes.error.message}`);
-      }
-      if (!modelRes.data) return { ok: false, code: 'target_not_participant' };
-    }
+    if (!modelRes.data) return { ok: false, code: 'target_not_in_session' };
   }
 
   const updRes = await service
     .from('sessions')
-    .update({ spotlight_target_profile_id: targetProfileId })
+    .update({ spotlight_target_model_id: targetModelId })
     .eq('id', sessionId);
   if (updRes.error) {
     throw new Error(`sessions update failed: ${updRes.error.message}`);
@@ -265,71 +250,120 @@ export async function setSpotlightAction(
   return { ok: true };
 }
 
-// ── resolveSpotlightTargetModelAction ───────────────────────────────────────
+// ── getSpotlightBannerAction ────────────────────────────────────────────────
 
-export type ResolveSpotlightTargetResult =
-  | { ok: true; modelUrl: string | null }
-  | { ok: false; code: 'unauthenticated' | 'no_current_stage' };
+export interface SpotlightBannerState {
+  /** Spotlit canvas id; the banner's "Open it" navigates to its design page. */
+  modelId: string;
+  /** Relative URL for the spotlit canvas. */
+  url: string;
+  /** Who/what is being shown: a participant's display name, or a room title. */
+  presenterLabel: string;
+  /** True when the canvas is a room (label is a room title, not a person). */
+  isRoom: boolean;
+  /** Facilitator display name, for the "<facilitator> is showing …" sentence. */
+  facilitatorName: string;
+}
 
 /**
- * Resolve the target participant's canvas on the session's current stage,
- * for the spotlight banner's "Open <name>'s model" affordance. Returns a
- * relative URL ready to drop into a <Link href={...}> or null when the
- * target has no model yet for this stage. Allowed for any signed-in
- * caller — the banner surfaces to every viewer, not just the facilitator.
+ * Resolve the session's current spotlight into everything the banner needs to
+ * render, or `null` when the banner should be hidden for the calling viewer.
+ * Allowed for any signed-in caller — the banner surfaces to every viewer.
  *
- * Failure codes:
- *   * `unauthenticated`   — no caller session
- *   * `no_current_stage`  — sessions.current_stage_id is NULL (the
- *                           spotlight has nothing to point at yet)
+ * Hidden (returns null) when: no spotlight set, the spotlit model is missing /
+ * deleted / from another session, the viewer is the facilitator, or — for a
+ * personal canvas — the viewer is its owner (they're already on it). Room
+ * canvases are owned by the facilitator, so room members still see the banner
+ * (clicking "Open it" is a harmless no-op if they're already there).
  */
-export async function resolveSpotlightTargetModelAction(
+export async function getSpotlightBannerAction(
   sessionId: string,
-  targetProfileId: string,
-): Promise<ResolveSpotlightTargetResult> {
+): Promise<SpotlightBannerState | null> {
   const userSupabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await userSupabase.auth.getUser();
-  if (!user) return { ok: false, code: 'unauthenticated' };
+  if (!user) return null;
 
   const service = getServiceSupabaseClient();
   const sessRes = await service
     .from('sessions')
-    .select('current_stage_id')
+    .select('facilitator_id, spotlight_target_model_id')
     .eq('id', sessionId)
     .maybeSingle();
   if (sessRes.error) {
     throw new Error(`sessions select failed: ${sessRes.error.message}`);
   }
-  const currentStageId = sessRes.data?.current_stage_id ?? null;
-  if (!currentStageId) return { ok: false, code: 'no_current_stage' };
+  const facilitatorId = sessRes.data?.facilitator_id ?? null;
+  const modelId = sessRes.data?.spotlight_target_model_id ?? null;
+  if (!modelId) return null;
+  // The facilitator drives the spotlight — they don't need the banner.
+  if (facilitatorId && user.id === facilitatorId) return null;
 
-  // Per-participant canvas lookup. Filter `deleted_at IS NULL` so a
-  // trashed model doesn't get surfaced. We do NOT filter on `room_id` —
-  // the spotlight follows the participant onto whichever canvas they're
-  // editing, room-backed or personal. If a participant happens to own
-  // multiple canvases on this stage (legacy data), we just take the
-  // most recently updated one.
   const modelRes = await service
     .from('models')
-    .select('id, updated_at')
+    .select('id, room_id, owner_profile_id')
+    .eq('id', modelId)
     .eq('session_id', sessionId)
-    .eq('stage_id', currentStageId)
-    .eq('owner_profile_id', targetProfileId)
     .is('deleted_at', null)
-    .order('updated_at', { ascending: false })
-    .limit(1)
     .maybeSingle();
   if (modelRes.error) {
     throw new Error(`models select failed: ${modelRes.error.message}`);
   }
+  if (!modelRes.data) return null;
+  const roomId = modelRes.data.room_id as string | null;
+  const ownerProfileId = modelRes.data.owner_profile_id as string | null;
+  const isRoom = roomId !== null;
 
-  const modelId = modelRes.data?.id as string | undefined;
+  // Personal canvas: the owner is already on it, so hide their own banner.
+  if (!isRoom && ownerProfileId && user.id === ownerProfileId) return null;
+
+  const facilitatorName = await resolveProfileName(service, facilitatorId, 'Facilitator');
+
+  let presenterLabel: string;
+  if (isRoom) {
+    const roomRes = await service
+      .from('stage_rooms')
+      .select('title, position')
+      .eq('id', roomId as string)
+      .maybeSingle();
+    if (roomRes.error) {
+      throw new Error(`stage_rooms select failed: ${roomRes.error.message}`);
+    }
+    const title = roomRes.data?.title?.trim();
+    presenterLabel = title || `Room ${(roomRes.data?.position ?? 0) + 1}`;
+  } else {
+    presenterLabel = await resolveProfileName(service, ownerProfileId, 'A participant');
+  }
+
   return {
-    ok: true,
-    modelUrl: modelId ? `/app/designs/${modelId}` : null,
+    modelId,
+    url: `/app/designs/${modelId}`,
+    presenterLabel,
+    isRoom,
+    facilitatorName,
   };
+}
+
+/** Resolve a profile id to a display name (full name → email → fallback). */
+async function resolveProfileName(
+  service: ReturnType<typeof getServiceSupabaseClient>,
+  profileId: string | null,
+  fallback: string,
+): Promise<string> {
+  if (!profileId) return fallback;
+  const { data, error } = await service
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', profileId)
+    .maybeSingle();
+  if (error) {
+    throw new Error(`profiles select failed: ${error.message}`);
+  }
+  const name = data?.full_name?.trim();
+  if (name) return name;
+  if (data?.email) return data.email;
+  return fallback;
 }
 
 // ── inviteParticipantsByEmailAction ─────────────────────────────────────────

@@ -203,9 +203,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      {data.session_id && user && (
-        <SpotlightBanner sessionId={data.session_id} viewerProfileId={user.id} />
-      )}
+      {data.session_id && user && <SpotlightBanner sessionId={data.session_id} />}
       <Builder
         initialModel={initialModel}
         readOnly={readOnly}
