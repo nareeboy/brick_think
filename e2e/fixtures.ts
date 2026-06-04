@@ -16,6 +16,11 @@ import { test as base, expect, type Page } from '@playwright/test';
 interface Fixtures {
   signedInEmail: string;
   signedInPage: Page;
+  // A signed-in page whose user has been promoted to site admin
+  // (public.profiles.is_site_admin = true) via the dev-only
+  // /api/test/promote-site-admin route. Gives access to the /app/admin/*
+  // surface (changelog editor, careers inbox, etc.).
+  siteAdminPage: Page;
   seededSession: {
     sessionId: string;
     orgId: string;
@@ -73,6 +78,18 @@ export const test = base.extend<Fixtures>({
         }
       }
     }
+  },
+  siteAdminPage: async ({ signedInPage, signedInEmail }, use) => {
+    // Reuse the already-signed-in page (and its fresh user + cleanup), then
+    // flip is_site_admin on that user's profile. The route gates on the same
+    // host + E2E_AUTH_ENABLED + test-email checks as the other test routes.
+    const res = await signedInPage.request.post('/api/test/promote-site-admin', {
+      data: { email: signedInEmail },
+    });
+    if (!res.ok()) {
+      throw new Error(`Promote site admin failed (${res.status()}): ${await res.text()}`);
+    }
+    await use(signedInPage);
   },
   seededSession: async ({ signedInPage, signedInEmail }, use) => {
     const res = await signedInPage.request.post('/api/test/seed-session', {
