@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
+import { getModelNarration } from '@/lib/sessions/modelNarration';
 import {
   addOrgMember,
   cleanupTestUser,
@@ -81,5 +82,20 @@ describe('model_narrations table', () => {
       transcript: 'Again.',
     });
     expect(dup.error).not.toBeNull(); // unique (model_id) violation
+  });
+});
+
+describe('getModelNarration read gate', () => {
+  test('owner reads their narration', async () => {
+    const n = await getModelNarration(fx.modelId, fx.owner.id);
+    expect(n?.transcript).toBe('Hello world.');
+  });
+  test('org member (session readable) reads it', async () => {
+    const n = await getModelNarration(fx.modelId, fx.member.id);
+    expect(n?.transcript).toBe('Hello world.');
+  });
+  test('outsider gets null (no read access)', async () => {
+    const n = await getModelNarration(fx.modelId, fx.outsider.id);
+    expect(n).toBeNull();
   });
 });
