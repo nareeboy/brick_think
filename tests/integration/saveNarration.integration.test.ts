@@ -173,4 +173,43 @@ describe('saveNarration (integration)', () => {
     const res = await saveNarration(fx.modelId, 'some transcript', null);
     expect(res).toEqual({ ok: false, code: 'not_owner' });
   });
+
+  it("participant records → the SESSION FACILITATOR's key does the cleanup", async () => {
+    // A participant (non-facilitator) owns their own canvas in fx.session, which
+    // is facilitated by fx.owner. Only the facilitator has a key.
+    const admin = getAdminClient();
+    const m = await admin
+      .from('models')
+      .insert({
+        owner_profile_id: fx.nonOwner.id,
+        session_id: fx.session.id,
+        stage_id: fx.session.stageIds.skill_building,
+        title: 'participant model',
+        canvas_state: EMPTY_CANVAS_STATE,
+      })
+      .select('id')
+      .single();
+    if (m.error || !m.data) throw new Error(`participant model insert failed: ${m.error?.message}`);
+    const participantModelId = m.data.id as string;
+
+    // Resolve key by profile id: only the facilitator (fx.owner) has one.
+    vi.mocked(getAnthropicClientForProfile).mockImplementation(async (profileId: string) =>
+      profileId === fx.owner.id
+        ? { ok: true as const, client: stubAnthropicClient('Polished via facilitator key.') }
+        : { ok: false as const, code: 'no_claude_key' as const },
+    );
+
+    // The recorder is the participant, who has no key of their own.
+    currentClient = await signInAs(fx.nonOwner);
+    const res = await saveNarration(participantModelId, 'attendee telling their story', 1500);
+
+    expect(res.ok).toBe(true);
+    if (!res.ok) throw new Error('expected ok');
+    expect(res.cleaned).toBe(true);
+    expect(res.cleanupStatus).toBe('succeeded');
+    expect(res.transcript).toBe('Polished via facilitator key.');
+    // The key looked up must be the facilitator's, never the recorder's.
+    expect(vi.mocked(getAnthropicClientForProfile)).toHaveBeenCalledWith(fx.owner.id);
+    expect(vi.mocked(getAnthropicClientForProfile)).not.toHaveBeenCalledWith(fx.nonOwner.id);
+  });
 });

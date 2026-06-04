@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
 
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 import { usePrefersReducedMotion } from '@/lib/a11y/usePrefersReducedMotion';
@@ -252,17 +251,8 @@ export function NarrationDrawer({ modelId, canRecord, initialNarration, open, on
                 {showRaw ? 'Show polished' : 'View raw'}
               </button>
             ) : null}
-            {canRecord && narration.cleanupStatus === 'skipped' ? (
-              <p className="mt-2 text-[12px] text-zinc-500">
-                Add your{' '}
-                <Link
-                  href="/app/account"
-                  className="text-[#c0613d] underline-offset-2 hover:underline"
-                >
-                  Anthropic key
-                </Link>{' '}
-                to auto-polish future transcripts.
-              </p>
+            {narration.cleanupStatus === 'skipped' ? (
+              <p className="mt-2 text-[12px] text-zinc-500">Saved as captured (not polished).</p>
             ) : null}
             {narration.cleanupStatus === 'failed' ? (
               <p className="mt-2 text-[12px] text-zinc-500">
