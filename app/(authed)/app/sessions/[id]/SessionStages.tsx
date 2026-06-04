@@ -15,6 +15,7 @@ import {
 } from '@/components/session/useSessionStages';
 import { useSessionModelsRealtime } from '@/components/session/useSessionModelsRealtime';
 import { useRoomAssignmentRefresh } from '@/components/session/useRoomAssignmentRefresh';
+import { useSpotlightTarget } from '@/components/session/useSpotlightTarget';
 
 import {
   advanceStageAction,
@@ -35,8 +36,6 @@ import { StageMetaEditor } from './StageMetaEditor';
 import { StageScenarioRow } from './StageScenarioRow';
 import { StartModelButton } from './StartModelButton';
 import { RoomsPanel, type StageRoomSummary } from './RoomsPanel';
-import { setSpotlightAction } from '../roster-actions';
-import { getBrowserSupabaseClient } from '@/lib/db/client';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
 import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
 import type { Scenario } from '@/lib/scenarios/types';
@@ -385,6 +384,7 @@ function StageRow({
 
       {ROOM_AWARE_STAGES.has(stageType) ? (
         <RoomsPanel
+          sessionId={sessionId}
           stageId={stage.id}
           stageType={stageType}
           rooms={rooms}
@@ -402,7 +402,6 @@ function StageRow({
           lastUpdatedAt={lastUpdatedAt}
           nowMs={nowMs}
           sessionId={sessionId}
-          stageStatus={status}
         />
       ) : null}
     </li>
@@ -415,71 +414,23 @@ function ParticipantsPanel({
   lastUpdatedAt,
   nowMs,
   sessionId,
-  stageStatus,
 }: {
   stageType: StageType;
   participants: ParticipantModel[];
   lastUpdatedAt: Map<string, number>;
   nowMs: number;
   sessionId: string;
-  stageStatus: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [spotlightTargetId, setSpotlightTargetId] = useState<string | null>(null);
-  const [spotlightBusy, setSpotlightBusy] = useState<string | null>(null);
+  // Spotlight targets a canvas (model id), live across every stage status —
+  // facilitators present participants' models after the timer stops too.
+  const { targetModelId, pendingModelId, toggle } = useSpotlightTarget(sessionId);
 
   const handleRefresh = () => {
     startTransition(() => {
       router.refresh();
     });
-  };
-
-  // Subscribe to the session's spotlight pointer so the chip on each
-  // participant row reflects live state. Realtime auth is primed via
-  // setAuth so RLS-filtered payloads land. Hidden when stageStatus
-  // isn't 'active' (the toggle button is disabled in that case too,
-  // since the "Open it" affordance only resolves for the current stage).
-  useEffect(() => {
-    const supabase = getBrowserSupabaseClient();
-    let active = true;
-    const load = async () => {
-      const { data } = await supabase
-        .from('sessions')
-        .select('spotlight_target_profile_id')
-        .eq('id', sessionId)
-        .maybeSingle();
-      if (active) setSpotlightTargetId(data?.spotlight_target_profile_id ?? null);
-    };
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (active && token) await supabase.realtime.setAuth(token);
-    })();
-    void load();
-    const channel = supabase
-      .channel(`stage-spotlight:${sessionId}:${stageType}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
-        (payload) => {
-          setSpotlightTargetId((payload.new?.spotlight_target_profile_id as string | null) ?? null);
-        },
-      )
-      .subscribe();
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
-  }, [sessionId, stageType]);
-
-  const handleToggleSpotlight = async (profileId: string) => {
-    if (stageStatus !== 'active') return;
-    const next = spotlightTargetId === profileId ? null : profileId;
-    setSpotlightBusy(profileId);
-    const result = await setSpotlightAction(sessionId, next);
-    setSpotlightBusy(null);
-    if (result.ok) setSpotlightTargetId(next);
   };
 
   return (
@@ -531,20 +482,17 @@ function ParticipantsPanel({
                 </div>
                 <div className="flex items-center gap-2">
                   {(() => {
-                    const isSpotlit = spotlightTargetId === p.ownerProfileId;
-                    const canSpotlight = stageStatus === 'active';
-                    const busy = spotlightBusy === p.ownerProfileId;
+                    const isSpotlit = targetModelId === p.id;
+                    const busy = pendingModelId === p.id;
                     return (
                       <button
                         type="button"
-                        onClick={() => void handleToggleSpotlight(p.ownerProfileId)}
-                        disabled={!canSpotlight || busy}
+                        onClick={() => void toggle(p.id)}
+                        disabled={busy}
                         title={
-                          canSpotlight
-                            ? isSpotlit
-                              ? 'Stop spotlighting this participant'
-                              : 'Spotlight this participant — everyone else sees a banner inviting them to view this canvas'
-                            : 'Start the stage to spotlight a participant'
+                          isSpotlit
+                            ? 'Stop spotlighting this canvas'
+                            : 'Spotlight this canvas — everyone else sees a banner inviting them to view it'
                         }
                         aria-pressed={isSpotlit}
                         className={`inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border px-3 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
