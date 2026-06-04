@@ -553,7 +553,7 @@ function ParticipantsPanel({
                             : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
                         }`}
                       >
-                        {isSpotlit ? 'Spotlit' : 'Spotlight'}
+                        {isSpotlit ? 'Remove spotlight' : 'Spotlight'}
                       </button>
                     );
                   })()}
