@@ -379,7 +379,10 @@ describe('setSpotlightAction', () => {
       .single();
     expect(sessRes.data?.spotlight_target_model_id).toBe(modelId);
 
-    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
@@ -398,7 +401,10 @@ describe('setSpotlightAction', () => {
       .single();
     expect(sessRes.data?.spotlight_target_model_id).toBe(modelId);
 
-    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
@@ -527,7 +533,10 @@ describe('getSpotlightBannerAction', () => {
       facilitatorName: fx.facilitator.email,
     });
 
-    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
@@ -540,7 +549,10 @@ describe('getSpotlightBannerAction', () => {
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toBeNull();
 
-    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
@@ -554,7 +566,10 @@ describe('getSpotlightBannerAction', () => {
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toBeNull();
 
-    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
@@ -574,13 +589,19 @@ describe('getSpotlightBannerAction', () => {
     });
 
     const admin = getAdminClient();
-    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
   test('returns null when no spotlight is set', async () => {
     const admin = getAdminClient();
-    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.session.id);
 
     currentClient = await signInAs(fx.bob);
     const result = await getSpotlightBannerAction(fx.session.id);
