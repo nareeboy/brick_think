@@ -239,7 +239,7 @@ export type Database = {
       careers_roles: {
         Row: {
           created_at: string
-          description_markdown: string
+          description_html: string
           employment_type: string
           id: string
           is_open: boolean
@@ -251,7 +251,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          description_markdown?: string
+          description_html?: string
           employment_type?: string
           id?: string
           is_open?: boolean
@@ -263,7 +263,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          description_markdown?: string
+          description_html?: string
           employment_type?: string
           id?: string
           is_open?: boolean
@@ -317,6 +317,63 @@ export type Database = {
             columns: ["target_model_id"]
             isOneToOne: false
             referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_narrations: {
+        Row: {
+          cleaned: boolean
+          cleanup_status: Database["public"]["Enums"]["narration_cleanup_status"]
+          created_at: string
+          duration_ms: number | null
+          id: string
+          model_id: string
+          profile_id: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          transcript: string
+          transcript_raw: string
+          updated_at: string
+        }
+        Insert: {
+          cleaned?: boolean
+          cleanup_status?: Database["public"]["Enums"]["narration_cleanup_status"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          model_id: string
+          profile_id?: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          transcript: string
+          transcript_raw: string
+          updated_at?: string
+        }
+        Update: {
+          cleaned?: boolean
+          cleanup_status?: Database["public"]["Enums"]["narration_cleanup_status"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          model_id?: string
+          profile_id?: string | null
+          stage_type?: Database["public"]["Enums"]["stage_type"]
+          transcript?: string
+          transcript_raw?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_narrations_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: true
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_narrations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1020,6 +1077,21 @@ export type Database = {
           },
         ]
       }
+      site_admin_emails: {
+        Row: {
+          added_at: string
+          email: string
+        }
+        Insert: {
+          added_at?: string
+          email: string
+        }
+        Update: {
+          added_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       stage_events: {
         Row: {
           actor_profile_id: string | null
@@ -1354,6 +1426,7 @@ export type Database = {
         | "reviewed"
         | "shortlisted"
         | "rejected"
+      narration_cleanup_status: "skipped" | "succeeded" | "failed"
       org_role: "owner" | "admin" | "facilitator" | "member"
       session_mode: "sync" | "async" | "hybrid"
       session_status: "draft" | "scheduled" | "live" | "completed" | "archived"
@@ -1501,6 +1574,7 @@ export const Constants = {
         "shortlisted",
         "rejected",
       ],
+      narration_cleanup_status: ["skipped", "succeeded", "failed"],
       org_role: ["owner", "admin", "facilitator", "member"],
       session_mode: ["sync", "async", "hybrid"],
       session_status: ["draft", "scheduled", "live", "completed", "archived"],

@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { ApplicationForm } from '@/components/careers/ApplicationForm';
 import { MarketingShell } from '@/components/marketing/MarketingChrome';
 import { getOpenRoleBySlug } from '@/lib/careers/queries';
+import { sanitizeRoleHtml } from '@/lib/careers/sanitizeHtml';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,10 +40,13 @@ export default async function RolePage({ params }: { params: Promise<{ slug: str
           {role.employmentType ? <span>· {role.employmentType}</span> : null}
         </div>
 
-        {role.descriptionMarkdown ? (
-          <div className="mt-8 whitespace-pre-wrap text-[15px] leading-relaxed text-zinc-800">
-            {role.descriptionMarkdown}
-          </div>
+        {role.descriptionHtml ? (
+          // Stored value is already sanitized on save; re-sanitize on render as
+          // defense-in-depth (and to neutralize any legacy pre-WYSIWYG rows).
+          <div
+            className="article-prose mt-8"
+            dangerouslySetInnerHTML={{ __html: sanitizeRoleHtml(role.descriptionHtml) }}
+          />
         ) : null}
 
         <div className="mt-12 border-t border-zinc-900/10 pt-10">

@@ -13,7 +13,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
   const supabase = await createServerSupabaseClient();
   const { data } = await supabase
     .from('careers_roles')
-    .select('id, slug, title, location, employment_type, summary, description_markdown, is_open')
+    .select('id, slug, title, location, employment_type, summary, description_html, is_open')
     .eq('id', id)
     .maybeSingle();
   if (!data) notFound();
@@ -37,7 +37,7 @@ export default async function EditRolePage({ params }: { params: Promise<{ id: s
           location: data.location,
           employmentType: data.employment_type,
           summary: data.summary,
-          descriptionMarkdown: data.description_markdown,
+          descriptionHtml: data.description_html,
         }}
       />
     </div>
