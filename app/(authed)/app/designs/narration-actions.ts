@@ -38,13 +38,26 @@ export async function saveNarration(
   const svc = getServiceSupabaseClient();
   const modelRes = await svc
     .from('models')
-    .select('id, owner_profile_id, stage_id')
+    .select('id, owner_profile_id, stage_id, session_id, room_id')
     .eq('id', modelId)
     .is('deleted_at', null)
     .maybeSingle();
   if (modelRes.error) throw new Error(`model lookup failed: ${modelRes.error.message}`);
   if (!modelRes.data) return { ok: false, code: 'model_not_found' };
-  if (modelRes.data.owner_profile_id !== user.id) return { ok: false, code: 'not_owner' };
+
+  // Authorize the writer: the canvas owner (personal session canvas), or — for a
+  // room-backed shared canvas — any transitive room member via can_edit_room.
+  // Mirrors the edit-ability gate the design page uses to show the Narrate button.
+  let authorized = modelRes.data.owner_profile_id === user.id;
+  if (!authorized && modelRes.data.room_id) {
+    const gate = await svc.rpc('can_edit_room', {
+      p_profile_id: user.id,
+      p_model_id: modelId,
+    });
+    if (gate.error) throw new Error(`can_edit_room failed: ${gate.error.message}`);
+    authorized = gate.data === true;
+  }
+  if (!authorized) return { ok: false, code: 'not_owner' };
 
   const stageRes = await svc
     .from('stages')
@@ -55,20 +68,37 @@ export async function saveNarration(
   const stageType = stageRes.data?.stage_type;
   if (!stageType) return { ok: false, code: 'model_not_found' };
 
-  // Optional Claude tidy-up — best-effort. Any failure degrades to raw.
+  // Cleanup runs on the SESSION FACILITATOR's Anthropic key, not the recorder's
+  // — participants do most of the speaking and rarely hold a key, while the
+  // facilitator already feeds participant data to their key for reports. The key
+  // is decrypted server-side and never exposed to the participant. Best-effort:
+  // any miss (no facilitator, no key, decrypt/API failure) degrades to raw text.
   let transcript = trimmed;
   let cleaned = false;
   let cleanupStatus: NarrationCleanupStatus = 'skipped';
 
-  const anthropic = await getAnthropicClientForProfile(user.id);
-  if (anthropic.ok) {
-    const result = await cleanupTranscript(anthropic.client, trimmed);
-    if (result.ok) {
-      transcript = result.text;
-      cleaned = true;
-      cleanupStatus = 'succeeded';
-    } else {
-      cleanupStatus = 'failed';
+  let facilitatorId: string | null = null;
+  if (modelRes.data.session_id) {
+    const sessRes = await svc
+      .from('sessions')
+      .select('facilitator_id')
+      .eq('id', modelRes.data.session_id)
+      .maybeSingle();
+    if (sessRes.error) throw new Error(`session lookup failed: ${sessRes.error.message}`);
+    facilitatorId = sessRes.data?.facilitator_id ?? null;
+  }
+
+  if (facilitatorId) {
+    const anthropic = await getAnthropicClientForProfile(facilitatorId);
+    if (anthropic.ok) {
+      const result = await cleanupTranscript(anthropic.client, trimmed);
+      if (result.ok) {
+        transcript = result.text;
+        cleaned = true;
+        cleanupStatus = 'succeeded';
+      } else {
+        cleanupStatus = 'failed';
+      }
     }
   }
 
