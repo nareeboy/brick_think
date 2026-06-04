@@ -17,6 +17,7 @@ import { computeDesignReadOnly } from '@/lib/models/readOnly';
 import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext, StageType } from '@/lib/sessions/types';
 import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
+import { getModelNarration } from '@/lib/sessions/modelNarration';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
@@ -166,6 +167,12 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
     isOwner: data.owner_profile_id === user.id,
     isSessionFacilitator,
   });
+  const isOwner = data.owner_profile_id === user.id;
+  // Narration: owner of a session-scoped, non-room canvas may record. Anyone who
+  // can read the model sees the transcript (getModelNarration enforces readability).
+  const canNarrate = sessionContext !== null && isOwner && data.room_id == null && !readOnly;
+  const initialNarration =
+    sessionContext !== null ? await getModelNarration(data.id, user.id) : null;
   // Room canvases have no single human "owner" in the UX sense (they're shared
   // breakout rooms), so don't surface an owner name on the read-only chrome —
   // the banner switches to room-aware copy below.
@@ -222,6 +229,8 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         initialComments={initialComments}
         myProfileId={user.id}
         scenario={scenario}
+        canNarrate={canNarrate}
+        initialNarration={initialNarration}
       />
     </>
   );

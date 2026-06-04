@@ -36,12 +36,32 @@ const defaultProps = {
 };
 
 describe('PreSessionChecklist', () => {
-  test('renders the three visible items (consent hidden until Phase 2)', () => {
+  test('renders all four visible items (including recording consent)', () => {
     render(<PreSessionChecklist {...defaultProps} />);
     screen.getByText(/Write a brief/i);
     screen.getByText(/Pick a scenario for each stage/i);
     screen.getByText(/Review accessibility/i);
-    expect(screen.queryByText(/Recording consent/i)).toBeNull();
+    screen.getByText(/Confirm recording consent/i);
+  });
+
+  test('recording-consent item ticks when pre_session_check.recording_consent === true', () => {
+    render(<PreSessionChecklist {...defaultProps} preSessionCheck={{ recording_consent: true }} />);
+    expect(screen.getByTestId('checklist-item-recording').getAttribute('data-status')).toBe('done');
+  });
+
+  test('recording consent is NOT part of the "Ready to start" gate', () => {
+    const stages = baseStages.map((s) => ({ ...s, scenarioId: 'scen-x' }));
+    render(
+      <PreSessionChecklist
+        {...defaultProps}
+        briefText={'a'.repeat(40)}
+        preSessionCheck={{ a11y_reviewed: true }}
+        stages={stages}
+      />,
+    );
+    // Consent left unchecked, yet the pill still appears at 3/3.
+    screen.getByText(/Ready to start/i);
+    expect(screen.getByTestId('checklist-item-recording').getAttribute('data-status')).toBe('open');
   });
 
   test('brief item ticks when text length ≥ 40 chars', () => {
