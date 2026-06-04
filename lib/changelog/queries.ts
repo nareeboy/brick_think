@@ -40,18 +40,28 @@ export async function listPublishedEntries(): Promise<PublicChangelogEntry[]> {
 
 // Footer indicator: the version_tag of the newest published entry, or null if
 // there are no published entries or the newest one has no tag.
+//
+// The Footer is an async server component rendered into otherwise-static pages
+// (e.g. /contact). During build-time static generation the Supabase env vars
+// (NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY) may be absent, in
+// which case createServerSupabaseClient() throws and crashes prerendering.
+// Swallow any failure and fall back to null — the footer simply omits the tag.
 export async function getLatestPublishedVersionTag(): Promise<string | null> {
-  const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from('changelog_entries')
-    .select('version_tag, published_at')
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error || !data) return null;
-  const tag = data.version_tag?.trim();
-  return tag ? tag : null;
+  try {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('changelog_entries')
+      .select('version_tag, published_at')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return null;
+    const tag = data.version_tag?.trim();
+    return tag ? tag : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function listEntriesForAdmin(): Promise<ChangelogListItem[]> {
