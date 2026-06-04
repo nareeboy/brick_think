@@ -69,4 +69,48 @@ describe('sanitizeRoleHtml', () => {
   test('returns empty string for empty/whitespace input', () => {
     expect(sanitizeRoleHtml('')).toBe('');
   });
+
+  // Adversarial regression guards for the load-bearing allowlist / schemes /
+  // transformTags config. These pass today; the point is to fail loudly if a
+  // future edit to sanitizeHtml.ts weakens the gate.
+  describe('adversarial regression guards', () => {
+    test.each([
+      '<a href="java&#115;cript:alert(1)">x</a>',
+      '<a href="java\tscript:alert(1)">x</a>',
+      '<a href="  javascript:alert(1)">x</a>',
+      '<a href="JavaScript:alert(1)">x</a>',
+      '<a href="vbscript:msgbox(1)">x</a>',
+      '<a href="data:text/html,<script>alert(1)</script>">x</a>',
+    ])('neutralizes dangerous href: %s', (payload) => {
+      const out = sanitizeRoleHtml(payload).toLowerCase();
+      expect(out).not.toContain('javascript:');
+      expect(out).not.toContain('vbscript:');
+      expect(out).not.toContain('data:text/html');
+      expect(out).not.toContain('alert');
+    });
+
+    test.each([
+      '<svg onload="alert(1)"></svg>',
+      '<form action="/x"></form>',
+      '<object data="x"></object>',
+      '<embed src="x">',
+    ])('strips dangerous element: %s', (payload) => {
+      const out = sanitizeRoleHtml(payload).toLowerCase();
+      for (const bad of ['svg', 'onload', 'form', 'object', 'embed', 'alert']) {
+        expect(out).not.toContain(bad);
+      }
+    });
+
+    test('does not re-introduce event handlers on allowed links', () => {
+      const out = sanitizeRoleHtml('<a href="https://x.io" onmouseover="alert(1)">x</a>');
+      expect(out).not.toContain('onmouseover');
+      expect(out).not.toContain('alert');
+      expect(out).toContain('href="https://x.io"');
+    });
+
+    test('entity-encoded markup stays inert text (no real tags)', () => {
+      const out = sanitizeRoleHtml('&lt;script&gt;alert(1)&lt;/script&gt;');
+      expect(out).not.toContain('<script');
+    });
+  });
 });
