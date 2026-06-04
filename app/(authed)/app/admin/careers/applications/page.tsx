@@ -15,7 +15,7 @@ export default async function ApplicationsPage() {
   const { data } = await supabase
     .from('careers_applications')
     .select(
-      'id, first_name, last_name, address, phone, linkedin_url, cv_path, status, created_at, expires_at, careers_roles(title)',
+      'id, first_name, last_name, email, address, phone, linkedin_url, cv_path, status, created_at, expires_at, careers_roles(title)',
     )
     .order('created_at', { ascending: false });
   const apps = data ?? [];
@@ -42,6 +42,11 @@ export default async function ApplicationsPage() {
                       </span>
                     </div>
                     <div className="mt-1 space-y-0.5 text-sm text-zinc-600">
+                      <div>
+                        <a href={`mailto:${a.email}`} className="text-[#c0613d] hover:underline">
+                          {a.email}
+                        </a>
+                      </div>
                       <div>{a.phone}</div>
                       <div>{a.address}</div>
                       <a
