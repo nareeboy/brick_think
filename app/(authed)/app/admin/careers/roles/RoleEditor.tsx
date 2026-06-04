@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { RichTextEditor } from '@/components/careers/RichTextEditor';
 import { createRoleAction, updateRoleAction, type RoleActionResult } from './actions';
 
 interface RoleEditorProps {
@@ -13,7 +14,7 @@ interface RoleEditorProps {
     location: string;
     employmentType: string;
     summary: string;
-    descriptionMarkdown: string;
+    descriptionHtml: string;
   };
 }
 
@@ -100,16 +101,10 @@ export function RoleEditor({ mode, initial }: RoleEditorProps) {
         <input id="summary" name="summary" defaultValue={initial?.summary} className={inputClass} />
       </div>
       <div>
-        <label htmlFor="descriptionMarkdown" className="block text-sm font-medium text-zinc-800">
-          Description
-        </label>
-        <textarea
-          id="descriptionMarkdown"
-          name="descriptionMarkdown"
-          rows={12}
-          defaultValue={initial?.descriptionMarkdown}
-          className={inputClass}
-        />
+        <span className="block text-sm font-medium text-zinc-800">Description</span>
+        <div className="mt-1.5">
+          <RichTextEditor name="descriptionHtml" initialHtml={initial?.descriptionHtml} />
+        </div>
       </div>
       {error ? (
         <p role="alert" className="text-sm text-red-600">
