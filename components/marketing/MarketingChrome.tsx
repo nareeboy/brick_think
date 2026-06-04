@@ -3,6 +3,11 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
+import { ProductHuntBadge } from '@/components/marketing/ProductHuntBadge';
+import { SourceForgeBadge } from '@/components/marketing/SourceForgeBadge';
+import { StartupFameBadge } from '@/components/marketing/StartupFameBadge';
+import { SourceForgeDownloadButton } from '@/components/marketing/SourceForgeDownloadButton';
 import { getLatestPublishedVersionTag } from '@/lib/changelog/queries';
 
 export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
@@ -65,10 +70,48 @@ export function NavBar() {
   );
 }
 
+// Site-wide "Featured on" wall sitting above the footer columns. A logo strip
+// for every place BrickThink has launched / been featured. Add new badges to
+// the centred row — it wraps cleanly as the list grows.
+function FeaturedOnBand() {
+  return (
+    <div className="border-b border-zinc-900/10">
+      <div className="mx-auto max-w-7xl px-6 py-10 md:py-12">
+        <p className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+          Featured on
+        </p>
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+          <ProductHuntBadge />
+          <StartupFameBadge />
+          <SourceForgeBadge />
+          <SourceForgeDownloadButton />
+          <a
+            href={LSP_DACH_COMMUNITY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
+          >
+            <Image
+              src="/dach-logo.png"
+              alt="LEGO® SERIOUS PLAY® Community DACH"
+              width={596}
+              height={216}
+              className="h-14 w-auto object-contain"
+            />
+            <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
+          </a>
+          <PeerlistBadge />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export async function Footer() {
   const versionTag = await getLatestPublishedVersionTag();
   return (
     <footer className="border-t border-zinc-900/10">
+      <FeaturedOnBand />
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-12 md:grid-cols-12">
         <div className="md:col-span-5">
           <Link href="/" className="flex items-center gap-2 text-zinc-900">
@@ -209,24 +252,6 @@ export async function Footer() {
           <p className="mt-2 text-[13px] text-zinc-600">
             WCAG 2.2 AA. GDPR-aligned. EU data residency. Always free.
           </p>
-          <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Featured on
-          </p>
-          <a
-            href={LSP_DACH_COMMUNITY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
-          >
-            <Image
-              src="/dach-logo.png"
-              alt="LEGO® SERIOUS PLAY® Community DACH"
-              width={596}
-              height={216}
-              className="h-20 w-56 object-contain"
-            />
-            <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
-          </a>
         </div>
       </div>
       <div className="border-t border-zinc-900/10">
