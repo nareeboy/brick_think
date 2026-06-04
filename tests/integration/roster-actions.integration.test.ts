@@ -44,10 +44,10 @@ vi.mock('@/lib/db/server', () => ({
 // Import AFTER mocks are registered.
 import {
   cancelInvitationAction,
+  getSpotlightBannerAction,
   inviteParticipantsByEmailAction,
   removeParticipantAction,
   resendInvitationAction,
-  resolveSpotlightTargetModelAction,
   restoreParticipantAction,
   setSpotlightAction,
 } from '@/app/(authed)/app/sessions/roster-actions';
@@ -142,6 +142,46 @@ async function seedParticipantModel(user: TestUser, stageId: string): Promise<st
     throw new Error(`seedParticipantModel failed: ${res.error?.message}`);
   }
   return res.data.id as string;
+}
+
+/**
+ * Seed a stage_rooms row + a facilitator-owned room canvas (models.room_id
+ * set) on the given stage. Wipes pre-existing rooms on that stage first so the
+ * unique (stage_id, position) constraint doesn't trip. Returns the room id,
+ * model id, and the room title for banner-label assertions.
+ */
+async function seedRoomModel(
+  stageId: string,
+  position: number,
+): Promise<{ roomId: string; modelId: string; roomTitle: string }> {
+  const admin = getAdminClient();
+  await admin.from('stage_rooms').delete().eq('stage_id', stageId);
+  const roomTitle = `Room ${position + 1}`;
+  const roomRes = await admin
+    .from('stage_rooms')
+    .insert({ stage_id: stageId, position, title: roomTitle })
+    .select('id')
+    .single();
+  if (roomRes.error || !roomRes.data) {
+    throw new Error(`seedRoomModel stage_rooms insert failed: ${roomRes.error?.message}`);
+  }
+  const roomId = roomRes.data.id as string;
+  const modelRes = await admin
+    .from('models')
+    .insert({
+      owner_profile_id: fx.facilitator.id,
+      session_id: fx.session.id,
+      stage_id: stageId,
+      room_id: roomId,
+      title: roomTitle,
+      canvas_state: { groups: [], bricks: [] },
+    })
+    .select('id')
+    .single();
+  if (modelRes.error || !modelRes.data) {
+    throw new Error(`seedRoomModel models insert failed: ${modelRes.error?.message}`);
+  }
+  return { roomId, modelId: modelRes.data.id as string, roomTitle };
 }
 
 /** Set sessions.current_stage_id via service role. */
@@ -319,39 +359,8 @@ describe('restoreParticipantAction', () => {
 });
 
 describe('setSpotlightAction', () => {
-  test('writes spotlight_target_profile_id when target is an active participant', async () => {
-    await ensureActiveParticipant(fx.alice);
-
-    currentClient = await signInAs(fx.facilitator);
-    const result = await setSpotlightAction(fx.session.id, fx.alice.id);
-    expect(result).toEqual({ ok: true });
-
+  test('writes spotlight_target_model_id for a model in the session', async () => {
     const admin = getAdminClient();
-    const sessRes = await admin
-      .from('sessions')
-      .select('spotlight_target_profile_id')
-      .eq('id', fx.session.id)
-      .single();
-    expect(sessRes.data?.spotlight_target_profile_id).toBe(fx.alice.id);
-  });
-
-  test('rejects when target is not a participant', async () => {
-    currentClient = await signInAs(fx.facilitator);
-    const result = await setSpotlightAction(fx.session.id, fx.outsider.id);
-    expect(result).toEqual({ ok: false, code: 'target_not_participant' });
-  });
-
-  test('writes spotlight when target owns a model in the session but has no participant row', async () => {
-    // The facilitator's ParticipantsPanel lists model owners (org members),
-    // not just join-code participants. An org member who built a canvas
-    // without ever redeeming a join code has no session_participants row,
-    // yet still appears in the panel and must be spotlightable.
-    const admin = getAdminClient();
-    await admin
-      .from('session_participants')
-      .delete()
-      .eq('session_id', fx.session.id)
-      .eq('profile_id', fx.alice.id);
     await admin
       .from('models')
       .delete()
@@ -360,110 +369,241 @@ describe('setSpotlightAction', () => {
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
 
     currentClient = await signInAs(fx.facilitator);
-    const result = await setSpotlightAction(fx.session.id, fx.alice.id);
+    const result = await setSpotlightAction(fx.session.id, modelId);
     expect(result).toEqual({ ok: true });
 
     const sessRes = await admin
       .from('sessions')
-      .select('spotlight_target_profile_id')
+      .select('spotlight_target_model_id')
       .eq('id', fx.session.id)
       .single();
-    expect(sessRes.data?.spotlight_target_profile_id).toBe(fx.alice.id);
+    expect(sessRes.data?.spotlight_target_model_id).toBe(modelId);
 
+    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
-  test('rejects when target is soft-deleted (treated as not a participant)', async () => {
-    await ensureActiveParticipant(fx.bob);
-    await softDeleteParticipant(fx.bob);
+  test('spotlights a facilitator-owned room canvas', async () => {
+    const { modelId } = await seedRoomModel(fx.session.stageIds.shared_model, 0);
 
     currentClient = await signInAs(fx.facilitator);
-    const result = await setSpotlightAction(fx.session.id, fx.bob.id);
-    expect(result).toEqual({ ok: false, code: 'target_not_participant' });
-  });
-
-  test('clears spotlight when targetProfileId is null', async () => {
-    // First set spotlight to alice so we have something to clear.
-    await ensureActiveParticipant(fx.alice);
-    currentClient = await signInAs(fx.facilitator);
-    const setRes = await setSpotlightAction(fx.session.id, fx.alice.id);
-    expect(setRes).toEqual({ ok: true });
-
-    // Now clear.
-    const clearRes = await setSpotlightAction(fx.session.id, null);
-    expect(clearRes).toEqual({ ok: true });
+    const result = await setSpotlightAction(fx.session.id, modelId);
+    expect(result).toEqual({ ok: true });
 
     const admin = getAdminClient();
     const sessRes = await admin
       .from('sessions')
-      .select('spotlight_target_profile_id')
+      .select('spotlight_target_model_id')
       .eq('id', fx.session.id)
       .single();
-    expect(sessRes.data?.spotlight_target_profile_id).toBeNull();
+    expect(sessRes.data?.spotlight_target_model_id).toBe(modelId);
+
+    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin.from('models').delete().eq('id', modelId);
+  });
+
+  test('works with no current stage set — spotlight is decoupled from stage lifecycle', async () => {
+    // A model on a session whose current_stage_id is NULL is still
+    // spotlightable: presenting after the timer stops must work.
+    const admin = getAdminClient();
+    const modelRes = await admin
+      .from('models')
+      .insert({
+        owner_profile_id: fx.facilitator.id,
+        session_id: fx.blankStageSession.id,
+        stage_id: fx.blankStageSession.stageIds.individual_model,
+        title: 'blank-stage model',
+        canvas_state: { groups: [], bricks: [] },
+      })
+      .select('id')
+      .single();
+    if (modelRes.error || !modelRes.data) {
+      throw new Error(`seed blank-stage model failed: ${modelRes.error?.message}`);
+    }
+    const modelId = modelRes.data.id as string;
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await setSpotlightAction(fx.blankStageSession.id, modelId);
+    expect(result).toEqual({ ok: true });
+
+    await admin
+      .from('sessions')
+      .update({ spotlight_target_model_id: null })
+      .eq('id', fx.blankStageSession.id);
+    await admin.from('models').delete().eq('id', modelId);
+  });
+
+  test('rejects a model that belongs to another session', async () => {
+    const admin = getAdminClient();
+    const modelRes = await admin
+      .from('models')
+      .insert({
+        owner_profile_id: fx.facilitator.id,
+        session_id: fx.blankStageSession.id,
+        stage_id: fx.blankStageSession.stageIds.individual_model,
+        title: 'other-session model',
+        canvas_state: { groups: [], bricks: [] },
+      })
+      .select('id')
+      .single();
+    if (modelRes.error || !modelRes.data) {
+      throw new Error(`seed other-session model failed: ${modelRes.error?.message}`);
+    }
+    const foreignModelId = modelRes.data.id as string;
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await setSpotlightAction(fx.session.id, foreignModelId);
+    expect(result).toEqual({ ok: false, code: 'target_not_in_session' });
+
+    await admin.from('models').delete().eq('id', foreignModelId);
+  });
+
+  test('rejects a soft-deleted model', async () => {
+    const admin = getAdminClient();
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
+    await admin.from('models').update({ deleted_at: new Date().toISOString() }).eq('id', modelId);
+
+    currentClient = await signInAs(fx.facilitator);
+    const result = await setSpotlightAction(fx.session.id, modelId);
+    expect(result).toEqual({ ok: false, code: 'target_not_in_session' });
+
+    await admin.from('models').delete().eq('id', modelId);
+  });
+
+  test('clears spotlight when targetModelId is null', async () => {
+    const admin = getAdminClient();
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
+
+    currentClient = await signInAs(fx.facilitator);
+    const setRes = await setSpotlightAction(fx.session.id, modelId);
+    expect(setRes).toEqual({ ok: true });
+
+    const clearRes = await setSpotlightAction(fx.session.id, null);
+    expect(clearRes).toEqual({ ok: true });
+
+    const sessRes = await admin
+      .from('sessions')
+      .select('spotlight_target_model_id')
+      .eq('id', fx.session.id)
+      .single();
+    expect(sessRes.data?.spotlight_target_model_id).toBeNull();
+
+    await admin.from('models').delete().eq('id', modelId);
   });
 
   test('rejects non-facilitator caller', async () => {
-    await ensureActiveParticipant(fx.alice);
+    const admin = getAdminClient();
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
+
     currentClient = await signInAs(fx.alice);
-    const result = await setSpotlightAction(fx.session.id, fx.alice.id);
+    const result = await setSpotlightAction(fx.session.id, modelId);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
+
+    await admin.from('models').delete().eq('id', modelId);
   });
 
   test('returns unauthenticated when no caller', async () => {
     currentClient = null;
-    const result = await setSpotlightAction(fx.session.id, fx.alice.id);
+    const result = await setSpotlightAction(fx.session.id, null);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });
 });
 
-describe('resolveSpotlightTargetModelAction', () => {
-  test('returns the model URL when the target has a model on the current stage', async () => {
-    const stageId = fx.session.stageIds.individual_model;
-    await setCurrentStage(fx.session.id, stageId);
-    const modelId = await seedParticipantModel(fx.alice, stageId);
-
-    currentClient = await signInAs(fx.facilitator);
-    const result = await resolveSpotlightTargetModelAction(fx.session.id, fx.alice.id);
-    expect(result).toEqual({ ok: true, modelUrl: `/app/designs/${modelId}` });
-
-    // Cleanup: drop the seeded model so the "no model" test below is clean.
+describe('getSpotlightBannerAction', () => {
+  test('returns banner state for a personal canvas (presenter = owner, isRoom false)', async () => {
     const admin = getAdminClient();
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
+    currentClient = await signInAs(fx.facilitator);
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+
+    // A viewer who is neither the facilitator nor the owner sees the banner.
+    currentClient = await signInAs(fx.bob);
+    const result = await getSpotlightBannerAction(fx.session.id);
+    expect(result).toEqual({
+      modelId,
+      url: `/app/designs/${modelId}`,
+      presenterLabel: fx.alice.email,
+      isRoom: false,
+      facilitatorName: fx.facilitator.email,
+    });
+
+    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
   });
 
-  test('returns modelUrl=null when the target has no model on the current stage', async () => {
-    await setCurrentStage(fx.session.id, fx.session.stageIds.individual_model);
-
+  test('hides from the facilitator (they drive the spotlight)', async () => {
+    const admin = getAdminClient();
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
     currentClient = await signInAs(fx.facilitator);
-    const result = await resolveSpotlightTargetModelAction(fx.session.id, fx.bob.id);
-    expect(result).toEqual({ ok: true, modelUrl: null });
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+
+    const result = await getSpotlightBannerAction(fx.session.id);
+    expect(result).toBeNull();
+
+    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin.from('models').delete().eq('id', modelId);
   });
 
-  test('returns no_current_stage when the session has no current stage set', async () => {
+  test('hides from the owner of a personal canvas (they are already on it)', async () => {
+    const admin = getAdminClient();
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
     currentClient = await signInAs(fx.facilitator);
-    const result = await resolveSpotlightTargetModelAction(fx.blankStageSession.id, fx.alice.id);
-    expect(result).toEqual({ ok: false, code: 'no_current_stage' });
-  });
-
-  test('returns unauthenticated when no caller', async () => {
-    currentClient = null;
-    const result = await resolveSpotlightTargetModelAction(fx.session.id, fx.alice.id);
-    expect(result).toEqual({ ok: false, code: 'unauthenticated' });
-  });
-
-  test('allows any signed-in caller (not just the facilitator)', async () => {
-    // The spotlight banner shows to every viewer, so non-facilitators must
-    // be able to resolve. Verify with `fx.alice` (a participant, not the
-    // facilitator) — same successful return as the facilitator case.
-    await setCurrentStage(fx.session.id, fx.session.stageIds.individual_model);
-    const modelId = await seedParticipantModel(fx.bob, fx.session.stageIds.individual_model);
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
 
     currentClient = await signInAs(fx.alice);
-    const result = await resolveSpotlightTargetModelAction(fx.session.id, fx.bob.id);
-    expect(result).toEqual({ ok: true, modelUrl: `/app/designs/${modelId}` });
+    const result = await getSpotlightBannerAction(fx.session.id);
+    expect(result).toBeNull();
+
+    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+    await admin.from('models').delete().eq('id', modelId);
+  });
+
+  test('returns room title + isRoom=true for a room canvas, shown to any non-facilitator', async () => {
+    const { modelId, roomTitle } = await seedRoomModel(fx.session.stageIds.shared_model, 0);
+    currentClient = await signInAs(fx.facilitator);
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+
+    currentClient = await signInAs(fx.alice);
+    const result = await getSpotlightBannerAction(fx.session.id);
+    expect(result).toEqual({
+      modelId,
+      url: `/app/designs/${modelId}`,
+      presenterLabel: roomTitle,
+      isRoom: true,
+      facilitatorName: fx.facilitator.email,
+    });
 
     const admin = getAdminClient();
+    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
     await admin.from('models').delete().eq('id', modelId);
+  });
+
+  test('returns null when no spotlight is set', async () => {
+    const admin = getAdminClient();
+    await admin.from('sessions').update({ spotlight_target_model_id: null }).eq('id', fx.session.id);
+
+    currentClient = await signInAs(fx.bob);
+    const result = await getSpotlightBannerAction(fx.session.id);
+    expect(result).toBeNull();
+  });
+
+  test('returns null when the spotlit model was deleted (FK clears the pointer)', async () => {
+    const admin = getAdminClient();
+    const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
+    currentClient = await signInAs(fx.facilitator);
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+
+    await admin.from('models').delete().eq('id', modelId);
+
+    currentClient = await signInAs(fx.bob);
+    const result = await getSpotlightBannerAction(fx.session.id);
+    expect(result).toBeNull();
+  });
+
+  test('returns null when no caller', async () => {
+    currentClient = null;
+    const result = await getSpotlightBannerAction(fx.session.id);
+    expect(result).toBeNull();
   });
 });
 

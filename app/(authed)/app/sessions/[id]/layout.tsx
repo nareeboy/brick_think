@@ -16,7 +16,7 @@ export default async function SessionLayout({
 
   return (
     <>
-      {user && <SpotlightBanner sessionId={id} viewerProfileId={user.id} />}
+      {user && <SpotlightBanner sessionId={id} />}
       {children}
     </>
   );
