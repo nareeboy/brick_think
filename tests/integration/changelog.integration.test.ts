@@ -149,6 +149,14 @@ describe('server actions', () => {
     expect(res).toEqual({ ok: false, code: 'invalid_category' });
   });
 
+  test('admin create accepts the release category', async () => {
+    currentClient = await signInAs(adminUser);
+    const id = await createViaAction({ title: 'A release', category: 'release' });
+    const row = await admin.from('changelog_entries').select('category').eq('id', id).single();
+    expect(row.error).toBeNull();
+    expect(row.data?.category).toBe('release');
+  });
+
   test('publish then unpublish keeps published_at', async () => {
     const id = await makeEntry({ title: 'Toggle me', category: 'improvement', status: 'draft' });
     currentClient = await signInAs(adminUser);
