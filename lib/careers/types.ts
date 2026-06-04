@@ -20,6 +20,7 @@ export interface ApplicationRow {
   roleTitle: string | null;
   firstName: string;
   lastName: string;
+  email: string;
   address: string;
   phone: string;
   linkedinUrl: string;

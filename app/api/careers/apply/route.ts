@@ -33,6 +33,7 @@ export async function POST(request: Request) {
   const fields = {
     firstName: str(form, 'firstName'),
     lastName: str(form, 'lastName'),
+    email: str(form, 'email'),
     address: str(form, 'address'),
     phone: str(form, 'phone'),
     linkedinUrl: str(form, 'linkedinUrl'),
@@ -72,6 +73,7 @@ export async function POST(request: Request) {
       role_id: roleId,
       first_name: fields.firstName.trim(),
       last_name: fields.lastName.trim(),
+      email: fields.email.trim(),
       address: fields.address.trim(),
       phone: fields.phone.trim(),
       linkedin_url: fields.linkedinUrl.trim(),

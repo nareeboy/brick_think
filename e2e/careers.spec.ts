@@ -85,6 +85,9 @@ test.describe('careers public application flow', () => {
     // --- Last name ---
     await page.getByLabel('Last name').fill('Testington');
 
+    // --- Email ---
+    await page.getByLabel('Email').fill('alice.testington@example.com');
+
     // --- Address ---
     await page.getByLabel('Address').fill('1 Test Street, Testville, TS1 1AB');
 
@@ -125,6 +128,7 @@ test.describe('careers public application flow', () => {
 
     await page.getByLabel('First name').fill('Bob');
     await page.getByLabel('Last name').fill('Nofile');
+    await page.getByLabel('Email').fill('bob.nofile@example.com');
     await page.getByLabel('Address').fill('2 Missing File Lane');
     await page.getByLabel('Contact number').fill('7700 900456');
     await page.getByLabel('LinkedIn profile').fill('https://www.linkedin.com/in/bob-nofile');
