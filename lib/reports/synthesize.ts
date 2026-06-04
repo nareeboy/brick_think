@@ -4,7 +4,7 @@ import type { CollectedSession } from '@/lib/reports/collect';
 
 const SYNTHESIS_TIMEOUT_MS = 90_000;
 
-const SYSTEM_PROMPT = `You are writing a session report for BrickThink, a facilitation tool for LEGO Serious Play sessions. Voice: confident, plain English, no jargon, no marketing fluff. Reference participants by first name. Never invent details that aren't in the input. Use British English.
+const SYSTEM_PROMPT = `You are writing a session report for BrickThink, a facilitation tool for LEGO® SERIOUS PLAY® sessions. Voice: confident, plain English, no jargon, no marketing fluff. Reference participants by first name. Never invent details that aren't in the input. Use British English.
 
 Output exactly one JSON object matching this schema:
 {

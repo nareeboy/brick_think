@@ -295,6 +295,15 @@ docs/                        local-only docs (specs, plans, followups, conventio
 
 BrickThink is licensed under the [Apache License 2.0](LICENSE). Third-party attribution and provenance live in [NOTICE](NOTICE). Contributions are accepted under the same terms — see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
+### Method vs. code
+
+These are two separate things, and the licences do not conflict:
+
+- **The code** — everything in this repository, including our own 52 tiles, their names, and all site copy — is original work, licensed under Apache 2.0.
+- **The method** — LEGO® SERIOUS PLAY® is published by the LEGO Group as an open-source methodology under CC BY-SA 3.0. BrickThink **implements** that method; it does not copy or redistribute the LEGO Group's written materials, IMAGINOPEDIA content, or brick designs.
+
+A methodology — the abstract process — is not subject to copyright; only its particular expression is. Because BrickThink incorporates **none** of the CC BY-SA-licensed material (we wrote our own copy and made our own tiles), the ShareAlike term does not reach our code, and the Apache 2.0 licence stands without obligation. Our reference to CC BY-SA 3.0 is an acknowledgement of the method's open status and its source, not a redistribution of CC-licensed work.
+
 ## Trademark
 
 LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob configurations are trademarks of the LEGO Group, which does not sponsor, authorize or endorse this product.
