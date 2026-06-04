@@ -7,6 +7,8 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { computeRemainingMs } from '@/lib/sessions/computeRemainingMs';
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
+import type { ModelNarration } from '@/lib/sessions/modelNarration';
+import { TranscriptViewModal } from '@/components/session/TranscriptViewModal';
 import { StageExpiryBanner } from '@/components/session/StageExpiryBanner';
 import {
   useSessionStages,
@@ -51,6 +53,8 @@ export interface ParticipantModel {
   title: string;
   ownerLabel: string;
   ownerProfileId: string;
+  /** This participant's saved narration for this stage's model, if any. */
+  narration: ModelNarration | null;
 }
 
 interface OwnedModelRow {
@@ -456,6 +460,7 @@ function ParticipantsPanel({
   // Spotlight targets a canvas (model id), live across every stage status —
   // facilitators present participants' models after the timer stops too.
   const { targetModelId, pendingModelId, toggle } = useSpotlightTarget(sessionId);
+  const [viewing, setViewing] = useState<{ name: string; narration: ModelNarration } | null>(null);
 
   const handleRefresh = () => {
     startTransition(() => {
@@ -491,6 +496,7 @@ function ParticipantsPanel({
           {participants.map((p) => {
             const t = lastUpdatedAt.get(p.id);
             const isLive = t != null && nowMs - t < 10_000;
+            const narration = p.narration;
             return (
               <li
                 key={p.id}
@@ -535,6 +541,17 @@ function ParticipantsPanel({
                       </button>
                     );
                   })()}
+                  {narration ? (
+                    <button
+                      type="button"
+                      onClick={() => setViewing({ name: p.ownerLabel, narration })}
+                      data-testid={`participant-transcript-${p.id}`}
+                      title="View this participant's saved narration transcript"
+                      className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
+                    >
+                      Transcript
+                    </button>
+                  ) : null}
                   <Link
                     href={`/app/designs/${p.id}`}
                     className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
@@ -547,6 +564,13 @@ function ParticipantsPanel({
           })}
         </ul>
       )}
+      {viewing ? (
+        <TranscriptViewModal
+          participantName={viewing.name}
+          narration={viewing.narration}
+          onClose={() => setViewing(null)}
+        />
+      ) : null}
     </div>
   );
 }
