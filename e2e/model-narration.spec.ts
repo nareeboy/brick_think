@@ -110,11 +110,13 @@ test.describe('model narration', () => {
     await page.getByTestId('narration-button').click();
     await expect(page.getByTestId('narration-transcript')).toContainText('model story');
 
-    // ── Step 8: read-only viewer ──────────────────────────────────────────
+    // ── Step 8: read-only viewer has no narration affordance ─────────────
     // A second signed-in user joins the session via its join code (becoming a
-    // session_participant, which satisfies can_read_model's participant
-    // branch). They open the owner's design and should see the saved
-    // transcript but NOT the record control (canRecord is owner-only).
+    // session_participant). They open the OWNER's design. Narrations are now
+    // per-(model, speaker): the drawer seeds with the caller's OWN narration,
+    // so this reader — who has no narration of their own on this canvas and
+    // can't record (read-only) — sees no Narrate button at all. (The combined
+    // transcript is surfaced to facilitators on the session page + the report.)
     const viewer = await newSignedInContext(page, 'narration-viewer');
     try {
       await viewer.page.goto(`/app/join/${seededSession.joinCode}`);
@@ -124,13 +126,7 @@ test.describe('model narration', () => {
 
       await viewer.page.goto(designUrl);
       await expect(viewer.page.getByTestId('builder-canvas')).toBeVisible();
-
-      // The Narrate button still renders for a reader when a narration exists
-      // (initialNarration !== null), so open the drawer.
-      await viewer.page.getByTestId('narration-button').click();
-      await expect(viewer.page.getByTestId('narration-transcript')).toContainText('model story');
-      // Reader is not the owner → no recorder, no notice ack.
-      await expect(viewer.page.getByTestId('narration-record')).toHaveCount(0);
+      await expect(viewer.page.getByTestId('narration-button')).toHaveCount(0);
     } finally {
       // Clean up the viewer's auth user (mirrors participant-join.spec.ts).
       const cleanupRes = await page.request.post('/api/test/delete-user', {

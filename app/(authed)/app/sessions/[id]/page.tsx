@@ -7,7 +7,7 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
-import { getNarrationsForModelIds } from '@/lib/sessions/modelNarration';
+import { getCombinedNarrationsForModelIds } from '@/lib/sessions/modelNarration';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
 import { getLatestSessionReport } from '../report-actions';
@@ -172,7 +172,9 @@ export default async function SessionDetailPage({
     // The facilitator / org-manager can read every model in the session, so a
     // batch read of their narrations is authorized — the canManageSession guard
     // IS the gate (the helper itself does no per-model check).
-    const narrationByModelId = await getNarrationsForModelIds(participantModels.map((m) => m.id));
+    const narrationByModelId = await getCombinedNarrationsForModelIds(
+      participantModels.map((m) => m.id),
+    );
     for (const m of participantModels) {
       const label = m.profiles?.full_name?.trim() || m.profiles?.email || 'Unknown';
       const list = participantsByStage[m.stage_id] ?? [];
@@ -234,6 +236,11 @@ export default async function SessionDetailPage({
       roomSources = (sourcesForRooms.data ?? []) as { room_id: string; source_room_id: string }[];
     }
     const modelByRoomId = new Map(roomModels.map((m) => [m.room_id as string, m.id]));
+    // Combined room narrations for the facilitator's Transcript button — each
+    // room's members' narrations merged into one. Guarded by canManageSession.
+    const roomNarrationByModelId = canManageSession
+      ? await getCombinedNarrationsForModelIds(roomModels.map((m) => m.id))
+      : null;
     const membersByRoomId = new Map<string, string[]>();
     for (const m of roomMembers) {
       const list = membersByRoomId.get(m.room_id) ?? [];
@@ -257,6 +264,7 @@ export default async function SessionDetailPage({
         modelId,
         memberIds: membersByRoomId.get(r.id) ?? [],
         sourceRoomIds: sourcesByRoomId.get(r.id) ?? [],
+        narration: roomNarrationByModelId?.get(modelId) ?? null,
       });
       roomsByStageId[r.stage_id] = list;
     }
