@@ -1,24 +1,26 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId } from 'react';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
-import type { ModelNarration } from '@/lib/sessions/modelNarration';
 
 interface Props {
-  participantName: string;
-  narration: ModelNarration;
+  /** Heading, e.g. a participant name or a room name. */
+  title: string;
+  /** Combined transcript text (one speaker verbatim, or several attributed). */
+  body: string;
+  /** True when any contributing narration was polished by Claude. */
+  polished: boolean;
   onClose: () => void;
 }
 
 /**
- * Read-only facilitator view of a participant's saved narration transcript.
- * The transcript text is already fetched server-side (the facilitator can read
- * every session model), so this is pure display — no recording controls.
+ * Read-only facilitator view of a model's combined narration transcript. On an
+ * individual canvas that's the owner's narration; on a room canvas it's every
+ * member's narration merged into one. Pure display — no recording controls.
  */
-export function TranscriptViewModal({ participantName, narration, onClose }: Props) {
+export function TranscriptViewModal({ title, body, polished, onClose }: Props) {
   const titleId = useId();
-  const [showRaw, setShowRaw] = useState(false);
 
   return (
     <ModalBackdrop onClose={onClose} titleId={titleId} panelClassName="w-full max-w-lg">
@@ -26,9 +28,9 @@ export function TranscriptViewModal({ participantName, narration, onClose }: Pro
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h2 id={titleId} className="text-sm font-semibold text-zinc-900">
-              {participantName}&rsquo;s narration
+              {title}
             </h2>
-            {narration.cleaned ? (
+            {polished ? (
               <span className="mt-1 inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
                 Polished by Claude
               </span>
@@ -45,25 +47,8 @@ export function TranscriptViewModal({ participantName, narration, onClose }: Pro
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto">
-          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-700">
-            {showRaw ? narration.transcriptRaw : narration.transcript}
-          </p>
+          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-700">{body}</p>
         </div>
-
-        {narration.cleaned ? (
-          <button
-            type="button"
-            onClick={() => setShowRaw((v) => !v)}
-            className="mt-2 text-[12px] text-[#c0613d] underline-offset-2 hover:underline"
-          >
-            {showRaw ? 'Show polished' : 'View raw'}
-          </button>
-        ) : null}
-        {narration.cleanupStatus === 'failed' ? (
-          <p className="mt-2 text-[12px] text-zinc-500">
-            Couldn&rsquo;t polish — showing the words as captured.
-          </p>
-        ) : null}
       </div>
     </ModalBackdrop>
   );

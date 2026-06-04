@@ -2,6 +2,7 @@ import type { ServiceSupabaseClient } from '@/lib/db/service';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { CanvasState } from '@/lib/models/types';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
+import { combineNarrations } from '@/lib/sessions/modelNarration';
 
 export interface CollectedModel {
   id: string;
@@ -65,7 +66,9 @@ export async function collectSession(
       room:stage_rooms ( id, title,
         members:stage_room_members ( profile:profiles ( full_name ) )
       ),
-      narrations:model_narrations ( transcript, cleaned )
+      narrations:model_narrations ( transcript, cleaned, created_at,
+        narrator:profiles!model_narrations_profile_id_fkey ( full_name, email )
+      )
     `,
     )
     .eq('session_id', sessionId);
@@ -122,14 +125,27 @@ export async function collectSession(
 
     const extractedText = extractText(canvasState).slice(0, 2000);
 
-    // model_narrations.model_id is UNIQUE, so PostgREST embeds it one-to-one (an
-    // object or null) rather than as an array — normalise both shapes.
-    const narrationEmbed = m.narrations as unknown as
-      | { transcript: string; cleaned: boolean }
-      | Array<{ transcript: string; cleaned: boolean }>
-      | null
-      | undefined;
-    const narrationRow = Array.isArray(narrationEmbed) ? narrationEmbed[0] : narrationEmbed;
+    // model_narrations is one-to-many per model (one per speaker) — combine every
+    // member's narration into one attributed transcript, ordered by recording time.
+    const narrationRows =
+      (m.narrations as unknown as
+        | Array<{
+            transcript: string;
+            cleaned: boolean;
+            created_at: string;
+            narrator: { full_name: string | null; email: string | null } | null;
+          }>
+        | null
+        | undefined) ?? [];
+    const combined = combineNarrations(
+      [...narrationRows]
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .map((n) => ({
+          speakerName: n.narrator?.full_name?.trim() || n.narrator?.email || 'Participant',
+          transcript: n.transcript,
+          cleaned: n.cleaned,
+        })),
+    );
 
     const list = modelsByStage.get(stageType) ?? [];
     list.push({
@@ -140,8 +156,8 @@ export async function collectSession(
       thumbnailUrl: m.thumbnail_path ? (urlByPath.get(m.thumbnail_path) ?? null) : null,
       ownerLabel,
       extractedText,
-      narration: narrationRow
-        ? { transcript: narrationRow.transcript, cleaned: narrationRow.cleaned }
+      narration: combined
+        ? { transcript: combined.combinedText, cleaned: combined.anyCleaned }
         : null,
     });
     modelsByStage.set(stageType, list);

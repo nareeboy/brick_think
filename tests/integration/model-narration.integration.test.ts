@@ -1,7 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
-import { getModelNarration } from '@/lib/sessions/modelNarration';
+import {
+  combineNarrations,
+  getCombinedNarrationsForModelIds,
+  getMyNarration,
+} from '@/lib/sessions/modelNarration';
 import {
   addOrgMember,
   cleanupTestUser,
@@ -59,8 +63,27 @@ afterAll(async () => {
   await cleanupTestUser(fx.outsider.id);
 });
 
-describe('model_narrations table', () => {
-  test('service role can insert one narration per model and the unique constraint holds', async () => {
+describe('combineNarrations', () => {
+  test('returns null for no entries', () => {
+    expect(combineNarrations([])).toBeNull();
+  });
+  test('single speaker is verbatim, no attribution', () => {
+    const c = combineNarrations([{ speakerName: 'Alice', transcript: 'Just me.', cleaned: true }]);
+    expect(c).toEqual({ combinedText: 'Just me.', speakerCount: 1, anyCleaned: true });
+  });
+  test('multiple speakers are attributed and joined', () => {
+    const c = combineNarrations([
+      { speakerName: 'Alice', transcript: 'My bit.', cleaned: false },
+      { speakerName: 'Bob', transcript: 'My bit too.', cleaned: true },
+    ]);
+    expect(c?.speakerCount).toBe(2);
+    expect(c?.anyCleaned).toBe(true);
+    expect(c?.combinedText).toBe('Alice:\nMy bit.\n\nBob:\nMy bit too.');
+  });
+});
+
+describe('model_narrations per-speaker rows', () => {
+  test('the owner can insert; a second insert by the SAME speaker on the model is rejected', async () => {
     const admin = getAdminClient();
     const ins = await admin.from('model_narrations').insert({
       model_id: fx.modelId,
@@ -81,46 +104,46 @@ describe('model_narrations table', () => {
       transcript_raw: 'again',
       transcript: 'Again.',
     });
-    expect(dup.error).not.toBeNull(); // unique (model_id) violation
+    expect(dup.error).not.toBeNull(); // unique (model_id, profile_id) violation
+  });
+
+  test('a DIFFERENT speaker can add their own narration to the same model', async () => {
+    const admin = getAdminClient();
+    const ins = await admin.from('model_narrations').insert({
+      model_id: fx.modelId,
+      profile_id: fx.member.id,
+      stage_type: 'individual_model',
+      transcript_raw: 'member view',
+      transcript: 'Member view.',
+      cleaned: false,
+      cleanup_status: 'skipped',
+    });
+    expect(ins.error).toBeNull();
   });
 });
 
-describe('getModelNarration read gate', () => {
-  test('owner reads their narration', async () => {
-    const n = await getModelNarration(fx.modelId, fx.owner.id);
+describe('getMyNarration', () => {
+  test('owner reads their OWN narration', async () => {
+    const n = await getMyNarration(fx.modelId, fx.owner.id);
     expect(n?.transcript).toBe('Hello world.');
   });
-  test('org member (same org as session) reads it', async () => {
-    // member is in the same org as the session facilitator — can_read_model grants access
-    const n = await getModelNarration(fx.modelId, fx.member.id);
-    expect(n?.transcript).toBe('Hello world.');
+  test('a different speaker reads their OWN narration on the same model', async () => {
+    const n = await getMyNarration(fx.modelId, fx.member.id);
+    expect(n?.transcript).toBe('Member view.');
   });
-  test('outsider gets null (no read access)', async () => {
-    const n = await getModelNarration(fx.modelId, fx.outsider.id);
+  test('outsider (no read access) gets null', async () => {
+    const n = await getMyNarration(fx.modelId, fx.outsider.id);
     expect(n).toBeNull();
   });
-  test('authorised owner gets null when no narration row exists', async () => {
-    // Insert a second model owned by fx.owner using a different stage (skill_building) to avoid
-    // the unique constraint on (session, stage, owner) that individual_model already occupies.
-    // No narration row is created for this model.
-    const admin = getAdminClient();
-    const res = await admin
-      .from('models')
-      .insert({
-        owner_profile_id: fx.owner.id,
-        session_id: fx.session.id,
-        stage_id: fx.session.stageIds.skill_building,
-        title: 'narration model (no narration)',
-        canvas_state: EMPTY_CANVAS_STATE,
-      })
-      .select('id')
-      .single();
-    if (res.error || !res.data)
-      throw new Error(`second model insert failed: ${res.error?.message}`);
-    const newModelId = res.data.id as string;
+});
 
-    // Owner can read the model, but there is no narration row — expect null.
-    const n = await getModelNarration(newModelId, fx.owner.id);
-    expect(n).toBeNull();
+describe('getCombinedNarrationsForModelIds', () => {
+  test('combines every speaker on a model into one attributed transcript', async () => {
+    const map = await getCombinedNarrationsForModelIds([fx.modelId]);
+    const combined = map.get(fx.modelId);
+    expect(combined?.speakerCount).toBe(2);
+    expect(combined?.anyCleaned).toBe(true);
+    expect(combined?.combinedText).toContain('Hello world.');
+    expect(combined?.combinedText).toContain('Member view.');
   });
 });
