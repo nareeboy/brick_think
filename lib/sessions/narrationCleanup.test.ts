@@ -1,3 +1,4 @@
+import type Anthropic from '@anthropic-ai/sdk';
 import { describe, expect, test, vi } from 'vitest';
 
 import { cleanupTranscript } from '@/lib/sessions/narrationCleanup';
@@ -10,7 +11,7 @@ function fakeClient(textOrThrow: string | Error) {
         return { content: [{ type: 'text', text: textOrThrow }] };
       }),
     },
-  } as unknown as import('@anthropic-ai/sdk').default;
+  } as unknown as Anthropic;
 }
 
 describe('cleanupTranscript', () => {
@@ -30,7 +31,7 @@ describe('cleanupTranscript', () => {
   test('returns ok:false when the response has no text block', async () => {
     const client = {
       messages: { create: vi.fn(async () => ({ content: [] })) },
-    } as unknown as import('@anthropic-ai/sdk').default;
+    } as unknown as Anthropic;
     const out = await cleanupTranscript(client, 'x');
     expect(out.ok).toBe(false);
   });

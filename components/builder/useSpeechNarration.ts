@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Minimal typings — SpeechRecognition is not in the default DOM lib.
 interface SpeechRecognitionLike {
@@ -66,6 +66,8 @@ export function useSpeechNarration(): UseSpeechNarration {
 
   const start = useCallback(() => {
     if (!ctor) return;
+    // Guard against a double-start leaking the previous recognition instance.
+    if (status === 'recording') return;
     const rec = new ctor();
     recRef.current = rec;
     rec.continuous = true;
@@ -100,7 +102,14 @@ export function useSpeechNarration(): UseSpeechNarration {
     startedAt.current = Date.now();
     setStatus('recording');
     rec.start();
-  }, [ctor]);
+  }, [ctor, status]);
+
+  // Stop any in-flight recognition if the component unmounts mid-recording.
+  useEffect(() => {
+    return () => {
+      recRef.current?.stop();
+    };
+  }, []);
 
   return {
     supported: ctor != null,
