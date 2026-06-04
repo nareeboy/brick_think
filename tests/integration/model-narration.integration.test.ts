@@ -90,12 +90,37 @@ describe('getModelNarration read gate', () => {
     const n = await getModelNarration(fx.modelId, fx.owner.id);
     expect(n?.transcript).toBe('Hello world.');
   });
-  test('org member (session readable) reads it', async () => {
+  test('org member (same org as session) reads it', async () => {
+    // member is in the same org as the session facilitator — can_read_model grants access
     const n = await getModelNarration(fx.modelId, fx.member.id);
     expect(n?.transcript).toBe('Hello world.');
   });
   test('outsider gets null (no read access)', async () => {
     const n = await getModelNarration(fx.modelId, fx.outsider.id);
+    expect(n).toBeNull();
+  });
+  test('authorised owner gets null when no narration row exists', async () => {
+    // Insert a second model owned by fx.owner using a different stage (skill_building) to avoid
+    // the unique constraint on (session, stage, owner) that individual_model already occupies.
+    // No narration row is created for this model.
+    const admin = getAdminClient();
+    const res = await admin
+      .from('models')
+      .insert({
+        owner_profile_id: fx.owner.id,
+        session_id: fx.session.id,
+        stage_id: fx.session.stageIds.skill_building,
+        title: 'narration model (no narration)',
+        canvas_state: EMPTY_CANVAS_STATE,
+      })
+      .select('id')
+      .single();
+    if (res.error || !res.data)
+      throw new Error(`second model insert failed: ${res.error?.message}`);
+    const newModelId = res.data.id as string;
+
+    // Owner can read the model, but there is no narration row — expect null.
+    const n = await getModelNarration(newModelId, fx.owner.id);
     expect(n).toBeNull();
   });
 });
