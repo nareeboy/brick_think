@@ -12,6 +12,7 @@ export const APP_ADDRESS_MAX = 2000;
 export const APP_PHONE_MIN = 3;
 export const APP_PHONE_MAX = 40;
 export const APP_LINKEDIN_MAX = 2000;
+export const APP_EMAIL_MAX = 320; // matches the DB length check (3–320)
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 // MIME allowlist. Magic-byte sniffing is overkill here (admin-only download,

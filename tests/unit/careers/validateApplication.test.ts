@@ -6,6 +6,7 @@ import { validateApplicationFields, validateCvFile } from '@/lib/careers/validat
 const valid = {
   firstName: 'Ada',
   lastName: 'Lovelace',
+  email: 'ada@example.com',
   address: '12 Analytical Engine Rd, London',
   phone: '+447700900123',
   linkedinUrl: 'https://www.linkedin.com/in/ada',
@@ -24,6 +25,18 @@ describe('validateApplicationFields', () => {
 
   test('rejects unchecked terms', () => {
     expect(validateApplicationFields({ ...valid, termsAccepted: false })).toBe('terms_required');
+  });
+
+  test('rejects a missing email', () => {
+    expect(validateApplicationFields({ ...valid, email: '  ' })).toBe('invalid_email');
+  });
+
+  test('rejects a malformed email', () => {
+    expect(validateApplicationFields({ ...valid, email: 'ada@nope' })).toBe('invalid_email');
+  });
+
+  test('accepts a plus-addressed email', () => {
+    expect(validateApplicationFields({ ...valid, email: 'ada+jobs@example.co.uk' })).toBeNull();
   });
 
   test('rejects a filled honeypot as spam', () => {

@@ -186,6 +186,7 @@ export type Database = {
           created_at: string
           cv_filename: string | null
           cv_path: string | null
+          email: string
           expires_at: string
           first_name: string
           id: string
@@ -200,6 +201,7 @@ export type Database = {
           created_at?: string
           cv_filename?: string | null
           cv_path?: string | null
+          email: string
           expires_at?: string
           first_name: string
           id?: string
@@ -214,6 +216,7 @@ export type Database = {
           created_at?: string
           cv_filename?: string | null
           cv_path?: string | null
+          email?: string
           expires_at?: string
           first_name?: string
           id?: string

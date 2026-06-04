@@ -8,6 +8,7 @@ import { PhoneInput } from './PhoneInput';
 const ERROR_MESSAGES: Record<string, string> = {
   invalid_first_name: 'Please enter your first name.',
   invalid_last_name: 'Please enter your last name.',
+  invalid_email: 'Please enter a valid email address.',
   invalid_address: 'Please enter your address.',
   invalid_phone: 'Please enter a valid contact number.',
   invalid_linkedin: 'Please enter a valid LinkedIn URL (https://…).',
@@ -85,6 +86,21 @@ export function ApplicationForm({ roleId, roleTitle }: { roleId: string; roleTit
           </label>
           <input id="lastName" name="lastName" required className={inputClass} />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium text-zinc-800">
+          Email
+        </label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+          className={inputClass}
+        />
       </div>
 
       <div>
