@@ -29,7 +29,11 @@ export default async function EditChangelogEntryPage({
           <DeleteEntryButton id={entry.id} />
         </div>
       </div>
-      <ChangelogEditor mode="edit" initial={entry} />
+      <ChangelogEditor
+        mode="edit"
+        initial={entry}
+        initialDate={entry.publishedAt ? entry.publishedAt.slice(0, 10) : ''}
+      />
     </div>
   );
 }
