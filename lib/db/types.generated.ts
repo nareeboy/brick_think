@@ -275,6 +275,42 @@ export type Database = {
         }
         Relationships: []
       }
+      changelog_entries: {
+        Row: {
+          body_html: string
+          category: string
+          created_at: string
+          id: string
+          published_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          version_tag: string | null
+        }
+        Insert: {
+          body_html?: string
+          category?: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          version_tag?: string | null
+        }
+        Update: {
+          body_html?: string
+          category?: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          version_tag?: string | null
+        }
+        Relationships: []
+      }
       model_imports: {
         Row: {
           id: string
