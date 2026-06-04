@@ -5,7 +5,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import type { PublicRole, RoleListItem } from './types';
 
 const LIST_COLS = 'id, slug, title, location, employment_type, summary, is_open, created_at';
-const DETAIL_COLS = `${LIST_COLS}, description_markdown`;
+const DETAIL_COLS = `${LIST_COLS}, description_html`;
 
 export async function listOpenRoles(): Promise<RoleListItem[]> {
   const supabase = await createServerSupabaseClient();
@@ -45,6 +45,6 @@ export async function getOpenRoleBySlug(slug: string): Promise<PublicRole | null
     summary: data.summary,
     isOpen: data.is_open,
     createdAt: data.created_at,
-    descriptionMarkdown: data.description_markdown,
+    descriptionHtml: data.description_html,
   };
 }

@@ -10,6 +10,7 @@ import {
   ROLE_SUMMARY_MAX,
   ROLE_TITLE_MAX,
 } from '@/lib/careers/constants';
+import { sanitizeRoleHtml } from '@/lib/careers/sanitizeHtml';
 import { isValidSlug, slugify } from '@/lib/careers/slug';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
@@ -37,7 +38,7 @@ interface RoleInput {
   location: string;
   employmentType: string;
   summary: string;
-  descriptionMarkdown: string;
+  descriptionHtml: string;
 }
 
 async function requireAdmin(): Promise<
@@ -67,7 +68,7 @@ function readInput(formData: FormData): RoleInput {
   const title = field(formData, 'title');
   let slug = field(formData, 'slug');
   if (!slug && title) slug = slugify(title);
-  const bodyRaw = formData.get('descriptionMarkdown');
+  const bodyRaw = formData.get('descriptionHtml');
   return {
     id: typeof id === 'string' && id ? id : undefined,
     title,
@@ -75,7 +76,9 @@ function readInput(formData: FormData): RoleInput {
     location: field(formData, 'location'),
     employmentType: field(formData, 'employmentType'),
     summary: field(formData, 'summary'),
-    descriptionMarkdown: typeof bodyRaw === 'string' ? bodyRaw : '',
+    // Sanitize the WYSIWYG HTML here so the stored value is always clean and
+    // the length check below runs against what we actually persist.
+    descriptionHtml: sanitizeRoleHtml(typeof bodyRaw === 'string' ? bodyRaw : ''),
   };
 }
 
@@ -85,7 +88,7 @@ function validate(input: RoleInput): Code | null {
   if (input.summary.length > ROLE_SUMMARY_MAX) return 'invalid_summary';
   if (input.location.length > ROLE_LOCATION_MAX) return 'invalid_location';
   if (input.employmentType.length > ROLE_EMPLOYMENT_TYPE_MAX) return 'invalid_employment_type';
-  if (input.descriptionMarkdown.length > ROLE_DESCRIPTION_MAX) return 'invalid_description';
+  if (input.descriptionHtml.length > ROLE_DESCRIPTION_MAX) return 'invalid_description';
   return null;
 }
 
@@ -111,7 +114,7 @@ export async function createRoleAction(formData: FormData): Promise<RoleActionRe
       location: input.location,
       employment_type: input.employmentType,
       summary: input.summary,
-      description_markdown: input.descriptionMarkdown,
+      description_html: input.descriptionHtml,
       is_open: true,
     })
     .select('id, slug')
@@ -141,7 +144,7 @@ export async function updateRoleAction(formData: FormData): Promise<RoleActionRe
       location: input.location,
       employment_type: input.employmentType,
       summary: input.summary,
-      description_markdown: input.descriptionMarkdown,
+      description_html: input.descriptionHtml,
     })
     .eq('id', input.id)
     .select('id, slug')

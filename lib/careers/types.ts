@@ -11,7 +11,7 @@ export interface RoleListItem {
 }
 
 export interface PublicRole extends RoleListItem {
-  descriptionMarkdown: string;
+  descriptionHtml: string;
 }
 
 export interface ApplicationRow {
