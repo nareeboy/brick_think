@@ -145,7 +145,6 @@ export function Builder({
                 facilitatorNotes={facilitatorNotes}
                 canNarrate={canNarrate}
                 initialNarration={initialNarration}
-                roomBacked={roomBacked}
                 reactionsEnabled={reactionsEnabled}
                 initialReactions={initialReactions ?? []}
                 commentsEnabled={commentsEnabled}
@@ -335,7 +334,6 @@ function CanvasStage({
   facilitatorNotes = null,
   canNarrate = false,
   initialNarration = null,
-  roomBacked = false,
   reactionsEnabled = false,
   initialReactions = [],
   commentsEnabled = false,
@@ -351,7 +349,6 @@ function CanvasStage({
   facilitatorNotes?: string | null;
   canNarrate?: boolean;
   initialNarration?: ModelNarration | null;
-  roomBacked?: boolean;
   reactionsEnabled?: boolean;
   initialReactions?: ReactionRow[];
   commentsEnabled?: boolean;
@@ -400,12 +397,11 @@ function CanvasStage({
   const shareRight = placeChrome(showShare, ICON_BTN_WIDTH);
   const exportRight = placeChrome(showExport, ICON_BTN_WIDTH);
   const notesRight = placeChrome(showNotes, NOTES_BTN_WIDTH);
-  // Narration is owner-recorded on a session-scoped, non-room canvas. Viewers
-  // (incl. facilitator) still see the button when a transcript exists, opening
-  // a read-only view. roomBacked canvases are owned by the facilitator, not the
-  // narrating participant, so they are excluded from the first build.
-  const showNarrate =
-    sessionContext !== null && !roomBacked && (canNarrate || initialNarration !== null);
+  // Narration is available on every session canvas (incl. room-backed shared
+  // stages, where attendees do most of the talking). `canNarrate` (edit-ability)
+  // gates recording; viewers who can only read still see the button when a
+  // transcript exists, opening a read-only view.
+  const showNarrate = sessionContext !== null && (canNarrate || initialNarration !== null);
   const NARRATE_BTN_WIDTH = 128; // h-11 pill: px-3.5 + icon + gap-2 + "Narrate"
   const narrateRight = placeChrome(showNarrate, NARRATE_BTN_WIDTH);
   const feedbackToggleRight = placeChrome(showFeedbackToggle, ICON_BTN_WIDTH);
