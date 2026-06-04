@@ -23,6 +23,22 @@ test.beforeEach(async ({ siteAdminPage: page }) => {
   });
 });
 
+// Unconditional reset of the global singleton, even if the test threw mid-way —
+// otherwise an active banner could leak into other specs. Best-effort.
+test.afterEach(async ({ siteAdminPage: page }) => {
+  try {
+    await page.goto('/app/admin/banner');
+    const toggle = page.getByRole('switch', { name: /banner active/i });
+    if ((await toggle.getAttribute('aria-checked')) === 'true') {
+      await toggle.click();
+      await page.getByRole('button', { name: /save banner/i }).click();
+      await expect(page.getByText('Saved.')).toBeVisible();
+    }
+  } catch {
+    // best-effort — never fail teardown
+  }
+});
+
 test('admin activates a banner; it shows site-wide, dismisses, and re-shows on edit', async ({
   siteAdminPage: page,
 }) => {
@@ -58,10 +74,5 @@ test('admin activates a banner; it shows site-wide, dismisses, and re-shows on e
   await expect(page.getByText('Saved.')).toBeVisible();
   await page.goto('/');
   await expect(page.locator('#site-banner')).toContainText(message2);
-
-  // Cleanup: deactivate so the global row doesn't leak into other specs.
-  await page.goto('/app/admin/banner');
-  await page.getByRole('switch', { name: /banner active/i }).click();
-  await page.getByRole('button', { name: /save banner/i }).click();
-  await expect(page.getByText('Saved.')).toBeVisible();
+  // Teardown (deactivation) runs unconditionally in afterEach.
 });

@@ -83,12 +83,27 @@ describe('RLS', () => {
     expect(active.data?.message).toBe('DB slow');
   });
 
-  test('non-admin authenticated user cannot update the row', async () => {
+  test('non-admin authenticated user cannot update the row, even when active', async () => {
+    // Activate first so the non-admin CAN read the row — proving the update
+    // block is independent of (and stricter than) read access.
+    await admin.from('site_banner').update({ is_active: true, message: 'live' }).eq('id', true);
+
     const client = await signInAs(plainUser);
-    await client.from('site_banner').update({ is_active: true, message: 'hax' }).eq('id', true);
-    // RLS blocks the row; the update affects 0 rows (no change).
-    const check = await admin.from('site_banner').select('message').eq('id', true).single();
-    expect(check.data?.message).toBe('');
+    const res = await client
+      .from('site_banner')
+      .update({ is_active: false, message: 'hax' })
+      .eq('id', true)
+      .select('id');
+    // RLS blocks the row from the update — zero rows affected, no change.
+    expect(res.data ?? []).toHaveLength(0);
+
+    const check = await admin
+      .from('site_banner')
+      .select('is_active, message')
+      .eq('id', true)
+      .single();
+    expect(check.data?.message).toBe('live');
+    expect(check.data?.is_active).toBe(true);
   });
 });
 
@@ -113,6 +128,25 @@ describe('saveBannerAction', () => {
     form.set('message', 'hi');
     const res = await saveBannerAction(form);
     expect(res).toEqual({ ok: false, code: 'invalid_type' });
+  });
+
+  test('rejects an over-length message (action gate)', async () => {
+    const { saveBannerAction } = await import('@/app/(authed)/app/admin/banner/actions');
+    currentClient = await signInAs(adminUser);
+    const form = new FormData();
+    form.set('isActive', 'true');
+    form.set('type', 'info');
+    form.set('message', 'x'.repeat(281));
+    const res = await saveBannerAction(form);
+    expect(res).toEqual({ ok: false, code: 'invalid_message' });
+  });
+
+  test('the DB CHECK also rejects an over-length message', async () => {
+    const res = await admin
+      .from('site_banner')
+      .update({ message: 'x'.repeat(281) })
+      .eq('id', true);
+    expect(res.error).not.toBeNull();
   });
 
   test('admin saves; getActiveBanner reflects active/empty and version bumps', async () => {
