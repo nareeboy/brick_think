@@ -4,7 +4,13 @@ export const CHANGELOG_TITLE_MAX = 200;
 export const CHANGELOG_BODY_MAX = 200_000;
 export const CHANGELOG_VERSION_MAX = 40;
 
-export const CHANGELOG_CATEGORIES = ['feature', 'improvement', 'fix', 'breaking'] as const;
+export const CHANGELOG_CATEGORIES = [
+  'feature',
+  'improvement',
+  'fix',
+  'breaking',
+  'release',
+] as const;
 export type ChangelogCategory = (typeof CHANGELOG_CATEGORIES)[number];
 
 export function isChangelogCategory(value: string): value is ChangelogCategory {
@@ -16,6 +22,7 @@ export const CATEGORY_LABELS: Record<ChangelogCategory, string> = {
   improvement: 'Improvement',
   fix: 'Fix',
   breaking: 'Breaking',
+  release: 'Release',
 };
 
 // Tailwind classes — all combinations clear WCAG 2.2 AA on a light surface
@@ -26,4 +33,5 @@ export const CATEGORY_STYLES: Record<ChangelogCategory, string> = {
   improvement: 'bg-emerald-50 text-emerald-800',
   fix: 'bg-sky-50 text-sky-800',
   breaking: 'bg-rose-50 text-rose-800',
+  release: 'bg-violet-100 text-violet-900',
 };
