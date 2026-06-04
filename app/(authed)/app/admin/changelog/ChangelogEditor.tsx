@@ -27,9 +27,14 @@ const CODE_MESSAGES: Record<string, string> = {
 export function ChangelogEditor({
   mode,
   initial,
+  initialDate = '',
 }: {
   mode: 'create' | 'edit';
   initial?: AdminChangelogEntry;
+  // Prefill for the Date field, as yyyy-mm-dd. The caller resolves it server-side
+  // (today's date for a new entry, the existing published_at for an edit) so the
+  // value is stable across SSR/hydration.
+  initialDate?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -103,20 +108,18 @@ export function ChangelogEditor({
           />
         </div>
       </div>
-      {initial?.status === 'published' ? (
-        <div>
-          <label htmlFor="publishedDate" className="block text-sm font-medium text-zinc-800">
-            Publish date
-          </label>
-          <input
-            id="publishedDate"
-            name="publishedDate"
-            type="date"
-            defaultValue={initial?.publishedAt ? initial.publishedAt.slice(0, 10) : ''}
-            className={inputClass}
-          />
-        </div>
-      ) : null}
+      <div>
+        <label htmlFor="publishedDate" className="block text-sm font-medium text-zinc-800">
+          Date <span className="text-zinc-500">(used to order and group entries)</span>
+        </label>
+        <input
+          id="publishedDate"
+          name="publishedDate"
+          type="date"
+          defaultValue={initialDate}
+          className={inputClass}
+        />
+      </div>
       <div>
         <span className="block text-sm font-medium text-zinc-800">Body</span>
         <div className="mt-1.5">
