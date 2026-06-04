@@ -1,4 +1,4 @@
-const BMC_URL = 'https://www.buymeacoffee.com/valueux';
+const BMC_URL = 'https://buymeacoffee.com/brickthink';
 
 export function BuyMeACoffeeCard() {
   return (
@@ -16,7 +16,7 @@ export function BuyMeACoffeeCard() {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="truncate text-[14px] font-semibold text-zinc-900">
-              buymeacoffee.com/valueux
+              buymeacoffee.com/brickthink
             </span>
             <span className="inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
               Optional
