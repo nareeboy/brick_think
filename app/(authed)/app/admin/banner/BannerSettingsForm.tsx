@@ -76,13 +76,14 @@ export function BannerSettingsForm({ initial }: { initial: AdminSiteBanner }) {
           aria-checked={active}
           aria-label="Banner Active"
           onClick={() => setActive((v) => !v)}
-          className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
             active ? 'bg-[#c0613d]' : 'bg-zinc-300'
           }`}
         >
           <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-              active ? 'translate-x-5' : 'translate-x-0.5'
+            aria-hidden="true"
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+              active ? 'translate-x-[1.375rem]' : 'translate-x-0.5'
             }`}
           />
         </button>
@@ -129,12 +130,10 @@ export function BannerSettingsForm({ initial }: { initial: AdminSiteBanner }) {
       <div>
         <div className="mb-1.5 text-sm font-medium text-zinc-800">Preview</div>
         <div
-          className={`flex items-center gap-3 rounded-md border px-4 py-2.5 text-sm ${styles.container}`}
+          className={`flex items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-center text-sm ${styles.container}`}
         >
           <BannerIcon type={type} className={`shrink-0 ${styles.icon}`} />
-          <span className="min-w-0 flex-1">
-            {message || 'Your banner message will appear here.'}
-          </span>
+          <span className="min-w-0">{message || 'Your banner message will appear here.'}</span>
         </div>
       </div>
 

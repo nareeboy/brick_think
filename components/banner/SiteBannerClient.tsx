@@ -51,15 +51,15 @@ export function SiteBannerClient({
       suppressHydrationWarning
       role="status"
       aria-live="polite"
-      className={`flex items-center gap-3 border-b px-4 py-2.5 text-sm ${styles.container}`}
+      className={`relative flex items-center justify-center gap-2 border-b px-10 py-2.5 text-center text-sm ${styles.container}`}
     >
       <BannerIcon type={type} className={`shrink-0 ${styles.icon}`} />
-      <p className="min-w-0 flex-1">{message}</p>
+      <p className="min-w-0">{message}</p>
       <button
         type="button"
         onClick={dismiss}
         aria-label="Dismiss notification"
-        className="shrink-0 cursor-pointer rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
+        className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-current"
       >
         <svg
           viewBox="0 0 24 24"
