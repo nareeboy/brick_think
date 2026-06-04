@@ -28,11 +28,13 @@ import { useBrickReactions } from './useBrickReactions';
 import { useFeedbackVisible } from './useFeedbackVisible';
 import { ExportMenu } from '@/components/exports/ExportMenu';
 import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
+import { NarrationButton } from '@/app/(authed)/app/designs/[id]/NarrationButton';
 import type { CommentRow, ReactionRow } from '@/lib/brickFeedback/loadInitial';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import { canShareDesign } from '@/lib/share/canShareDesign';
 import { canSaveModelVersion } from '@/lib/models/canSaveModelVersion';
 import type { ModelDetail } from '@/lib/models/types';
+import type { ModelNarration } from '@/lib/sessions/modelNarration';
 import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
 import { StageTimerContainer } from '@/components/session/StageTimerContainer';
@@ -54,6 +56,10 @@ interface BuilderProps {
   isSessionFacilitator?: boolean;
   /** Pre-fetched facilitator notes (server-side); null for everyone else. */
   facilitatorNotes?: string | null;
+  /** True when the signed-in caller may record narration on this model. */
+  canNarrate?: boolean;
+  /** Pre-fetched narration for this model (server-side); null if none/unreadable. */
+  initialNarration?: ModelNarration | null;
   /**
    * Pre-fetched reactions for the brick-feedback overlay. Non-null only when
    * the model is room-backed (the affordance is room-scoped). Empty array on
@@ -88,6 +94,8 @@ export function Builder({
   alreadyImported = false,
   isSessionFacilitator = false,
   facilitatorNotes = null,
+  canNarrate = false,
+  initialNarration = null,
   initialReactions = null,
   initialComments = null,
   myProfileId = null,
@@ -135,6 +143,9 @@ export function Builder({
                 sessionContext={sessionContext}
                 isSessionFacilitator={isSessionFacilitator}
                 facilitatorNotes={facilitatorNotes}
+                canNarrate={canNarrate}
+                initialNarration={initialNarration}
+                roomBacked={roomBacked}
                 reactionsEnabled={reactionsEnabled}
                 initialReactions={initialReactions ?? []}
                 commentsEnabled={commentsEnabled}
@@ -322,6 +333,9 @@ function CanvasStage({
   sessionContext = null,
   isSessionFacilitator = false,
   facilitatorNotes = null,
+  canNarrate = false,
+  initialNarration = null,
+  roomBacked = false,
   reactionsEnabled = false,
   initialReactions = [],
   commentsEnabled = false,
@@ -335,6 +349,9 @@ function CanvasStage({
   sessionContext?: SessionContext | null;
   isSessionFacilitator?: boolean;
   facilitatorNotes?: string | null;
+  canNarrate?: boolean;
+  initialNarration?: ModelNarration | null;
+  roomBacked?: boolean;
   reactionsEnabled?: boolean;
   initialReactions?: ReactionRow[];
   commentsEnabled?: boolean;
@@ -383,6 +400,14 @@ function CanvasStage({
   const shareRight = placeChrome(showShare, ICON_BTN_WIDTH);
   const exportRight = placeChrome(showExport, ICON_BTN_WIDTH);
   const notesRight = placeChrome(showNotes, NOTES_BTN_WIDTH);
+  // Narration is owner-recorded on a session-scoped, non-room canvas. Viewers
+  // (incl. facilitator) still see the button when a transcript exists, opening
+  // a read-only view. roomBacked canvases are owned by the facilitator, not the
+  // narrating participant, so they are excluded from the first build.
+  const showNarrate =
+    sessionContext !== null && !roomBacked && (canNarrate || initialNarration !== null);
+  const NARRATE_BTN_WIDTH = 128; // h-11 pill: px-3.5 + icon + gap-2 + "Narrate"
+  const narrateRight = placeChrome(showNarrate, NARRATE_BTN_WIDTH);
   const feedbackToggleRight = placeChrome(showFeedbackToggle, ICON_BTN_WIDTH);
 
   // Live-presence avatar strip sits in the same row as the chrome buttons,
@@ -449,6 +474,15 @@ function CanvasStage({
             initialValue={facilitatorNotes}
             rightPx={notesRight}
           />
+        ) : null}
+        {narrateRight !== null && modelId !== null ? (
+          <div className="absolute top-5 z-30" style={{ right: narrateRight }}>
+            <NarrationButton
+              modelId={modelId}
+              canRecord={canNarrate}
+              initialNarration={initialNarration}
+            />
+          </div>
         ) : null}
         {feedbackToggleRight !== null ? (
           <FeedbackToggleButton
