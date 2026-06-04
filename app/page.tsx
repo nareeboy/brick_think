@@ -18,6 +18,8 @@ import { ProductHuntBadge } from '@/components/marketing/ProductHuntBadge';
 import { SaasHubBadge } from '@/components/marketing/SaasHubBadge';
 import { SourceForgeBadge } from '@/components/marketing/SourceForgeBadge';
 import { StartupFameBadge } from '@/components/marketing/StartupFameBadge';
+import { TinyLaunchBadge } from '@/components/marketing/TinyLaunchBadge';
+import { UneedBadge } from '@/components/marketing/UneedBadge';
 
 export const metadata: Metadata = { title: 'BrickThink' };
 
@@ -253,6 +255,8 @@ function LaunchBar() {
           <ProductHuntBadge />
           <StartupFameBadge />
           <LaunchIgniterBadge />
+          <UneedBadge />
+          <TinyLaunchBadge />
           <SourceForgeBadge imgClassName="h-[calc(var(--spacing)*27)] w-auto" />
           <PeerlistBadge />
           <SaasHubBadge />
