@@ -207,7 +207,11 @@ export function SessionStages({
             <p className="text-[12px] text-zinc-500">Awaiting start</p>
           )}
           {canManageSession && session.status !== 'completed' ? (
-            <EndSessionButton sessionId={sessionId} sessionTitle={sessionTitle} />
+            <EndSessionButton
+              sessionId={sessionId}
+              sessionTitle={sessionTitle}
+              stageName={activeLabel}
+            />
           ) : null}
         </div>
       </header>
@@ -293,6 +297,14 @@ function StageRow({
         ? 'paused'
         : 'idle';
 
+  // Facilitator's example-model controls show on non-room stages only.
+  const showExampleModelControls = canManageSession && !ROOM_AWARE_STAGES.has(stageType);
+  // Mirror StageTimerControls' internal `hasActions`: every stage status now
+  // yields controls (completed stages keep an independent revive Start), so the
+  // timer cluster always renders for the facilitator. Kept as a named flag so
+  // the paired row below isn't rendered empty if this ever narrows again.
+  const timerHasActions = canManageSession;
+
   return (
     <li
       data-testid={`stage-card-${stageType}`}
@@ -322,24 +334,6 @@ function StageRow({
               isTourTarget={isFirst}
             />
           </div>
-          <StageScenarioRow
-            stageId={stage.id}
-            stageType={stageType}
-            canManage={canManageSession}
-            pickedScenario={pickedScenario}
-            titleOverride={stage.scenario_title_override ?? null}
-            bodyOverride={stage.scenario_body_override ?? null}
-          />
-          {ROOM_AWARE_STAGES.has(stageType) ? null : ownedModel ? (
-            <p className="mt-2 truncate text-[12px] text-zinc-600">
-              <span className="font-mono uppercase tracking-[0.18em] text-[9px] text-zinc-500">
-                Your model ·{' '}
-              </span>
-              {ownedModel.title}
-            </p>
-          ) : (
-            <p className="mt-2 text-[12px] text-zinc-500">No model yet</p>
-          )}
         </div>
 
         <div className="flex shrink-0 flex-col items-end gap-3">
@@ -348,7 +342,7 @@ function StageRow({
           ) : remaining !== null ? (
             <Timer remainingMs={remaining} variant={timerVariant} />
           ) : null}
-          {ROOM_AWARE_STAGES.has(stageType) ? null : (
+          {ROOM_AWARE_STAGES.has(stageType) || canManageSession ? null : (
             <ModelAction
               ownedModel={ownedModel}
               sessionId={sessionId}
@@ -361,6 +355,17 @@ function StageRow({
         </div>
       </div>
 
+      {/* Scenario prompt spans the full card width (within the card's p-5 padding),
+          not the constrained left header column. */}
+      <StageScenarioRow
+        stageId={stage.id}
+        stageType={stageType}
+        canManage={canManageSession}
+        pickedScenario={pickedScenario}
+        titleOverride={stage.scenario_title_override ?? null}
+        bodyOverride={stage.scenario_body_override ?? null}
+      />
+
       {canManageSession && status === 'active' && remaining !== null && remaining <= 0 ? (
         <StageExpiryBanner
           stageId={stage.id}
@@ -370,16 +375,41 @@ function StageRow({
         />
       ) : null}
 
-      {canManageSession ? (
-        <StageTimerControls
-          stage={stage}
-          isLastStage={isLastStage}
-          remainingMs={remaining}
-          sessionId={sessionId}
-          sessionTitle={sessionTitle}
-          sessionStatus={sessionStatus}
-          isFirst={isFirst}
-        />
+      {/* Facilitator controls — the example-model action and the stage timer sit
+          side by side at 50/50 (stacked on narrow screens). The example-model
+          container is suppressed on room-aware stages and StageTimerControls
+          self-suppresses on completed stages; when one is absent the other takes
+          the full width via flex-1. */}
+      {showExampleModelControls || timerHasActions ? (
+        <div className="flex flex-col gap-3 sm:flex-row">
+          {showExampleModelControls ? (
+            <div className="rounded-xl border border-dashed border-zinc-900/15 bg-zinc-50 px-3 py-2.5 sm:flex-1 sm:basis-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                  Example model
+                </p>
+                <ModelAction
+                  ownedModel={ownedModel}
+                  sessionId={sessionId}
+                  stageId={stage.id}
+                  stageType={stageType}
+                  isFirst={isFirst}
+                  canManageSession={canManageSession}
+                />
+              </div>
+            </div>
+          ) : null}
+          <StageTimerControls
+            stage={stage}
+            isLastStage={isLastStage}
+            remainingMs={remaining}
+            sessionId={sessionId}
+            sessionTitle={sessionTitle}
+            sessionStatus={sessionStatus}
+            isFirst={isFirst}
+            className="sm:flex-1 sm:basis-0"
+          />
+        </div>
       ) : null}
 
       {ROOM_AWARE_STAGES.has(stageType) ? (
@@ -590,6 +620,7 @@ function StageTimerControls({
   sessionTitle,
   sessionStatus,
   isFirst,
+  className,
 }: {
   stage: LiveStageRow;
   isLastStage: boolean;
@@ -601,6 +632,9 @@ function StageTimerControls({
   sessionTitle: string;
   sessionStatus: string;
   isFirst: boolean;
+  /** Extra classes merged onto the dashed container (e.g. flex sizing when
+   *  paired side by side with the example-model container). */
+  className?: string;
 }) {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -622,92 +656,107 @@ function StageTimerControls({
   };
 
   const status = stage.status;
-  // Stopped session: keep the cluster on completed stages so Start can revive
-  // the workshop. Naturally-completed stages during a live session stay clean
-  // (rollback owns that path when its UI returns).
-  const showRevive = status === 'completed' && sessionStatus === 'completed';
+  // A completed stage keeps its own revive "Start" regardless of the session's
+  // status. This is deliberately NOT gated on `sessionStatus === 'completed'`:
+  // reviving (or starting) any stage promotes the session to `live`, and the old
+  // gate then hid every *other* completed stage's controls — so starting one
+  // stage appeared to "control" the others (their timer box vanished). The state
+  // machine allows `completed → start`, so each stage's controls are independent.
+  const showRevive = status === 'completed';
   const hasActions =
     status === 'pending' || status === 'active' || status === 'paused' || showRevive;
   if (!hasActions) return null;
 
   return (
-    <div className="rounded-xl border border-dashed border-zinc-900/15 bg-zinc-50 px-3 py-2.5">
-      <div className="flex flex-wrap items-center gap-2">
-        <p className="mr-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+    <div
+      className={`rounded-xl border border-dashed border-zinc-900/15 bg-zinc-50 px-3 py-2.5${
+        className ? ` ${className}` : ''
+      }`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Stage timer
         </p>
-        {(status === 'pending' || showRevive) && (
-          <button
-            type="button"
-            onClick={wrap(() => STAGE_ACTIONS.start(stage.id))}
-            disabled={pending}
-            className={btn('primary')}
-            {...(isFirst ? { 'data-tour-id': 'stage-timer-start' } : {})}
-          >
-            Start
-          </button>
-        )}
-        {(status === 'active' || status === 'paused') && (
-          <>
-            {status === 'active' ? (
-              <button
-                type="button"
-                onClick={wrap(() => STAGE_ACTIONS.pause(stage.id))}
-                disabled={pending}
-                className={btn('secondary')}
-              >
-                Pause
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={wrap(() => STAGE_ACTIONS.resume(stage.id))}
-                disabled={pending}
-                className={btn('primary')}
-              >
-                Resume
-              </button>
-            )}
-            {stage.duration_seconds !== null && (
-              <button
-                type="button"
-                onClick={wrap(() => STAGE_ACTIONS.extend(stage.id, 300))}
-                disabled={pending}
-                className={btn('secondary')}
-              >
-                Extend +5m
-              </button>
-            )}
+        <div className="flex flex-wrap items-center gap-2">
+          {(status === 'pending' || showRevive) && (
             <button
               type="button"
-              onClick={wrap(() => STAGE_ACTIONS.reset(stage.id))}
+              onClick={wrap(() => STAGE_ACTIONS.start(stage.id))}
               disabled={pending}
-              className={btn('warning')}
-              title="Restart this stage's timer with a fresh clock. Clears extend and pause history."
+              className={btn('primary')}
+              {...(isFirst ? { 'data-tour-id': 'stage-timer-start' } : {})}
             >
-              Reset
+              Start
             </button>
-            {/* Advance is the natural end-of-stage action. Live in the cluster so a
-             *  facilitator can cut a stage short. Hidden when the expiry banner
-             *  above is already promoting the same action, and on the last stage
-             *  (no next stage to advance into). */}
-            {!isLastStage && !(status === 'active' && remainingMs !== null && remainingMs <= 0) ? (
+          )}
+          {(status === 'active' || status === 'paused') && (
+            <>
+              {status === 'active' ? (
+                <button
+                  type="button"
+                  onClick={wrap(() => STAGE_ACTIONS.pause(stage.id))}
+                  disabled={pending}
+                  className={btn('secondary')}
+                >
+                  Pause
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={wrap(() => STAGE_ACTIONS.resume(stage.id))}
+                  disabled={pending}
+                  className={btn('primary')}
+                >
+                  Resume
+                </button>
+              )}
+              {stage.duration_seconds !== null && (
+                <button
+                  type="button"
+                  onClick={wrap(() => STAGE_ACTIONS.extend(stage.id, 300))}
+                  disabled={pending}
+                  className={btn('secondary')}
+                >
+                  Extend +5m
+                </button>
+              )}
               <button
                 type="button"
-                onClick={wrap(() => STAGE_ACTIONS.advance(stage.id))}
+                onClick={wrap(() => STAGE_ACTIONS.reset(stage.id))}
                 disabled={pending}
-                data-testid="advance-stage-button"
-                className={btn('secondary')}
-                title="End this stage and move the session to the next stage."
+                className={btn('warning')}
+                title="Restart this stage's timer with a fresh clock. Clears extend and pause history."
               >
-                Advance
+                Reset
               </button>
-            ) : null}
-            {sessionStatus !== 'completed' ? (
-              <EndSessionButton sessionId={sessionId} sessionTitle={sessionTitle} variant="text" />
-            ) : null}
-          </>
-        )}
+              {/* Advance is the natural end-of-stage action. Live in the cluster so a
+               *  facilitator can cut a stage short. Hidden when the expiry banner
+               *  above is already promoting the same action, and on the last stage
+               *  (no next stage to advance into). */}
+              {!isLastStage &&
+              !(status === 'active' && remainingMs !== null && remainingMs <= 0) ? (
+                <button
+                  type="button"
+                  onClick={wrap(() => STAGE_ACTIONS.advance(stage.id))}
+                  disabled={pending}
+                  data-testid="advance-stage-button"
+                  className={btn('secondary')}
+                  title="End this stage and move the session to the next stage."
+                >
+                  Advance
+                </button>
+              ) : null}
+              {sessionStatus !== 'completed' ? (
+                <EndSessionButton
+                  sessionId={sessionId}
+                  sessionTitle={sessionTitle}
+                  stageName={stage.title ?? stageLabel(stage.stage_type as StageType)}
+                  variant="text"
+                />
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
       {errorMessage ? (
         <p role="alert" className="mt-2 text-[12px] text-red-700">
@@ -905,10 +954,15 @@ function StopIcon({ className }: { className?: string }) {
 function EndSessionButton({
   sessionId,
   sessionTitle,
+  stageName = null,
   variant = 'icon',
 }: {
   sessionId: string;
   sessionTitle: string;
+  /** Name of the stage this action is invoked from — the active stage for the
+   *  header button, the cluster's own stage inline. Shown in the confirm title;
+   *  falls back to the session title when no stage is in context. */
+  stageName?: string | null;
   /** `icon` is the small square button for the page header. `text` is a labeled
    *  destructive button that sits inline next to other timer controls. */
   variant?: 'icon' | 'text';
@@ -969,7 +1023,7 @@ function EndSessionButton({
       )}
       {confirming ? (
         <DeleteConfirmDialog
-          title={`End "${sessionTitle}"?`}
+          title={`End "${stageName ?? sessionTitle}"?`}
           description={
             <div className="flex flex-col gap-2">
               <p>

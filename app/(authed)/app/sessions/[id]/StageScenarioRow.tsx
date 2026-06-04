@@ -41,7 +41,7 @@ export function StageScenarioRow({
   const displayedBody = bodyIsOverridden ? (bodyOverride as string) : pickedScenario.body;
 
   return (
-    <div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50/60 p-4">
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 p-4">
       <div className="flex flex-wrap items-center gap-1.5">
         <span className={stageChipClasses(stageType)}>{STAGE_CHIP_LABEL[stageType]}</span>
         <span className={NEUTRAL_CHIP}>{pickedScenario.duration_minutes} min</span>
