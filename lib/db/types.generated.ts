@@ -401,7 +401,7 @@ export type Database = {
           {
             foreignKeyName: "model_narrations_model_id_fkey"
             columns: ["model_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "models"
             referencedColumns: ["id"]
           },
@@ -1127,6 +1127,41 @@ export type Database = {
           email?: string
         }
         Relationships: []
+      }
+      site_banner: {
+        Row: {
+          id: boolean
+          is_active: boolean
+          message: string
+          type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: boolean
+          is_active?: boolean
+          message?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: boolean
+          is_active?: boolean
+          message?: string
+          type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "site_banner_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stage_events: {
         Row: {
