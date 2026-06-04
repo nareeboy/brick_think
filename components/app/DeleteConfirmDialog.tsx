@@ -66,9 +66,9 @@ export function DeleteConfirmDialog({
         <h2 id={titleId} className="text-[16px] font-semibold text-zinc-950">
           {title}
         </h2>
-        <p id={descId} className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+        <div id={descId} className="mt-2 text-[13px] leading-relaxed text-zinc-600">
           {description}
-        </p>
+        </div>
         <div className="mt-6 flex items-center justify-end gap-2">
           <button
             ref={cancelRef}
