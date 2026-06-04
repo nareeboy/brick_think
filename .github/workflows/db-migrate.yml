@@ -42,7 +42,7 @@ jobs:
     if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: production # approval gate — required reviewers must approve
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: supabase/setup-cli@v1
         with:
           version: latest
