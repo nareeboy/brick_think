@@ -471,10 +471,11 @@ function CanvasStage({
             rightPx={notesRight}
           />
         ) : null}
-        {narrateRight !== null && modelId !== null ? (
+        {narrateRight !== null && modelId !== null && sessionContext ? (
           <div className="absolute top-5 z-30" style={{ right: narrateRight }}>
             <NarrationButton
               modelId={modelId}
+              sessionId={sessionContext.sessionId}
               canRecord={canNarrate}
               initialNarration={initialNarration}
             />
