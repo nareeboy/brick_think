@@ -16,6 +16,7 @@ import {
   type StageRow as LiveStageRow,
 } from '@/components/session/useSessionStages';
 import { useSessionModelsRealtime } from '@/components/session/useSessionModelsRealtime';
+import { useNarrationSavedRefresh } from '@/components/session/narrationRealtime';
 import { useRoomAssignmentRefresh } from '@/components/session/useRoomAssignmentRefresh';
 import { useSpotlightTarget } from '@/components/session/useSpotlightTarget';
 
@@ -167,6 +168,9 @@ export function SessionStages({
   // Live-refresh a participant's room assignment so the "Open my room" button
   // appears the moment the facilitator partitions rooms — no manual refresh.
   useRoomAssignmentRefresh(sessionId, currentUserId);
+  // Live-refresh when any participant saves a narration so the Transcript button
+  // (and combined room transcripts) appear without the facilitator refreshing.
+  useNarrationSavedRefresh(sessionId);
 
   const sorted = [...stages].sort((a, b) => a.position - b.position);
   const completed = sorted.filter((s) => s.status === 'completed');
