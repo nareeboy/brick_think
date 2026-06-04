@@ -138,6 +138,11 @@ export function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/careers" className="hover:text-zinc-950">
+                Careers
+              </Link>
+            </li>
+            <li>
               <Link href="/roadmap" className="hover:text-zinc-950">
                 Roadmap
               </Link>
