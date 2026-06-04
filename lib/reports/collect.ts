@@ -11,6 +11,8 @@ export interface CollectedModel {
   thumbnailUrl: string | null;
   ownerLabel: string;
   extractedText: string;
+  /** The model's saved narration transcript (display text), if any. */
+  narration: { transcript: string; cleaned: boolean } | null;
 }
 
 export interface CollectedSession {
@@ -62,7 +64,8 @@ export async function collectSession(
       profile:profiles!models_owner_profile_id_fkey ( full_name ),
       room:stage_rooms ( id, title,
         members:stage_room_members ( profile:profiles ( full_name ) )
-      )
+      ),
+      narrations:model_narrations ( transcript, cleaned )
     `,
     )
     .eq('session_id', sessionId);
@@ -119,6 +122,15 @@ export async function collectSession(
 
     const extractedText = extractText(canvasState).slice(0, 2000);
 
+    // model_narrations.model_id is UNIQUE, so PostgREST embeds it one-to-one (an
+    // object or null) rather than as an array — normalise both shapes.
+    const narrationEmbed = m.narrations as unknown as
+      | { transcript: string; cleaned: boolean }
+      | Array<{ transcript: string; cleaned: boolean }>
+      | null
+      | undefined;
+    const narrationRow = Array.isArray(narrationEmbed) ? narrationEmbed[0] : narrationEmbed;
+
     const list = modelsByStage.get(stageType) ?? [];
     list.push({
       id: m.id,
@@ -128,6 +140,9 @@ export async function collectSession(
       thumbnailUrl: m.thumbnail_path ? (urlByPath.get(m.thumbnail_path) ?? null) : null,
       ownerLabel,
       extractedText,
+      narration: narrationRow
+        ? { transcript: narrationRow.transcript, cleaned: narrationRow.cleaned }
+        : null,
     });
     modelsByStage.set(stageType, list);
   }

@@ -4,12 +4,12 @@ import type { CollectedSession } from '@/lib/reports/collect';
 
 const SYNTHESIS_TIMEOUT_MS = 90_000;
 
-const SYSTEM_PROMPT = `You are writing a session report for BrickThink, a facilitation tool for LEGO® SERIOUS PLAY® sessions. Voice: confident, plain English, no jargon, no marketing fluff. Reference participants by first name. Never invent details that aren't in the input. Use British English.
+const SYSTEM_PROMPT = `You are writing a session report for BrickThink, a facilitation tool for LEGO® SERIOUS PLAY® sessions. Voice: confident, plain English, no jargon, no marketing fluff. Reference participants by first name. Never invent details that aren't in the input. Use British English. When a model includes a spoken narration, treat it as the participant's own account of their model and give it weight — it is the most direct evidence of what they meant.
 
 Output exactly one JSON object matching this schema:
 {
-  "exec_summary": string (2-3 paragraphs separated by \\n\\n synthesising the session's arc),
-  "model_descriptions": { [model_id: string]: string (one paragraph per model describing what it represents and notable themes from any extracted text) },
+  "exec_summary": string (2-3 paragraphs separated by \\n\\n synthesising the session's arc, drawing on participants' spoken narrations where present),
+  "model_descriptions": { [model_id: string]: string (one paragraph per model describing what it represents and notable themes, grounded in its extracted text AND the participant's spoken narration if one is present) },
   "closing": string (1-2 paragraphs synthesising the guiding_principles stage if any models exist for it, plus 2-3 concrete next steps. If no guiding_principles models exist, return a short reflection on shared_model + system_model themes.)
 }
 
@@ -66,6 +66,14 @@ function buildUserBlock(s: CollectedSession): string {
       lines.push(`  [${stage}] ${m.ownerLabel} — "${m.title}" (id: ${m.id})`);
       if (m.extractedText) {
         lines.push(`    Text from canvas: ${m.extractedText}`);
+      }
+      if (m.narration) {
+        // NOTE (follow-up): for long sessions the combined narrations can balloon
+        // this prompt. A future "condense transcripts" option on report generation
+        // (generateSessionReport) should summarise each narration before this step
+        // — e.g. a facilitator toggle when they request the write-up.
+        const provenance = m.narration.cleaned ? 'polished' : 'as captured';
+        lines.push(`    Spoken narration (${provenance}): ${m.narration.transcript}`);
       }
     }
   }

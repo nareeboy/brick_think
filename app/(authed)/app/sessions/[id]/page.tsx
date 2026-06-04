@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
+import { getNarrationsForModelIds } from '@/lib/sessions/modelNarration';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
 import { getLatestSessionReport } from '../report-actions';
@@ -167,8 +168,12 @@ export default async function SessionDetailPage({
     }));
   const participantsByStage: Record<string, ParticipantModel[]> = {};
   if (canManageSession) {
-    for (const m of allModels) {
-      if (m.owner_profile_id === user.id) continue;
+    const participantModels = allModels.filter((m) => m.owner_profile_id !== user.id);
+    // The facilitator / org-manager can read every model in the session, so a
+    // batch read of their narrations is authorized — the canManageSession guard
+    // IS the gate (the helper itself does no per-model check).
+    const narrationByModelId = await getNarrationsForModelIds(participantModels.map((m) => m.id));
+    for (const m of participantModels) {
       const label = m.profiles?.full_name?.trim() || m.profiles?.email || 'Unknown';
       const list = participantsByStage[m.stage_id] ?? [];
       list.push({
@@ -176,6 +181,7 @@ export default async function SessionDetailPage({
         title: m.title,
         ownerLabel: label,
         ownerProfileId: m.owner_profile_id,
+        narration: narrationByModelId.get(m.id) ?? null,
       });
       participantsByStage[m.stage_id] = list;
     }
