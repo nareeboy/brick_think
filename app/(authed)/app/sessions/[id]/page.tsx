@@ -361,7 +361,11 @@ export default async function SessionDetailPage({
   }[]) {
     addRow(row);
   }
-  orgMembers = Array.from(memberById.values());
+  // The facilitator observes rooms read-only and never builds in them, so they
+  // must not appear in the room-assignment picker as a participant to assign.
+  orgMembers = Array.from(memberById.values()).filter(
+    (member) => member.id !== session.facilitator_id,
+  );
 
   // Scenarios: RLS filters to templates + caller-org rows. One query covers
   // every stage_type — group locally so the picker can lookup by stage_type

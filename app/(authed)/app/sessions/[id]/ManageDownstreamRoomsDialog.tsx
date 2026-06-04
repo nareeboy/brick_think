@@ -49,6 +49,7 @@ function errorMessage(code: StageRoomError): string {
       return 'You have been signed out. Refresh to sign in again.';
     case 'duplicate_member':
     case 'unknown_member':
+    case 'facilitator_not_assignable':
       // Shared-model-only codes — never raised by this dialog.
       return 'Something went wrong. Refresh and try again.';
   }

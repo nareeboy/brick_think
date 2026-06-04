@@ -19,6 +19,7 @@ export type StageRoomError =
   | 'stage_not_found'
   | 'unsupported_stage_type'
   | 'not_facilitator'
+  | 'facilitator_not_assignable'
   | 'duplicate_member'
   | 'empty_partition'
   | 'unknown_member'
@@ -91,6 +92,12 @@ export async function setSharedModelRooms(input: {
   if (sessionRes.error || !sessionRes.data) return { ok: false, code: 'stage_not_found' };
   if (sessionRes.data.facilitator_id !== user.id) {
     return { ok: false, code: 'not_facilitator' };
+  }
+  // The facilitator observes rooms read-only and never builds in them, so they
+  // can never be a room member. The picker UI already omits them; reject an
+  // explicit submission too (defense-in-depth).
+  if (sessionRes.data.facilitator_id && seenProfiles.has(sessionRes.data.facilitator_id)) {
+    return { ok: false, code: 'facilitator_not_assignable' };
   }
   const orgId = sessionRes.data.org_id as string;
 
