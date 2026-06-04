@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { SiteBanner } from '@/components/banner/SiteBanner';
 import { CookieConsent } from '@/components/consent/CookieConsent';
 import './globals.css';
 
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <a href="#main" className="skip-link">
           Skip to main content
         </a>
+        <SiteBanner />
         {children}
         <CookieConsent />
       </body>

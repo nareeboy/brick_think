@@ -18,6 +18,10 @@ const SECTIONS: Array<{ heading: string; items: Array<{ href: string; label: str
       { href: '/app/admin/careers/applications', label: 'Applications' },
     ],
   },
+  {
+    heading: 'Site',
+    items: [{ href: '/app/admin/banner', label: 'Banner' }],
+  },
 ];
 
 export function AdminSideNav() {
