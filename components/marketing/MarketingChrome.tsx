@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+import { getLatestPublishedVersionTag } from '@/lib/changelog/queries';
 
 export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 export const LINKEDIN_URL = 'https://www.linkedin.com/company/brickthink';
@@ -62,7 +63,8 @@ export function NavBar() {
   );
 }
 
-export function Footer() {
+export async function Footer() {
+  const versionTag = await getLatestPublishedVersionTag();
   return (
     <footer className="border-t border-zinc-900/10">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-12 md:grid-cols-12">
@@ -163,6 +165,11 @@ export function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/changelog" className="hover:text-zinc-950">
+                Changelog
+              </Link>
+            </li>
+            <li>
               <Link href="/roadmap" className="hover:text-zinc-950">
                 Roadmap
               </Link>
@@ -231,6 +238,14 @@ export function Footer() {
               Privacy
             </Link>
             <ManageCookiesButton className="cursor-pointer text-[12px] text-zinc-500 transition-colors hover:text-zinc-800" />
+            {versionTag ? (
+              <span className="text-[12px] text-zinc-400">
+                {'— '}
+                <Link href="/changelog" className="text-zinc-500 hover:text-zinc-800">
+                  {versionTag}
+                </Link>
+              </span>
+            ) : null}
           </nav>
         </div>
       </div>
