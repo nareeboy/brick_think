@@ -1,4 +1,4 @@
--- 20260604130000_model_narrations.sql
+-- 20260606110000_model_narrations.sql
 --
 -- model_narrations: one transcript per model, written by the model owner.
 -- Audio is NEVER stored — the browser's Web Speech API produces text and we
