@@ -167,10 +167,12 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
     isOwner: data.owner_profile_id === user.id,
     isSessionFacilitator,
   });
-  const isOwner = data.owner_profile_id === user.id;
-  // Narration: owner of a session-scoped, non-room canvas may record. Anyone who
-  // can read the model sees the transcript (getModelNarration enforces readability).
-  const canNarrate = sessionContext !== null && isOwner && data.room_id == null && !readOnly;
+  // Narration is recordable by anyone who can EDIT a session canvas: the owner of
+  // a personal session canvas, or a room member on a shared room canvas. `readOnly`
+  // already excludes facilitator-observers and non-member viewers, so it's the
+  // single edit-ability signal. Anyone who can READ the model still sees the
+  // transcript (getModelNarration enforces read access).
+  const canNarrate = sessionContext !== null && !readOnly;
   const initialNarration =
     sessionContext !== null ? await getModelNarration(data.id, user.id) : null;
   // Room canvases have no single human "owner" in the UX sense (they're shared
