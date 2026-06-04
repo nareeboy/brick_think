@@ -54,6 +54,11 @@ test('admin can publish a changelog entry and it appears publicly with footer ve
   await page.getByLabel('Title').fill(title);
   await page.getByLabel('Category').selectOption('feature');
   await page.getByLabel(/Version tag/).fill(version);
+  // Set a far-future date so this entry is unambiguously the newest published
+  // one — the footer shows the latest published entry's version tag, and other
+  // (e.g. leaked) published rows must not outrank it. Also exercises the
+  // editable Date field directly.
+  await page.getByLabel(/^Date/).fill('2999-12-31');
 
   // Tiptap rich-text editor — the editable region carries the `article-prose`
   // class (RichTextEditor.tsx). Click to focus, then type.

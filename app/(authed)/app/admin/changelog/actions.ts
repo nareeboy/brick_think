@@ -108,6 +108,10 @@ export async function createEntryAction(formData: FormData): Promise<ChangelogAc
       version_tag: input.versionTag.length === 0 ? null : input.versionTag,
       body_html: input.bodyHtml,
       status: 'draft',
+      // A draft may carry a date (the CHECK only requires PUBLISHED rows to have
+      // one). Storing it now means publish can honor the admin's chosen date.
+      published_at:
+        input.publishedDate.length > 0 ? publishedDateToInstant(input.publishedDate) : null,
     })
     .select('id')
     .single();
@@ -125,23 +129,17 @@ export async function updateEntryAction(formData: FormData): Promise<ChangelogAc
   const invalid = validate(input);
   if (invalid) return { ok: false, code: invalid };
 
-  // Re-read status server-side: published_at is applied only to published rows,
-  // and an empty date means "leave as-is" — never write null (that would break
-  // the changelog_published_has_timestamp CHECK and wipe the date).
-  const existing = await supabase
-    .from('changelog_entries')
-    .select('status')
-    .eq('id', input.id)
-    .maybeSingle();
-  if (!existing.data) return { ok: false, code: 'not_found' };
-
   const updateFields: Database['public']['Tables']['changelog_entries']['Update'] = {
     title: input.title,
     category: input.category,
     version_tag: input.versionTag.length === 0 ? null : input.versionTag,
     body_html: input.bodyHtml,
   };
-  if (input.publishedDate.length > 0 && existing.data.status === 'published') {
+  // A date can be set or changed on ANY entry (draft or published). An empty
+  // input means "leave as-is" — we never write null, which would break the
+  // changelog_published_has_timestamp CHECK on a published row and silently
+  // wipe the date on a draft.
+  if (input.publishedDate.length > 0) {
     updateFields.published_at = publishedDateToInstant(input.publishedDate);
   }
 
@@ -163,9 +161,19 @@ export async function publishEntryAction(id: string): Promise<ChangelogActionRes
   const guard = await requireAdmin();
   if ('ok' in guard) return guard;
   const { supabase } = guard;
+  // Honor a date the admin already set in the editor; only stamp "now" when the
+  // entry has no date yet. Either way the published row ends up with a non-null
+  // published_at, satisfying the changelog_published_has_timestamp CHECK.
+  const existing = await supabase
+    .from('changelog_entries')
+    .select('published_at')
+    .eq('id', id)
+    .maybeSingle();
+  if (!existing.data) return { ok: false, code: 'not_found' };
+  const publishedAt = existing.data.published_at ?? new Date().toISOString();
   const res = await supabase
     .from('changelog_entries')
-    .update({ status: 'published', published_at: new Date().toISOString() })
+    .update({ status: 'published', published_at: publishedAt })
     .eq('id', id)
     .select('id')
     .single();
