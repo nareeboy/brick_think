@@ -18,17 +18,26 @@ function asType(value: string): BannerType {
 // Under the anon role, RLS returns the row only while it is active, so an
 // inactive banner is simply absent. Empty messages and any read error also
 // yield null, so a banner outage can never break page render.
+//
+// The whole body is wrapped so a thrown error never breaks render: most
+// importantly `getAnonServerSupabaseClient()` throws when the public Supabase
+// env vars are absent (e.g. the worker service, which has no Supabase config),
+// which would otherwise crash the static prerender of pages in the root layout.
 export async function getActiveBanner(): Promise<SiteBanner | null> {
-  const supabase = getAnonServerSupabaseClient();
-  const { data, error } = await supabase
-    .from('site_banner')
-    .select('is_active, type, message, updated_at')
-    .eq('id', true)
-    .maybeSingle();
-  if (error || !data || !data.is_active) return null;
-  const message = (data.message ?? '').trim();
-  if (message.length === 0) return null;
-  return { type: asType(data.type), message, version: data.updated_at };
+  try {
+    const supabase = getAnonServerSupabaseClient();
+    const { data, error } = await supabase
+      .from('site_banner')
+      .select('is_active, type, message, updated_at')
+      .eq('id', true)
+      .maybeSingle();
+    if (error || !data || !data.is_active) return null;
+    const message = (data.message ?? '').trim();
+    if (message.length === 0) return null;
+    return { type: asType(data.type), message, version: data.updated_at };
+  } catch {
+    return null;
+  }
 }
 
 // Admin editor read — returns the row regardless of active state. Called only
