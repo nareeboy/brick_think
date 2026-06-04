@@ -8,6 +8,8 @@ export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 export const LINKEDIN_URL = 'https://www.linkedin.com/company/brickthink';
 export const INSTAGRAM_URL = 'https://www.instagram.com/brick_think/';
 export const TIKTOK_URL = 'https://www.tiktok.com/@brickthink';
+export const SLACK_URL =
+  'https://join.slack.com/t/brickthink/shared_invite/zt-3zy9dg1hi-ZVZCdIlfSS_6OYLrQj2R0w';
 export const LEGO_SERIOUS_PLAY_URL = 'https://www.lego.com/en-ch/themes/serious-play';
 export const LSP_DACH_COMMUNITY_URL = 'https://seriousplay.community/dach/';
 
@@ -111,6 +113,15 @@ export function Footer() {
               className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-zinc-900/10 bg-white/60 text-zinc-700 transition-colors hover:border-zinc-900/20 hover:bg-white hover:text-zinc-950"
             >
               <TikTokGlyph className="h-4 w-4" />
+            </a>
+            <a
+              href={SLACK_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Join the BrickThink community on Slack"
+              className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-zinc-900/10 bg-white/60 text-zinc-700 transition-colors hover:border-zinc-900/20 hover:bg-white hover:text-zinc-950"
+            >
+              <SlackGlyph className="h-4 w-4" />
             </a>
           </div>
         </div>
@@ -297,6 +308,14 @@ export function TikTokGlyph({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
       <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />
+    </svg>
+  );
+}
+
+export function SlackGlyph({ className = '' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" />
     </svg>
   );
 }
