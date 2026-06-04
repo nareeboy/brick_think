@@ -180,6 +180,101 @@ export type Database = {
           },
         ]
       }
+      careers_applications: {
+        Row: {
+          address: string
+          created_at: string
+          cv_filename: string | null
+          cv_path: string | null
+          email: string
+          expires_at: string
+          first_name: string
+          id: string
+          last_name: string
+          linkedin_url: string
+          phone: string
+          role_id: string | null
+          status: Database["public"]["Enums"]["careers_application_status"]
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          cv_filename?: string | null
+          cv_path?: string | null
+          email: string
+          expires_at?: string
+          first_name: string
+          id?: string
+          last_name: string
+          linkedin_url: string
+          phone: string
+          role_id?: string | null
+          status?: Database["public"]["Enums"]["careers_application_status"]
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          cv_filename?: string | null
+          cv_path?: string | null
+          email?: string
+          expires_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          linkedin_url?: string
+          phone?: string
+          role_id?: string | null
+          status?: Database["public"]["Enums"]["careers_application_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "careers_applications_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "careers_roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      careers_roles: {
+        Row: {
+          created_at: string
+          description_markdown: string
+          employment_type: string
+          id: string
+          is_open: boolean
+          location: string
+          slug: string
+          summary: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description_markdown?: string
+          employment_type?: string
+          id?: string
+          is_open?: boolean
+          location?: string
+          slug: string
+          summary?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description_markdown?: string
+          employment_type?: string
+          id?: string
+          is_open?: boolean
+          location?: string
+          slug?: string
+          summary?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       model_imports: {
         Row: {
           id: string
@@ -222,6 +317,63 @@ export type Database = {
             columns: ["target_model_id"]
             isOneToOne: false
             referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      model_narrations: {
+        Row: {
+          cleaned: boolean
+          cleanup_status: Database["public"]["Enums"]["narration_cleanup_status"]
+          created_at: string
+          duration_ms: number | null
+          id: string
+          model_id: string
+          profile_id: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          transcript: string
+          transcript_raw: string
+          updated_at: string
+        }
+        Insert: {
+          cleaned?: boolean
+          cleanup_status?: Database["public"]["Enums"]["narration_cleanup_status"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          model_id: string
+          profile_id?: string | null
+          stage_type: Database["public"]["Enums"]["stage_type"]
+          transcript: string
+          transcript_raw: string
+          updated_at?: string
+        }
+        Update: {
+          cleaned?: boolean
+          cleanup_status?: Database["public"]["Enums"]["narration_cleanup_status"]
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          model_id?: string
+          profile_id?: string | null
+          stage_type?: Database["public"]["Enums"]["stage_type"]
+          transcript?: string
+          transcript_raw?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "model_narrations_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: true
+            referencedRelation: "models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "model_narrations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -925,6 +1077,21 @@ export type Database = {
           },
         ]
       }
+      site_admin_emails: {
+        Row: {
+          added_at: string
+          email: string
+        }
+        Insert: {
+          added_at?: string
+          email: string
+        }
+        Update: {
+          added_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
       stage_events: {
         Row: {
           actor_profile_id: string | null
@@ -1250,9 +1417,16 @@ export type Database = {
       }
       purge_dead_share_links: { Args: never; Returns: undefined }
       purge_expired_trashed_models: { Args: never; Returns: undefined }
+      trigger_careers_purge: { Args: never; Returns: undefined }
     }
     Enums: {
       article_status: "draft" | "published"
+      careers_application_status:
+        | "new"
+        | "reviewed"
+        | "shortlisted"
+        | "rejected"
+      narration_cleanup_status: "skipped" | "succeeded" | "failed"
       org_role: "owner" | "admin" | "facilitator" | "member"
       session_mode: "sync" | "async" | "hybrid"
       session_status: "draft" | "scheduled" | "live" | "completed" | "archived"
@@ -1394,6 +1568,13 @@ export const Constants = {
   public: {
     Enums: {
       article_status: ["draft", "published"],
+      careers_application_status: [
+        "new",
+        "reviewed",
+        "shortlisted",
+        "rejected",
+      ],
+      narration_cleanup_status: ["skipped", "succeeded", "failed"],
       org_role: ["owner", "admin", "facilitator", "member"],
       session_mode: ["sync", "async", "hybrid"],
       session_status: ["draft", "scheduled", "live", "completed", "archived"],
