@@ -3,8 +3,10 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
 import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
 import { ProductHuntBadge } from '@/components/marketing/ProductHuntBadge';
+import { SaasHubBadge } from '@/components/marketing/SaasHubBadge';
 import { SourceForgeBadge } from '@/components/marketing/SourceForgeBadge';
 import { StartupFameBadge } from '@/components/marketing/StartupFameBadge';
 import { SourceForgeDownloadButton } from '@/components/marketing/SourceForgeDownloadButton';
@@ -83,6 +85,7 @@ function FeaturedOnBand() {
         <div className="mt-7 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
           <ProductHuntBadge />
           <StartupFameBadge />
+          <LaunchIgniterBadge />
           <SourceForgeBadge />
           <SourceForgeDownloadButton />
           <a
@@ -101,6 +104,7 @@ function FeaturedOnBand() {
             <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
           </a>
           <PeerlistBadge />
+          <SaasHubBadge />
         </div>
       </div>
     </div>
