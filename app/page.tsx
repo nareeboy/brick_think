@@ -185,13 +185,14 @@ function Hero() {
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[0.98] tracking-[-0.02em] text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)] sm:text-[58px] md:text-[78px]">
             Build <span className="text-[#c0613d]">one model</span>
             <br />
-            your team believes in.
+            your team believes in, <span className="text-[#c0613d]">remotely</span>.
           </h1>
 
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-200/95 drop-shadow-[0_1px_12px_rgba(0,0,0,0.45)]">
-            BrickThink runs real LSP workshops online. People build. People share what their build
-            means. Five stages, in order and the same flow you use in the room. No box of bricks
-            needed.
+            Finally, people who work remotely can take part in real LSP workshops. They build. They
+            share what each build means. Five stages, in order, the same flow as the room. No box of
+            bricks needed. Not a replacement for being in the room together—an option for when you
+            can&rsquo;t be.
           </p>
 
           <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -356,7 +357,7 @@ function FeatureBento() {
             className="md:col-span-3"
             label="outputs"
             title="Walk away with a record, not a screenshot."
-            body="Export a PDF report. Save each stage as an image. Download each person’s narration as video. Take the whole session with you — no lock-in."
+            body="Export a PDF report. Save each stage as an image. Take the whole session with you — no lock-in."
           >
             <ExportsVisual />
           </FeatureCard>
@@ -590,7 +591,6 @@ function RosterPill({ name, color }: { name: string; color: string }) {
 function ExportsVisual() {
   const items: { ext: string; name: string; meta: string }[] = [
     { ext: 'PDF', name: 'session-report.pdf', meta: '24 pages · 4.2 MB' },
-    { ext: 'MP4', name: 'idris-stage-03-narration.mp4', meta: '00:48 · 12 MB' },
     { ext: 'JSON', name: 'session-state.json', meta: '1,284 nodes · 318 KB' },
     { ext: 'PNG', name: 'shared-model.png', meta: '3200×2400' },
   ];
