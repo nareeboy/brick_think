@@ -45,6 +45,9 @@ export function PreSessionChecklist({
 }: Props) {
   const [draftBrief, setDraftBrief] = useState(briefText);
   const [a11yReviewed, setA11yReviewed] = useState<boolean>(preSessionCheck.a11y_reviewed === true);
+  const [recordingConsent, setRecordingConsent] = useState<boolean>(
+    preSessionCheck.recording_consent === true,
+  );
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [expanded, setExpanded] = useState<string | null>('brief');
@@ -61,6 +64,7 @@ export function PreSessionChecklist({
   const allPicked = stages.length > 0 && stages.every((s) => s.scenarioId !== null);
   const scenariosDone: ItemStatus = allPicked ? 'done' : 'open';
   const a11yDone: ItemStatus = a11yReviewed ? 'done' : 'open';
+  const recordingDone: ItemStatus = recordingConsent ? 'done' : 'open';
 
   const tickedCount = [briefDone, scenariosDone, a11yDone].filter((s) => s === 'done').length;
   const readyToStart = tickedCount === 3;
@@ -81,6 +85,18 @@ export function PreSessionChecklist({
       if (!result.ok) {
         setA11yReviewed(!next);
         setError('Could not save the accessibility check.');
+      }
+    });
+  }
+
+  function toggleRecording(next: boolean) {
+    setRecordingConsent(next);
+    setError(null);
+    startTransition(async () => {
+      const result = await updatePreSessionCheckAction(sessionId, 'recording_consent', next);
+      if (!result.ok) {
+        setRecordingConsent(!next);
+        setError('Could not save the recording-consent check.');
       }
     });
   }
@@ -155,7 +171,32 @@ export function PreSessionChecklist({
           <p className="mt-2 text-[11px] text-zinc-500">Ticks once every stage has a scenario.</p>
         </ChecklistRow>
 
-        {/* Recording consent row hidden until story capture ships in Phase 2. */}
+        <ChecklistRow
+          testid="checklist-item-recording"
+          title="Confirm recording consent"
+          status={recordingDone}
+          expanded={expanded === 'recording'}
+          onToggle={() => setExpanded(expanded === 'recording' ? null : 'recording')}
+          control={
+            <label className="ml-3 inline-flex cursor-pointer items-center gap-2 text-[12px] text-zinc-700">
+              <input
+                type="checkbox"
+                checked={recordingConsent}
+                onChange={(e) => toggleRecording(e.target.checked)}
+                disabled={pending}
+                aria-label="Confirm recording consent"
+                className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-[#c0613d] focus:ring-[#c0613d]"
+              />
+              Consent confirmed
+            </label>
+          }
+        >
+          <p className="text-[12px] leading-relaxed text-zinc-600">
+            Participants can record the spoken story of their model. Their browser&rsquo;s speech
+            engine converts voice to text — BrickThink never stores or receives the audio, only the
+            transcript. Confirm everyone in the room consents before they record.
+          </p>
+        </ChecklistRow>
 
         <ChecklistRow
           testid="checklist-item-a11y"
