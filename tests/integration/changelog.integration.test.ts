@@ -56,6 +56,32 @@ async function makeEntry(fields: Record<string, unknown>): Promise<string> {
   return data.id;
 }
 
+// Drive createEntryAction (which redirects on success) and recover the new id
+// from the mocked redirect throw, registering it for cleanup. Caller must set
+// `currentClient` to a site-admin client first.
+async function createViaAction(fields: {
+  title: string;
+  category?: string;
+  versionTag?: string;
+  publishedDate?: string;
+}): Promise<string> {
+  const { createEntryAction } = await import('@/app/(authed)/app/admin/changelog/actions');
+  const fd = new FormData();
+  fd.set('title', fields.title);
+  fd.set('category', fields.category ?? 'feature');
+  if (fields.versionTag) fd.set('versionTag', fields.versionTag);
+  if (fields.publishedDate) fd.set('publishedDate', fields.publishedDate);
+  try {
+    await createEntryAction(fd);
+  } catch (e) {
+    const id = (e as Error).message.match(/^__redirect__:\/app\/admin\/changelog\/(.+)$/)?.[1];
+    if (!id) throw e;
+    createdIds.push(id);
+    return id;
+  }
+  throw new Error('createEntryAction did not redirect');
+}
+
 beforeAll(async () => {
   adminUser = await createTestUser();
   plainUser = await createTestUser();
@@ -148,6 +174,35 @@ describe('server actions', () => {
       .single();
     expect(afterUnpublish.data?.status).toBe('draft');
     expect(afterUnpublish.data?.published_at).not.toBeNull();
+  });
+});
+
+describe('date control', () => {
+  test('create stores the chosen date on a draft', async () => {
+    currentClient = await signInAs(adminUser);
+    const id = await createViaAction({ title: 'Dated draft', publishedDate: '2026-03-15' });
+    const row = await admin
+      .from('changelog_entries')
+      .select('status, published_at')
+      .eq('id', id)
+      .single();
+    expect(row.data?.status).toBe('draft');
+    expect(row.data?.published_at?.slice(0, 10)).toBe('2026-03-15');
+  });
+
+  test('publish honors a date set before publishing (does not overwrite with now)', async () => {
+    currentClient = await signInAs(adminUser);
+    const id = await createViaAction({ title: 'Pre-dated', publishedDate: '2026-02-20' });
+    const { publishEntryAction } = await import('@/app/(authed)/app/admin/changelog/actions');
+    const res = await publishEntryAction(id);
+    expect(res.ok).toBe(true);
+    const row = await admin
+      .from('changelog_entries')
+      .select('status, published_at')
+      .eq('id', id)
+      .single();
+    expect(row.data?.status).toBe('published');
+    expect(row.data?.published_at?.slice(0, 10)).toBe('2026-02-20');
   });
 });
 
