@@ -1,6 +1,7 @@
 // lib/banner/queries.ts
 import 'server-only';
 
+import { getAnonServerSupabaseClient } from '@/lib/db/anonServer';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { isBannerType, type BannerType } from './constants';
@@ -11,12 +12,14 @@ function asType(value: string): BannerType {
   return isBannerType(value) ? value : 'info';
 }
 
-// Public read for every page. RLS hides the row entirely when inactive for
-// non-admins; we also null out for admins (they shouldn't see an inactive
-// banner on the public surface) and for empty messages. Any read error returns
-// null so a banner outage can never break page render.
+// Public read for every page. Uses a COOKIELESS anon client so mounting this in
+// the root layout does NOT opt every route into dynamic rendering — pages stay
+// static and are refreshed by `revalidatePath('/', 'layout')` on each save.
+// Under the anon role, RLS returns the row only while it is active, so an
+// inactive banner is simply absent. Empty messages and any read error also
+// yield null, so a banner outage can never break page render.
 export async function getActiveBanner(): Promise<SiteBanner | null> {
-  const supabase = await createServerSupabaseClient();
+  const supabase = getAnonServerSupabaseClient();
   const { data, error } = await supabase
     .from('site_banner')
     .select('is_active, type, message, updated_at')
