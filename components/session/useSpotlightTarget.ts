@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 
 import { setSpotlightAction } from '@/app/(authed)/app/sessions/roster-actions';
 import { getBrowserSupabaseClient } from '@/lib/db/client';
@@ -26,6 +26,12 @@ interface UseSpotlightTarget {
 export function useSpotlightTarget(sessionId: string): UseSpotlightTarget {
   const [targetModelId, setTargetModelId] = useState<string | null>(null);
   const [pendingModelId, setPendingModelId] = useState<string | null>(null);
+  // A session page mounts this hook once per stage panel (and per room panel),
+  // all with the same sessionId. Supabase keys channels by name and returns the
+  // already-subscribed instance for a duplicate name — calling .on() on it then
+  // throws "cannot add postgres_changes callbacks after subscribe()". A
+  // per-instance id keeps each hook's channel unique.
+  const channelId = useId();
 
   useEffect(() => {
     const supabase = getBrowserSupabaseClient();
@@ -48,7 +54,7 @@ export function useSpotlightTarget(sessionId: string): UseSpotlightTarget {
     void load();
 
     const channel = supabase
-      .channel(`spotlight-target:${sessionId}`)
+      .channel(`spotlight-target:${sessionId}:${channelId}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
@@ -62,7 +68,7 @@ export function useSpotlightTarget(sessionId: string): UseSpotlightTarget {
       active = false;
       supabase.removeChannel(channel);
     };
-  }, [sessionId]);
+  }, [sessionId, channelId]);
 
   const toggle = useCallback(
     async (modelId: string) => {
