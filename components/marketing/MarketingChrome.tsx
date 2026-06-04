@@ -10,6 +10,8 @@ import { SaasHubBadge } from '@/components/marketing/SaasHubBadge';
 import { SourceForgeBadge } from '@/components/marketing/SourceForgeBadge';
 import { StartupFameBadge } from '@/components/marketing/StartupFameBadge';
 import { SourceForgeDownloadButton } from '@/components/marketing/SourceForgeDownloadButton';
+import { TinyLaunchBadge } from '@/components/marketing/TinyLaunchBadge';
+import { UneedBadge } from '@/components/marketing/UneedBadge';
 import { getLatestPublishedVersionTag } from '@/lib/changelog/queries';
 
 export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
@@ -86,6 +88,8 @@ function FeaturedOnBand() {
           <ProductHuntBadge />
           <StartupFameBadge />
           <LaunchIgniterBadge />
+          <UneedBadge />
+          <TinyLaunchBadge />
           <SourceForgeBadge />
           <SourceForgeDownloadButton />
           <a
