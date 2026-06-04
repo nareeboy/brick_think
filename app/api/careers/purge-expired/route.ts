@@ -39,7 +39,13 @@ export async function POST(request: Request) {
   let filesDeleted = 0;
   if (paths.length > 0) {
     const removeRes = await supabase.storage.from(CAREERS_CV_BUCKET).remove(paths);
-    if (!removeRes.error) filesDeleted = removeRes.data?.length ?? paths.length;
+    // Abort BEFORE deleting rows if storage removal failed: otherwise the rows
+    // (and their cv_path) vanish and the physical files become permanently
+    // unreachable orphans. Storage.remove is idempotent, so a retry is safe.
+    if (removeRes.error) {
+      return NextResponse.json({ ok: false, code: 'storage_failed' }, { status: 500 });
+    }
+    filesDeleted = removeRes.data?.length ?? paths.length;
   }
 
   const ids = rows.map((r) => r.id);
