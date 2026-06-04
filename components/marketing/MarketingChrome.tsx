@@ -239,7 +239,7 @@ export async function Footer() {
             </Link>
             <ManageCookiesButton className="cursor-pointer text-[12px] text-zinc-500 transition-colors hover:text-zinc-800" />
             {versionTag ? (
-              <span className="text-[12px] text-zinc-400">
+              <span className="text-[12px] text-zinc-500">
                 {'— '}
                 <Link href="/changelog" className="text-zinc-500 hover:text-zinc-800">
                   {versionTag}
