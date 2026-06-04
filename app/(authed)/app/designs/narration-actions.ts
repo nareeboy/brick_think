@@ -114,7 +114,7 @@ export async function saveNarration(
       duration_ms: durationMs,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'model_id' },
+    { onConflict: 'model_id,profile_id' },
   );
   if (upsert.error) throw new Error(`model_narrations upsert failed: ${upsert.error.message}`);
 

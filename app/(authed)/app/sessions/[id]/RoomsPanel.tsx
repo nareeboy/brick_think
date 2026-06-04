@@ -5,7 +5,9 @@ import { useState } from 'react';
 
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
+import type { CombinedNarration } from '@/lib/sessions/modelNarration';
 import { useSpotlightTarget } from '@/components/session/useSpotlightTarget';
+import { TranscriptViewModal } from '@/components/session/TranscriptViewModal';
 
 import { ManageRoomsDialog, type OrgMemberSummary } from './ManageRoomsDialog';
 import {
@@ -22,6 +24,8 @@ export interface StageRoomSummary {
   memberIds: string[];
   /** Upstream room ids this room composes (system_model / guiding_principles). */
   sourceRoomIds: string[];
+  /** Combined narration for this room's canvas (all members); facilitator-only. */
+  narration: CombinedNarration | null;
 }
 
 interface Props {
@@ -56,6 +60,11 @@ export function RoomsPanel({
   // Spotlight targets the room's canvas (model id) so the facilitator can
   // invite everyone to a room's model — including after the timer stops.
   const { targetModelId, pendingModelId, toggle } = useSpotlightTarget(sessionId);
+  const [viewing, setViewing] = useState<{
+    title: string;
+    body: string;
+    polished: boolean;
+  } | null>(null);
 
   const isDownstream = stageType === 'system_model' || stageType === 'guiding_principles';
   const myRoom = rooms.find((r) => r.id === myRoomId) ?? null;
@@ -132,6 +141,27 @@ export function RoomsPanel({
                     </button>
                   );
                 })()}
+                {(() => {
+                  const narration = room.narration;
+                  if (!narration) return null;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setViewing({
+                          title: `${room.title?.trim() || `Room ${room.position + 1}`} narration`,
+                          body: narration.combinedText,
+                          polished: narration.anyCleaned,
+                        })
+                      }
+                      data-testid={`transcript-room-${room.position}`}
+                      title="View this room's combined narration transcript"
+                      className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 hover:bg-zinc-900/5"
+                    >
+                      Transcript
+                    </button>
+                  );
+                })()}
                 <Link
                   href={`/app/designs/${room.modelId}`}
                   className="inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 hover:bg-zinc-900/5"
@@ -190,6 +220,15 @@ export function RoomsPanel({
             sourceRoomIds: r.sourceRoomIds,
           }))}
           onClose={() => setEditing(false)}
+        />
+      ) : null}
+
+      {viewing ? (
+        <TranscriptViewModal
+          title={viewing.title}
+          body={viewing.body}
+          polished={viewing.polished}
+          onClose={() => setViewing(null)}
         />
       ) : null}
     </div>
