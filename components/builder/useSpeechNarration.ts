@@ -37,6 +37,7 @@ export interface UseSpeechNarration {
   interim: string;
   error: ErrorCode;
   durationMs: number;
+  speaking: boolean;
   start: () => void;
   stop: () => void;
   reset: () => void;
@@ -51,6 +52,14 @@ export function useSpeechNarration(): UseSpeechNarration {
   const [interim, setInterim] = useState('');
   const [error, setError] = useState<ErrorCode>(null);
   const [durationMs, setDurationMs] = useState(0);
+  const [speaking, setSpeaking] = useState(false);
+  const speakingTimer = useRef<number | null>(null);
+
+  const markSpeaking = useCallback(() => {
+    setSpeaking(true);
+    if (speakingTimer.current != null) window.clearTimeout(speakingTimer.current);
+    speakingTimer.current = window.setTimeout(() => setSpeaking(false), 400);
+  }, []);
 
   const stop = useCallback(() => {
     recRef.current?.stop();
@@ -61,6 +70,8 @@ export function useSpeechNarration(): UseSpeechNarration {
     setInterim('');
     setError(null);
     setDurationMs(0);
+    if (speakingTimer.current != null) window.clearTimeout(speakingTimer.current);
+    setSpeaking(false);
     setStatus('idle');
   }, []);
 
@@ -85,6 +96,7 @@ export function useSpeechNarration(): UseSpeechNarration {
       }
       if (addedFinal) setFinalText((prev) => prev + addedFinal);
       setInterim(nextInterim);
+      markSpeaking();
     };
     rec.onerror = (ev) => {
       const code = ev.error;
@@ -94,6 +106,8 @@ export function useSpeechNarration(): UseSpeechNarration {
     };
     rec.onend = () => {
       if (startedAt.current != null) setDurationMs(Date.now() - startedAt.current);
+      if (speakingTimer.current != null) window.clearTimeout(speakingTimer.current);
+      setSpeaking(false);
       setStatus('stopped');
     };
     setError(null);
@@ -102,12 +116,13 @@ export function useSpeechNarration(): UseSpeechNarration {
     startedAt.current = Date.now();
     setStatus('recording');
     rec.start();
-  }, [ctor, status]);
+  }, [ctor, status, markSpeaking]);
 
   // Stop any in-flight recognition if the component unmounts mid-recording.
   useEffect(() => {
     return () => {
       recRef.current?.stop();
+      if (speakingTimer.current != null) window.clearTimeout(speakingTimer.current);
     };
   }, []);
 
@@ -118,6 +133,7 @@ export function useSpeechNarration(): UseSpeechNarration {
     interim,
     error,
     durationMs,
+    speaking,
     start,
     stop,
     reset,
