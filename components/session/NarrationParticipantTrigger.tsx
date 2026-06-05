@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
 import { useSpeechNarration } from '@/components/builder/useSpeechNarration';
 import { LiveTranscriptChat } from '@/components/session/LiveTranscriptChat';
+import { useNarrationDrawer } from '@/components/session/NarrationDrawerContext';
 import { NarrationWaveform } from '@/components/session/NarrationWaveform';
 import {
   broadcastNarrationSaved,
@@ -48,12 +49,20 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
   const [fallbackText, setFallbackText] = useState('');
   const [savedTranscript, setSavedTranscript] = useState('');
   const [savedCleaned, setSavedCleaned] = useState(false);
-  // The attendee can collapse the drawer (recording continues); a reopen button
-  // brings it back so an accidental close isn't a dead end.
-  const [minimized, setMinimized] = useState(false);
+  // The attendee can collapse the drawer (recording continues); the sidebar
+  // reopen button brings it back so an accidental close isn't a dead end. State
+  // is shared so that sidebar button (rendered elsewhere) can restore it.
+  const { minimized, setMinimized, setActive } = useNarrationDrawer();
 
   const phaseRef = useRef<Phase>('idle');
   phaseRef.current = phase;
+
+  // Report whether a drawer is in progress so the sidebar reopen button knows
+  // when to offer itself; clear it on unmount (navigation away).
+  useEffect(() => {
+    setActive(phase !== 'idle');
+  }, [phase, setActive]);
+  useEffect(() => () => setActive(false), [setActive]);
   const prevFinalRef = useRef('');
   const fallbackRef = useRef('');
   fallbackRef.current = fallbackText;
@@ -176,26 +185,9 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
 
   if (phase === 'idle') return null;
 
-  // Collapsed: just a reopen affordance (bottom-left, where the canvas save
-  // action sits) so an accidental close can be undone. Recording keeps running.
-  if (minimized) {
-    return createPortal(
-      <button
-        type="button"
-        onClick={() => setMinimized(false)}
-        data-testid="narration-participant-reopen"
-        className="fixed bottom-6 left-6 z-50 inline-flex items-center gap-2 rounded-2xl bg-[#c0613d] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] hover:bg-[#cf6e47]"
-      >
-        {phase === 'recording' ? (
-          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
-        ) : (
-          <span aria-hidden>🎙</span>
-        )}
-        {phase === 'recording' ? 'Recording — reopen' : 'Narration'}
-      </button>,
-      document.body,
-    );
-  }
+  // Collapsed: the drawer hides; the sidebar's reopen button restores it. The
+  // recorder keeps running because this component stays mounted.
+  if (minimized) return null;
 
   const headerTitle =
     phase === 'denied'
