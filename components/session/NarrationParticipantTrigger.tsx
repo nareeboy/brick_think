@@ -113,28 +113,37 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
     },
   });
 
-  // Stream final-text deltas as final chunks while recording.
+  // Final-text deltas: render locally (instant, reliable — no broadcast
+  // round-trip) AND broadcast to the rest of the room. With self:false the local
+  // apply is the only source for the speaker's own words, so there's no double.
   useEffect(() => {
     if (phase !== 'recording' || !speech.supported) return;
     const full = speech.transcript;
     if (full.length > prevFinalRef.current.length) {
       const delta = full.slice(prevFinalRef.current.length);
       prevFinalRef.current = full;
-      channel.sendChunk({ modelId, profileId, name: displayName, text: delta, isFinal: true });
+      const chunk = { modelId, profileId, name: displayName, text: delta, isFinal: true };
+      setLive((prev) => reduceChunk(prev, chunk));
+      channel.sendChunk(chunk);
     }
   }, [speech.transcript, phase, speech.supported, channel, modelId, profileId, displayName]);
 
-  // Stream interim text.
+  // Interim text: local only. It updates many times per second; broadcasting
+  // each one floods the realtime channel (and can get rate-limited, freezing the
+  // feed). The speaker sees their own interim "writing"; the room sees finalised
+  // bubbles as they land.
   useEffect(() => {
     if (phase !== 'recording' || !speech.supported) return;
-    channel.sendChunk({
-      modelId,
-      profileId,
-      name: displayName,
-      text: speech.interim,
-      isFinal: false,
-    });
-  }, [speech.interim, phase, speech.supported, channel, modelId, profileId, displayName]);
+    setLive((prev) =>
+      reduceChunk(prev, {
+        modelId,
+        profileId,
+        name: displayName,
+        text: speech.interim,
+        isFinal: false,
+      }),
+    );
+  }, [speech.interim, phase, speech.supported, modelId, profileId, displayName]);
 
   // When the facilitator stop lands, the recogniser ends → persist the full text.
   useEffect(() => {
