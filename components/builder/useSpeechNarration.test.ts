@@ -19,6 +19,12 @@ class FakeRecognition {
       resultIndex: 0,
     });
   }
+  emitInterim(text: string) {
+    this.onresult?.({
+      results: [Object.assign([{ transcript: text }], { isFinal: false })],
+      resultIndex: 0,
+    });
+  }
 }
 
 afterEach(() => {
@@ -46,5 +52,31 @@ describe('useSpeechNarration', () => {
     expect(result.current.transcript.trim()).toBe('hello world');
     act(() => result.current.stop());
     expect(rec.stop).toHaveBeenCalled();
+  });
+
+  test('speaking is true on a result and decays to false after ~400ms', () => {
+    vi.useFakeTimers();
+    const rec = new FakeRecognition();
+    // @ts-expect-error inject
+    globalThis.SpeechRecognition = vi.fn(() => rec);
+    const { result } = renderHook(() => useSpeechNarration());
+    act(() => result.current.start());
+
+    expect(result.current.speaking).toBe(false);
+
+    act(() => rec.emitInterim('hel'));
+    expect(result.current.speaking).toBe(true);
+
+    // Still talking before the window elapses.
+    act(() => vi.advanceTimersByTime(300));
+    act(() => rec.emitInterim('hello'));
+    expect(result.current.speaking).toBe(true);
+
+    // No more results — decays to silent.
+    act(() => vi.advanceTimersByTime(400));
+    expect(result.current.speaking).toBe(false);
+
+    act(() => result.current.stop());
+    vi.useRealTimers();
   });
 });
