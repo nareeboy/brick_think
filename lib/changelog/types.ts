@@ -11,6 +11,7 @@ export interface PublicChangelogEntry {
   category: ChangelogCategory;
   versionTag: string | null;
   publishedAt: string; // never null on the public surface
+  bannerUrl: string | null; // resolved public URL, cache-busted; null when unset
 }
 
 // Admin list row (no body — keeps the list query light).
@@ -27,6 +28,7 @@ export interface ChangelogListItem {
 // Full row for the admin editor.
 export interface AdminChangelogEntry extends ChangelogListItem {
   bodyHtml: string;
+  bannerUrl: string | null; // resolved public URL, cache-busted; null when unset
 }
 
 // A month bucket for the public single-scrolling page.

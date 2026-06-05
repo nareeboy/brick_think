@@ -277,6 +277,7 @@ export type Database = {
       }
       changelog_entries: {
         Row: {
+          banner_image_path: string | null
           body_html: string
           category: string
           created_at: string
@@ -288,6 +289,7 @@ export type Database = {
           version_tag: string | null
         }
         Insert: {
+          banner_image_path?: string | null
           body_html?: string
           category?: string
           created_at?: string
@@ -299,6 +301,7 @@ export type Database = {
           version_tag?: string | null
         }
         Update: {
+          banner_image_path?: string | null
           body_html?: string
           category?: string
           created_at?: string
