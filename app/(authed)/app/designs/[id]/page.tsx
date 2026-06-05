@@ -177,7 +177,12 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
   const ownerLabel = roomBacked
     ? null
     : await loadOwnerLabel(supabase, data.owner_profile_id, readOnly);
-  const self = liveMode ? await loadSelfPresence(supabase, user.id) : null;
+  // Loaded for live presence AND for the narration trigger's speaker
+  // attribution (`displayName`). `canNarrate` canvases include non-live stages
+  // (e.g. individual_model), where `liveMode` is false — without this the
+  // facilitator-driven recorder would never mount. usePeerPresence ignores
+  // `self` when there's no awareness, so loading it off-live is inert.
+  const self = liveMode || canNarrate ? await loadSelfPresence(supabase, user.id) : null;
 
   // Reactions + comments are scoped to room-backed canvases (the
   // brick-feedback feature is collaborative-only). Non-room designs skip the

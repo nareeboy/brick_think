@@ -15,7 +15,10 @@ export interface LiveTranscriptState {
 
 export const emptyLiveTranscript: LiveTranscriptState = { messages: [], interim: {} };
 
-export function reduceChunk(state: LiveTranscriptState, chunk: TranscriptChunk): LiveTranscriptState {
+export function reduceChunk(
+  state: LiveTranscriptState,
+  chunk: TranscriptChunk,
+): LiveTranscriptState {
   if (chunk.isFinal) {
     const text = chunk.text.trim();
     if (!text) return state;

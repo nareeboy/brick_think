@@ -147,6 +147,7 @@ export function Builder({
                 myProfileId={myProfileId}
                 readOnly={readOnly}
                 scenario={scenario}
+                narratorName={self?.displayName ?? null}
               />
             </div>
           </div>
@@ -335,6 +336,7 @@ function CanvasStage({
   myProfileId = null,
   readOnly = false,
   scenario = null,
+  narratorName = null,
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
@@ -349,6 +351,7 @@ function CanvasStage({
   myProfileId?: string | null;
   readOnly?: boolean;
   scenario?: BuilderScenario | null;
+  narratorName?: string | null;
 }) {
   const { awareness, selfClientId, view, self, modelId } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
@@ -457,12 +460,12 @@ function CanvasStage({
             rightPx={notesRight}
           />
         ) : null}
-        {canNarrate && modelId !== null && sessionContext && myProfileId && self ? (
+        {canNarrate && modelId !== null && sessionContext && myProfileId && narratorName ? (
           <NarrationParticipantTrigger
             modelId={modelId}
             sessionId={sessionContext.sessionId}
             profileId={myProfileId}
-            displayName={self.displayName}
+            displayName={narratorName}
           />
         ) : null}
         {feedbackToggleRight !== null ? (
