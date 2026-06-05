@@ -40,7 +40,7 @@ export async function getMyActiveSessionsForNav(
     .select('sessions!inner(id, title, status)')
     .eq('profile_id', userId)
     .is('removed_at', null)
-    .in('sessions.status', ACTIVE_SESSION_STATUSES as unknown as string[]);
+    .in('sessions.status', [...ACTIVE_SESSION_STATUSES]);
 
   if (error || !data) return [];
   return (data as unknown as ParticipantRow[])

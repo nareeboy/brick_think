@@ -46,14 +46,14 @@ describe('SessionNavLink', () => {
     const trigger = screen.getByRole('button', { name: /session/i });
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
 
-    // Menu items are not in the DOM until opened.
-    expect(screen.queryByRole('menuitem', { name: 'Alpha' })).toBeNull();
+    // Session links are not in the DOM until the dropdown is opened.
+    expect(screen.queryByRole('link', { name: 'Alpha' })).toBeNull();
 
     fireEvent.click(trigger);
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
 
-    const alpha = screen.getByRole('menuitem', { name: 'Alpha' });
-    const beta = screen.getByRole('menuitem', { name: 'Beta' });
+    const alpha = screen.getByRole('link', { name: 'Alpha' });
+    const beta = screen.getByRole('link', { name: 'Beta' });
     expect(alpha.getAttribute('href')).toBe('/app/sessions/a');
     expect(beta.getAttribute('href')).toBe('/app/sessions/b');
   });
@@ -69,9 +69,9 @@ describe('SessionNavLink', () => {
     );
     const trigger = screen.getByRole('button', { name: /session/i });
     fireEvent.click(trigger);
-    expect(screen.getByRole('menuitem', { name: 'Alpha' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Alpha' })).toBeTruthy();
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(screen.queryByRole('menuitem', { name: 'Alpha' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Alpha' })).toBeNull();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
   });
 });

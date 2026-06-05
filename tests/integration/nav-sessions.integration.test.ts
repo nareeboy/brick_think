@@ -121,4 +121,11 @@ describe('getMyActiveSessionsForNav', () => {
     const rows = await getMyActiveSessionsForNav(outsiderClient, fx.outsider.id);
     expect(rows).toEqual([]);
   });
+
+  test('cannot read another user’s sessions even when passed their id (RLS self-read)', async () => {
+    // Outsider's client + attendee's id: the self-read policy keys off
+    // auth.uid(), so the userId arg can't be used to read someone else's rows.
+    const rows = await getMyActiveSessionsForNav(outsiderClient, fx.attendee.id);
+    expect(rows).toEqual([]);
+  });
 });

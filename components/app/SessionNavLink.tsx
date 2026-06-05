@@ -70,9 +70,9 @@ export function SessionNavLink({ sessions }: Props) {
       <button
         ref={triggerRef}
         type="button"
-        aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}
+        aria-current={onSessionRoute ? 'page' : undefined}
         data-testid="nav-session"
         onClick={() => setOpen((v) => !v)}
         className={pillClasses(onSessionRoute)}
@@ -92,15 +92,12 @@ export function SessionNavLink({ sessions }: Props) {
       {open && (
         <div
           id={menuId}
-          role="menu"
-          aria-label="Your sessions"
           className="absolute left-0 top-full z-30 mt-1 min-w-[200px] overflow-hidden rounded-xl border border-zinc-900/10 bg-white py-1 shadow-[0_20px_40px_-16px_rgba(0,0,0,0.35)]"
         >
           {sessions.map((s) => (
             <Link
               key={s.id}
               href={`/app/sessions/${s.id}`}
-              role="menuitem"
               onClick={() => setOpen(false)}
               className="flex min-h-[36px] items-center px-3 text-[13px] text-zinc-700 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 focus-visible:bg-zinc-900/5 focus-visible:outline-none"
             >
