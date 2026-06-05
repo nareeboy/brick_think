@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
 import { useSpeechNarration } from '@/components/builder/useSpeechNarration';
@@ -10,6 +11,7 @@ import {
   broadcastNarrationSaved,
   useNarrationLiveChannel,
 } from '@/components/session/narrationRealtime';
+import { usePrefersReducedMotion } from '@/lib/a11y/usePrefersReducedMotion';
 import {
   emptyLiveTranscript,
   reduceChunk,
@@ -29,13 +31,16 @@ interface Props {
 
 /**
  * Facilitator-driven story capture on the participant's canvas. Renders nothing
- * until the facilitator starts recording for THIS model; then prompts the
- * participant to tap (authorising their mic), streams their words into the
- * shared live chat, and auto-saves when the facilitator stops. Only the
- * facilitator can stop — there is no participant Stop button.
+ * until the facilitator starts recording for THIS model; then a left slide-out
+ * drawer prompts the participant to tap (authorising their mic), streams their
+ * words into the shared live chat as they speak, and auto-saves when the
+ * facilitator stops. Only the facilitator can stop — there is no participant
+ * Stop button. The drawer is anchored left with no backdrop so the model stays
+ * visible on the right, mirroring the old recorder drawer's placement.
  */
 export function NarrationParticipantTrigger({ modelId, sessionId, profileId, displayName }: Props) {
   const speech = useSpeechNarration();
+  const reducedMotion = usePrefersReducedMotion();
   const [phase, setPhase] = useState<Phase>('idle');
   const [noticeSeen, setNoticeSeen] = useState(true); // assume seen until localStorage read
   const [live, setLive] = useState<LiveTranscriptState>(emptyLiveTranscript);
@@ -145,109 +150,116 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
 
   if (phase === 'idle') return null;
 
-  if (phase === 'denied') {
-    return (
-      <div
-        data-testid="narration-participant-prompt"
-        className="fixed bottom-5 left-1/2 z-40 w-[min(92vw,460px)] -translate-x-1/2 rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.35)]"
-      >
-        <p className="text-sm font-semibold text-zinc-900">Microphone blocked</p>
-        <p className="mt-1 text-[12px] leading-relaxed text-zinc-600">
-          Enable microphone access in your browser settings, then tap to try again.
-        </p>
-        <button
-          type="button"
-          onClick={beginRecording}
-          data-testid="narration-participant-retry"
-          className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
-        >
-          Try again
-        </button>
-      </div>
-    );
-  }
+  const headerTitle =
+    phase === 'denied'
+      ? 'Microphone blocked'
+      : phase === 'recording'
+        ? 'Recording your story'
+        : 'Narrate your model';
 
-  return (
+  return createPortal(
     <div
+      role="dialog"
+      aria-label="Narrate your model"
       data-testid="narration-participant-prompt"
-      className="fixed bottom-5 left-1/2 z-40 w-[min(92vw,460px)] -translate-x-1/2 rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.35)]"
+      className={`fixed left-0 top-0 z-50 flex h-full w-full max-w-md flex-col border-r border-zinc-200 bg-white shadow-xl ${
+        reducedMotion ? '' : 'motion-safe:animate-in motion-safe:slide-in-from-left'
+      }`}
     >
-      {phase === 'prompted' ? (
-        <div>
-          <p className="text-sm font-semibold text-zinc-900">Story capture started</p>
-          {!noticeSeen ? (
-            <p className="mt-1 text-[12px] leading-relaxed text-zinc-600">
-              Your browser converts your voice to text. BrickThink never stores or receives your
-              audio — only the transcript. Your words appear live to the facilitator and your room.
+      <header className="flex items-center gap-2 border-b border-zinc-200 px-4 py-3">
+        {phase === 'recording' ? (
+          <span className="inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-500" />
+        ) : null}
+        <h2 className="text-sm font-semibold text-zinc-900">{headerTitle}</h2>
+      </header>
+
+      <div className="flex flex-1 flex-col overflow-y-auto p-4 text-[13px] text-zinc-700">
+        {phase === 'denied' ? (
+          <div>
+            <p className="leading-relaxed text-zinc-600">
+              Enable microphone access in your browser settings, then tap to try again.
             </p>
-          ) : (
-            <p className="mt-1 text-[12px] text-zinc-600">
-              Tap to record the story of your model. The facilitator will stop the recording.
-            </p>
-          )}
-          {speech.supported ? (
             <button
               type="button"
               onClick={beginRecording}
-              data-testid="narration-participant-record"
+              data-testid="narration-participant-retry"
               className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
             >
-              {noticeSeen ? 'Tap to record' : 'Allow mic & record'}
+              Try again
             </button>
-          ) : (
-            <div className="mt-3">
-              <p className="mb-1 text-[12px] text-zinc-600">
-                Voice capture isn&rsquo;t supported here — type your story; the facilitator will
-                stop when you&rsquo;re done.
+          </div>
+        ) : phase === 'prompted' ? (
+          <div className="flex flex-1 flex-col">
+            {!noticeSeen ? (
+              <p className="leading-relaxed text-zinc-600">
+                Your browser converts your voice to text. BrickThink never stores or receives your
+                audio — only the transcript. Your words appear live to the facilitator and your
+                room.
               </p>
+            ) : (
+              <p className="text-zinc-600">
+                Tap to record the story of your model. The facilitator will stop the recording.
+              </p>
+            )}
+            {speech.supported ? (
+              <button
+                type="button"
+                onClick={beginRecording}
+                data-testid="narration-participant-record"
+                className="mt-3 inline-flex h-10 w-fit items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
+              >
+                {noticeSeen ? 'Tap to record' : 'Allow mic & record'}
+              </button>
+            ) : (
+              <div className="mt-3">
+                <p className="mb-1 text-zinc-600">
+                  Voice capture isn&rsquo;t supported here — type your story; the facilitator will
+                  stop when you&rsquo;re done.
+                </p>
+                <textarea
+                  value={fallbackText}
+                  onChange={(e) => setFallbackText(e.target.value)}
+                  rows={4}
+                  aria-label="Narration text"
+                  className="block w-full rounded-lg border border-zinc-300 p-2 text-[13px]"
+                  onFocus={() => {
+                    setPhase('recording');
+                    channel.sendAck({ modelId, profileId, state: 'recording' });
+                  }}
+                />
+              </div>
+            )}
+            {speech.supported ? (
+              <div className="mt-4 flex-1 overflow-y-auto">
+                <LiveTranscriptChat
+                  state={live}
+                  emptyHint="Your room's stories will appear here as people speak."
+                />
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col">
+            {speech.supported ? (
+              <>
+                <NarrationWaveform active={speech.speaking} />
+                <div className="mt-3 flex-1 overflow-y-auto">
+                  <LiveTranscriptChat state={live} emptyHint="Start speaking…" />
+                </div>
+              </>
+            ) : (
               <textarea
                 value={fallbackText}
                 onChange={(e) => setFallbackText(e.target.value)}
-                rows={4}
+                rows={6}
                 aria-label="Narration text"
-                className="block w-full rounded-lg border border-zinc-300 p-2 text-[13px]"
-                onFocus={() => {
-                  setPhase('recording');
-                  channel.sendAck({ modelId, profileId, state: 'recording' });
-                }}
+                className="block w-full flex-1 rounded-lg border border-zinc-300 p-2 text-[13px]"
               />
-            </div>
-          )}
-          {speech.supported ? (
-            <div className="mt-3 max-h-[24vh] overflow-y-auto">
-              <LiveTranscriptChat
-                state={live}
-                emptyHint="Your room's stories will appear here as people speak."
-              />
-            </div>
-          ) : null}
-        </div>
-      ) : (
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-red-500" />
-            <p className="text-[12px] font-semibold text-zinc-700">
-              Recording — the facilitator will stop when ready
-            </p>
+            )}
           </div>
-          {speech.supported ? (
-            <>
-              <NarrationWaveform active={speech.speaking} />
-              <div className="mt-2 max-h-[30vh] overflow-y-auto">
-                <LiveTranscriptChat state={live} emptyHint="Start speaking…" />
-              </div>
-            </>
-          ) : (
-            <textarea
-              value={fallbackText}
-              onChange={(e) => setFallbackText(e.target.value)}
-              rows={4}
-              aria-label="Narration text"
-              className="block w-full rounded-lg border border-zinc-300 p-2 text-[13px]"
-            />
-          )}
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </div>,
+    document.body,
   );
 }
