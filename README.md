@@ -100,6 +100,30 @@ pnpm db:link
 pnpm dev                          # http://localhost:3000
 ```
 
+## Granting site admin
+
+The `/app/admin` surface (CMS, careers, site banner, changelog) is gated on a per-user `profiles.is_site_admin` flag. There is **no hardcoded admin** — you designate your own by listing emails in the `app.site_admin_emails` database setting (comma-separated).
+
+Set it once per environment — Supabase SQL editor for a remote project, or local Studio → SQL editor / psql for the local stack:
+
+```sql
+alter database postgres set app.site_admin_emails = 'you@example.com,teammate@example.com';
+```
+
+Then apply migrations (`pnpm db:reset` locally, or your remote migration path) and sign in with that email — the promotion trigger flips `is_site_admin` when the profile is created. Already signed in before setting it? Re-run `pnpm db:reset` (local), or promote in place:
+
+```sql
+update public.profiles p set is_site_admin = true
+from regexp_split_to_table(current_setting('app.site_admin_emails', true), ',') as e(email)
+where p.email = trim(e.email)::citext;
+```
+
+Notes:
+
+- Unset/empty setting → no admins (safe default for a fresh clone).
+- A local `pnpm db:reset` recreates the database and **wipes** this setting, so re-run the `alter database` line after a reset (same caveat as the other `app.*` settings the project uses).
+- Promotion never demotes: removing an email from the list does not strip an existing admin — do that with an explicit `update ... set is_site_admin = false`.
+
 ## Auth and local user testing
 
 The sign-in page supports magic link and Google OAuth.
