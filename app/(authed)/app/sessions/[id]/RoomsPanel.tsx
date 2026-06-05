@@ -8,6 +8,7 @@ import type { StageType } from '@/lib/sessions/types';
 import type { CombinedNarration } from '@/lib/sessions/modelNarration';
 import { useSpotlightTarget } from '@/components/session/useSpotlightTarget';
 import { TranscriptViewModal } from '@/components/session/TranscriptViewModal';
+import { NarrationRowControl } from '@/components/session/NarrationRowControl';
 
 import { ManageRoomsDialog, type OrgMemberSummary } from './ManageRoomsDialog';
 import {
@@ -141,6 +142,7 @@ export function RoomsPanel({
                     </button>
                   );
                 })()}
+                <NarrationRowControl modelId={room.modelId} size="sm" />
                 {(() => {
                   const narration = room.narration;
                   if (!narration) return null;

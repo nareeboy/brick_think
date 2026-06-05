@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
@@ -57,20 +58,14 @@ export default async function AccountPage() {
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
+      <PageBanner
+        eyebrow="BrickThink"
+        title="Account"
+        titleTestId="account-heading"
+        subtitle={`Joined ${createdLabel}.`}
+        maxWidthClassName="max-w-[640px]"
+      />
       <div className="mx-auto flex max-w-[640px] flex-col gap-8 px-5 py-10">
-        <header className="flex flex-col gap-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            BrickThink
-          </p>
-          <h1
-            data-testid="account-heading"
-            className="text-[26px] font-semibold tracking-tight text-zinc-950"
-          >
-            Account
-          </h1>
-          <p className="text-[13px] text-zinc-500">Joined {createdLabel}.</p>
-        </header>
-
         <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
           <AccountForm
             initialFullName={fullName}

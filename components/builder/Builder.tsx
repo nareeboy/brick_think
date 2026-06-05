@@ -28,13 +28,14 @@ import { useBrickReactions } from './useBrickReactions';
 import { useFeedbackVisible } from './useFeedbackVisible';
 import { ExportMenu } from '@/components/exports/ExportMenu';
 import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
-import { NarrationButton } from '@/app/(authed)/app/designs/[id]/NarrationButton';
+import { NarrationParticipantTrigger } from '@/components/session/NarrationParticipantTrigger';
+import { NarrationDrawerProvider } from '@/components/session/NarrationDrawerContext';
+import { NarrationReopenButton } from '@/components/session/NarrationReopenButton';
 import type { CommentRow, ReactionRow } from '@/lib/brickFeedback/loadInitial';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import { canShareDesign } from '@/lib/share/canShareDesign';
 import { canSaveModelVersion } from '@/lib/models/canSaveModelVersion';
 import type { ModelDetail } from '@/lib/models/types';
-import type { ModelNarration } from '@/lib/sessions/modelNarration';
 import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
 import { StageTimerContainer } from '@/components/session/StageTimerContainer';
@@ -58,8 +59,6 @@ interface BuilderProps {
   facilitatorNotes?: string | null;
   /** True when the signed-in caller may record narration on this model. */
   canNarrate?: boolean;
-  /** Pre-fetched narration for this model (server-side); null if none/unreadable. */
-  initialNarration?: ModelNarration | null;
   /**
    * Pre-fetched reactions for the brick-feedback overlay. Non-null only when
    * the model is room-backed (the affordance is room-scoped). Empty array on
@@ -95,7 +94,6 @@ export function Builder({
   isSessionFacilitator = false,
   facilitatorNotes = null,
   canNarrate = false,
-  initialNarration = null,
   initialReactions = null,
   initialComments = null,
   myProfileId = null,
@@ -130,30 +128,32 @@ export function Builder({
             sessionContext={sessionContext}
           />
           <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
-            <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
-              <UnifiedSidebar
-                readOnly={readOnly}
-                ownerLabel={ownerLabel}
-                sessionContext={sessionContext}
-                canSaveVersion={canSaveModelVersion({ roomBacked, isSessionFacilitator })}
-              />
-              <CanvasStage
-                orgId={orgId}
-                colourblindMode={colourblindMode}
-                sessionContext={sessionContext}
-                isSessionFacilitator={isSessionFacilitator}
-                facilitatorNotes={facilitatorNotes}
-                canNarrate={canNarrate}
-                initialNarration={initialNarration}
-                reactionsEnabled={reactionsEnabled}
-                initialReactions={initialReactions ?? []}
-                commentsEnabled={commentsEnabled}
-                initialComments={initialComments ?? []}
-                myProfileId={myProfileId}
-                readOnly={readOnly}
-                scenario={scenario}
-              />
-            </div>
+            <NarrationDrawerProvider>
+              <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
+                <UnifiedSidebar
+                  readOnly={readOnly}
+                  ownerLabel={ownerLabel}
+                  sessionContext={sessionContext}
+                  canSaveVersion={canSaveModelVersion({ inSession: sessionContext !== null })}
+                />
+                <CanvasStage
+                  orgId={orgId}
+                  colourblindMode={colourblindMode}
+                  sessionContext={sessionContext}
+                  isSessionFacilitator={isSessionFacilitator}
+                  facilitatorNotes={facilitatorNotes}
+                  canNarrate={canNarrate}
+                  reactionsEnabled={reactionsEnabled}
+                  initialReactions={initialReactions ?? []}
+                  commentsEnabled={commentsEnabled}
+                  initialComments={initialComments ?? []}
+                  myProfileId={myProfileId}
+                  readOnly={readOnly}
+                  scenario={scenario}
+                  narratorName={self?.displayName ?? null}
+                />
+              </div>
+            </NarrationDrawerProvider>
           </div>
         </div>
         <SaveToast />
@@ -226,6 +226,7 @@ function UnifiedSidebar({
         <LayersPanel />
         <BringInPreviousModelReopenButton />
         <SaveBuildButton canSaveVersion={canSaveVersion} />
+        <NarrationReopenButton />
       </div>
     </aside>
   );
@@ -333,7 +334,6 @@ function CanvasStage({
   isSessionFacilitator = false,
   facilitatorNotes = null,
   canNarrate = false,
-  initialNarration = null,
   reactionsEnabled = false,
   initialReactions = [],
   commentsEnabled = false,
@@ -341,6 +341,7 @@ function CanvasStage({
   myProfileId = null,
   readOnly = false,
   scenario = null,
+  narratorName = null,
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
@@ -348,7 +349,6 @@ function CanvasStage({
   isSessionFacilitator?: boolean;
   facilitatorNotes?: string | null;
   canNarrate?: boolean;
-  initialNarration?: ModelNarration | null;
   reactionsEnabled?: boolean;
   initialReactions?: ReactionRow[];
   commentsEnabled?: boolean;
@@ -356,6 +356,7 @@ function CanvasStage({
   myProfileId?: string | null;
   readOnly?: boolean;
   scenario?: BuilderScenario | null;
+  narratorName?: string | null;
 }) {
   const { awareness, selfClientId, view, self, modelId } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
@@ -397,13 +398,6 @@ function CanvasStage({
   const shareRight = placeChrome(showShare, ICON_BTN_WIDTH);
   const exportRight = placeChrome(showExport, ICON_BTN_WIDTH);
   const notesRight = placeChrome(showNotes, NOTES_BTN_WIDTH);
-  // Narration is available on every session canvas (incl. room-backed shared
-  // stages, where attendees do most of the talking). `canNarrate` (edit-ability)
-  // gates recording; viewers who can only read still see the button when a
-  // transcript exists, opening a read-only view.
-  const showNarrate = sessionContext !== null && (canNarrate || initialNarration !== null);
-  const NARRATE_BTN_WIDTH = 102; // measured rendered width of the h-11 "🎙 Narrate" pill
-  const narrateRight = placeChrome(showNarrate, NARRATE_BTN_WIDTH);
   const feedbackToggleRight = placeChrome(showFeedbackToggle, ICON_BTN_WIDTH);
 
   // Live-presence avatar strip sits in the same row as the chrome buttons,
@@ -471,15 +465,13 @@ function CanvasStage({
             rightPx={notesRight}
           />
         ) : null}
-        {narrateRight !== null && modelId !== null && sessionContext ? (
-          <div className="absolute top-5 z-30" style={{ right: narrateRight }}>
-            <NarrationButton
-              modelId={modelId}
-              sessionId={sessionContext.sessionId}
-              canRecord={canNarrate}
-              initialNarration={initialNarration}
-            />
-          </div>
+        {canNarrate && modelId !== null && sessionContext && myProfileId && narratorName ? (
+          <NarrationParticipantTrigger
+            modelId={modelId}
+            sessionId={sessionContext.sessionId}
+            profileId={myProfileId}
+            displayName={narratorName}
+          />
         ) : null}
         {feedbackToggleRight !== null ? (
           <FeedbackToggleButton

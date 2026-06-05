@@ -19,6 +19,8 @@ import { useSessionModelsRealtime } from '@/components/session/useSessionModelsR
 import { useNarrationSavedRefresh } from '@/components/session/narrationRealtime';
 import { useRoomAssignmentRefresh } from '@/components/session/useRoomAssignmentRefresh';
 import { useSpotlightTarget } from '@/components/session/useSpotlightTarget';
+import { NarrationControlProvider } from '@/components/session/NarrationControlContext';
+import { NarrationRowControl } from '@/components/session/NarrationRowControl';
 
 import {
   advanceStageAction,
@@ -183,73 +185,75 @@ export function SessionStages({
     : null;
 
   return (
-    <div className="flex flex-col gap-4" data-testid="session-stage-list">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-1">
-        <div className="flex items-baseline gap-3">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            Workshop flow
-          </p>
-          <p className="text-[12px] text-zinc-600">
-            {sorted.length} stages · {completed.length} done
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {activeStage ? (
-            <div className="flex items-center gap-2">
-              <StatusDot status="active" />
-              <span className="text-[12px] text-zinc-700">
-                Now · Stage {activeStage.position + 1} · {activeLabel}
-              </span>
-              {activeRemaining !== null ? (
-                <span
-                  suppressHydrationWarning
-                  className="font-mono tabular-nums text-[12px] font-medium text-zinc-900"
-                >
-                  {formatRemaining(activeRemaining)}
+    <NarrationControlProvider sessionId={sessionId}>
+      <div className="flex flex-col gap-4" data-testid="session-stage-list">
+        <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-1">
+          <div className="flex items-baseline gap-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              Workshop flow
+            </p>
+            <p className="text-[12px] text-zinc-600">
+              {sorted.length} stages · {completed.length} done
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {activeStage ? (
+              <div className="flex items-center gap-2">
+                <StatusDot status="active" />
+                <span className="text-[12px] text-zinc-700">
+                  Now · Stage {activeStage.position + 1} · {activeLabel}
                 </span>
-              ) : null}
-            </div>
-          ) : session.status === 'completed' ? (
-            <p className="text-[12px] text-zinc-500">Session complete</p>
-          ) : (
-            <p className="text-[12px] text-zinc-500">Awaiting start</p>
-          )}
-          {canManageSession && session.status !== 'completed' ? (
-            <EndSessionButton
+                {activeRemaining !== null ? (
+                  <span
+                    suppressHydrationWarning
+                    className="font-mono tabular-nums text-[12px] font-medium text-zinc-900"
+                  >
+                    {formatRemaining(activeRemaining)}
+                  </span>
+                ) : null}
+              </div>
+            ) : session.status === 'completed' ? (
+              <p className="text-[12px] text-zinc-500">Session complete</p>
+            ) : (
+              <p className="text-[12px] text-zinc-500">Awaiting start</p>
+            )}
+            {canManageSession && session.status !== 'completed' ? (
+              <EndSessionButton
+                sessionId={sessionId}
+                sessionTitle={sessionTitle}
+                stageName={activeLabel}
+              />
+            ) : null}
+          </div>
+        </header>
+
+        <ol className="flex flex-col gap-4">
+          {sorted.map((stage, index) => (
+            <StageRow
+              key={stage.id}
+              stage={stage}
+              isFirst={index === 0}
+              isLastStage={index === sorted.length - 1}
+              nowMs={nowMs}
+              ownedModel={modelByStageId.get(stage.id) ?? null}
+              participants={participantsByStage[stage.id] ?? []}
+              canManageSession={canManageSession}
               sessionId={sessionId}
               sessionTitle={sessionTitle}
-              stageName={activeLabel}
+              sessionStatus={session.status}
+              lastUpdatedAt={lastUpdatedAt}
+              rooms={roomsByStageId[stage.id] ?? []}
+              orgMembers={orgMembers}
+              upstreamRooms={upstreamRoomsByStageId[stage.id] ?? []}
+              upstreamStageType={upstreamStageTypeByStageId[stage.id] ?? null}
+              myRoomId={myRoomIdByStageId[stage.id] ?? null}
+              currentUserId={currentUserId}
+              pickedScenario={pickedScenarioByStageId[stage.id] ?? null}
             />
-          ) : null}
-        </div>
-      </header>
-
-      <ol className="flex flex-col gap-4">
-        {sorted.map((stage, index) => (
-          <StageRow
-            key={stage.id}
-            stage={stage}
-            isFirst={index === 0}
-            isLastStage={index === sorted.length - 1}
-            nowMs={nowMs}
-            ownedModel={modelByStageId.get(stage.id) ?? null}
-            participants={participantsByStage[stage.id] ?? []}
-            canManageSession={canManageSession}
-            sessionId={sessionId}
-            sessionTitle={sessionTitle}
-            sessionStatus={session.status}
-            lastUpdatedAt={lastUpdatedAt}
-            rooms={roomsByStageId[stage.id] ?? []}
-            orgMembers={orgMembers}
-            upstreamRooms={upstreamRoomsByStageId[stage.id] ?? []}
-            upstreamStageType={upstreamStageTypeByStageId[stage.id] ?? null}
-            myRoomId={myRoomIdByStageId[stage.id] ?? null}
-            currentUserId={currentUserId}
-            pickedScenario={pickedScenarioByStageId[stage.id] ?? null}
-          />
-        ))}
-      </ol>
-    </div>
+          ))}
+        </ol>
+      </div>
+    </NarrationControlProvider>
   );
 }
 
@@ -549,6 +553,7 @@ function ParticipantsPanel({
                       </button>
                     );
                   })()}
+                  <NarrationRowControl modelId={p.id} />
                   {narration ? (
                     <button
                       type="button"

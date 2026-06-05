@@ -1,30 +1,19 @@
 export interface CanSaveModelVersionArgs {
-  /** True when the canvas is a room-backed (breakout room) shared canvas. */
-  roomBacked: boolean;
-  /** True when the signed-in caller is the parent session's facilitator. */
-  isSessionFacilitator: boolean;
+  /** True when the canvas belongs to a session (any session stage). */
+  inSession: boolean;
 }
 
 /**
  * Whether the caller may save a model version from this canvas.
  *
- * `model_versions` inserts are **owner-only** at the RLS layer
- * (`owner_profile_id = auth.uid()`, see the models migration). On a room-backed
- * canvas the facilitator owns the `models` row while attendees are room members
- * who can edit live but do **not** own it — so an attendee's insert is rejected
- * by RLS and the API returns 500. The "Save version" button must therefore stay
- * hidden for attendees on a room canvas; only the facilitator (the owner) saves
- * versions there.
- *
- * Personal designs and non-room session canvases (`individual_model`,
- * `skill_building`) are owned by the caller, so saving stays available — the
- * existing read-only gate already hides the button for non-owning viewers of
- * those.
+ * Versioning is a **personal-designs-only** feature. Session canvases hide it —
+ * individual / skill-building canvases and room-backed shared rooms alike: the
+ * facilitator drives the workshop and attendees don't curate version history
+ * mid-session, and on a room-backed canvas the attendee doesn't even own the
+ * `models` row (the `model_versions` insert is owner-only at the RLS layer and
+ * would 500). The existing read-only gate still hides the button for non-owning
+ * viewers of personal designs.
  */
-export function canSaveModelVersion({
-  roomBacked,
-  isSessionFacilitator,
-}: CanSaveModelVersionArgs): boolean {
-  if (roomBacked) return isSessionFacilitator;
-  return true;
+export function canSaveModelVersion({ inSession }: CanSaveModelVersionArgs): boolean {
+  return !inSession;
 }

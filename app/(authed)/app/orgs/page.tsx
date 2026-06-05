@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { PageBanner } from '@/components/app/PageBanner';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -71,24 +72,20 @@ export default async function OrgsPage() {
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-        <FacilitatorChecklist progress={onboardingProgress} />
-        <header className="flex items-center justify-between gap-4">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              BrickThink
-            </p>
-            <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">
-              Organisations
-            </h1>
-          </div>
+      <PageBanner
+        eyebrow="BrickThink"
+        title="Organisations"
+        actions={
           <Link
             href="/app/orgs/new"
             className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
           >
             New organisation
           </Link>
-        </header>
+        }
+      />
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
+        <FacilitatorChecklist progress={onboardingProgress} />
 
         {orgs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center text-[13px] text-zinc-500">

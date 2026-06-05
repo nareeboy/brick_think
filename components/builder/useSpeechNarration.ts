@@ -54,6 +54,9 @@ export function useSpeechNarration(): UseSpeechNarration {
   const [durationMs, setDurationMs] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const speakingTimer = useRef<number | null>(null);
+  // Distinguishes an intentional end (explicit stop / terminal error / unmount)
+  // from Chrome auto-ending on silence, which we resume from.
+  const stoppingRef = useRef(false);
 
   const markSpeaking = useCallback(() => {
     setSpeaking(true);
@@ -62,6 +65,7 @@ export function useSpeechNarration(): UseSpeechNarration {
   }, []);
 
   const stop = useCallback(() => {
+    stoppingRef.current = true;
     recRef.current?.stop();
   }, []);
 
@@ -100,11 +104,33 @@ export function useSpeechNarration(): UseSpeechNarration {
     };
     rec.onerror = (ev) => {
       const code = ev.error;
-      if (code === 'not-allowed' || code === 'service-not-allowed') setError('mic_denied');
-      else if (code === 'no-speech') setError('no_speech_detected');
-      else setError('unknown');
+      // ONLY a denied mic is terminal. Every other error — `no-speech`,
+      // `aborted`, `network`, `audio-capture` — is transient: Chrome fires these
+      // routinely during a long dictation (especially around the auto-restart
+      // boundary), and treating them as terminal stops capture "after a few
+      // words". Leave stoppingRef false so onend resumes; only an explicit
+      // stop(), a denied mic, or unmount truly ends the session.
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        setError('mic_denied');
+        stoppingRef.current = true; // terminal — do not auto-restart
+      } else if (code === 'no-speech') {
+        setError('no_speech_detected'); // transient — onend will resume
+      } else {
+        setError('unknown'); // transient — onend will resume
+      }
     };
     rec.onend = () => {
+      // Chrome ends recognition on silence even with continuous=true. Resume so
+      // a pause mid-story doesn't end capture; only an explicit stop(), a
+      // terminal error, or unmount sets stoppingRef and lets it truly stop.
+      if (!stoppingRef.current) {
+        try {
+          rec.start();
+          return;
+        } catch {
+          // engine refused to resume — fall through to a real stop
+        }
+      }
       if (startedAt.current != null) setDurationMs(Date.now() - startedAt.current);
       if (speakingTimer.current != null) window.clearTimeout(speakingTimer.current);
       setSpeaking(false);
@@ -113,6 +139,7 @@ export function useSpeechNarration(): UseSpeechNarration {
     setError(null);
     setFinalText('');
     setInterim('');
+    stoppingRef.current = false;
     startedAt.current = Date.now();
     setStatus('recording');
     rec.start();
@@ -121,6 +148,7 @@ export function useSpeechNarration(): UseSpeechNarration {
   // Stop any in-flight recognition if the component unmounts mid-recording.
   useEffect(() => {
     return () => {
+      stoppingRef.current = true;
       recRef.current?.stop();
       if (speakingTimer.current != null) window.clearTimeout(speakingTimer.current);
     };
