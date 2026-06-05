@@ -104,14 +104,19 @@ export function useSpeechNarration(): UseSpeechNarration {
     };
     rec.onerror = (ev) => {
       const code = ev.error;
+      // ONLY a denied mic is terminal. Every other error — `no-speech`,
+      // `aborted`, `network`, `audio-capture` — is transient: Chrome fires these
+      // routinely during a long dictation (especially around the auto-restart
+      // boundary), and treating them as terminal stops capture "after a few
+      // words". Leave stoppingRef false so onend resumes; only an explicit
+      // stop(), a denied mic, or unmount truly ends the session.
       if (code === 'not-allowed' || code === 'service-not-allowed') {
         setError('mic_denied');
         stoppingRef.current = true; // terminal — do not auto-restart
       } else if (code === 'no-speech') {
         setError('no_speech_detected'); // transient — onend will resume
       } else {
-        setError('unknown');
-        stoppingRef.current = true; // terminal
+        setError('unknown'); // transient — onend will resume
       }
     };
     rec.onend = () => {
