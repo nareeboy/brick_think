@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { PageBanner } from '@/components/app/PageBanner';
 import { CreateSessionSpotlight } from '@/components/onboarding/CreateSessionSpotlight';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -112,41 +113,43 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10">
-        <Suspense fallback={null}>
-          <CreateSessionSpotlight />
-        </Suspense>
-        <FacilitatorChecklist progress={onboardingProgress} />
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              <Link href="/app/orgs" className="underline-offset-2 hover:underline">
-                Organisations
-              </Link>
-              <span aria-hidden="true" className="mx-1.5 text-zinc-400">
-                /
-              </span>
+      <Suspense fallback={null}>
+        <CreateSessionSpotlight />
+      </Suspense>
+      <PageBanner
+        eyebrow={
+          <>
+            <Link href="/app/orgs" className="underline-offset-2 hover:underline">
+              Organisations
+            </Link>
+            <span aria-hidden="true" className="mx-1.5 text-zinc-400">
+              /
+            </span>
+            {orgRes.data.name}
+          </>
+        }
+        title={
+          isAdmin ? (
+            <RenameOrgForm orgId={id} initialName={orgRes.data.name} />
+          ) : (
+            <h1 className="text-[26px] font-semibold tracking-tight text-zinc-950">
               {orgRes.data.name}
-            </p>
-            <div className="mt-1">
-              {isAdmin ? (
-                <RenameOrgForm orgId={id} initialName={orgRes.data.name} />
-              ) : (
-                <h1 className="text-[26px] font-semibold tracking-tight text-zinc-950">
-                  {orgRes.data.name}
-                </h1>
-              )}
-            </div>
-            <p className="mt-1 font-mono text-[12px] text-zinc-500">{orgRes.data.slug}</p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
+            </h1>
+          )
+        }
+        subtitle={<span className="font-mono text-[12px] text-zinc-500">{orgRes.data.slug}</span>}
+        actions={
+          <>
             <LeaveOrgButton orgId={id} profileId={user.id} />
             {isOwner ? (
               <DeleteOrgButton orgId={id} orgName={orgRes.data.name} orgSlug={orgRes.data.slug} />
             ) : null}
             <CreateSessionButton orgId={id} />
-          </div>
-        </header>
+          </>
+        }
+      />
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10">
+        <FacilitatorChecklist progress={onboardingProgress} />
 
         <section className="flex flex-col gap-3">
           <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">Sessions</h2>

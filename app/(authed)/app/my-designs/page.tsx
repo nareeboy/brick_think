@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { Avatar } from '@/components/app/Avatar';
+import { PageBanner } from '@/components/app/PageBanner';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -361,38 +362,30 @@ export default async function MyDesignsPage({
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
+      <WelcomeModal />
+      <PageBanner
+        avatar={<Avatar url={profileAvatarUrl} name={profileName} size="md" />}
+        eyebrow="BrickThink"
+        title="My Designs"
+        titleTestId="my-designs-heading"
+        actions={
+          <>
+            {trashCount > 0 ? (
+              <Link
+                href="/app/designs/trash"
+                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5"
+              >
+                Trash ({trashCount})
+              </Link>
+            ) : null}
+            <ImportDesignButton />
+            <NewDesignDialogButton orgs={orgs} />
+          </>
+        }
+      />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-        <WelcomeModal />
         <FacilitatorChecklist progress={onboardingProgress} />
         <header className="flex flex-col gap-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Avatar url={profileAvatarUrl} name={profileName} size="md" />
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                  BrickThink
-                </p>
-                <h1
-                  data-testid="my-designs-heading"
-                  className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950"
-                >
-                  My Designs
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {trashCount > 0 ? (
-                <Link
-                  href="/app/designs/trash"
-                  className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5"
-                >
-                  Trash ({trashCount})
-                </Link>
-              ) : null}
-              <ImportDesignButton />
-              <NewDesignDialogButton orgs={orgs} />
-            </div>
-          </div>
           <SearchInput initialValue={q} inputId="my-designs-search-input" />
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">
