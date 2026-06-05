@@ -386,7 +386,6 @@ export default async function MyDesignsPage({
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
         <FacilitatorChecklist progress={onboardingProgress} />
         <header className="flex flex-col gap-5">
-          <SearchInput initialValue={q} inputId="my-designs-search-input" />
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">
               <label htmlFor="my-designs-filter" className="text-[13px] font-medium text-zinc-600">
@@ -399,6 +398,9 @@ export default async function MyDesignsPage({
                 Sort:
               </label>
               <SortDropdown buttonId="my-designs-sort" value={sort} />
+            </div>
+            <div className="ml-auto w-full max-w-md">
+              <SearchInput initialValue={q} inputId="my-designs-search-input" />
             </div>
           </div>
           {allTags.length > 0 ? <TagFilterBar tags={allTags} active={activeTags} /> : null}
