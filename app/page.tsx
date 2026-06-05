@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
-import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -13,13 +12,6 @@ import {
   GitHubGlyph,
   NavBar,
 } from '@/components/marketing/MarketingChrome';
-import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
-import { ProductHuntBadge } from '@/components/marketing/ProductHuntBadge';
-import { SaasHubBadge } from '@/components/marketing/SaasHubBadge';
-import { SourceForgeBadge } from '@/components/marketing/SourceForgeBadge';
-import { StartupFameBadge } from '@/components/marketing/StartupFameBadge';
-import { TinyLaunchBadge } from '@/components/marketing/TinyLaunchBadge';
-import { UneedBadge } from '@/components/marketing/UneedBadge';
 
 export const metadata: Metadata = { title: 'BrickThink' };
 
@@ -97,7 +89,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <EventBanner />
       <main id="main">
         <Hero />
-        <LaunchBar />
         <MethodologySection />
         <FeatureBento />
         <PersonasSection />
@@ -234,32 +225,6 @@ function Hero() {
               </div>
             ))}
           </dl>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Launch / social-proof bar. Lives on the solid cream background directly
-// below the hero (the hero's video + fade end well above this), so the badge
-// never sits over the video blend. Left-aligned to continue the hero's axis.
-// Add launch badges to this row as they land; it wraps on its own.
-function LaunchBar() {
-  return (
-    <section aria-label="As seen on" className="bg-[#FAF7F1]">
-      <div className="mx-auto max-w-7xl px-6 pb-14 pt-2 md:pb-16">
-        <p className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          As seen on
-        </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
-          <ProductHuntBadge />
-          <StartupFameBadge />
-          <LaunchIgniterBadge />
-          <UneedBadge />
-          <TinyLaunchBadge />
-          <SourceForgeBadge imgClassName="h-[calc(var(--spacing)*27)] w-auto" />
-          <PeerlistBadge />
-          <SaasHubBadge />
         </div>
       </div>
     </section>
