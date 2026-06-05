@@ -4,17 +4,11 @@ import { createContext, useCallback, useContext, useState, type ReactNode } from
 
 import { useNarrationLiveChannel } from '@/components/session/narrationRealtime';
 import { deriveRowStatus, type RowStatus } from '@/lib/sessions/narrationStatus';
-import {
-  emptyLiveTranscript,
-  reduceChunk,
-  type LiveTranscriptState,
-} from '@/lib/sessions/liveTranscript';
 import type { AckState } from '@/lib/sessions/narrationLiveTypes';
 
 interface ContextValue {
   ackStates: Record<string, Record<string, AckState>>;
   requested: Record<string, boolean>;
-  live: Record<string, LiveTranscriptState>;
   start: (modelId: string) => void;
   stop: (modelId: string) => void;
 }
@@ -30,26 +24,22 @@ export function NarrationControlProvider({
 }) {
   const [ackStates, setAckStates] = useState<Record<string, Record<string, AckState>>>({});
   const [requested, setRequested] = useState<Record<string, boolean>>({});
-  const [live, setLive] = useState<Record<string, LiveTranscriptState>>({});
 
+  // The facilitator only needs per-speaker status (the live chat is the
+  // participant's view, and the saved transcript is read afterwards), so this
+  // provider subscribes to acks alone — not the chunk stream.
   const api = useNarrationLiveChannel(sessionId, {
     onAck: (ack) =>
       setAckStates((prev) => ({
         ...prev,
         [ack.modelId]: { ...(prev[ack.modelId] ?? {}), [ack.profileId]: ack.state },
       })),
-    onChunk: (chunk) =>
-      setLive((prev) => ({
-        ...prev,
-        [chunk.modelId]: reduceChunk(prev[chunk.modelId] ?? emptyLiveTranscript, chunk),
-      })),
   });
 
   const start = useCallback(
     (modelId: string) => {
-      // Fresh capture window — clear any prior acks/chat for this model.
+      // Fresh capture window — clear any prior acks for this model.
       setAckStates((prev) => ({ ...prev, [modelId]: {} }));
-      setLive((prev) => ({ ...prev, [modelId]: emptyLiveTranscript }));
       setRequested((prev) => ({ ...prev, [modelId]: true }));
       api.startRecording(modelId);
     },
@@ -65,7 +55,7 @@ export function NarrationControlProvider({
   );
 
   return (
-    <NarrationControlContext.Provider value={{ ackStates, requested, live, start, stop }}>
+    <NarrationControlContext.Provider value={{ ackStates, requested, start, stop }}>
       {children}
     </NarrationControlContext.Provider>
   );
@@ -74,7 +64,6 @@ export function NarrationControlProvider({
 export interface RowControl {
   status: RowStatus;
   isActive: boolean;
-  live: LiveTranscriptState;
   start: () => void;
   stop: () => void;
 }
@@ -89,7 +78,6 @@ export function useNarrationRowControl(modelId: string): RowControl {
     return {
       status: { kind: 'idle' },
       isActive: false,
-      live: emptyLiveTranscript,
       start: () => {},
       stop: () => {},
     };
@@ -99,7 +87,6 @@ export function useNarrationRowControl(modelId: string): RowControl {
   return {
     status: deriveRowStatus(isActive, states),
     isActive,
-    live: ctx.live[modelId] ?? emptyLiveTranscript,
     start: () => ctx.start(modelId),
     stop: () => ctx.stop(modelId),
   };
