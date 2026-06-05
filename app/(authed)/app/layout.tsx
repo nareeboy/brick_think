@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 
 import { fetchRecentNotifications } from '@/app/(authed)/app/notifications/actions';
 import { GlobalHeader } from '@/components/app/GlobalHeader';
+import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -43,6 +44,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const userAvatarUrl = profileRes.data?.avatar_url ?? null;
   const isSiteAdmin = profileRes.data?.is_site_admin === true;
+  const navSessions = await getMyActiveSessionsForNav(supabase, user.id);
   const initialNotifications = await fetchRecentNotifications();
 
   return (
@@ -53,6 +55,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
           userEmail={email}
           userAvatarUrl={userAvatarUrl}
           isSiteAdmin={isSiteAdmin}
+          sessions={navSessions}
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
         <NotificationToast />
