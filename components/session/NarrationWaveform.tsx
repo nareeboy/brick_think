@@ -8,20 +8,20 @@
 
 const BAR_COUNT = 18;
 
-// Per-bar phase offsets (seconds) so the wave looks lively rather than uniform.
+// Per-bar phase offsets (seconds) so the bars ripple rather than move in unison.
 const BARS = Array.from({ length: BAR_COUNT }, (_, i) => {
   // Deterministic, no Math.random: a small triangle wave of delays.
   const phase = (i % 6) - 3; // -3..2
-  return -(Math.abs(phase) * 0.12);
+  return -(Math.abs(phase) * 0.1);
 });
 
 const STYLE = `
 @keyframes bt-wave {
-  0%, 100% { transform: scaleY(0.18); }
+  0%, 100% { transform: scaleY(0.22); }
   50% { transform: scaleY(1); }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .bt-wave-bar--active { animation: bt-wave 0.9s ease-in-out infinite; }
+  .bt-wave-bar--active { animation: bt-wave 0.85s ease-in-out infinite; }
 }
 `;
 
@@ -35,17 +35,16 @@ export function NarrationWaveform({ active }: Props) {
       role="img"
       aria-label="recording in progress"
       data-testid="narration-waveform"
-      className="mb-2 flex h-6 items-center gap-[3px] rounded-lg bg-zinc-50 px-2"
+      className="mb-2 flex h-8 items-center justify-center gap-[3px] rounded-lg bg-zinc-50 px-2"
     >
       <style>{STYLE}</style>
       {BARS.map((delay, i) => (
         <span
           key={i}
-          className={`bt-wave-bar w-[3px] flex-1 rounded-full bg-[#c0613d] transition-transform duration-200 ${
+          className={`bt-wave-bar h-5 w-[3px] rounded-full bg-[#c0613d] transition-transform duration-200 ${
             active ? 'bt-wave-bar--active' : ''
           }`}
           style={{
-            height: '16px',
             transformOrigin: 'center',
             transform: active ? undefined : 'scaleY(0.18)',
             animationDelay: `${delay}s`,
