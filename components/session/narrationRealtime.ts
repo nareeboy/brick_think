@@ -4,10 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { getBrowserSupabaseClient } from '@/lib/db/client';
-import type {
-  RecordingAck,
-  TranscriptChunk,
-} from '@/lib/sessions/narrationLiveTypes';
+import type { RecordingAck, TranscriptChunk } from '@/lib/sessions/narrationLiveTypes';
 
 // A lightweight per-session broadcast channel used purely to nudge the
 // facilitator's session page to refresh when a participant saves a narration.
@@ -164,9 +161,18 @@ export function useNarrationLiveChannel(
   }, []);
 
   return {
-    startRecording: useCallback((modelId: string) => send(RECORDING_START_EVENT, { modelId }), [send]),
-    stopRecording: useCallback((modelId: string) => send(RECORDING_STOP_EVENT, { modelId }), [send]),
+    startRecording: useCallback(
+      (modelId: string) => send(RECORDING_START_EVENT, { modelId }),
+      [send],
+    ),
+    stopRecording: useCallback(
+      (modelId: string) => send(RECORDING_STOP_EVENT, { modelId }),
+      [send],
+    ),
     sendAck: useCallback((ack: RecordingAck) => send(RECORDING_ACK_EVENT, { ...ack }), [send]),
-    sendChunk: useCallback((chunk: TranscriptChunk) => send(TRANSCRIPT_CHUNK_EVENT, { ...chunk }), [send]),
+    sendChunk: useCallback(
+      (chunk: TranscriptChunk) => send(TRANSCRIPT_CHUNK_EVENT, { ...chunk }),
+      [send],
+    ),
   };
 }

@@ -19,9 +19,7 @@ export function LiveTranscriptChat({ state, emptyHint }: Props) {
   return (
     <div data-testid="live-transcript-chat" className="flex flex-col gap-2">
       {empty ? (
-        <p className="text-[12px] text-zinc-500">
-          {emptyHint ?? 'Waiting for the first words…'}
-        </p>
+        <p className="text-[12px] text-zinc-500">{emptyHint ?? 'Waiting for the first words…'}</p>
       ) : null}
 
       {state.messages.map((m) => (

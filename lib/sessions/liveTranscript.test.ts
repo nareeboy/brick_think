@@ -28,7 +28,10 @@ describe('reduceChunk', () => {
   });
 
   it('keeps two speakers separate and message ids unique', () => {
-    let s = reduceChunk(emptyLiveTranscript, chunk({ profileId: 'a', name: 'Alice', text: 'hi', isFinal: true }));
+    let s = reduceChunk(
+      emptyLiveTranscript,
+      chunk({ profileId: 'a', name: 'Alice', text: 'hi', isFinal: true }),
+    );
     s = reduceChunk(s, chunk({ profileId: 'b', name: 'Bob', text: 'yo', isFinal: true }));
     expect(s.messages.map((m) => m.name)).toEqual(['Alice', 'Bob']);
     expect(new Set(s.messages.map((m) => m.id)).size).toBe(2);

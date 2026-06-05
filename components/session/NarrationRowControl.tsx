@@ -70,9 +70,7 @@ export function NarrationRowControl({
       <button
         type="button"
         onClick={() => (isActive ? stop() : start())}
-        data-testid={
-          isActive ? `narration-stop-${modelId}` : `narration-start-${modelId}`
-        }
+        data-testid={isActive ? `narration-stop-${modelId}` : `narration-start-${modelId}`}
         title={isActive ? 'Stop story capture' : 'Start story capture for this canvas'}
         aria-pressed={isActive}
         className={`inline-flex ${h} cursor-pointer items-center justify-center rounded-xl border px-3 text-[12px] font-medium transition-colors ${
