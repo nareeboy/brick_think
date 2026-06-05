@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
@@ -433,44 +434,45 @@ export default async function SessionDetailPage({
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
-        <FacilitatorChecklist progress={onboardingProgress} />
-        <header data-tour-id="session-header" className="flex items-start justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="mb-6">
-              <SessionRoleChip isFacilitator={session.facilitator_id === user.id} />
-            </div>
-            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              <Link href="/app/orgs" className="underline-offset-2 hover:underline">
-                Organisations
+      <PageBanner
+        dataTourId="session-header"
+        maxWidthClassName="max-w-[900px]"
+        leading={<SessionRoleChip isFacilitator={session.facilitator_id === user.id} />}
+        eyebrow={
+          <>
+            <Link href="/app/orgs" className="underline-offset-2 hover:underline">
+              Organisations
+            </Link>
+            <span aria-hidden="true" className="mx-1.5 text-zinc-400">
+              /
+            </span>
+            {session.organisations ? (
+              <Link
+                href={`/app/orgs/${session.organisations.id}`}
+                className="underline-offset-2 hover:underline"
+              >
+                {session.organisations.name}
               </Link>
-              <span aria-hidden="true" className="mx-1.5 text-zinc-400">
-                /
-              </span>
-              {session.organisations ? (
-                <Link
-                  href={`/app/orgs/${session.organisations.id}`}
-                  className="underline-offset-2 hover:underline"
-                >
-                  {session.organisations.name}
-                </Link>
-              ) : (
-                <span>Unknown org</span>
-              )}
-              <span aria-hidden="true" className="mx-1.5 text-zinc-400">
-                /
-              </span>
-              Session · {session.status}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <SessionTitle
-                sessionId={session.id}
-                initialTitle={session.title}
-                canRename={canManageSession}
-              />
-            </div>
+            ) : (
+              <span>Unknown org</span>
+            )}
+            <span aria-hidden="true" className="mx-1.5 text-zinc-400">
+              /
+            </span>
+            Session · {session.status}
+          </>
+        }
+        title={
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <SessionTitle
+              sessionId={session.id}
+              initialTitle={session.title}
+              canRename={canManageSession}
+            />
           </div>
-          <div className="flex items-center gap-3">
+        }
+        actions={
+          <>
             <GoToMyCanvasButton sessionId={session.id} currentStageId={session.current_stage_id} />
             {canManageSession ? (
               <>
@@ -494,8 +496,11 @@ export default async function SessionDetailPage({
                 <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
               </>
             ) : null}
-          </div>
-        </header>
+          </>
+        }
+      />
+      <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
+        <FacilitatorChecklist progress={onboardingProgress} />
         <PreSessionChecklist
           sessionId={session.id}
           sessionStatus={session.status}

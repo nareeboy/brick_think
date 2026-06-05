@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
+import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Scenario } from '@/lib/scenarios/types';
@@ -36,25 +37,24 @@ export default async function ScenariosPage() {
   const scenarios = (res.data ?? []) as unknown as Scenario[];
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-10">
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-6">
-        <div>
-          <h1 className="font-serif text-[40px] leading-tight tracking-tight text-zinc-900">
-            Scenarios
-          </h1>
-          <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-zinc-600">
-            Canonical LEGO® SERIOUS PLAY® exercises for each stage of a session.
-          </p>
-        </div>
-        <span
-          className="inline-flex h-9 items-center rounded-full bg-zinc-900/5 px-3 text-[12px] font-medium text-zinc-700"
-          aria-label="Custom scenario authoring is on the Phase 2 roadmap"
-        >
-          Want to author your own? On the roadmap.
-        </span>
+    <>
+      <PageBanner
+        eyebrow="BrickThink"
+        title="Scenarios"
+        subtitle="Canonical LEGO® SERIOUS PLAY® exercises for each stage of a session."
+        maxWidthClassName="max-w-6xl"
+        actions={
+          <span
+            className="inline-flex h-9 items-center rounded-full bg-white/70 px-3 text-[12px] font-medium text-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            aria-label="Custom scenario authoring is on the Phase 2 roadmap"
+          >
+            Want to author your own? On the roadmap.
+          </span>
+        }
+      />
+      <div className="mx-auto w-full max-w-6xl px-6 py-10">
+        <ScenariosList scenarios={scenarios} />
       </div>
-
-      <ScenariosList scenarios={scenarios} />
-    </div>
+    </>
   );
 }
