@@ -17,6 +17,13 @@ import { useBuilderState, type BrickInstance, type LayerGroup } from './builderS
 
 const NAME_BY_CODE = new Map<string, string>(CANONICAL_BRICKS.map((b) => [b.code, b.name]));
 
+export function pieceLabel(brick: BrickInstance): string {
+  const base = NAME_BY_CODE.get(brick.code) ?? brick.code;
+  const generated = `${base} · ${brick.id.slice(-4)}`;
+  const trimmed = brick.name?.trim();
+  return trimmed || generated;
+}
+
 const MIME_BRICK = 'application/x-brick';
 const MIME_GROUP = 'application/x-group';
 
@@ -453,8 +460,7 @@ function BrickRow({
     hint?.kind === 'brick-edge' && hint.brickId === brick.id && hint.side === 'before';
   const showAfter =
     hint?.kind === 'brick-edge' && hint.brickId === brick.id && hint.side === 'after';
-  const baseName = NAME_BY_CODE.get(brick.code) ?? brick.code;
-  const label = `${baseName} · ${brick.id.slice(-4)}`;
+  const label = pieceLabel(brick);
   return (
     <div>
       {showBefore ? <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" /> : null}
