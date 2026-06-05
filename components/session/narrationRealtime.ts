@@ -130,7 +130,11 @@ export function useNarrationLiveChannel(
       if (cancelled) return;
 
       channel = supabase
-        .channel(channelName(sessionId), { config: { broadcast: { self: true } } })
+        // self:false — a sender does NOT receive its own messages. The
+        // recording participant renders its own words locally (no round-trip),
+        // so echoing them back would double them; everyone else still receives
+        // each speaker's chunks normally.
+        .channel(channelName(sessionId), { config: { broadcast: { self: false } } })
         .on('broadcast', { event: RECORDING_START_EVENT }, ({ payload }) =>
           handlersRef.current.onRecordingStart?.((payload as { modelId: string }).modelId),
         )
