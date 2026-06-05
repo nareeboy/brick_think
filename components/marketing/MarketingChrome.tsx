@@ -90,7 +90,7 @@ function FeaturedOnBand() {
           <LaunchIgniterBadge />
           <UneedBadge />
           <TinyLaunchBadge />
-          <SourceForgeBadge />
+          <SourceForgeBadge imgClassName="h-[calc(var(--spacing)*21)] w-auto" />
           <SourceForgeDownloadButton />
           <a
             href={LSP_DACH_COMMUNITY_URL}
