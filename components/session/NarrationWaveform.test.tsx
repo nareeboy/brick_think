@@ -12,7 +12,7 @@ describe('NarrationWaveform', () => {
   test('renders a fixed row of bars with an accessible label', () => {
     const { container, getByLabelText } = render(<NarrationWaveform active={false} />);
     expect(getByLabelText('recording in progress')).toBeTruthy();
-    expect(container.querySelectorAll('.bt-wave-bar')).toHaveLength(18);
+    expect(container.querySelectorAll('.bt-wave-bar')).toHaveLength(32);
   });
 
   test('applies the active modifier only when active', () => {
@@ -20,6 +20,6 @@ describe('NarrationWaveform', () => {
     expect(container.querySelectorAll('.bt-wave-bar--active')).toHaveLength(0);
 
     rerender(<NarrationWaveform active={true} />);
-    expect(container.querySelectorAll('.bt-wave-bar--active')).toHaveLength(18);
+    expect(container.querySelectorAll('.bt-wave-bar--active')).toHaveLength(32);
   });
 });
