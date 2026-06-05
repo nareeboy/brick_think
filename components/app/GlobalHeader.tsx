@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { Avatar } from '@/components/app/Avatar';
+import type { NavSession } from '@/lib/sessions/navSessions';
 import { BrickGlyph } from '@/components/app/BrickGlyph';
 import { HeaderInner } from '@/components/app/HeaderInner';
 import { HeaderNav } from '@/components/app/HeaderNav';
@@ -11,9 +12,16 @@ interface Props {
   userEmail: string | null;
   userAvatarUrl: string | null;
   isSiteAdmin?: boolean;
+  sessions?: NavSession[];
 }
 
-export function GlobalHeader({ userName, userEmail, userAvatarUrl, isSiteAdmin = false }: Props) {
+export function GlobalHeader({
+  userName,
+  userEmail,
+  userAvatarUrl,
+  isSiteAdmin = false,
+  sessions = [],
+}: Props) {
   return (
     <header className="shrink-0 border-b border-zinc-900/5 bg-white">
       <HeaderInner>
@@ -28,7 +36,7 @@ export function GlobalHeader({ userName, userEmail, userAvatarUrl, isSiteAdmin =
               BrickThink
             </span>
           </Link>
-          <HeaderNav showAdmin={isSiteAdmin} />
+          <HeaderNav showAdmin={isSiteAdmin} sessions={sessions} />
         </div>
 
         <div className="flex items-center gap-1">
