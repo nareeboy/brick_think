@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { TRASH_RETENTION_DAYS, formatDaysRemaining } from '@/lib/models/trash';
@@ -39,21 +40,19 @@ export default async function TrashPage() {
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-        <header className="flex items-center justify-between gap-4">
-          <div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              BrickThink
-            </p>
-            <h1 className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950">Trash</h1>
-          </div>
+      <PageBanner
+        eyebrow="BrickThink"
+        title="Trash"
+        actions={
           <Link
             href="/app/my-designs"
             className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5"
           >
             Back to designs
           </Link>
-        </header>
+        }
+      />
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
         <TrashList items={items} />
       </div>
     </main>
