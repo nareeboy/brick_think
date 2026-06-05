@@ -30,6 +30,7 @@ const FAKE_SPEECH = `
 async function newSignedInContext(
   ownerPage: Page,
   label: string,
+  opts: { seedNotice?: boolean } = {},
 ): Promise<{ context: BrowserContext; page: Page; userId: string }> {
   const browser = ownerPage.context().browser();
   if (!browser) throw new Error('browser missing');
@@ -41,6 +42,13 @@ async function newSignedInContext(
     window.localStorage.setItem('bt_checklist_dismissed', '1');
     window.localStorage.setItem('bt_session_tour_seen', '1');
   });
+  // Pre-acknowledge the one-time narration notice so the recorder auto-starts
+  // (the auto-start path requires `bt_narration_notice_seen`).
+  if (opts.seedNotice) {
+    await page.addInitScript(() => {
+      window.localStorage.setItem('bt_narration_notice_seen', '1');
+    });
+  }
   // Inject fake speech on the participant so their recording is deterministic.
   await page.addInitScript(FAKE_SPEECH);
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -121,6 +129,12 @@ test.describe('facilitator-driven narration', () => {
       ).toContainText('Recording', { timeout: 15_000 });
       await facilitatorPage.getByTestId(`narration-stop-${participantModelId}`).click();
 
+      // The attendee's recorder stops and the drawer shows the saved text back.
+      await expect(participant.page.getByTestId('narration-participant-saved')).toContainText(
+        'model story',
+        { timeout: 15_000 },
+      );
+
       // Step 8: After stop the facilitator waits for the Transcript button to
       // appear (realtime broadcast → page update). Up to 15s.
       await expect(
@@ -133,6 +147,71 @@ test.describe('facilitator-driven narration', () => {
       await expect(facilitatorPage.getByText('model story')).toBeVisible({ timeout: 10_000 });
     } finally {
       // Step 9: Clean up the participant's auth user.
+      const cleanupRes = await facilitatorPage.request.post('/api/test/delete-user', {
+        data: { userId: participant.userId },
+      });
+      if (!cleanupRes.ok()) {
+        console.warn(
+          `[e2e] participant cleanup failed (${participant.userId}): ${cleanupRes.status()} ${await cleanupRes.text()}`,
+        );
+      }
+      await participant.context.close();
+    }
+  });
+
+  test('a returning participant (notice acknowledged) auto-records on Start — no tap', async ({
+    signedInPage: facilitatorPage,
+    seededSession,
+  }) => {
+    await facilitatorPage.goto(`/app/sessions/${seededSession.sessionId}`);
+    await expect(facilitatorPage.getByTestId('session-title')).toBeVisible();
+
+    // Participant who has already seen the notice → auto-start path.
+    const participant = await newSignedInContext(facilitatorPage, 'narration-autostart', {
+      seedNotice: true,
+    });
+    try {
+      await participant.page.goto(`/app/join/${seededSession.joinCode}`);
+      await participant.page.waitForURL(`**/app/sessions/${seededSession.sessionId}`, {
+        timeout: 15_000,
+      });
+      await participant.page
+        .getByTestId('stage-card-individual_model')
+        .getByTestId('start-model-individual_model')
+        .click();
+      await participant.page.waitForURL(/\/app\/designs\/[0-9a-f-]+/, { timeout: 20_000 });
+      const participantModelId = participant.page.url().match(/\/app\/designs\/([0-9a-f-]+)/)?.[1];
+      if (!participantModelId) throw new Error('could not extract participantModelId');
+      await expect(participant.page.getByTestId('builder-canvas')).toBeVisible({ timeout: 15_000 });
+
+      // Facilitator starts. The participant must begin recording WITHOUT tapping:
+      // no record button click here.
+      await facilitatorPage.getByTestId('refresh-participants-individual_model').click();
+      await facilitatorPage.getByTestId(`narration-start-${participantModelId}`).click();
+
+      // The drawer opens already recording and the live transcript fills in.
+      await expect(participant.page.getByTestId('narration-participant-prompt')).toBeVisible({
+        timeout: 15_000,
+      });
+      await expect(participant.page.getByTestId('narration-participant-record')).toHaveCount(0);
+      await expect(participant.page.getByTestId('live-transcript-chat')).toContainText(
+        'model story',
+        { timeout: 10_000 },
+      );
+
+      // Facilitator stops → transcript saved → Transcript button appears.
+      await expect(
+        facilitatorPage.getByTestId(`narration-status-${participantModelId}`),
+      ).toContainText('Recording', { timeout: 15_000 });
+      await facilitatorPage.getByTestId(`narration-stop-${participantModelId}`).click();
+      await expect(participant.page.getByTestId('narration-participant-saved')).toContainText(
+        'model story',
+        { timeout: 15_000 },
+      );
+      await expect(
+        facilitatorPage.getByTestId(`participant-transcript-${participantModelId}`),
+      ).toBeVisible({ timeout: 15_000 });
+    } finally {
       const cleanupRes = await facilitatorPage.request.post('/api/test/delete-user', {
         data: { userId: participant.userId },
       });
