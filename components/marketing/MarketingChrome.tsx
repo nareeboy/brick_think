@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
 import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
+import { NickLaunchesBadge } from '@/components/marketing/NickLaunchesBadge';
 import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
 import { ProductHuntBadge } from '@/components/marketing/ProductHuntBadge';
 import { SaasHubBadge } from '@/components/marketing/SaasHubBadge';
@@ -110,6 +111,7 @@ function FeaturedOnBand() {
           </a>
           <PeerlistBadge />
           <SaasHubBadge />
+          <NickLaunchesBadge />
         </div>
       </div>
     </div>
