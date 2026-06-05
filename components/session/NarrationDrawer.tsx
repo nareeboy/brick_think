@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 import { usePrefersReducedMotion } from '@/lib/a11y/usePrefersReducedMotion';
 import { useSpeechNarration } from '@/components/builder/useSpeechNarration';
+import { NarrationWaveform } from '@/components/session/NarrationWaveform';
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
 import { broadcastNarrationSaved } from '@/components/session/narrationRealtime';
 import type { ModelNarration } from '@/lib/sessions/modelNarration';
@@ -169,6 +170,7 @@ export function NarrationDrawer({
             <div className="mb-4" data-testid="narration-recorder">
               {speech.status === 'recording' ? (
                 <>
+                  <NarrationWaveform active={speech.speaking} />
                   <p className="mb-2 min-h-[3rem] rounded-lg bg-zinc-50 p-2 text-zinc-800">
                     {speech.transcript}
                     <span className="text-zinc-400">{speech.interim}</span>
