@@ -262,6 +262,45 @@ describe('thumbnail capture trigger', () => {
   });
 });
 
+describe('renameBrick', () => {
+  function withBrick() {
+    return {
+      modelId: 'm1',
+      title: 'T',
+      canvasState: {
+        groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
+        bricks: [
+          {
+            id: 'b1',
+            groupId: 'g1',
+            code: 'A',
+            image: '',
+            width: 50,
+            height: 50,
+            x: 0,
+            y: 0,
+            rotation: 0,
+            visible: true,
+          },
+        ],
+      },
+    };
+  }
+
+  test('sets a trimmed name on the piece', () => {
+    const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(withBrick()) });
+    act(() => result.current.renameBrick('b1', '  Roof tile  '));
+    expect(result.current.bricks.find((b) => b.id === 'b1')?.name).toBe('Roof tile');
+  });
+
+  test('an empty/whitespace value clears the name', () => {
+    const { result } = renderHook(() => useBuilderState(), { wrapper: wrap(withBrick()) });
+    act(() => result.current.renameBrick('b1', 'Temp'));
+    act(() => result.current.renameBrick('b1', '   '));
+    expect(result.current.bricks.find((b) => b.id === 'b1')?.name).toBe('');
+  });
+});
+
 describe('BuilderProvider readOnly', () => {
   it('readOnly provider blocks mutations and reports readOnly via context', () => {
     const initial = {

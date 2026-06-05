@@ -143,6 +143,7 @@ export interface BuilderState {
   addBrick: (brick: BrickInstance) => void;
   appendImportedBricks: (canvas: { groups: LayerGroup[]; bricks: BrickInstance[] }) => void;
   updateBrick: (id: string, partial: Partial<Omit<BrickInstance, 'id' | 'groupId'>>) => void;
+  renameBrick: (id: string, name: string) => void;
   deleteBrick: (id: string) => void;
   toggleBrickVisible: (id: string) => void;
   moveBrick: (brickId: string, toGroupId: string, beforeBrickId: string | null) => void;
@@ -778,6 +779,13 @@ export function BuilderProvider({
     [liveMode, liveDoc],
   );
 
+  const renameBrick = useCallback(
+    (id: string, name: string) => {
+      updateBrick(id, { name: name.trim() });
+    },
+    [updateBrick],
+  );
+
   const deleteBrick = useCallback(
     (id: string) => {
       if (liveMode && liveDoc) {
@@ -868,6 +876,7 @@ export function BuilderProvider({
       addBrick: guard(addBrick, undefined),
       appendImportedBricks: guard(appendImportedBricks, undefined),
       updateBrick: guard(updateBrick, undefined),
+      renameBrick: guard(renameBrick, undefined),
       deleteBrick: guard(deleteBrick, undefined),
       toggleBrickVisible: guard(toggleBrickVisible, undefined),
       moveBrick: guard(moveBrick, undefined),
@@ -916,6 +925,7 @@ export function BuilderProvider({
       addBrick,
       appendImportedBricks,
       updateBrick,
+      renameBrick,
       deleteBrick,
       toggleBrickVisible,
       moveBrick,
