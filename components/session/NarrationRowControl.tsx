@@ -1,9 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-
-import { ModalBackdrop } from '@/components/app/ModalBackdrop';
-import { LiveTranscriptChat } from '@/components/session/LiveTranscriptChat';
 import { useNarrationRowControl } from '@/components/session/NarrationControlContext';
 import type { RowStatus } from '@/lib/sessions/narrationStatus';
 
@@ -24,21 +20,18 @@ function statusLabel(status: RowStatus): string | null {
 
 /**
  * Facilitator Start/Stop narration toggle for one model (a participant row or a
- * room row). Broadcasts via the shared control context; shows live status and a
- * "Live" button that opens the streaming attributed chat.
+ * room row). Broadcasts via the shared control context and shows a live status
+ * chip. The facilitator reads the captured story afterwards via the existing
+ * Transcript button — there is no live-stream view here.
  */
 export function NarrationRowControl({
   modelId,
-  label,
   size = 'md',
 }: {
   modelId: string;
-  /** Heading used in the live modal, e.g. the participant or room name. */
-  label: string;
   size?: 'sm' | 'md';
 }) {
-  const { status, isActive, live, start, stop } = useNarrationRowControl(modelId);
-  const [showLive, setShowLive] = useState(false);
+  const { status, isActive, start, stop } = useNarrationRowControl(modelId);
 
   const h = size === 'sm' ? 'h-8' : 'h-9';
   const chip = statusLabel(status);
@@ -55,18 +48,6 @@ export function NarrationRowControl({
         </span>
       ) : null}
 
-      {isActive ? (
-        <button
-          type="button"
-          onClick={() => setShowLive(true)}
-          data-testid={`narration-live-${modelId}`}
-          title="Watch the live transcript"
-          className={`inline-flex ${h} cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-3 text-[12px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5`}
-        >
-          Live
-        </button>
-      ) : null}
-
       <button
         type="button"
         onClick={() => (isActive ? stop() : start())}
@@ -81,31 +62,6 @@ export function NarrationRowControl({
       >
         {buttonLabel}
       </button>
-
-      {showLive ? (
-        <ModalBackdrop
-          onClose={() => setShowLive(false)}
-          ariaLabel={`Live transcript — ${label}`}
-          panelClassName="w-full max-w-lg"
-        >
-          <div className="rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <h2 className="text-sm font-semibold text-zinc-900">Live transcript — {label}</h2>
-              <button
-                type="button"
-                onClick={() => setShowLive(false)}
-                aria-label="Close"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded p-1 text-zinc-400 hover:text-zinc-700"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="max-h-[60vh] overflow-y-auto">
-              <LiveTranscriptChat state={live} />
-            </div>
-          </div>
-        </ModalBackdrop>
-      ) : null}
     </>
   );
 }

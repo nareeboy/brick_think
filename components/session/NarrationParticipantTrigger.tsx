@@ -20,7 +20,7 @@ import {
 
 const NOTICE_KEY = 'bt_narration_notice_seen';
 
-type Phase = 'idle' | 'prompted' | 'recording' | 'denied';
+type Phase = 'idle' | 'prompted' | 'recording' | 'saving' | 'saved' | 'denied';
 
 interface Props {
   modelId: string;
@@ -32,10 +32,11 @@ interface Props {
 /**
  * Facilitator-driven story capture on the participant's canvas. Renders nothing
  * until the facilitator starts recording for THIS model; then a left slide-out
- * drawer prompts the participant to tap (authorising their mic), streams their
- * words into the shared live chat as they speak, and auto-saves when the
- * facilitator stops. Only the facilitator can stop — there is no participant
- * Stop button. The drawer is anchored left with no backdrop so the model stays
+ * drawer streams the participant's words as they speak. When the facilitator
+ * stops, the recogniser stops, the transcript is saved (polished by Claude when
+ * the facilitator holds an API key) and the saved text is shown back to the
+ * participant. Only the facilitator can stop — there is no participant Stop
+ * button. The drawer is anchored left with no backdrop so the model stays
  * visible on the right, mirroring the old recorder drawer's placement.
  */
 export function NarrationParticipantTrigger({ modelId, sessionId, profileId, displayName }: Props) {
@@ -45,6 +46,11 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
   const [noticeSeen, setNoticeSeen] = useState(true); // assume seen until localStorage read
   const [live, setLive] = useState<LiveTranscriptState>(emptyLiveTranscript);
   const [fallbackText, setFallbackText] = useState('');
+  const [savedTranscript, setSavedTranscript] = useState('');
+  const [savedCleaned, setSavedCleaned] = useState(false);
+  // The attendee can collapse the drawer (recording continues); a reopen button
+  // brings it back so an accidental close isn't a dead end.
+  const [minimized, setMinimized] = useState(false);
 
   const phaseRef = useRef<Phase>('idle');
   phaseRef.current = phase;
@@ -62,20 +68,35 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
       if (id !== modelId) return;
       prevFinalRef.current = '';
       setLive(emptyLiveTranscript);
-      setPhase('prompted');
-      channel.sendAck({ modelId, profileId, state: 'prompted' });
+      setMinimized(false);
+      // Auto-start without a tap when the browser will allow it: a participant
+      // who has already acknowledged the one-time notice granted mic permission
+      // before, so the recogniser can start programmatically. The first-ever
+      // recording still shows the consent tap, and a blocked mic falls back to
+      // the tap via the 'denied' phase (see the mic_denied effect).
+      if (noticeSeen && speech.supported) {
+        beginRecording();
+      } else {
+        setPhase('prompted');
+        channel.sendAck({ modelId, profileId, state: 'prompted' });
+      }
     },
     onRecordingStop: (id) => {
       if (id !== modelId) return;
-      if (phaseRef.current === 'recording') {
-        if (speech.supported) {
-          stopRequested.current = true;
-          speech.stop();
-        } else {
-          void persist(fallbackRef.current);
-        }
+      // Only the facilitator can stop. Stop the recogniser and move to 'saving';
+      // the persist path then shows the saved text. If the participant never
+      // started (still prompted), just dismiss.
+      if (phaseRef.current !== 'recording') {
+        setPhase('idle');
+        return;
       }
-      setPhase('idle');
+      setPhase('saving');
+      if (speech.supported) {
+        stopRequested.current = true;
+        speech.stop();
+      } else {
+        void persist(fallbackRef.current);
+      }
     },
     onChunk: (chunk) => {
       if (chunk.modelId !== modelId) return;
@@ -128,8 +149,13 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
   async function persist(raw: string): Promise<void> {
     const res = await saveNarration(modelId, raw, speech.durationMs || null);
     if (res.ok) {
+      setSavedTranscript(res.transcript);
+      setSavedCleaned(res.cleaned);
       channel.sendAck({ modelId, profileId, state: 'saved' });
       void broadcastNarrationSaved(sessionId);
+      setPhase('saved');
+    } else {
+      setPhase('idle');
     }
     setFallbackText('');
     speech.reset();
@@ -150,12 +176,37 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
 
   if (phase === 'idle') return null;
 
+  // Collapsed: just a reopen affordance (bottom-left, where the canvas save
+  // action sits) so an accidental close can be undone. Recording keeps running.
+  if (minimized) {
+    return createPortal(
+      <button
+        type="button"
+        onClick={() => setMinimized(false)}
+        data-testid="narration-participant-reopen"
+        className="fixed bottom-6 left-6 z-50 inline-flex items-center gap-2 rounded-2xl bg-[#c0613d] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] hover:bg-[#cf6e47]"
+      >
+        {phase === 'recording' ? (
+          <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-white" />
+        ) : (
+          <span aria-hidden>🎙</span>
+        )}
+        {phase === 'recording' ? 'Recording — reopen' : 'Narration'}
+      </button>,
+      document.body,
+    );
+  }
+
   const headerTitle =
     phase === 'denied'
       ? 'Microphone blocked'
-      : phase === 'recording'
-        ? 'Recording your story'
-        : 'Narrate your model';
+      : phase === 'saving'
+        ? 'Saving your story…'
+        : phase === 'saved'
+          ? 'Story saved'
+          : phase === 'recording'
+            ? 'Recording your story'
+            : 'Narrate your model';
 
   return createPortal(
     <div
@@ -171,6 +222,16 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
           <span className="inline-block h-2 w-2 shrink-0 animate-pulse rounded-full bg-red-500" />
         ) : null}
         <h2 className="text-sm font-semibold text-zinc-900">{headerTitle}</h2>
+        <button
+          type="button"
+          onClick={() => setMinimized(true)}
+          aria-label="Close"
+          title="Close — your recording keeps going"
+          data-testid="narration-participant-close"
+          className="ml-auto inline-flex h-8 w-8 shrink-0 items-center justify-center rounded p-1 text-zinc-400 hover:text-zinc-700"
+        >
+          ✕
+        </button>
       </header>
 
       <div className="flex flex-1 flex-col overflow-y-auto p-4 text-[13px] text-zinc-700">
@@ -186,6 +247,29 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
               className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
             >
               Try again
+            </button>
+          </div>
+        ) : phase === 'saving' ? (
+          <p className="text-zinc-600">Saving your story…</p>
+        ) : phase === 'saved' ? (
+          <div className="flex flex-1 flex-col">
+            {savedCleaned ? (
+              <span className="mb-2 inline-flex w-fit items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
+                Polished by Claude
+              </span>
+            ) : null}
+            <p
+              data-testid="narration-participant-saved"
+              className="flex-1 overflow-y-auto whitespace-pre-wrap leading-relaxed text-zinc-800"
+            >
+              {savedTranscript || 'Saved — no words were captured.'}
+            </p>
+            <button
+              type="button"
+              onClick={() => setPhase('idle')}
+              className="mt-3 inline-flex h-10 w-fit items-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-700 hover:bg-zinc-900/5"
+            >
+              Done
             </button>
           </div>
         ) : phase === 'prompted' ? (
