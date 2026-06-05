@@ -119,6 +119,41 @@ describe('canvas-codec', () => {
     expect(projectDocToCanvas(doc).title).toBe('New');
   });
 
+  test('brick name round-trips through the doc', () => {
+    const doc = new Y.Doc();
+    seedDocFromCanvas(
+      doc,
+      {
+        groups: [{ id: 'g1', name: 'Untitled', collapsed: false, visible: true }],
+        bricks: [{ ...makeBrick('b1', 'g1'), name: 'Roof tile' }],
+      },
+      'T',
+    );
+    expect(projectDocToCanvas(doc).bricks[0]?.name).toBe('Roof tile');
+  });
+
+  test('updateBrickInDoc sets name and moveBrickInDoc preserves it', () => {
+    const doc = new Y.Doc();
+    seedDocFromCanvas(
+      doc,
+      {
+        groups: [
+          { id: 'g1', name: 'A', collapsed: false, visible: true },
+          { id: 'g2', name: 'B', collapsed: false, visible: true },
+        ],
+        bricks: [makeBrick('b1', 'g1')],
+      },
+      'T',
+    );
+    updateBrickInDoc(doc, 'b1', { name: 'Chimney' });
+    expect(projectDocToCanvas(doc).bricks[0]?.name).toBe('Chimney');
+
+    moveBrickInDoc(doc, 'b1', 'g2', null);
+    const moved = projectDocToCanvas(doc).bricks[0];
+    expect(moved?.groupId).toBe('g2');
+    expect(moved?.name).toBe('Chimney');
+  });
+
   test('two docs converge after sync', () => {
     const a = new Y.Doc();
     const b = new Y.Doc();
