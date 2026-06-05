@@ -8,6 +8,7 @@ import { CHANGELOG_CATEGORIES, CATEGORY_LABELS } from '@/lib/changelog/constants
 import type { AdminChangelogEntry } from '@/lib/changelog/types';
 
 import { createEntryAction, updateEntryAction, type ChangelogActionResult } from './actions';
+import { BannerImageField } from './BannerImageField';
 
 const inputClass =
   'mt-1.5 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#c0613d] focus:outline-none focus:ring-1 focus:ring-[#c0613d]';
@@ -64,80 +65,89 @@ export function ChangelogEditor({
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-2xl space-y-5">
-      {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-zinc-800">
-          Title
-        </label>
-        <input
-          id="title"
-          name="title"
-          required
-          defaultValue={initial?.title}
-          className={inputClass}
-        />
-      </div>
-      <div className="grid gap-5 sm:grid-cols-2">
+    <div className="max-w-2xl space-y-5">
+      {initial?.id ? (
+        <BannerImageField entryId={initial.id} initialUrl={initial.bannerUrl} />
+      ) : (
+        <p className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-3 text-[12px] text-zinc-500">
+          Save this entry first — the banner image upload appears once the entry exists.
+        </p>
+      )}
+      <form onSubmit={onSubmit} className="space-y-5">
+        {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-zinc-800">
-            Category
-          </label>
-          <select
-            id="category"
-            name="category"
-            defaultValue={initial?.category ?? 'feature'}
-            className={inputClass}
-          >
-            {CHANGELOG_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABELS[c]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="versionTag" className="block text-sm font-medium text-zinc-800">
-            Version tag <span className="text-zinc-500">(optional, e.g. v2.4)</span>
+          <label htmlFor="title" className="block text-sm font-medium text-zinc-800">
+            Title
           </label>
           <input
-            id="versionTag"
-            name="versionTag"
-            defaultValue={initial?.versionTag ?? ''}
+            id="title"
+            name="title"
+            required
+            defaultValue={initial?.title}
             className={inputClass}
           />
         </div>
-      </div>
-      <div>
-        <label htmlFor="publishedDate" className="block text-sm font-medium text-zinc-800">
-          Date <span className="text-zinc-500">(used to order and group entries)</span>
-        </label>
-        <input
-          id="publishedDate"
-          name="publishedDate"
-          type="date"
-          defaultValue={initialDate}
-          className={inputClass}
-        />
-      </div>
-      <div>
-        <span className="block text-sm font-medium text-zinc-800">Body</span>
-        <div className="mt-1.5">
-          <RichTextEditor name="bodyHtml" initialHtml={initial?.bodyHtml} />
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-zinc-800">
+              Category
+            </label>
+            <select
+              id="category"
+              name="category"
+              defaultValue={initial?.category ?? 'feature'}
+              className={inputClass}
+            >
+              {CHANGELOG_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {CATEGORY_LABELS[c]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="versionTag" className="block text-sm font-medium text-zinc-800">
+              Version tag <span className="text-zinc-500">(optional, e.g. v2.4)</span>
+            </label>
+            <input
+              id="versionTag"
+              name="versionTag"
+              defaultValue={initial?.versionTag ?? ''}
+              className={inputClass}
+            />
+          </div>
         </div>
-      </div>
-      {error ? (
-        <p role="alert" className="text-sm text-red-600">
-          {error}
-        </p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex cursor-pointer items-center rounded-md bg-[#c0613d] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#a8512f] disabled:opacity-60"
-      >
-        {saving ? 'Saving…' : mode === 'create' ? 'Create entry' : 'Save changes'}
-      </button>
-    </form>
+        <div>
+          <label htmlFor="publishedDate" className="block text-sm font-medium text-zinc-800">
+            Date <span className="text-zinc-500">(used to order and group entries)</span>
+          </label>
+          <input
+            id="publishedDate"
+            name="publishedDate"
+            type="date"
+            defaultValue={initialDate}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <span className="block text-sm font-medium text-zinc-800">Body</span>
+          <div className="mt-1.5">
+            <RichTextEditor name="bodyHtml" initialHtml={initial?.bodyHtml} />
+          </div>
+        </div>
+        {error ? (
+          <p role="alert" className="text-sm text-red-600">
+            {error}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex cursor-pointer items-center rounded-md bg-[#c0613d] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#a8512f] disabled:opacity-60"
+        >
+          {saving ? 'Saving…' : mode === 'create' ? 'Create entry' : 'Save changes'}
+        </button>
+      </form>
+    </div>
   );
 }
