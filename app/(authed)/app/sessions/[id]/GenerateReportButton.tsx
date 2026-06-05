@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 import { generateSessionReport } from '../report-actions';
 
@@ -21,6 +21,15 @@ export default function GenerateReportButton({
   const [generatedAt, setGeneratedAt] = useState(initialGeneratedAt);
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [pending, startTransition] = useTransition();
+
+  // Formatted client-side after mount: `toLocaleString()` resolves in the
+  // viewer's locale/timezone, which never matches the server's (Railway = UTC),
+  // so formatting during SSR/hydration trips a hydration mismatch. Empty on the
+  // server + first client render (they agree → no `<p>`), filled post-mount.
+  const [generatedLabel, setGeneratedLabel] = useState<string | null>(null);
+  useEffect(() => {
+    setGeneratedLabel(generatedAt ? new Date(generatedAt).toLocaleString() : null);
+  }, [generatedAt]);
 
   function run() {
     setError(null);
@@ -73,10 +82,8 @@ export default function GenerateReportButton({
       )}
       {generatedAt || error ? (
         <div className="absolute right-0 top-full z-10 mt-1 flex max-w-[280px] flex-col items-end gap-1 text-right">
-          {generatedAt ? (
-            <p className="text-xs text-zinc-500">
-              Generated {new Date(generatedAt).toLocaleString()}
-            </p>
+          {generatedLabel ? (
+            <p className="text-xs text-zinc-500">Generated {generatedLabel}</p>
           ) : null}
           {error ? (
             <p className="text-xs text-red-700" role="status">
