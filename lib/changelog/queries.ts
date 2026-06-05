@@ -4,6 +4,7 @@ import 'server-only';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { isChangelogCategory, type ChangelogCategory } from './constants';
+import { getBannerPublicUrl } from './storage';
 import type { AdminChangelogEntry, ChangelogListItem, PublicChangelogEntry } from './types';
 
 function asCategory(value: string): ChangelogCategory {
@@ -12,8 +13,8 @@ function asCategory(value: string): ChangelogCategory {
 }
 
 const ADMIN_COLS = 'id, title, category, version_tag, status, published_at, updated_at';
-const ADMIN_DETAIL_COLS = `${ADMIN_COLS}, body_html`;
-const PUBLIC_COLS = 'id, title, body_html, category, version_tag, published_at';
+const ADMIN_DETAIL_COLS = `${ADMIN_COLS}, body_html, banner_image_path`;
+const PUBLIC_COLS = 'id, title, body_html, category, version_tag, published_at, banner_image_path';
 
 // Public: published entries, newest-first by published_at. RLS already hides
 // drafts from anon/non-admin callers; the status filter keeps an admin's own
@@ -35,6 +36,7 @@ export async function listPublishedEntries(): Promise<PublicChangelogEntry[]> {
       category: asCategory(r.category),
       versionTag: r.version_tag,
       publishedAt: r.published_at as string,
+      bannerUrl: getBannerPublicUrl(supabase, r.banner_image_path),
     }));
 }
 
@@ -99,5 +101,6 @@ export async function getEntryForAdmin(id: string): Promise<AdminChangelogEntry 
     status: data.status as ChangelogListItem['status'],
     publishedAt: data.published_at,
     updatedAt: data.updated_at,
+    bannerUrl: getBannerPublicUrl(supabase, data.banner_image_path),
   };
 }

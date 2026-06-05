@@ -12,6 +12,7 @@ function entry(id: string, publishedAt: string): PublicChangelogEntry {
     category: 'feature',
     versionTag: null,
     publishedAt,
+    bannerUrl: null,
   };
 }
 

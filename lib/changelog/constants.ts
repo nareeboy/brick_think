@@ -4,6 +4,10 @@ export const CHANGELOG_TITLE_MAX = 200;
 export const CHANGELOG_BODY_MAX = 200_000;
 export const CHANGELOG_VERSION_MAX = 40;
 
+// Banner image upload cap. Stays under next.config's serverActions.bodySizeLimit
+// (4 MB) with multipart overhead headroom — see app/(authed)/CLAUDE.md.
+export const CHANGELOG_BANNER_MAX_BYTES = 2 * 1024 * 1024;
+
 export const CHANGELOG_CATEGORIES = [
   'feature',
   'improvement',

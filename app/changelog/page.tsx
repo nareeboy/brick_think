@@ -63,6 +63,14 @@ export default async function ChangelogPage() {
 function EntryBlock({ entry }: { entry: PublicChangelogEntry }) {
   return (
     <article className="border-t border-zinc-900/10 pt-8 first:border-t-0 first:pt-0">
+      {entry.bannerUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- Supabase storage host kept off next.config image domains
+        <img
+          src={entry.bannerUrl}
+          alt={`Banner for ${entry.title}`}
+          className="mb-6 aspect-[3/1] w-full rounded-2xl object-cover ring-1 ring-zinc-900/5"
+        />
+      ) : null}
       <div className="flex flex-wrap items-center gap-3">
         <CategoryBadge category={entry.category} />
         {entry.versionTag ? (
