@@ -337,7 +337,6 @@ function FeatureBento() {
             label="story capture"
             title="The story is the record."
             body="Capture text, voice, and video right on the canvas. We write it out for you. Find any quote by person or stage."
-            status="roadmap"
           >
             <NarrationVisual />
           </FeatureCard>
