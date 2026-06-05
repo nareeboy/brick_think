@@ -47,6 +47,7 @@ export function LayersPanel() {
     toggleGroupCollapsed,
     moveGroup,
     deleteBrick,
+    renameBrick,
     toggleBrickVisible,
     moveBrick,
   } = useBuilderState();
@@ -219,6 +220,7 @@ export function LayersPanel() {
               onSelectBrick={selectBrick}
               onToggleBrickVisible={toggleBrickVisible}
               onDeleteBrick={deleteBrick}
+              onRenameBrick={renameBrick}
               onGroupDragStart={handleGroupDragStart}
               onGroupHeaderDragOver={handleGroupHeaderDragOver}
               onGroupHeaderDrop={handleGroupHeaderDrop}
@@ -247,6 +249,7 @@ interface GroupBlockProps {
   onSelectBrick: (id: string | null) => void;
   onToggleBrickVisible: (id: string) => void;
   onDeleteBrick: (id: string) => void;
+  onRenameBrick: (id: string, name: string) => void;
   onGroupDragStart: (groupId: string, e: DragEvent<HTMLDivElement>) => void;
   onGroupHeaderDragOver: (e: DragEvent<HTMLDivElement>, g: LayerGroup) => void;
   onGroupHeaderDrop: (e: DragEvent<HTMLDivElement>, g: LayerGroup) => void;
@@ -269,6 +272,7 @@ function GroupBlock({
   onSelectBrick,
   onToggleBrickVisible,
   onDeleteBrick,
+  onRenameBrick,
   onGroupDragStart,
   onGroupHeaderDragOver,
   onGroupHeaderDrop,
@@ -416,6 +420,7 @@ function GroupBlock({
                 onSelect={onSelectBrick}
                 onToggleVisible={onToggleBrickVisible}
                 onDelete={onDeleteBrick}
+                onRename={onRenameBrick}
                 onDragStart={onBrickDragStart}
                 onDragOver={onBrickDragOver}
                 onDrop={onBrickDrop}
@@ -432,7 +437,7 @@ function GroupBlock({
   );
 }
 
-function BrickRow({
+export function BrickRow({
   brick,
   selected,
   groupHidden,
@@ -440,6 +445,7 @@ function BrickRow({
   onSelect,
   onToggleVisible,
   onDelete,
+  onRename,
   onDragStart,
   onDragOver,
   onDrop,
@@ -451,10 +457,22 @@ function BrickRow({
   onSelect: (id: string | null) => void;
   onToggleVisible: (id: string) => void;
   onDelete: (id: string) => void;
+  onRename: (id: string, name: string) => void;
   onDragStart: (id: string, e: DragEvent<HTMLDivElement>) => void;
   onDragOver: (e: DragEvent<HTMLDivElement>, b: BrickInstance) => void;
   onDrop: (e: DragEvent<HTMLDivElement>, b: BrickInstance) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(brick.name ?? '');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editing]);
+
   const dimmed = !brick.visible || groupHidden;
   const showBefore =
     hint?.kind === 'brick-edge' && hint.brickId === brick.id && hint.side === 'before';
@@ -467,7 +485,7 @@ function BrickRow({
       <div
         role="button"
         tabIndex={0}
-        draggable
+        draggable={!editing}
         onDragStart={(e) => onDragStart(brick.id, e)}
         onDragOver={(e) => onDragOver(e, brick)}
         onDrop={(e) => onDrop(e, brick)}
@@ -477,6 +495,10 @@ function BrickRow({
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onSelect(brick.id);
+          } else if (e.key === 'F2') {
+            e.preventDefault();
+            setDraft(brick.name ?? '');
+            setEditing(true);
           } else if (e.key === 'Delete' || e.key === 'Backspace') {
             e.preventDefault();
             onDelete(brick.id);
@@ -501,7 +523,40 @@ function BrickRow({
             className="pointer-events-none max-h-[80%] max-w-[80%] select-none"
           />
         </span>
-        <span className="flex-1 truncate">{label}</span>
+        {editing ? (
+          <input
+            ref={inputRef}
+            draggable={false}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              onRename(brick.id, draft);
+              setEditing(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onRename(brick.id, draft);
+                setEditing(false);
+              } else if (e.key === 'Escape') {
+                setDraft(brick.name ?? '');
+                setEditing(false);
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 rounded border border-[#c0613d]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
+          />
+        ) : (
+          <span
+            className="flex-1 truncate"
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              setDraft(brick.name ?? '');
+              setEditing(true);
+            }}
+          >
+            {label}
+          </span>
+        )}
         <IconButton
           aria-label={brick.visible ? 'Hide piece' : 'Show piece'}
           onClick={(e) => {
