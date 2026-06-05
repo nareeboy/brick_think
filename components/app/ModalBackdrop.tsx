@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap';
 
@@ -48,7 +49,15 @@ export function ModalBackdrop({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  return (
+  // Render into document.body so the fixed z-40 layer lives in the root
+  // stacking context. Rendered inline, the dialog would be trapped inside any
+  // ancestor that establishes a stacking context (e.g. PageBanner's
+  // `isolation: isolate`), letting later-in-tree page content paint over it.
+  // Modals are open-gated client-side, so document is always present here; the
+  // guard only covers a defensive SSR render.
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <div
       ref={dialogRef}
       data-testid={dataTestid}
@@ -66,6 +75,7 @@ export function ModalBackdrop({
         className="absolute inset-0 cursor-default bg-black/40"
       />
       <div className={`relative ${panelClassName}`}>{children}</div>
-    </div>
+    </div>,
+    document.body,
   );
 }
