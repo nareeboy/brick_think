@@ -101,7 +101,7 @@ export function StageMetaEditor({
   if (!canEdit) {
     return (
       <>
-        <h2 className="text-[16px] font-semibold tracking-tight text-zinc-950">{visibleTitle}</h2>
+        <h2 className="text-[16px] font-serif text-zinc-950">{visibleTitle}</h2>
         <p className="text-[12px] leading-snug text-zinc-500">{visibleDescription}</p>
       </>
     );
@@ -128,7 +128,7 @@ export function StageMetaEditor({
             }
           }}
           autoComplete="off"
-          className="-mx-1.5 rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[16px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d]"
+          className="-mx-1.5 rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[16px] font-serif text-zinc-950 outline-none focus:border-[#c0613d]"
         />
         <textarea
           value={draftDescription}
@@ -186,9 +186,7 @@ export function StageMetaEditor({
       className="group -mx-1.5 flex flex-col items-start gap-1 rounded-md px-1.5 py-0.5 text-left hover:bg-zinc-900/5 disabled:cursor-default disabled:opacity-70"
     >
       <span className="flex items-center gap-1.5">
-        <span className="text-[16px] font-semibold tracking-tight text-zinc-950">
-          {visibleTitle}
-        </span>
+        <span className="text-[16px] font-serif text-zinc-950">{visibleTitle}</span>
         <PencilIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-600" />
       </span>
       <span className="text-[12px] leading-snug text-zinc-500">{visibleDescription}</span>

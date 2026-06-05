@@ -8,6 +8,9 @@ import { NotesEditor } from '@/components/session/NotesEditor';
 interface Props {
   sessionId: string;
   initialValue: string | null;
+  // When true, the card fills its container's height (used in the sticky
+  // sidebar) and the editor scrolls internally instead of growing the page.
+  fillHeight?: boolean;
 }
 
 // Collapsible private-notes card. Lives under the pre-session checklist;
@@ -15,7 +18,7 @@ interface Props {
 // mounting). Collapsed state is per-session in localStorage so the facilitator
 // can keep it folded between visits without us bouncing them into a textarea
 // every page load.
-export function FacilitatorNotesCard({ sessionId, initialValue }: Props) {
+export function FacilitatorNotesCard({ sessionId, initialValue, fillHeight }: Props) {
   const storageKey = `bt:facilitator-notes-collapsed:${sessionId}`;
   const [collapsed, setCollapsed] = useState(false);
 
@@ -29,10 +32,14 @@ export function FacilitatorNotesCard({ sessionId, initialValue }: Props) {
   }, [collapsed, storageKey]);
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-4">
+    <section
+      className={`flex flex-col rounded-lg border border-zinc-200 bg-white p-4 ${
+        fillHeight && !collapsed ? 'lg:h-full' : ''
+      }`}
+    >
       <header className="flex items-start justify-between">
         <div>
-          <h3 className="text-sm font-semibold">Private notes</h3>
+          <h3 className="font-serif text-[16px] text-zinc-900">Private notes</h3>
           <p className="text-xs text-zinc-500">Only you can see these.</p>
         </div>
         <button
@@ -46,10 +53,11 @@ export function FacilitatorNotesCard({ sessionId, initialValue }: Props) {
         </button>
       </header>
       {!collapsed && (
-        <div className="mt-3">
+        <div className={`mt-3 ${fillHeight ? 'lg:flex lg:min-h-0 lg:flex-1 lg:flex-col' : ''}`}>
           <NotesEditor
             initialValue={initialValue}
             onSave={(value) => updateFacilitatorNotesAction(sessionId, value)}
+            fill={fillHeight}
           />
         </div>
       )}

@@ -16,7 +16,6 @@ import { getLatestSessionReport } from '../report-actions';
 import { DeleteSessionButton } from './DeleteSessionButton';
 import { FacilitatorNotesCard } from './FacilitatorNotesCard';
 import GenerateReportButton from './GenerateReportButton';
-import { GoToMyCanvasButton } from './GoToMyCanvasButton';
 import { PreSessionChecklist } from './PreSessionChecklist';
 import { RosterButton } from '@/components/session/RosterButton';
 import { SessionRoleChip } from './SessionRoleChip';
@@ -436,7 +435,7 @@ export default async function SessionDetailPage({
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <PageBanner
         dataTourId="session-header"
-        maxWidthClassName="max-w-[900px]"
+        maxWidthClassName="max-w-[1200px]"
         leading={<SessionRoleChip isFacilitator={session.facilitator_id === user.id} />}
         eyebrow={
           <>
@@ -473,7 +472,6 @@ export default async function SessionDetailPage({
         }
         actions={
           <>
-            <GoToMyCanvasButton sessionId={session.id} currentStageId={session.current_stage_id} />
             {canManageSession ? (
               <>
                 {session.join_code ? (
@@ -499,46 +497,59 @@ export default async function SessionDetailPage({
           </>
         }
       />
-      <div className="mx-auto flex max-w-[900px] flex-col gap-6 px-5 py-10">
-        <FacilitatorChecklist progress={onboardingProgress} />
-        <PreSessionChecklist
-          sessionId={session.id}
-          sessionStatus={session.status}
-          briefText={session.brief_text ?? ''}
-          preSessionCheck={(session.pre_session_check as Record<string, unknown>) ?? {}}
-          canManage={canManageSession}
-          stages={stages.map((s) => ({
-            id: s.id,
-            stage_type: s.stage_type as StageType,
-            scenarioId: s.scenario_id ?? null,
-            title: s.title,
-          }))}
-          scenariosByStageType={scenariosByStageType}
-        />
-        {isFacilitator ? (
-          <FacilitatorNotesCard sessionId={session.id} initialValue={facilitatorNotes} />
-        ) : null}
-        <SessionStages
-          sessionId={session.id}
-          sessionTitle={session.title}
-          initialStages={stages}
-          initialSession={initialSession}
-          ownedModels={ownedModels}
-          participantsByStage={participantsByStage}
-          canManageSession={canManageSession}
-          roomsByStageId={roomsByStageId}
-          orgMembers={orgMembers}
-          upstreamRoomsByStageId={upstreamRoomsByStageId}
-          upstreamStageTypeByStageId={upstreamStageTypeByStageId}
-          myRoomIdByStageId={myRoomIdByStageId}
-          currentUserId={user.id}
-          pickedScenarioByStageId={pickedScenarioByStageId}
-        />
-        <SpotlightTour canManageSession={canManageSession} suppressed={startModelSpotlightActive} />
-        <Suspense fallback={null}>
-          <StartModelSpotlight />
-        </Suspense>
-        <ParticipantCoachMark />
+      <div className="mx-auto max-w-[1200px] px-5 py-10">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            <FacilitatorChecklist progress={onboardingProgress} />
+            <PreSessionChecklist
+              sessionId={session.id}
+              sessionStatus={session.status}
+              briefText={session.brief_text ?? ''}
+              preSessionCheck={(session.pre_session_check as Record<string, unknown>) ?? {}}
+              canManage={canManageSession}
+              stages={stages.map((s) => ({
+                id: s.id,
+                stage_type: s.stage_type as StageType,
+                scenarioId: s.scenario_id ?? null,
+                title: s.title,
+              }))}
+              scenariosByStageType={scenariosByStageType}
+            />
+            <SessionStages
+              sessionId={session.id}
+              sessionTitle={session.title}
+              initialStages={stages}
+              initialSession={initialSession}
+              ownedModels={ownedModels}
+              participantsByStage={participantsByStage}
+              canManageSession={canManageSession}
+              roomsByStageId={roomsByStageId}
+              orgMembers={orgMembers}
+              upstreamRoomsByStageId={upstreamRoomsByStageId}
+              upstreamStageTypeByStageId={upstreamStageTypeByStageId}
+              myRoomIdByStageId={myRoomIdByStageId}
+              currentUserId={user.id}
+              pickedScenarioByStageId={pickedScenarioByStageId}
+            />
+            <SpotlightTour
+              canManageSession={canManageSession}
+              suppressed={startModelSpotlightActive}
+            />
+            <Suspense fallback={null}>
+              <StartModelSpotlight />
+            </Suspense>
+            <ParticipantCoachMark />
+          </div>
+          {isFacilitator ? (
+            <aside className="w-full shrink-0 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
+              <FacilitatorNotesCard
+                sessionId={session.id}
+                initialValue={facilitatorNotes}
+                fillHeight
+              />
+            </aside>
+          ) : null}
+        </div>
       </div>
     </main>
   );

@@ -9,6 +9,9 @@ interface Props {
   onSave: (value: string | null) => Promise<{ ok: boolean }>;
   disabled?: boolean;
   ariaLabel?: string;
+  // When true, the editor fills its parent's height and the textarea scrolls
+  // internally rather than growing the page (sticky sidebar layout).
+  fill?: boolean;
 }
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -17,7 +20,7 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 // deliberately tiny — a counter + a single status line — so it can live inside
 // both the session-page collapsible card and the right-edge canvas drawer
 // without competing with the surrounding chrome.
-export function NotesEditor({ initialValue, onSave, disabled, ariaLabel }: Props) {
+export function NotesEditor({ initialValue, onSave, disabled, ariaLabel, fill }: Props) {
   const [value, setValue] = useState(initialValue ?? '');
   const [savedAt, setSavedAt] = useState<number | null>(initialValue ? Date.now() : null);
   const [state, setState] = useState<SaveState>('idle');
@@ -45,15 +48,17 @@ export function NotesEditor({ initialValue, onSave, disabled, ariaLabel }: Props
   }, [value, onSave]);
 
   return (
-    <div className="space-y-1.5">
+    <div className={fill ? 'flex h-full min-h-0 flex-col gap-1.5' : 'space-y-1.5'}>
       <textarea
         aria-label={ariaLabel ?? 'Facilitator notes'}
         value={value}
         onChange={(e) => setValue(e.target.value)}
         maxLength={FACILITATOR_NOTES_MAX}
         disabled={disabled}
-        rows={12}
-        className="w-full resize-y rounded-md border border-zinc-200 px-3 py-2 text-sm font-sans focus:border-zinc-400 focus:outline-none"
+        rows={fill ? undefined : 12}
+        className={`w-full rounded-md border border-zinc-200 px-3 py-2 text-sm font-sans focus:border-zinc-400 focus:outline-none ${
+          fill ? 'min-h-[14rem] flex-1 resize-none lg:min-h-0' : 'resize-y'
+        }`}
       />
       <div className="flex items-center justify-between text-xs text-zinc-500">
         <span>
