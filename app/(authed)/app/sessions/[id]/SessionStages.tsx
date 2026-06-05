@@ -553,7 +553,7 @@ function ParticipantsPanel({
                       </button>
                     );
                   })()}
-                  <NarrationRowControl modelId={p.id} label={p.ownerLabel} />
+                  <NarrationRowControl modelId={p.id} />
                   {narration ? (
                     <button
                       type="button"

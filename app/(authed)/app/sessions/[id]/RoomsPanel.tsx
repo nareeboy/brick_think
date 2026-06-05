@@ -142,11 +142,7 @@ export function RoomsPanel({
                     </button>
                   );
                 })()}
-                <NarrationRowControl
-                  modelId={room.modelId}
-                  label={room.title?.trim() || `Room ${room.position + 1}`}
-                  size="sm"
-                />
+                <NarrationRowControl modelId={room.modelId} size="sm" />
                 {(() => {
                   const narration = room.narration;
                   if (!narration) return null;
