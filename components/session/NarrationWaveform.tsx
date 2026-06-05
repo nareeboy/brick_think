@@ -6,7 +6,7 @@
 // CSS (the keyframe animation only applies under prefers-reduced-motion: no-preference),
 // so reduced-motion users see the static resting bars.
 
-const BAR_COUNT = 18;
+const BAR_COUNT = 32;
 
 // Per-bar phase offsets (seconds) so the bars ripple rather than move in unison.
 const BARS = Array.from({ length: BAR_COUNT }, (_, i) => {
@@ -35,7 +35,7 @@ export function NarrationWaveform({ active }: Props) {
       role="img"
       aria-label="recording in progress"
       data-testid="narration-waveform"
-      className="mb-2 flex h-8 items-center justify-center gap-[3px] rounded-lg bg-zinc-50 px-2"
+      className="mb-2 flex h-8 items-center justify-between rounded-lg bg-zinc-50 px-2"
     >
       <style>{STYLE}</style>
       {BARS.map((delay, i) => (
@@ -46,7 +46,7 @@ export function NarrationWaveform({ active }: Props) {
           }`}
           style={{
             transformOrigin: 'center',
-            transform: active ? undefined : 'scaleY(0.18)',
+            transform: active ? undefined : 'scaleY(0.22)',
             animationDelay: `${delay}s`,
           }}
         />
