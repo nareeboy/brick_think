@@ -18,7 +18,7 @@ import {
 
 const NOTICE_KEY = 'bt_narration_notice_seen';
 
-type Phase = 'idle' | 'prompted' | 'recording';
+type Phase = 'idle' | 'prompted' | 'recording' | 'denied';
 
 interface Props {
   modelId: string;
@@ -110,6 +110,16 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speech.status]);
 
+  // Mic blocked → tell the facilitator (declined) and show the participant a
+  // recoverable message instead of a dead "Recording…" panel.
+  useEffect(() => {
+    if (phase === 'recording' && speech.error === 'mic_denied') {
+      stopRequested.current = false;
+      channel.sendAck({ modelId, profileId, state: 'declined' });
+      setPhase('denied');
+    }
+  }, [speech.error, phase, channel, modelId, profileId]);
+
   async function persist(raw: string): Promise<void> {
     const res = await saveNarration(modelId, raw, speech.durationMs || null);
     if (res.ok) {
@@ -134,6 +144,28 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
   }
 
   if (phase === 'idle') return null;
+
+  if (phase === 'denied') {
+    return (
+      <div
+        data-testid="narration-participant-prompt"
+        className="fixed bottom-5 left-1/2 z-40 w-[min(92vw,460px)] -translate-x-1/2 rounded-2xl border border-zinc-200 bg-white p-4 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.35)]"
+      >
+        <p className="text-sm font-semibold text-zinc-900">Microphone blocked</p>
+        <p className="mt-1 text-[12px] leading-relaxed text-zinc-600">
+          Enable microphone access in your browser settings, then tap to try again.
+        </p>
+        <button
+          type="button"
+          onClick={beginRecording}
+          data-testid="narration-participant-retry"
+          className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -174,10 +206,21 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
                 rows={4}
                 aria-label="Narration text"
                 className="block w-full rounded-lg border border-zinc-300 p-2 text-[13px]"
-                onFocus={() => setPhase('recording')}
+                onFocus={() => {
+                  setPhase('recording');
+                  channel.sendAck({ modelId, profileId, state: 'recording' });
+                }}
               />
             </div>
           )}
+          {speech.supported ? (
+            <div className="mt-3 max-h-[24vh] overflow-y-auto">
+              <LiveTranscriptChat
+                state={live}
+                emptyHint="Your room's stories will appear here as people speak."
+              />
+            </div>
+          ) : null}
         </div>
       ) : (
         <div>

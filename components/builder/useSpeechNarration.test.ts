@@ -79,4 +79,24 @@ describe('useSpeechNarration', () => {
     act(() => result.current.stop());
     vi.useRealTimers();
   });
+
+  test('auto-restarts when recognition ends on its own (silence), preserving transcript', () => {
+    const rec = new FakeRecognition();
+    // @ts-expect-error inject
+    globalThis.SpeechRecognition = vi.fn(() => rec);
+    const { result } = renderHook(() => useSpeechNarration());
+    act(() => result.current.start());
+    act(() => rec.emitFinal('hello'));
+    expect(rec.start).toHaveBeenCalledTimes(1);
+
+    // Chrome ends the session spontaneously (no explicit stop):
+    act(() => rec.onend?.());
+    expect(result.current.status).toBe('recording');
+    expect(rec.start).toHaveBeenCalledTimes(2);
+    expect(result.current.transcript.trim()).toBe('hello');
+
+    // Explicit stop now truly stops.
+    act(() => result.current.stop());
+    expect(result.current.status).toBe('stopped');
+  });
 });
