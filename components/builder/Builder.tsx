@@ -29,6 +29,8 @@ import { useFeedbackVisible } from './useFeedbackVisible';
 import { ExportMenu } from '@/components/exports/ExportMenu';
 import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
 import { NarrationParticipantTrigger } from '@/components/session/NarrationParticipantTrigger';
+import { NarrationDrawerProvider } from '@/components/session/NarrationDrawerContext';
+import { NarrationReopenButton } from '@/components/session/NarrationReopenButton';
 import type { CommentRow, ReactionRow } from '@/lib/brickFeedback/loadInitial';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 import { canShareDesign } from '@/lib/share/canShareDesign';
@@ -126,30 +128,32 @@ export function Builder({
             sessionContext={sessionContext}
           />
           <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-3 py-3 md:min-h-0 md:px-5 md:py-5">
-            <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
-              <UnifiedSidebar
-                readOnly={readOnly}
-                ownerLabel={ownerLabel}
-                sessionContext={sessionContext}
-                canSaveVersion={canSaveModelVersion({ roomBacked, isSessionFacilitator })}
-              />
-              <CanvasStage
-                orgId={orgId}
-                colourblindMode={colourblindMode}
-                sessionContext={sessionContext}
-                isSessionFacilitator={isSessionFacilitator}
-                facilitatorNotes={facilitatorNotes}
-                canNarrate={canNarrate}
-                reactionsEnabled={reactionsEnabled}
-                initialReactions={initialReactions ?? []}
-                commentsEnabled={commentsEnabled}
-                initialComments={initialComments ?? []}
-                myProfileId={myProfileId}
-                readOnly={readOnly}
-                scenario={scenario}
-                narratorName={self?.displayName ?? null}
-              />
-            </div>
+            <NarrationDrawerProvider>
+              <div className="flex flex-1 flex-col gap-4 md:min-h-0 md:flex-row">
+                <UnifiedSidebar
+                  readOnly={readOnly}
+                  ownerLabel={ownerLabel}
+                  sessionContext={sessionContext}
+                  canSaveVersion={canSaveModelVersion({ inSession: sessionContext !== null })}
+                />
+                <CanvasStage
+                  orgId={orgId}
+                  colourblindMode={colourblindMode}
+                  sessionContext={sessionContext}
+                  isSessionFacilitator={isSessionFacilitator}
+                  facilitatorNotes={facilitatorNotes}
+                  canNarrate={canNarrate}
+                  reactionsEnabled={reactionsEnabled}
+                  initialReactions={initialReactions ?? []}
+                  commentsEnabled={commentsEnabled}
+                  initialComments={initialComments ?? []}
+                  myProfileId={myProfileId}
+                  readOnly={readOnly}
+                  scenario={scenario}
+                  narratorName={self?.displayName ?? null}
+                />
+              </div>
+            </NarrationDrawerProvider>
           </div>
         </div>
         <SaveToast />
@@ -222,6 +226,7 @@ function UnifiedSidebar({
         <LayersPanel />
         <BringInPreviousModelReopenButton />
         <SaveBuildButton canSaveVersion={canSaveVersion} />
+        <NarrationReopenButton />
       </div>
     </aside>
   );
