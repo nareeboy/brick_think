@@ -40,6 +40,7 @@ export interface BrickInstance {
   id: string;
   groupId: string;
   code: string;
+  name?: string;
   image: string;
   width: number;
   height: number;
