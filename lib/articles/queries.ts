@@ -92,9 +92,9 @@ interface PublicAuthor {
 // genuinely public info though — name + avatar shown beneath the headline.
 // We escalate to the service role for this narrow lookup, deliberately
 // selecting only the columns the byline needs (full_name, avatar_url) plus
-// email — email is used solely as the key into `AUTHOR_LINKS` (see
-// lib/articles/authors.ts) and never leaves this function. Profile ids
-// without a row resolve to nulls.
+// email — email is used solely as the lookup key for the ARTICLE_AUTHORS byline
+// config (see lib/articles/authors.ts) and never leaves this function. Profile
+// ids without a row resolve to nulls.
 async function loadPublicAuthors(
   profileIds: readonly string[],
 ): Promise<Map<string, PublicAuthor>> {
