@@ -45,7 +45,12 @@ export function PageBanner({
     <section
       data-tour-id={dataTourId}
       data-testid={dataTestId}
-      className="relative isolate overflow-hidden border-b border-[#c0613d]/10 bg-[linear-gradient(108deg,#FAF7F1_0%,#F4E4D5_52%,#EACDB5_100%)]"
+      // shrink-0: the banner is a flex item in the authed layout's
+      // `flex flex-col overflow-y-auto` scroll container. With overflow-hidden
+      // its flex min-height resolves to 0, so a taller-than-viewport page (e.g.
+      // the full Scenarios grid) would otherwise crush the band to ~1px and the
+      // heading/subtitle would vanish until a filter shortened the list.
+      className="relative isolate shrink-0 overflow-hidden border-b border-[#c0613d]/10 bg-[linear-gradient(108deg,#FAF7F1_0%,#F4E4D5_52%,#EACDB5_100%)]"
     >
       {/* Soft warm glow in the top-right to give the wash some depth. */}
       <div

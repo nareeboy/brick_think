@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { fetchRecentNotifications } from '@/app/(authed)/app/notifications/actions';
 import { GlobalHeader } from '@/components/app/GlobalHeader';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
-import { ScrollContainer } from './ScrollContainer';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -58,7 +57,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
           isSiteAdmin={isSiteAdmin}
           sessions={navSessions}
         />
-        <ScrollContainer>{children}</ScrollContainer>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
         <NotificationToast />
       </div>
     </NotificationsProvider>
