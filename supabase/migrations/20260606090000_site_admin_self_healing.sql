@@ -38,21 +38,17 @@ create table if not exists public.site_admin_emails (
 -- pattern used by the session-reports storage bucket.
 alter table public.site_admin_emails enable row level security;
 
--- Seed the configured admin emails from the `app.site_admin_emails` database
--- setting (a comma-separated list) — NOT hardcoded, so a fork/self-host sets
--- its own admins once per environment (Supabase SQL editor or local psql):
+-- No admins are seeded here — there is no hardcoded admin, and an empty
+-- allowlist (the default for a fresh clone) means no admins until the operator
+-- grants one. Bootstrapping is a one-time, no-privilege SQL step run after first
+-- sign-in (see README "Granting site admin"):
 --
---   alter database postgres set app.site_admin_emails = 'you@example.com,teammate@example.com';
+--   insert into public.site_admin_emails (email) values ('you@example.com')
+--   on conflict (email) do nothing;
 --
--- Unset/empty setting → zero rows inserted (correct default for a fresh clone).
-insert into public.site_admin_emails (email)
-select trim(email)::citext
-from regexp_split_to_table(
-  coalesce(current_setting('app.site_admin_emails', true), ''),
-  ','
-) as email
-where trim(email) <> ''
-on conflict (email) do nothing;
+-- The promotion trigger below then flips is_site_admin for that account on its
+-- next profile insert/update; the backfill at the end heals an already-existing
+-- profile immediately.
 
 -- ── 2. Promotion trigger ────────────────────────────────────────────────────
 -- Promote-only: the flag is forced true when the email is on the allowlist,

@@ -102,27 +102,27 @@ pnpm dev                          # http://localhost:3000
 
 ## Granting site admin
 
-The `/app/admin` surface (CMS, careers, site banner, changelog) is gated on a per-user `profiles.is_site_admin` flag. There is **no hardcoded admin** — you designate your own by listing emails in the `app.site_admin_emails` database setting (comma-separated).
+The `/app/admin` surface (CMS, careers, site banner, changelog) is gated on a per-user `profiles.is_site_admin` flag. There is **no hardcoded admin** and migrations seed none — a fresh deploy has zero admins until you grant one. Granting needs **no superuser** and works on Supabase cloud, a self-managed Postgres, and the local stack alike:
 
-Set it once per environment — Supabase SQL editor for a remote project, or local Studio → SQL editor / psql for the local stack:
-
-```sql
-alter database postgres set app.site_admin_emails = 'you@example.com,teammate@example.com';
-```
-
-Then apply migrations (`pnpm db:reset` locally, or your remote migration path) and sign in with that email — the promotion trigger flips `is_site_admin` when the profile is created. Already signed in before setting it? Re-run `pnpm db:reset` (local), or promote in place:
+1. Deploy, then **sign in once** with the account you want as admin so its `profiles` row exists.
+2. In the Supabase SQL editor (or local Studio → SQL editor), run:
 
 ```sql
-update public.profiles p set is_site_admin = true
-from regexp_split_to_table(current_setting('app.site_admin_emails', true), ',') as e(email)
-where p.email = trim(e.email)::citext;
+insert into public.site_admin_emails (email) values ('you@example.com')
+on conflict (email) do nothing;
+
+update public.profiles set is_site_admin = true where email = 'you@example.com';
 ```
+
+Adding more admins later is the same two lines with a different email.
+
+How it works: `site_admin_emails` is the allowlist, and a trigger auto-promotes any profile whose email is on it — so for **brand-new** accounts you can insert the email _before_ they sign in and skip the `update` (the trigger flips the flag on profile creation). The `update` line is only for accounts that already existed when you added them.
 
 Notes:
 
-- Unset/empty setting → no admins (safe default for a fresh clone).
-- A local `pnpm db:reset` recreates the database and **wipes** this setting, so re-run the `alter database` line after a reset (same caveat as the other `app.*` settings the project uses).
-- Promotion never demotes: removing an email from the list does not strip an existing admin — do that with an explicit `update ... set is_site_admin = false`.
+- Empty `site_admin_emails` → no admins (safe default for a fresh clone).
+- Promotion never demotes: removing an email from `site_admin_emails` does **not** strip an existing admin — revoke explicitly with `update public.profiles set is_site_admin = false where email = '...'`.
+- A local `pnpm db:reset` wipes all data, so re-run the grant after a reset.
 
 ## Auth and local user testing
 
