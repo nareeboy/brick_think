@@ -50,8 +50,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/app/designs', destination: '/app/my-designs', permanent: true },
-      { source: '/app/sessions', destination: '/app/orgs', permanent: true },
-      { source: '/app/sessions/new', destination: '/app/orgs', permanent: true },
+      { source: '/app/sessions', destination: '/app/workshops', permanent: true },
+      { source: '/app/sessions/new', destination: '/app/workshops', permanent: true },
+      { source: '/app/orgs', destination: '/app/workshops', permanent: true },
+      { source: '/app/orgs/:path*', destination: '/app/workshops/:path*', permanent: true },
     ];
   },
 };

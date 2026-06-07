@@ -40,7 +40,7 @@ export async function updateProfileAction(rawName: string): Promise<UpdateProfil
   revalidatePath('/app/account');
   // The header reads full_name in the (authed) layout — bust those paths too.
   revalidatePath('/app/my-designs');
-  revalidatePath('/app/orgs');
+  revalidatePath('/app/workshops');
   return { kind: 'ok', fullName: next };
 }
 
@@ -100,7 +100,7 @@ export async function updateAvatarAction(formData: FormData): Promise<UpdateAvat
 
   revalidatePath('/app/account');
   revalidatePath('/app/my-designs');
-  revalidatePath('/app/orgs');
+  revalidatePath('/app/workshops');
   return { kind: 'ok', url };
 }
 
@@ -128,7 +128,7 @@ export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
 
   revalidatePath('/app/account');
   revalidatePath('/app/my-designs');
-  revalidatePath('/app/orgs');
+  revalidatePath('/app/workshops');
   return { kind: 'ok' };
 }
 

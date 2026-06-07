@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useId, useState, useTransition } from 'react';
 
-import { removeOrgMemberAction } from '@/app/(authed)/app/orgs/actions';
+import { removeOrgMemberAction } from '@/app/(authed)/app/workshops/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
 interface Props {
@@ -22,8 +22,8 @@ export function LeaveOrgButton({ orgId, profileId }: Props) {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        aria-label="Leave organisation"
-        title="Leave organisation"
+        aria-label="Leave workshop"
+        title="Leave workshop"
         className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-zinc-900/10 text-zinc-700 transition-colors hover:bg-zinc-900/5"
       >
         <LeaveIcon className="h-4 w-4" />
@@ -33,7 +33,7 @@ export function LeaveOrgButton({ orgId, profileId }: Props) {
         <ModalBackdrop titleId={titleId} onClose={() => setConfirming(false)}>
           <div className="rounded-2xl bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
             <h2 id={titleId} className="text-[18px] font-semibold tracking-tight text-zinc-950">
-              Leave this organisation?
+              Leave this workshop?
             </h2>
             <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
               You will lose access to its sessions and shared designs. An admin can re-add you
@@ -54,7 +54,7 @@ export function LeaveOrgButton({ orgId, profileId }: Props) {
                 onClick={() =>
                   start(async () => {
                     await removeOrgMemberAction(orgId, profileId);
-                    router.push('/app/orgs');
+                    router.push('/app/workshops');
                   })
                 }
                 className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"

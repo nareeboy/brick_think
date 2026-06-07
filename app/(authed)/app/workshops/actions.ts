@@ -49,11 +49,11 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
     .single();
   if (error) {
     if (error.code === '23505') return { kind: 'slug_taken' };
-    throw new Error(`Failed to create organisation: ${error.message}`);
+    throw new Error(`Failed to create workshop: ${error.message}`);
   }
-  if (!data) throw new Error('Failed to create organisation: no id returned');
+  if (!data) throw new Error('Failed to create workshop: no id returned');
 
-  revalidatePath('/app/orgs');
+  revalidatePath('/app/workshops');
   revalidatePath('/app/my-designs');
   return { kind: 'ok', orgId: data.id };
 }
@@ -95,7 +95,7 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
     service.from('organisations').select('name').eq('id', orgId).maybeSingle(),
     service.from('profiles').select('full_name, email').eq('id', user.id).maybeSingle(),
   ]);
-  const orgName = orgRes.data?.name ?? 'an organisation';
+  const orgName = orgRes.data?.name ?? 'a workshop';
   const actorDisplay = resolveActorDisplay({
     fullName: actorRes.data?.full_name,
     email: actorRes.data?.email ?? user.email ?? null,
@@ -145,7 +145,7 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
       actorDisplay,
     });
 
-    revalidatePath(`/app/orgs/${orgId}`);
+    revalidatePath(`/app/workshops/${orgId}`);
     return { kind: 'ok', recipientDisplay, orgName };
   }
 
@@ -170,7 +170,7 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
   const proto = h.get('x-forwarded-proto') ?? 'http';
   const host = h.get('host') ?? 'localhost:3000';
   const redirectTo = `${proto}://${host}/auth/confirm?next=${encodeURIComponent(
-    `/app/orgs/${orgId}`,
+    `/app/workshops/${orgId}`,
   )}`;
 
   const inviteRes = await service.auth.admin.inviteUserByEmail(trimmed, { redirectTo });
@@ -186,7 +186,7 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
     return { kind: 'invite_failed', message: inviteRes.error.message };
   }
 
-  revalidatePath(`/app/orgs/${orgId}`);
+  revalidatePath(`/app/workshops/${orgId}`);
   return { kind: 'invited', email: trimmed, orgName };
 }
 
@@ -202,8 +202,8 @@ export async function removeOrgMemberAction(orgId: string, profileId: string): P
   if (!data || data.length === 0) {
     throw new Error('Member not found or you lack permission to remove them');
   }
-  revalidatePath(`/app/orgs/${orgId}`);
-  revalidatePath('/app/orgs');
+  revalidatePath(`/app/workshops/${orgId}`);
+  revalidatePath('/app/workshops');
   revalidatePath('/app/my-designs');
 }
 
@@ -240,8 +240,8 @@ export async function renameOrgAction(orgId: string, name: string): Promise<Rena
     return (count ?? 0) === 0 ? { kind: 'not_found' } : { kind: 'forbidden' };
   }
 
-  revalidatePath('/app/orgs');
-  revalidatePath(`/app/orgs/${orgId}`);
+  revalidatePath('/app/workshops');
+  revalidatePath(`/app/workshops/${orgId}`);
   revalidatePath('/app/my-designs');
   return { kind: 'ok' };
 }
@@ -272,7 +272,7 @@ export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
     return (count ?? 0) === 0 ? { kind: 'not_found' } : { kind: 'forbidden' };
   }
 
-  revalidatePath('/app/orgs');
+  revalidatePath('/app/workshops');
   revalidatePath('/app/my-designs');
   return { kind: 'ok' };
 }

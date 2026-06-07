@@ -72,7 +72,7 @@ export async function createDesignAction(input: CreateDesignInput): Promise<stri
       throw new Error(`Membership check failed: ${memberError.message}`);
     }
     if ((count ?? 0) === 0) {
-      throw new Error('You are not a member of that organisation');
+      throw new Error('You are not a member of that workshop');
     }
 
     const stageRes = await supabase
@@ -86,7 +86,7 @@ export async function createDesignAction(input: CreateDesignInput): Promise<stri
     }
     const sessionOrg = (stageRes.data as { sessions: { org_id: string } }).sessions?.org_id;
     if (sessionOrg !== orgId) {
-      throw new Error('Session does not belong to the supplied organisation');
+      throw new Error('Session does not belong to the supplied workshop');
     }
     stageId = stageRes.data.id;
   }
@@ -135,7 +135,7 @@ export async function duplicateToSessionAction(input: DuplicateInput): Promise<s
   if (memberError) {
     throw new Error(`Membership check failed: ${memberError.message}`);
   }
-  if ((count ?? 0) === 0) throw new Error('You are not a member of that organisation');
+  if ((count ?? 0) === 0) throw new Error('You are not a member of that workshop');
 
   // 2. Load source — must be owned by caller and not deleted.
   const sourceRes = await supabase
@@ -160,7 +160,7 @@ export async function duplicateToSessionAction(input: DuplicateInput): Promise<s
     .maybeSingle();
   if (stageRes.error || !stageRes.data) throw new Error('Session not found or has no stages');
   const sessionOrg = (stageRes.data as { sessions: { org_id: string } }).sessions?.org_id;
-  if (sessionOrg !== orgId) throw new Error('Session does not belong to the supplied organisation');
+  if (sessionOrg !== orgId) throw new Error('Session does not belong to the supplied workshop');
 
   // 4. Insert the new row. canvas_state is copied verbatim. Thumbnail is not
   //    copied — the next autosave will regenerate it.

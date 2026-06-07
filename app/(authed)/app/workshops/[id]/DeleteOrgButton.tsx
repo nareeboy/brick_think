@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
-import { deleteOrgAction, type DeleteOrgResult } from '@/app/(authed)/app/orgs/actions';
+import { deleteOrgAction, type DeleteOrgResult } from '@/app/(authed)/app/workshops/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
 interface Props {
@@ -42,16 +42,16 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
     start(async () => {
       const result: DeleteOrgResult = await deleteOrgAction(orgId);
       if (result.kind === 'ok') {
-        router.push('/app/orgs');
+        router.push('/app/workshops');
         router.refresh();
         return;
       }
       if (result.kind === 'forbidden') {
-        setError('Only the owner can delete this organisation.');
+        setError('Only the owner can delete this workshop.');
         return;
       }
       if (result.kind === 'not_found') {
-        router.push('/app/orgs');
+        router.push('/app/workshops');
         router.refresh();
         return;
       }
@@ -63,8 +63,8 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        aria-label="Delete organisation"
-        title="Delete organisation"
+        aria-label="Delete workshop"
+        title="Delete workshop"
         className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors hover:bg-red-50"
       >
         <TrashIcon className="h-4 w-4" />
@@ -81,8 +81,8 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
                 Delete &ldquo;{orgName}&rdquo;?
               </h2>
               <p className="text-[12px] leading-relaxed text-red-900/80">
-                This permanently removes the organisation, all its members, and any sessions owned
-                by it. Designs created here will move back to their authors&rsquo; personal context.
+                This permanently removes the workshop, all its members, and any sessions owned by
+                it. Designs created here will move back to their authors&rsquo; personal context.
                 This action cannot be undone.
               </p>
             </div>
@@ -120,7 +120,7 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
                 disabled={pending || typed.trim() !== orgSlug}
                 className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-red-600 px-3 text-[12px] font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
-                {pending ? 'Deleting…' : 'Delete organisation'}
+                {pending ? 'Deleting…' : 'Delete workshop'}
               </button>
             </div>
           </form>

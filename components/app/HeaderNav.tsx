@@ -8,7 +8,7 @@ import type { NavSession } from '@/lib/sessions/navSessions';
 
 const BASE_LINKS = [
   { href: '/app/my-designs', label: 'My Designs' },
-  { href: '/app/orgs', label: 'Organisations' },
+  { href: '/app/workshops', label: 'Workshops' },
   { href: '/app/scenarios', label: 'Scenarios' },
 ] as const;
 

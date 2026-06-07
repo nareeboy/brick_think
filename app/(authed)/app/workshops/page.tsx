@@ -9,7 +9,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
-export const metadata: Metadata = { title: 'Organisations' };
+export const metadata: Metadata = { title: 'Workshops' };
 export const dynamic = 'force-dynamic';
 
 interface OrgWithCount extends OrgSummary {
@@ -30,7 +30,7 @@ export default async function OrgsPage() {
     .from('org_memberships')
     .select('role, organisations:org_id ( id, name, slug )')
     .eq('profile_id', user.id);
-  if (error) throw new Error(`Failed to load organisations: ${error.message}`);
+  if (error) throw new Error(`Failed to load workshops: ${error.message}`);
 
   const summaries: OrgSummary[] = (data ?? [])
     .map((row): OrgSummary | null => {
@@ -74,13 +74,13 @@ export default async function OrgsPage() {
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <PageBanner
         eyebrow="BrickThink"
-        title="Organisations"
+        title="Workshops"
         actions={
           <Link
-            href="/app/orgs/new"
+            href="/app/workshops/new"
             className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
           >
-            New organisation
+            New workshop
           </Link>
         }
       />
@@ -89,7 +89,7 @@ export default async function OrgsPage() {
 
         {orgs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center text-[13px] text-zinc-500">
-            No organisations yet. Create one to share designs with teammates.
+            No workshops yet. Create one to share designs with teammates.
           </p>
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -99,7 +99,11 @@ export default async function OrgsPage() {
                 data-scroll-target=""
                 className="rounded-2xl border border-zinc-900/10 bg-white p-4 transition-colors hover:bg-[#FAF7F1]"
               >
-                <Link href={`/app/orgs/${o.id}`} aria-label={`Open ${o.name}`} className="block">
+                <Link
+                  href={`/app/workshops/${o.id}`}
+                  aria-label={`Open ${o.name}`}
+                  className="block"
+                >
                   <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl border border-zinc-900/5 bg-[#FBF7F1]">
                     {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> per CLAUDE.md to avoid host whitelist */}
                     <img

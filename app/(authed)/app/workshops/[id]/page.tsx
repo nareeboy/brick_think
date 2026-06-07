@@ -27,10 +27,10 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  if (!isSupabaseConfigured()) return { title: 'Organisation' };
+  if (!isSupabaseConfigured()) return { title: 'Workshop' };
   const supabase = await createServerSupabaseClient();
   const { data } = await supabase.from('organisations').select('name').eq('id', id).single();
-  return { title: data?.name ?? 'Organisation' };
+  return { title: data?.name ?? 'Workshop' };
 }
 
 export default async function OrgDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -119,8 +119,8 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
       <PageBanner
         eyebrow={
           <>
-            <Link href="/app/orgs" className="underline-offset-2 hover:underline">
-              Organisations
+            <Link href="/app/workshops" className="underline-offset-2 hover:underline">
+              Workshops
             </Link>
             <span aria-hidden="true" className="mx-1.5 text-zinc-400">
               /

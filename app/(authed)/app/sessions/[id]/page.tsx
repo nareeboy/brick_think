@@ -439,15 +439,15 @@ export default async function SessionDetailPage({
         leading={<SessionRoleChip isFacilitator={session.facilitator_id === user.id} />}
         eyebrow={
           <>
-            <Link href="/app/orgs" className="underline-offset-2 hover:underline">
-              Organisations
+            <Link href="/app/workshops" className="underline-offset-2 hover:underline">
+              Workshops
             </Link>
             <span aria-hidden="true" className="mx-1.5 text-zinc-400">
               /
             </span>
             {session.organisations ? (
               <Link
-                href={`/app/orgs/${session.organisations.id}`}
+                href={`/app/workshops/${session.organisations.id}`}
                 className="underline-offset-2 hover:underline"
               >
                 {session.organisations.name}

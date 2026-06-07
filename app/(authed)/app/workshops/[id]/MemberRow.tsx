@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 
-import { removeOrgMemberAction } from '@/app/(authed)/app/orgs/actions';
+import { removeOrgMemberAction } from '@/app/(authed)/app/workshops/actions';
 import { Avatar } from '@/components/app/Avatar';
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import type { OrgMember } from '@/lib/orgs/types';
@@ -49,8 +49,8 @@ export function MemberRow({ orgId, member, canRemove }: Props) {
           title={`Remove ${displayName}?`}
           description={
             <>
-              They will lose access to this organisation&rsquo;s sessions and shared designs. An
-              admin can re-add them later.
+              They will lose access to this workshop&rsquo;s sessions and shared designs. An admin
+              can re-add them later.
             </>
           }
           confirmLabel="Remove"

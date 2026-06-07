@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useTransition } from 'react';
 
-import { renameOrgAction, type RenameOrgResult } from '@/app/(authed)/app/orgs/actions';
+import { renameOrgAction, type RenameOrgResult } from '@/app/(authed)/app/workshops/actions';
 
 interface Props {
   orgId: string;
@@ -56,11 +56,11 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
         return;
       }
       if (result.kind === 'forbidden') {
-        setError("You don't have permission to rename this organisation.");
+        setError("You don't have permission to rename this workshop.");
         return;
       }
       if (result.kind === 'not_found') {
-        setError('This organisation no longer exists.');
+        setError('This workshop no longer exists.');
         return;
       }
     });
@@ -72,7 +72,7 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
         type="button"
         onClick={() => setEditing(true)}
         className="group -mx-1 inline-flex max-w-full cursor-pointer items-baseline gap-2 rounded-md px-1 text-left transition-colors hover:bg-zinc-900/5"
-        title="Rename organisation"
+        title="Rename workshop"
       >
         <span className="truncate text-[26px] font-semibold tracking-tight text-zinc-950">
           {initialName}
@@ -96,7 +96,7 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
           onChange={(e) => setName(e.target.value)}
           maxLength={80}
           disabled={pending}
-          aria-label="Organisation name"
+          aria-label="Workshop name"
           autoComplete="off"
           className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-900/10 bg-white px-3 text-[20px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d] disabled:opacity-60"
         />
