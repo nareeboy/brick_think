@@ -32,7 +32,7 @@ export async function dispatchOrgAddedNotification(args: DispatchOrgAddedArgs): 
     kind: 'org_added',
     title: `${args.actorDisplay} added you to ${args.orgName}`,
     body: null,
-    link_url: `/app/orgs/${args.orgId}`,
+    link_url: `/app/workshops/${args.orgId}`,
     actor_profile_id: args.actorProfileId,
     org_id: args.orgId,
   });

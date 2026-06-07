@@ -11,7 +11,7 @@ const CHECKLIST_ANCHOR_ID = 'onboarding-checklist';
 const STEPS = [
   {
     n: '01',
-    title: 'Organisations',
+    title: 'Workshops',
     body: 'A shared space for your team — everything you run together lives inside one.',
   },
   {
@@ -136,7 +136,7 @@ function NestingVisual() {
       className="relative hidden items-center justify-center overflow-hidden bg-gradient-to-br from-[#f8efe9] via-[#f3e2d7] to-[#ecd2c2] p-7 md:flex"
     >
       <div className="w-full max-w-[300px]">
-        <Frame label="Organisation" tint="bg-white/55">
+        <Frame label="Workshop" tint="bg-white/55">
           <Frame label="Session" tint="bg-white/70">
             <Frame label="Stage" tint="bg-white/85">
               <Frame label="Design" tint="bg-white" innermost>

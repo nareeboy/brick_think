@@ -4,7 +4,7 @@ import { PageBanner } from '@/components/app/PageBanner';
 
 import { CreateOrgForm } from './CreateOrgForm';
 
-export const metadata: Metadata = { title: 'New organisation' };
+export const metadata: Metadata = { title: 'New workshop' };
 export const dynamic = 'force-dynamic';
 
 export default function NewOrgPage() {
@@ -12,8 +12,8 @@ export default function NewOrgPage() {
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <PageBanner
         eyebrow="BrickThink"
-        title="New organisation"
-        subtitle="Organisations let you share designs with teammates as read-only."
+        title="New workshop"
+        subtitle="Workshops let you share designs with teammates as read-only."
         maxWidthClassName="max-w-[480px]"
       />
       <div className="mx-auto flex max-w-[480px] flex-col gap-6 px-5 py-10">

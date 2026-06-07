@@ -63,7 +63,7 @@ export async function createSession(formData: FormData): Promise<void> {
     throw new Error(`Membership check failed: ${memberRes.error.message}`);
   }
   if ((memberRes.count ?? 0) === 0) {
-    throw new Error('You are not a member of that organisation');
+    throw new Error('You are not a member of that workshop');
   }
 
   // Mint a join_code up front so the participant-join flow works the
@@ -105,7 +105,7 @@ export async function createSession(formData: FormData): Promise<void> {
     throw new Error(`Failed to create stages: ${stagesRes.error.message}`);
   }
 
-  revalidatePath(`/app/orgs/${orgId}`);
+  revalidatePath(`/app/workshops/${orgId}`);
   redirect(`/app/sessions/${sessionId}`);
 }
 
@@ -451,9 +451,9 @@ export async function deleteSession(sessionId: string): Promise<void> {
     throw new Error('Session not found, or you do not have permission to delete it.');
   }
 
-  revalidatePath(`/app/orgs/${orgId}`);
+  revalidatePath(`/app/workshops/${orgId}`);
   revalidatePath('/app/my-designs');
-  redirect(`/app/orgs/${orgId}`);
+  redirect(`/app/workshops/${orgId}`);
 }
 
 /**

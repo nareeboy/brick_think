@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
-import { createOrgAction, type CreateOrgResult } from '@/app/(authed)/app/orgs/actions';
+import { createOrgAction, type CreateOrgResult } from '@/app/(authed)/app/workshops/actions';
 import { isValidSlug, suggestSlug } from '@/lib/orgs/slug';
 
 export function CreateOrgForm() {
@@ -43,7 +43,7 @@ export function CreateOrgForm() {
     start(async () => {
       const result: CreateOrgResult = await createOrgAction(fd);
       if (result.kind === 'ok') {
-        router.push(`/app/orgs/${result.orgId}`);
+        router.push(`/app/workshops/${result.orgId}`);
         return;
       }
       if (result.kind === 'slug_taken') {
@@ -104,7 +104,7 @@ export function CreateOrgForm() {
         disabled={pending}
         className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
       >
-        {pending ? 'Creating…' : 'Create organisation'}
+        {pending ? 'Creating…' : 'Create workshop'}
       </button>
     </form>
   );

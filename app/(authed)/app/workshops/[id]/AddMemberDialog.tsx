@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
-import { addOrgMemberAction, type AddMemberResult } from '@/app/(authed)/app/orgs/actions';
+import { addOrgMemberAction, type AddMemberResult } from '@/app/(authed)/app/workshops/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import { useNotifications } from '@/components/notifications/NotificationsProvider';
 
@@ -47,7 +47,7 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
           kind: 'org_added',
           title: `${result.recipientDisplay} was added to ${result.orgName}`,
           body: 'They have been notified.',
-          link_url: `/app/orgs/${orgId}`,
+          link_url: `/app/workshops/${orgId}`,
           actor_profile_id: null,
           org_id: orgId,
           session_id: null,

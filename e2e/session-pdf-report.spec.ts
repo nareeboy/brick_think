@@ -125,7 +125,7 @@ test.describe('Session PDF report button', () => {
     await expect(deepLink).toBeVisible();
     await expect(deepLink).toHaveAttribute(
       'href',
-      `/app/orgs/${seededSession.orgId}/settings/integrations`,
+      `/app/workshops/${seededSession.orgId}/settings/integrations`,
     );
   });
 
