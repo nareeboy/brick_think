@@ -87,7 +87,7 @@ export default function GenerateReportButton({
             type="button"
             onClick={run}
             disabled={pending}
-            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-zinc-900 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-zinc-800 active:scale-[0.98] disabled:opacity-50"
           >
             {pending ? 'Generating…' : 'Generate report'}
           </button>
