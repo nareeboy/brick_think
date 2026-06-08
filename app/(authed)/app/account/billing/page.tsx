@@ -4,7 +4,9 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { isBillingEnabled } from '@/lib/billing/env';
 import { subscriptionTierFromRow } from '@/lib/billing/entitlements';
 import { type Tier } from '@/lib/billing/plans';
+import { listInvoicesForProfile, type InvoiceSummary } from '@/lib/billing/invoices';
 import BillingActions from './BillingActions';
+import { InvoiceList } from './InvoiceList';
 
 export const metadata: Metadata = { title: 'Billing' };
 export const dynamic = 'force-dynamic';
@@ -21,6 +23,7 @@ export default async function BillingPage() {
   let currentTier: Tier | null = null;
   let status: string | null = null;
   let renewsLabel: string | null = null;
+  let invoices: InvoiceSummary[] = [];
 
   if (billingOn) {
     const { data: sub } = await supabase
@@ -37,6 +40,7 @@ export default async function BillingPage() {
           year: 'numeric',
         })
       : null;
+    invoices = await listInvoicesForProfile(user.id);
   }
 
   return (
@@ -46,7 +50,10 @@ export default async function BillingPage() {
           Billing is not enabled on this instance — all features are available for free.
         </p>
       ) : (
-        <BillingActions currentTier={currentTier} status={status} renewsLabel={renewsLabel} />
+        <div className="space-y-8">
+          <BillingActions currentTier={currentTier} status={status} renewsLabel={renewsLabel} />
+          <InvoiceList invoices={invoices} />
+        </div>
       )}
     </div>
   );

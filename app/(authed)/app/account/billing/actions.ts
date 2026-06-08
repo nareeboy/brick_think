@@ -77,6 +77,9 @@ export async function createSessionCheckout(
       success_url: `${origin}/app/sessions/${sessionId}?report_unlocked=1`,
       cancel_url: `${origin}/app/sessions/${sessionId}?report_canceled=1`,
       client_reference_id: user.id,
+      // Generate an invoice for the one-time unlock so it appears in billing history
+      // (payment-mode checkouts don't create one by default).
+      invoice_creation: { enabled: true },
       payment_intent_data: { metadata: { profile_id: user.id, session_id: sessionId, tier } },
       metadata: { profile_id: user.id, session_id: sessionId, tier },
     });
