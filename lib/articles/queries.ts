@@ -19,7 +19,7 @@ const ROW_WITH_AUTHOR = `
   slug,
   title,
   excerpt,
-  body_markdown,
+  body_html,
   cover_image_path,
   ${COVER_CREDIT_COLS},
   status,
@@ -30,7 +30,7 @@ const ROW_WITH_AUTHOR = `
   author:author_profile_id (full_name, email, avatar_url)
 `;
 
-// Same shape minus body_markdown — used by the public list query.
+// Same shape minus body_html — used by the public list query.
 const PUBLIC_ROW = `
   id,
   slug,
@@ -55,7 +55,7 @@ interface JoinedRow extends CoverCreditCols {
   slug: string;
   title: string;
   excerpt: string | null;
-  body_markdown: string;
+  body_html: string;
   cover_image_path: string | null;
   status: 'draft' | 'published';
   published_at: string | null;
@@ -130,7 +130,7 @@ function toDetail(
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
-    bodyMarkdown: row.body_markdown,
+    bodyHtml: row.body_html,
     coverImagePath: row.cover_image_path,
     coverImageUrl: getCoverPublicUrl(client, row.cover_image_path),
     status: row.status,
@@ -217,7 +217,7 @@ export async function listPublishedArticles(): Promise<PublishedArticleSummary[]
 }
 
 interface PublicDetailRow extends PublicListRow {
-  body_markdown: string;
+  body_html: string;
 }
 
 export async function getPublishedArticleBySlug(
@@ -226,7 +226,7 @@ export async function getPublishedArticleBySlug(
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from('articles')
-    .select(`${PUBLIC_ROW}, body_markdown`)
+    .select(`${PUBLIC_ROW}, body_html`)
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle();
@@ -242,7 +242,7 @@ export async function getPublishedArticleBySlug(
     slug: row.slug,
     title: row.title,
     excerpt: row.excerpt,
-    bodyMarkdown: row.body_markdown,
+    bodyHtml: row.body_html,
     coverImageUrl: getCoverPublicUrl(supabase, row.cover_image_path),
     publishedAt: row.published_at,
     authorName: a?.name ?? null,
