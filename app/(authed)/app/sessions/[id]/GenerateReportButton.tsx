@@ -57,6 +57,7 @@ export default function GenerateReportButton({
         open={showUpgrade}
         onClose={() => setShowUpgrade(false)}
         feature="PDF session reports"
+        sessionId={sessionId}
       />
       {/* `relative` + absolutely-positioned messages keep this column's width equal
           to the button alone. Otherwise a long error/generated-at line would widen
