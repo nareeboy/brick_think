@@ -4,16 +4,18 @@ import { redirect } from 'next/navigation';
 import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { getServiceSupabaseClient } from '@/lib/db/service';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
+import { isBillingEnabled } from '@/lib/billing/env';
+import { isEntitled } from '@/lib/billing/entitlements';
+
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
+import { BillingCard } from './BillingCard';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
-import { IntegrationsCard } from './IntegrationsCard';
 import { ReplayWalkthroughCard } from './ReplayWalkthroughCard';
 
 export const metadata: Metadata = { title: 'Account' };
@@ -38,14 +40,8 @@ export default async function AccountPage() {
     throw new Error(`Failed to load profile: ${profileRes.error.message}`);
   }
 
-  // user_integrations carries the encrypted Anthropic key + a last4 surface
-  // for the connected display. Ciphertext is never selected here.
-  const svc = getServiceSupabaseClient();
-  const { data: integration } = await svc
-    .from('user_integrations')
-    .select('anthropic_api_key_last4, updated_at')
-    .eq('profile_id', user.id)
-    .maybeSingle();
+  const billingEnabled = isBillingEnabled();
+  const entitled = billingEnabled ? await isEntitled(user.id) : false;
 
   const email = profileRes.data.email;
   const fullName = profileRes.data.full_name?.trim() || null;
@@ -63,35 +59,42 @@ export default async function AccountPage() {
         title="Account"
         titleTestId="account-heading"
         subtitle={`Joined ${createdLabel}.`}
-        maxWidthClassName="max-w-[640px]"
       />
-      <div className="mx-auto flex max-w-[640px] flex-col gap-8 px-5 py-10">
-        <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
-          <AccountForm
-            initialFullName={fullName}
-            email={email}
-            initialAvatarUrl={initialAvatarUrl}
-          />
-        </section>
+      <div className="mx-auto max-w-[1200px] px-5 py-10">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+          {/* Profile — the anchor tile, two columns wide. */}
+          <section className="rounded-2xl border border-zinc-900/10 bg-white p-6 lg:col-span-2">
+            <AccountForm
+              initialFullName={fullName}
+              email={email}
+              initialAvatarUrl={initialAvatarUrl}
+            />
+          </section>
 
-        <ReplayWalkthroughCard />
+          {/* Right rail — stacked preference + walkthrough + tip-jar tiles. */}
+          <div className="flex flex-col gap-4">
+            <A11yPreferencesCard
+              initialColourblindMode={
+                normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
+              }
+            />
+            <ReplayWalkthroughCard />
+            <BuyMeACoffeeCard />
+            {billingEnabled ? (
+              <BillingCard billingEnabled={billingEnabled} entitled={entitled} />
+            ) : null}
+          </div>
 
-        <A11yPreferencesCard
-          initialColourblindMode={
-            normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
-          }
-        />
+          {/* Contribution — full-width tile so its label/CTA row has room to breathe. */}
+          <div className="lg:col-span-3">
+            <ContributionCard />
+          </div>
 
-        <IntegrationsCard
-          existingLast4={integration?.anthropic_api_key_last4 ?? null}
-          existingUpdatedAt={integration?.updated_at ?? null}
-        />
-
-        <ContributionCard />
-
-        <BuyMeACoffeeCard />
-
-        <DangerZone email={email} />
+          {/* Danger zone — full-width footer tile. */}
+          <div className="lg:col-span-3">
+            <DangerZone email={email} />
+          </div>
+        </div>
       </div>
     </main>
   );

@@ -163,7 +163,7 @@ export function CreateSessionSpotlight() {
         </h2>
         <p id={bodyId} className="mt-2 text-[13px] leading-relaxed text-zinc-700">
           Click <span className="font-semibold text-zinc-900">Create session</span> to set up a
-          working meeting inside this organisation.
+          working meeting inside this workshop.
         </p>
         <div className="mt-4 flex justify-end">
           <button

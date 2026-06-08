@@ -49,7 +49,7 @@ export function MyDesignsFilter({ orgs, value, buttonId }: Props) {
         return 'Personal';
       case 'org': {
         const org = orgs.find((o) => o.id === value.orgId);
-        return org?.name ?? 'Organisation';
+        return org?.name ?? 'Workshop';
       }
     }
   })();

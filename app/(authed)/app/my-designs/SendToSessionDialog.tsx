@@ -73,7 +73,7 @@ export function SendToSessionDialog({ sourceModelId, orgs, onClose }: Props) {
             ))}
             {orgs.length === 0 ? (
               <li className="rounded-xl border border-dashed border-zinc-900/15 px-4 py-3 text-[13px] text-zinc-500">
-                You are not a member of any organisation.
+                You are not a member of any workshop.
               </li>
             ) : null}
           </ul>
@@ -95,7 +95,7 @@ export function SendToSessionDialog({ sourceModelId, orgs, onClose }: Props) {
             ))}
             {sessions.length === 0 ? (
               <li className="rounded-xl border border-dashed border-zinc-900/15 px-4 py-3 text-[13px] text-zinc-500">
-                No sessions in this organisation yet.
+                No sessions in this workshop yet.
               </li>
             ) : null}
             <li>

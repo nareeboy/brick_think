@@ -37,7 +37,7 @@ export type Database = {
       articles: {
         Row: {
           author_profile_id: string | null
-          body_markdown: string
+          body_html: string
           cover_credit_name: string | null
           cover_credit_source: string | null
           cover_credit_source_url: string | null
@@ -54,7 +54,7 @@ export type Database = {
         }
         Insert: {
           author_profile_id?: string | null
-          body_markdown?: string
+          body_html?: string
           cover_credit_name?: string | null
           cover_credit_source?: string | null
           cover_credit_source_url?: string | null
@@ -71,7 +71,7 @@ export type Database = {
         }
         Update: {
           author_profile_id?: string | null
-          body_markdown?: string
+          body_html?: string
           cover_credit_name?: string | null
           cover_credit_source?: string | null
           cover_credit_source_url?: string | null
@@ -313,6 +313,38 @@ export type Database = {
           version_tag?: string | null
         }
         Relationships: []
+      }
+      facilitator_subscriptions: {
+        Row: {
+          current_period_end: string | null
+          profile_id: string
+          status: string
+          stripe_subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          current_period_end?: string | null
+          profile_id: string
+          status: string
+          stripe_subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          current_period_end?: string | null
+          profile_id?: string
+          status?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facilitator_subscriptions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       model_imports: {
         Row: {
@@ -1394,31 +1426,25 @@ export type Database = {
           },
         ]
       }
-      user_integrations: {
+      stripe_customers: {
         Row: {
-          anthropic_api_key_ciphertext: string | null
-          anthropic_api_key_last4: string | null
-          anthropic_api_key_nonce: string | null
+          created_at: string
           profile_id: string
-          updated_at: string
+          stripe_customer_id: string
         }
         Insert: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
+          created_at?: string
           profile_id: string
-          updated_at?: string
+          stripe_customer_id: string
         }
         Update: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
+          created_at?: string
           profile_id?: string
-          updated_at?: string
+          stripe_customer_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "user_integrations_profile_id_fkey"
+            foreignKeyName: "stripe_customers_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"

@@ -23,7 +23,7 @@ export interface CoverCredit {
 }
 
 export interface ArticleDetail extends ArticleListItem {
-  bodyMarkdown: string;
+  bodyHtml: string;
   coverImagePath: string | null;
   coverImageUrl: string | null;
   authorProfileId: string | null;
@@ -45,6 +45,6 @@ export interface PublishedArticleSummary {
 }
 
 export interface PublishedArticleDetail extends PublishedArticleSummary {
-  bodyMarkdown: string;
+  bodyHtml: string;
   coverCredit: CoverCredit;
 }

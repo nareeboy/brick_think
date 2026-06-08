@@ -46,6 +46,8 @@ playwright/.cache/
 # Supabase local state
 supabase/.temp/
 supabase/.branches/
+# Local-only dev seeds (e.g. site-admin allowlist) — never commit (no hardcoded admin in repo)
+supabase/seeds/
 
 # Local-only documentation per project guideline
 docs/

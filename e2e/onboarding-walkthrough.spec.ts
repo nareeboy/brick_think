@@ -65,7 +65,7 @@ test.describe('onboarding walkthrough', () => {
     // seededSession creates org + session for the user but no models yet.
     // The walkthrough checklist follows the user onto the org detail page too,
     // where step 2 (create a session) happens.
-    await signedInPage.goto(`/app/orgs/${seededSession.orgId}`);
+    await signedInPage.goto(`/app/workshops/${seededSession.orgId}`);
     await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
     await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute('data-done', '1');
 
@@ -105,7 +105,7 @@ test.describe('onboarding walkthrough', () => {
   }) => {
     // The checklist's step 2 link carries ?onboarding=create-session; landing
     // on the org page with that param fires the spotlight on the button.
-    await signedInPage.goto(`/app/orgs/${seededSession.orgId}?onboarding=create-session`);
+    await signedInPage.goto(`/app/workshops/${seededSession.orgId}?onboarding=create-session`);
 
     const spotlight = signedInPage.getByTestId('create-session-spotlight');
     await expect(spotlight).toBeVisible();
@@ -117,7 +117,7 @@ test.describe('onboarding walkthrough', () => {
     await expect(spotlight).toHaveCount(0);
 
     // Reloading without the param does not re-fire it.
-    await signedInPage.goto(`/app/orgs/${seededSession.orgId}`);
+    await signedInPage.goto(`/app/workshops/${seededSession.orgId}`);
     await expect(signedInPage.getByTestId('create-session-spotlight')).toHaveCount(0);
   });
 

@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useTransition } from 'react';
 
+import UpgradeModal from '@/components/billing/UpgradeModal';
+
 import { generateSessionReport } from '../report-actions';
 
 interface Props {
@@ -20,6 +22,7 @@ export default function GenerateReportButton({
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl);
   const [generatedAt, setGeneratedAt] = useState(initialGeneratedAt);
   const [error, setError] = useState<string | null>(initialError ?? null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [pending, startTransition] = useTransition();
 
   // Formatted client-side after mount: `toLocaleString()` resolves in the
@@ -38,8 +41,10 @@ export default function GenerateReportButton({
       if (res.ok) {
         setPdfUrl(res.pdfUrl);
         setGeneratedAt(res.generatedAt);
+      } else if (res.code === 'upgrade_required') {
+        setShowUpgrade(true);
       } else if (res.code === 'no_claude_key') {
-        setError('You have no Anthropic key yet.');
+        setError('AI report generation is not configured on this server.');
       } else {
         setError(messageForCode(res.code, res.message));
       }
@@ -47,57 +52,59 @@ export default function GenerateReportButton({
   }
 
   return (
-    // `relative` + absolutely-positioned messages keep this column's width equal
-    // to the button alone. Otherwise a long error/generated-at line would widen
-    // the flex item and shove the sibling header buttons to the left.
-    <div className="relative flex flex-col items-end">
-      {pdfUrl ? (
-        <div className="flex items-center gap-2">
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
-          >
-            Download PDF
-          </a>
+    <>
+      <UpgradeModal
+        open={showUpgrade}
+        onClose={() => setShowUpgrade(false)}
+        feature="PDF session reports"
+      />
+      {/* `relative` + absolutely-positioned messages keep this column's width equal
+          to the button alone. Otherwise a long error/generated-at line would widen
+          the flex item and shove the sibling header buttons to the left. */}
+      <div className="relative flex flex-col items-end">
+        {pdfUrl ? (
+          <div className="flex items-center gap-2">
+            <a
+              href={pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
+            >
+              Download PDF
+            </a>
+            <button
+              type="button"
+              onClick={run}
+              disabled={pending}
+              className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-50 disabled:opacity-50"
+            >
+              {pending ? 'Regenerating…' : 'Regenerate'}
+            </button>
+          </div>
+        ) : (
           <button
             type="button"
             onClick={run}
             disabled={pending}
-            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-50 disabled:opacity-50"
+            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
           >
-            {pending ? 'Regenerating…' : 'Regenerate'}
+            {pending ? 'Generating…' : 'Generate report'}
           </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={run}
-          disabled={pending}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
-        >
-          {pending ? 'Generating…' : 'Generate report'}
-        </button>
-      )}
-      {generatedAt || error ? (
-        <div className="absolute right-0 top-full z-10 mt-1 flex max-w-[280px] flex-col items-end gap-1 text-right">
-          {generatedLabel ? (
-            <p className="text-xs text-zinc-500">Generated {generatedLabel}</p>
-          ) : null}
-          {error ? (
-            <p className="text-xs text-red-700" role="status">
-              {error}{' '}
-              {error.includes('no Anthropic key') ? (
-                <a href="/app/account" className="underline">
-                  Add one
-                </a>
-              ) : null}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+        )}
+        {generatedAt || error ? (
+          <div className="absolute right-0 top-full z-10 mt-1 flex max-w-[280px] flex-col items-end gap-1 text-right">
+            {generatedLabel ? (
+              <p className="text-xs text-zinc-500">Generated {generatedLabel}</p>
+            ) : null}
+            {error ? (
+              <p className="text-xs text-red-700" role="status">
+                {error}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </>
   );
 }
 
@@ -107,14 +114,14 @@ function messageForCode(code: string, fallback?: string): string {
       return 'End the session first.';
     case 'no_models':
       return 'This session has no models to include.';
-    case 'decrypt_failed':
-      return "Your stored key can't be decrypted (encryption key changed?). Re-paste it on /app/account.";
     case 'claude_api_error':
       return `Anthropic error: ${fallback ?? 'unknown'}.`;
     case 'render_failed':
       return "Couldn't render the PDF — please contact support.";
     case 'storage_upload_failed':
       return 'Upload failed — try again.';
+    case 'upgrade_required':
+      return 'Subscribe to generate PDF reports.';
     default:
       return fallback ?? 'Something went wrong.';
   }

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+import { BetaListBadge } from '@/components/marketing/BetaListBadge';
 import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
 import { NickLaunchesBadge } from '@/components/marketing/NickLaunchesBadge';
 import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
@@ -23,11 +24,14 @@ export const TIKTOK_URL = 'https://www.tiktok.com/@brickthink';
 export const SLACK_URL =
   'https://join.slack.com/t/brickthink/shared_invite/zt-3zy9dg1hi-ZVZCdIlfSS_6OYLrQj2R0w';
 export const LEGO_SERIOUS_PLAY_URL = 'https://www.lego.com/en-ch/themes/serious-play';
-export const LSP_DACH_COMMUNITY_URL = 'https://seriousplay.community/dach/';
+export const LSP_DACH_COMMUNITY_URL = 'https://www.linkedin.com/groups/19163025/';
+export const PLAY_SERIOUS_ARTICLE_URL =
+  'https://www.play-serious.org/brickthink-virtuelle-haptik-ueberholt-lego/';
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
   { href: '/articles', label: 'Articles' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
   { href: '/help', label: 'Help' },
   { href: '/contact', label: 'Contact' },
@@ -76,9 +80,9 @@ export function NavBar() {
   );
 }
 
-// Site-wide "Featured on" wall sitting above the footer columns. A logo strip
-// for every place BrickThink has launched / been featured. Add new badges to
-// the centred row — it wraps cleanly as the list grows.
+// Press / editorial wall — communities and articles that have written about
+// BrickThink. Sits above the "Launched on" directory wall. Local PNG logos, so
+// rendered via next/image. Add new features to the centred row — it wraps cleanly.
 function FeaturedOnBand() {
   return (
     <div className="border-b border-zinc-900/10">
@@ -87,13 +91,6 @@ function FeaturedOnBand() {
           Featured on
         </p>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
-          <ProductHuntBadge />
-          <StartupFameBadge />
-          <LaunchIgniterBadge />
-          <UneedBadge />
-          <TinyLaunchBadge />
-          <SourceForgeBadge imgClassName="h-[calc(var(--spacing)*21)] w-auto" />
-          <SourceForgeDownloadButton />
           <a
             href={LSP_DACH_COMMUNITY_URL}
             target="_blank"
@@ -105,13 +102,54 @@ function FeaturedOnBand() {
               alt="LEGO® SERIOUS PLAY® Community DACH"
               width={596}
               height={216}
-              className="h-14 w-auto object-contain"
+              className="h-[calc(var(--spacing)*28)] w-auto object-contain"
             />
             <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
           </a>
+          <a
+            href={PLAY_SERIOUS_ARTICLE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
+          >
+            <Image
+              src="/play-serious-akademie-logo.png"
+              alt="Play Serious Akademie"
+              width={340}
+              height={156}
+              className="h-[calc(var(--spacing)*28)] w-auto object-contain"
+            />
+            <span className="sr-only">
+              — read the Play Serious Akademie article about BrickThink
+            </span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Launch-directory wall — every directory / launch platform BrickThink has
+// shipped on. Sits below the press "Featured on" band. Add new badges to the
+// centred row — it wraps cleanly as the list grows.
+function LaunchedOnBand() {
+  return (
+    <div className="border-b border-zinc-900/10">
+      <div className="mx-auto max-w-7xl px-6 py-10 md:py-12">
+        <p className="text-center font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+          Launched on
+        </p>
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+          <ProductHuntBadge />
+          <StartupFameBadge />
+          <LaunchIgniterBadge />
+          <UneedBadge />
+          <TinyLaunchBadge />
+          <SourceForgeBadge imgClassName="h-[calc(var(--spacing)*21)] w-auto" />
           <PeerlistBadge />
           <SaasHubBadge />
           <NickLaunchesBadge />
+          <BetaListBadge />
         </div>
       </div>
     </div>
@@ -123,6 +161,7 @@ export async function Footer() {
   return (
     <footer className="border-t border-zinc-900/10">
       <FeaturedOnBand />
+      <LaunchedOnBand />
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-12 md:grid-cols-12">
         <div className="md:col-span-5">
           <Link href="/" className="flex items-center gap-2 text-zinc-900">
@@ -214,6 +253,11 @@ export async function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/pricing" className="hover:text-zinc-950">
+                Pricing
+              </Link>
+            </li>
+            <li>
               <a
                 href={LEGO_SERIOUS_PLAY_URL}
                 target="_blank"
@@ -272,6 +316,7 @@ export async function Footer() {
           <p className="mt-2 text-[13px] text-zinc-600">
             WCAG 2.2 AA. GDPR-aligned. EU data residency. Always free.
           </p>
+          <SourceForgeDownloadButton className="mt-4" />
         </div>
       </div>
       <div className="border-t border-zinc-900/10">

@@ -105,8 +105,8 @@ export function FacilitatorChecklist({ progress }: Props) {
       <ol className="mt-4 flex flex-col gap-3">
         <ChecklistRow
           done={progress.hasOrg}
-          label="Create your first organisation"
-          href="/app/orgs"
+          label="Create your first workshop"
+          href="/app/workshops"
           testid="onboarding-step-org"
           isNext={!progress.hasOrg}
         />
@@ -119,10 +119,10 @@ export function FacilitatorChecklist({ progress }: Props) {
           // it's a same-page nav; from elsewhere it routes to the first org.
           href={
             progress.firstOrgId
-              ? `/app/orgs/${progress.firstOrgId}${
+              ? `/app/workshops/${progress.firstOrgId}${
                   progress.hasSessionInAnyOrg ? '' : '?onboarding=create-session'
                 }`
-              : '/app/orgs'
+              : '/app/workshops'
           }
           testid="onboarding-step-session"
           isNext={progress.hasOrg && !progress.hasSessionInAnyOrg}
@@ -139,7 +139,7 @@ export function FacilitatorChecklist({ progress }: Props) {
               ? `/app/sessions/${progress.firstSessionId}${
                   progress.hasOwnedSessionDesign ? '' : '?onboarding=start-model'
                 }`
-              : '/app/orgs'
+              : '/app/workshops'
           }
           testid="onboarding-step-model"
           isNext={progress.hasOrg && progress.hasSessionInAnyOrg && !progress.hasOwnedSessionDesign}

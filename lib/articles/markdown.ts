@@ -1,5 +1,6 @@
-// Minimal, dependency-free markdown subset used by the admin preview and the
-// future public reader. Supports: ATX headings (# … ######), unordered lists
+// Minimal, dependency-free markdown subset used by the public reader's
+// transitional shim (ArticleProse) and the one-time conversion script
+// (scripts/convert-article-bodies-to-html.ts). Supports: ATX headings (# … ######), unordered lists
 // (-, *), ordered lists (1.), blockquotes (>), fenced code blocks (```), inline
 // code (`x`), bold (**x**), italic (*x* and _x_), links ([text](url)), and
 // paragraph wrapping. Everything else falls through as escaped text — so this
@@ -147,4 +148,24 @@ export function renderMarkdown(input: string): string {
   closeList();
 
   return out.join('\n');
+}
+
+// Article bodies support only h2/h3 headings (the WYSIWYG toolbar's range; the
+// article's sole h1 is the page title). Map legacy Markdown headings into that
+// range so sanitizeArticleHtml (which allows only h2/h3) never strips a heading
+// down to a bare text node: h1 -> h2, h4/h5/h6 -> h3. h2/h3 pass through.
+export function renderArticleMarkdown(markdown: string): string {
+  return renderMarkdown(markdown)
+    .replace(/<(\/?)h1>/g, '<$1h2>')
+    .replace(/<(\/?)h[456]>/g, '<$1h3>');
+}
+
+// Distinguishes an already-HTML article body from legacy Markdown during the
+// migration. Every body produced by the WYSIWYG editor and by renderArticleMarkdown
+// begins with a block-level tag (p / h1–h6 / ul / ol / blockquote / pre). Legacy
+// Markdown prose does not — even Markdown that opens with a stray '<' (e.g. "<3")
+// fails to match a real block tag, so it's still routed through the Markdown renderer.
+const ARTICLE_HTML_LEADING_TAG = /^\s*<(p|h[1-6]|ul|ol|blockquote|pre)\b/i;
+export function looksLikeArticleHtml(body: string): boolean {
+  return ARTICLE_HTML_LEADING_TAG.test(body);
 }

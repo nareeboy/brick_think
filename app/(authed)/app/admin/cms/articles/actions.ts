@@ -11,6 +11,7 @@ import {
 } from '@/lib/articles/constants';
 import { isValidSlug, slugify } from '@/lib/articles/slug';
 import { isValidPublishedDateInput, publishedDateToInstant } from '@/lib/articles/publishedDate';
+import { sanitizeArticleHtml } from '@/lib/articles/sanitizeHtml';
 import { ARTICLE_COVERS_BUCKET } from '@/lib/articles/storage';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Database } from '@/lib/db/types.generated';
@@ -40,7 +41,7 @@ interface ArticleInput {
   title: string;
   slug: string;
   excerpt: string;
-  bodyMarkdown: string;
+  bodyHtml: string;
   coverCreditName: string;
   coverCreditUrl: string;
   coverCreditSource: string;
@@ -91,7 +92,7 @@ function validate(input: ArticleInput): Code | null {
   const slug = input.slug.trim();
   if (!isValidSlug(slug)) return 'invalid_slug';
   if (input.excerpt.length > ARTICLE_EXCERPT_MAX) return 'invalid_excerpt';
-  if (input.bodyMarkdown.length > ARTICLE_BODY_MAX) return 'invalid_body';
+  if (input.bodyHtml.length > ARTICLE_BODY_MAX) return 'invalid_body';
   if (input.coverCreditName.length > CREDIT_NAME_MAX) return 'invalid_credit_url';
   if (input.coverCreditSource.length > CREDIT_SOURCE_MAX) return 'invalid_credit_url';
   if (!isValidExternalUrl(input.coverCreditUrl)) return 'invalid_credit_url';
@@ -118,7 +119,7 @@ function readInput(formData: FormData): ArticleInput {
     title,
     slug,
     excerpt: readField(formData, 'excerpt'),
-    bodyMarkdown: typeof bodyRaw === 'string' ? bodyRaw : '',
+    bodyHtml: typeof bodyRaw === 'string' ? sanitizeArticleHtml(bodyRaw) : '',
     coverCreditName: readField(formData, 'coverCreditName'),
     coverCreditUrl: readField(formData, 'coverCreditUrl'),
     coverCreditSource: readField(formData, 'coverCreditSource'),
@@ -166,7 +167,7 @@ export async function createArticleAction(formData: FormData): Promise<ArticleAc
       title: input.title.trim(),
       slug: input.slug,
       excerpt: input.excerpt.length === 0 ? null : input.excerpt,
-      body_markdown: input.bodyMarkdown,
+      body_html: input.bodyHtml,
       status: 'draft',
       author_profile_id: userId,
       ...creditFields(input),
@@ -207,7 +208,7 @@ export async function updateArticleAction(formData: FormData): Promise<ArticleAc
     title: input.title.trim(),
     slug: input.slug,
     excerpt: input.excerpt.length === 0 ? null : input.excerpt,
-    body_markdown: input.bodyMarkdown,
+    body_html: input.bodyHtml,
     ...creditFields(input),
   };
   if (input.publishedDate.length > 0 && existing.data.status === 'published') {

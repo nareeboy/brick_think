@@ -64,9 +64,9 @@ export function DangerZone({ email }: Props) {
         </p>
         <h2 className="text-[18px] font-semibold tracking-tight text-red-900">Delete account</h2>
         <p className="mt-1 text-[13px] leading-relaxed text-zinc-600">
-          Removes your sign-in credentials, your personal designs, and any organisations you own
-          alone. Sessions you facilitated in someone else&rsquo;s org stay there, with your name
-          shown as &ldquo;Former facilitator&rdquo;. This action cannot be undone.
+          Removes your sign-in credentials, your personal designs, and any workshops you own alone.
+          Sessions you facilitated in someone else&rsquo;s org stay there, with your name shown as
+          &ldquo;Former facilitator&rdquo;. This action cannot be undone.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export function DangerZone({ email }: Props) {
               </h2>
               <p className="text-[12px] leading-relaxed text-red-900/80">
                 This permanently removes your sign-in, your personal designs, and any sole-owner
-                organisations. There is no recovery.
+                workshops. There is no recovery.
               </p>
             </div>
 
@@ -104,7 +104,7 @@ export function DangerZone({ email }: Props) {
                   {blocked.reasons.map((row) => (
                     <li key={row.id}>
                       <a
-                        href={`/app/orgs/${row.id}`}
+                        href={`/app/workshops/${row.id}`}
                         className="font-semibold underline-offset-4 hover:underline"
                       >
                         {row.name}

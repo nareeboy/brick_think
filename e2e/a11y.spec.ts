@@ -30,8 +30,8 @@ function logViolations(routeName: string, violations: AxeViolations) {
 // Routes that need no dynamic ID — navigate directly.
 const STATIC_ROUTES = [
   { name: 'my-designs', path: '/app/my-designs' },
-  { name: 'orgs', path: '/app/orgs' },
-  { name: 'orgs/new', path: '/app/orgs/new' },
+  { name: 'workshops', path: '/app/workshops' },
+  { name: 'workshops/new', path: '/app/workshops/new' },
   { name: 'account', path: '/app/account' },
   { name: 'designs/trash', path: '/app/designs/trash' },
 ] as const;

@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { isEntitled } from '@/lib/billing/entitlements';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
+import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
 import { getCanvasImageBuffer } from '@/lib/reports/canvas-image';
 import { collectSession, orderedStages } from '@/lib/reports/collect';
 import { renderSessionReportPdf, type SessionReportData } from '@/lib/reports/pdf';
@@ -25,11 +26,11 @@ export type GenerateReportResult =
         | 'not_facilitator'
         | 'session_not_completed'
         | 'no_claude_key'
-        | 'decrypt_failed'
         | 'no_models'
         | 'claude_api_error'
         | 'render_failed'
-        | 'storage_upload_failed';
+        | 'storage_upload_failed'
+        | 'upgrade_required';
       message?: string;
     };
 
@@ -51,6 +52,7 @@ export async function generateSessionReport(sessionId: string): Promise<Generate
   if (!session) return { ok: false, code: 'not_facilitator' };
   if (session.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
   if (session.status !== 'completed') return { ok: false, code: 'session_not_completed' };
+  if (!(await isEntitled(user.id))) return { ok: false, code: 'upgrade_required' };
 
   const svc = getServiceSupabaseClient();
 
@@ -59,19 +61,8 @@ export async function generateSessionReport(sessionId: string): Promise<Generate
   const stagesPresent = orderedStages(collected.modelsByStage);
   if (stagesPresent.length === 0) return { ok: false, code: 'no_models' };
 
-  // The Anthropic key follows the facilitator, not the org. Each user pastes
-  // their own key on /app/account; the report bills against that user's
-  // Anthropic account.
-  const clientLookup = await getAnthropicClientForProfile(user.id);
+  const clientLookup = getServerAnthropicClient();
   if (!clientLookup.ok) {
-    if (clientLookup.code === 'decrypt_failed') {
-      // The stored ciphertext can't be decrypted under the current
-      // BRICKTHINK_ENCRYPTION_KEY — almost always because the key rotated
-      // since the row was written. The user needs to re-paste, but we
-      // surface it distinctly so the UI doesn't claim "no key" when there
-      // is one (just unreadable).
-      return { ok: false, code: 'decrypt_failed', message: clientLookup.message };
-    }
     return { ok: false, code: 'no_claude_key' };
   }
 
