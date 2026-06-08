@@ -18,6 +18,8 @@ async function requireUser() {
 }
 
 async function originUrl(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  if (configured && configured.length > 0) return configured.replace(/\/$/, '');
   const h = await headers();
   const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
   const proto = h.get('x-forwarded-proto') ?? 'http';
@@ -35,19 +37,25 @@ export async function createCheckoutSession(
 
   const prices = requireStripePriceIds();
   const price = interval === 'annual' ? prices.annual : prices.monthly;
-  const customerId = await getOrCreateStripeCustomer(user.id, user.email);
-  const origin = await originUrl();
 
-  const session = await getStripe().checkout.sessions.create({
-    mode: 'subscription',
-    customer: customerId,
-    line_items: [{ price, quantity: 1 }],
-    success_url: `${origin}/app/account/billing?success=1`,
-    cancel_url: `${origin}/app/account/billing?canceled=1`,
-    client_reference_id: user.id,
-  });
-  if (!session.url) return { ok: false, code: 'no_url' };
-  return { ok: true, url: session.url };
+  try {
+    const customerId = await getOrCreateStripeCustomer(user.id, user.email);
+    const origin = await originUrl();
+
+    const session = await getStripe().checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${origin}/app/account/billing?success=1`,
+      cancel_url: `${origin}/app/account/billing?canceled=1`,
+      client_reference_id: user.id,
+    });
+    if (!session.url) return { ok: false, code: 'no_url' };
+    return { ok: true, url: session.url };
+  } catch (err) {
+    console.error('[billing] checkout session failed', err);
+    return { ok: false, code: 'stripe_error' };
+  }
 }
 
 export async function createPortalSession(): Promise<BillingActionResult> {
@@ -62,10 +70,15 @@ export async function createPortalSession(): Promise<BillingActionResult> {
     .maybeSingle();
   if (!cust.data?.stripe_customer_id) return { ok: false, code: 'no_customer' };
 
-  const origin = await originUrl();
-  const portal = await getStripe().billingPortal.sessions.create({
-    customer: cust.data.stripe_customer_id,
-    return_url: `${origin}/app/account/billing`,
-  });
-  return { ok: true, url: portal.url };
+  try {
+    const origin = await originUrl();
+    const portal = await getStripe().billingPortal.sessions.create({
+      customer: cust.data.stripe_customer_id,
+      return_url: `${origin}/app/account/billing`,
+    });
+    return { ok: true, url: portal.url };
+  } catch (err) {
+    console.error('[billing] portal session failed', err);
+    return { ok: false, code: 'stripe_error' };
+  }
 }
