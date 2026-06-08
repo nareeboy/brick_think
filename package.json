@@ -104,8 +104,7 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "sharp",
-      "esbuild",
-      "supabase"
+      "esbuild"
     ]
   }
 }
