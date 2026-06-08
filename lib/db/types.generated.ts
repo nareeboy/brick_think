@@ -1452,38 +1452,6 @@ export type Database = {
           },
         ]
       }
-      user_integrations: {
-        Row: {
-          anthropic_api_key_ciphertext: string | null
-          anthropic_api_key_last4: string | null
-          anthropic_api_key_nonce: string | null
-          profile_id: string
-          updated_at: string
-        }
-        Insert: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
-          profile_id: string
-          updated_at?: string
-        }
-        Update: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
-          profile_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_integrations_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       yjs_documents: {
         Row: {
           bytes: number | null
