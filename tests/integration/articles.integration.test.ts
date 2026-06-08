@@ -115,7 +115,7 @@ describe('createArticleAction', () => {
       title: 'First article',
       slug: 'first-article',
       excerpt: 'A summary.',
-      body: '# Hello\n\nWorld.',
+      body: '<h2>Hello</h2><p>World.</p>',
     });
     let redirectUrl: string | null = null;
     try {
@@ -133,12 +133,42 @@ describe('createArticleAction', () => {
     const admin = getAdminClient();
     const row = await admin
       .from('articles')
-      .select('id, slug, title, status, body_markdown')
+      .select('id, slug, title, status, body_html')
       .eq('slug', 'first-article')
       .maybeSingle();
     expect(row.data?.status).toBe('draft');
     expect(row.data?.title).toBe('First article');
-    expect(row.data?.body_markdown).toBe('# Hello\n\nWorld.');
+    expect(row.data?.body_html).toBe('<h2>Hello</h2><p>World.</p>');
+    if (row.data) createdArticleIds.push(row.data.id);
+  });
+
+  test('strips dangerous markup from the stored body', async () => {
+    currentClient = await signInAs(fx.admin);
+    const fd = fdFor({
+      title: 'XSS',
+      slug: 'xss-test',
+      body: '<p>safe</p><script>alert(1)</script>',
+    });
+    let redirectUrl: string | null = null;
+    try {
+      await createArticleAction(fd);
+    } catch (err) {
+      const message = (err as Error).message;
+      if (message.startsWith('__redirect__:')) {
+        redirectUrl = message.slice('__redirect__:'.length);
+      } else {
+        throw err;
+      }
+    }
+    expect(redirectUrl).toMatch(/^\/app\/admin\/cms\/articles\//);
+
+    const admin = getAdminClient();
+    const row = await admin
+      .from('articles')
+      .select('id, body_html')
+      .eq('slug', 'xss-test')
+      .single();
+    expect(row.data?.body_html).toBe('<p>safe</p>');
     if (row.data) createdArticleIds.push(row.data.id);
   });
 
@@ -280,18 +310,14 @@ describe('updateArticleAction', () => {
       id,
       title: 'First article (edited)',
       slug: 'first-article',
-      body: '## Updated',
+      body: '<h2>Updated</h2>',
     });
     const result = await updateArticleAction(fd);
     expect(result.ok).toBe(true);
 
-    const verify = await admin
-      .from('articles')
-      .select('title, body_markdown')
-      .eq('id', id)
-      .single();
+    const verify = await admin.from('articles').select('title, body_html').eq('id', id).single();
     expect(verify.data?.title).toBe('First article (edited)');
-    expect(verify.data?.body_markdown).toBe('## Updated');
+    expect(verify.data?.body_html).toBe('<h2>Updated</h2>');
   });
 
   test('non-admin update via action is rejected with forbidden', async () => {

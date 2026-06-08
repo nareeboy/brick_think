@@ -4,11 +4,19 @@ import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useState } from 'react';
 
-// WYSIWYG editor for the role description. Emits HTML into a hidden input
-// (`name`) so the surrounding <form> submits it to the server action, which
-// sanitizes before storing (see lib/careers/sanitizeHtml.ts). The editor-side
-// link config is for UX only — the server sanitizer is the security gate.
-export function RichTextEditor({ name, initialHtml = '' }: { name: string; initialHtml?: string }) {
+// Shared WYSIWYG editor (TipTap). Emits HTML into a hidden input (`name`) so a
+// surrounding <form> submits it, and/or calls `onChange(html)` for controlled
+// consumers. Used by careers role descriptions, changelog entries, and articles.
+// The server-side sanitizer is the security gate (see each consumer's sanitizeHtml).
+export function RichTextEditor({
+  name,
+  initialHtml = '',
+  onChange,
+}: {
+  name: string;
+  initialHtml?: string;
+  onChange?: (html: string) => void;
+}) {
   const [html, setHtml] = useState(initialHtml);
 
   const editor = useEditor({
@@ -32,7 +40,9 @@ export function RichTextEditor({ name, initialHtml = '' }: { name: string; initi
     },
     onUpdate: ({ editor }) => {
       // An "empty" editor still serialises to "<p></p>"; store '' instead.
-      setHtml(editor.isEmpty ? '' : editor.getHTML());
+      const next = editor.isEmpty ? '' : editor.getHTML();
+      setHtml(next);
+      onChange?.(next);
     },
   });
 

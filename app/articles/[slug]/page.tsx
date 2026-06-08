@@ -45,7 +45,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
   const article = await getPublishedArticleBySlug(slug);
   if (!article) notFound();
 
-  const minutes = readingMinutes(article.bodyMarkdown);
+  const minutes = readingMinutes(article.bodyHtml.replace(/<[^>]+>/g, ' '));
 
   return (
     <MarketingShell>
@@ -54,7 +54,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         {article.coverImageUrl ? (
           <Cover url={article.coverImageUrl} alt={article.title} credit={article.coverCredit} />
         ) : null}
-        <Body markdown={article.bodyMarkdown} />
+        <Body html={article.bodyHtml} />
         <ArticleAuthorByline
           name={article.authorName}
           avatarUrl={article.authorAvatarUrl}
@@ -155,11 +155,11 @@ function Cover({ url, alt, credit }: { url: string; alt: string; credit: CoverCr
   );
 }
 
-function Body({ markdown }: { markdown: string }) {
+function Body({ html }: { html: string }) {
   return (
     <section className="border-b border-zinc-900/5">
       <div className="mx-auto max-w-3xl px-6 py-16 md:py-24">
-        <ArticleProse markdown={markdown} />
+        <ArticleProse html={html} />
       </div>
     </section>
   );

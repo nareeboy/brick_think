@@ -37,7 +37,7 @@ export type Database = {
       articles: {
         Row: {
           author_profile_id: string | null
-          body_markdown: string
+          body_html: string
           cover_credit_name: string | null
           cover_credit_source: string | null
           cover_credit_source_url: string | null
@@ -54,7 +54,7 @@ export type Database = {
         }
         Insert: {
           author_profile_id?: string | null
-          body_markdown?: string
+          body_html?: string
           cover_credit_name?: string | null
           cover_credit_source?: string | null
           cover_credit_source_url?: string | null
@@ -71,7 +71,7 @@ export type Database = {
         }
         Update: {
           author_profile_id?: string | null
-          body_markdown?: string
+          body_html?: string
           cover_credit_name?: string | null
           cover_credit_source?: string | null
           cover_credit_source_url?: string | null
