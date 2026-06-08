@@ -33,4 +33,9 @@ describe('isSubscriptionEntitled', () => {
   it('true for active with null period_end (treat as open)', () => {
     expect(isSubscriptionEntitled({ status: 'active', current_period_end: null }, NOW)).toBe(true);
   });
+  it('false when period_end exactly equals now (strict boundary)', () => {
+    expect(
+      isSubscriptionEntitled({ status: 'active', current_period_end: NOW.toISOString() }, NOW),
+    ).toBe(false);
+  });
 });
