@@ -2,18 +2,30 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TIERS, TIER_RANK, hasTierRank, priceCatalog, priceIdFor, tierMetaFor } from './plans';
 
 const ENV_KEYS = [
-  'STRIPE_PRICE_SESSION_REPORT_ONCE', 'STRIPE_PRICE_SESSION_REPORT_MONTHLY', 'STRIPE_PRICE_SESSION_REPORT_YEARLY',
-  'STRIPE_PRICE_CLIENT_READY_ONCE', 'STRIPE_PRICE_CLIENT_READY_MONTHLY', 'STRIPE_PRICE_CLIENT_READY_YEARLY',
-  'STRIPE_PRICE_FULL_FINDINGS_ONCE', 'STRIPE_PRICE_FULL_FINDINGS_MONTHLY', 'STRIPE_PRICE_FULL_FINDINGS_YEARLY',
+  'STRIPE_PRICE_SESSION_REPORT_ONCE',
+  'STRIPE_PRICE_SESSION_REPORT_MONTHLY',
+  'STRIPE_PRICE_SESSION_REPORT_YEARLY',
+  'STRIPE_PRICE_CLIENT_READY_ONCE',
+  'STRIPE_PRICE_CLIENT_READY_MONTHLY',
+  'STRIPE_PRICE_CLIENT_READY_YEARLY',
+  'STRIPE_PRICE_FULL_FINDINGS_ONCE',
+  'STRIPE_PRICE_FULL_FINDINGS_MONTHLY',
+  'STRIPE_PRICE_FULL_FINDINGS_YEARLY',
 ];
 
 describe('plans catalog', () => {
   const saved: Record<string, string | undefined> = {};
   beforeEach(() => {
-    ENV_KEYS.forEach((k, i) => { saved[k] = process.env[k]; process.env[k] = `price_${i}`; });
+    ENV_KEYS.forEach((k, i) => {
+      saved[k] = process.env[k];
+      process.env[k] = `price_${i}`;
+    });
   });
   afterEach(() => {
-    ENV_KEYS.forEach((k) => { if (saved[k] === undefined) delete process.env[k]; else process.env[k] = saved[k]; });
+    ENV_KEYS.forEach((k) => {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    });
   });
 
   it('orders tiers and ranks them', () => {

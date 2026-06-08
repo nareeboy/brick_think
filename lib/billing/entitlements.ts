@@ -17,7 +17,10 @@ export function subscriptionTierFromRow(row: SubscriptionRow | null, now: Date):
   if (!row) return null;
   if (!ENTITLED_STATUSES.has(row.status)) return null;
   if (!row.tier || !TIER_SET.has(row.tier)) return null;
-  if (row.current_period_end !== null && new Date(row.current_period_end).getTime() <= now.getTime())
+  if (
+    row.current_period_end !== null &&
+    new Date(row.current_period_end).getTime() <= now.getTime()
+  )
     return null;
   return row.tier as Tier;
 }

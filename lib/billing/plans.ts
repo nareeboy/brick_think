@@ -102,10 +102,7 @@ const TIER_META: Record<Tier, TierMeta> = {
     key: 'client_ready',
     name: 'Client-Ready',
     tagline: 'A branded deliverable for the facilitator billing a client.',
-    bullets: [
-      'Everything in Session Report',
-      "Fully white-labelled — your logo, colours, name",
-    ],
+    bullets: ['Everything in Session Report', 'Fully white-labelled — your logo, colours, name'],
     prices: {
       once: { amount: 45, stripeUnitAmount: 4500 },
       monthly: { amount: 119, stripeUnitAmount: 11900 },
