@@ -4,7 +4,6 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { isBillingEnabled } from '@/lib/billing/env';
 import { subscriptionTierFromRow } from '@/lib/billing/entitlements';
 import { type Tier } from '@/lib/billing/plans';
-import { PageBanner } from '@/components/app/PageBanner';
 import BillingActions from './BillingActions';
 
 export const metadata: Metadata = { title: 'Billing' };
@@ -41,9 +40,8 @@ export default async function BillingPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <PageBanner eyebrow="Account" title="Billing" maxWidthClassName="max-w-[640px]" />
-      <div className="mx-auto max-w-[640px] px-5 py-10">
+    <div className="mx-auto max-w-[1200px] px-5 py-10">
+      <div className="max-w-[640px]">
         {!billingOn ? (
           <p className="text-sm text-zinc-600">
             Billing is not enabled on this instance — all features are available for free.
@@ -52,6 +50,6 @@ export default async function BillingPage() {
           <BillingActions currentTier={currentTier} status={status} renewsLabel={renewsLabel} />
         )}
       </div>
-    </main>
+    </div>
   );
 }

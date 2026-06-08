@@ -1,18 +1,13 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
-import { isBillingEnabled } from '@/lib/billing/env';
-import { subscriptionTier } from '@/lib/billing/entitlements';
-
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
-import { BillingCard } from './BillingCard';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
@@ -33,67 +28,50 @@ export default async function AccountPage() {
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, created_at, avatar_url, a11y_preferences')
+    .select('full_name, email, avatar_url, a11y_preferences')
     .eq('id', user.id)
     .single();
   if (profileRes.error) {
     throw new Error(`Failed to load profile: ${profileRes.error.message}`);
   }
 
-  const billingEnabled = isBillingEnabled();
-  const tier = billingEnabled ? await subscriptionTier(user.id) : null;
-
   const email = profileRes.data.email;
   const fullName = profileRes.data.full_name?.trim() || null;
   const initialAvatarUrl = profileRes.data.avatar_url ?? null;
-  const createdAt = new Date(profileRes.data.created_at);
-  const createdLabel = createdAt.toLocaleDateString('en-GB', {
-    month: 'long',
-    year: 'numeric',
-  });
 
   return (
-    <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <PageBanner
-        eyebrow="BrickThink"
-        title="Account"
-        titleTestId="account-heading"
-        subtitle={`Joined ${createdLabel}.`}
-      />
-      <div className="mx-auto max-w-[1200px] px-5 py-10">
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-          {/* Profile — the anchor tile, two columns wide. */}
-          <section className="rounded-2xl border border-zinc-900/10 bg-white p-6 lg:col-span-2">
-            <AccountForm
-              initialFullName={fullName}
-              email={email}
-              initialAvatarUrl={initialAvatarUrl}
-            />
-          </section>
+    <div className="mx-auto max-w-[1200px] px-5 py-10">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        {/* Profile — the anchor tile, two columns wide. */}
+        <section className="rounded-2xl border border-zinc-900/10 bg-white p-6 lg:col-span-2">
+          <AccountForm
+            initialFullName={fullName}
+            email={email}
+            initialAvatarUrl={initialAvatarUrl}
+          />
+        </section>
 
-          {/* Right rail — stacked preference + walkthrough + tip-jar tiles. */}
-          <div className="flex flex-col gap-4">
-            <A11yPreferencesCard
-              initialColourblindMode={
-                normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
-              }
-            />
-            <ReplayWalkthroughCard />
-            <BuyMeACoffeeCard />
-            {billingEnabled ? <BillingCard billingEnabled={billingEnabled} tier={tier} /> : null}
-          </div>
+        {/* Right rail — stacked preference + walkthrough + tip-jar tiles. */}
+        <div className="flex flex-col gap-4">
+          <A11yPreferencesCard
+            initialColourblindMode={
+              normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
+            }
+          />
+          <ReplayWalkthroughCard />
+          <BuyMeACoffeeCard />
+        </div>
 
-          {/* Contribution — full-width tile so its label/CTA row has room to breathe. */}
-          <div className="lg:col-span-3">
-            <ContributionCard />
-          </div>
+        {/* Contribution — full-width tile so its label/CTA row has room to breathe. */}
+        <div className="lg:col-span-3">
+          <ContributionCard />
+        </div>
 
-          {/* Danger zone — full-width footer tile. */}
-          <div className="lg:col-span-3">
-            <DangerZone email={email} />
-          </div>
+        {/* Danger zone — full-width footer tile. */}
+        <div className="lg:col-span-3">
+          <DangerZone email={email} />
         </div>
       </div>
-    </main>
+    </div>
   );
 }
