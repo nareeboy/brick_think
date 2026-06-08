@@ -24,7 +24,7 @@ export function requireStripeEnv(): StripeEnv {
   return { secretKey };
 }
 
-export function getStripeWebhookSecret(): string {
+export function requireStripeWebhookSecret(): string {
   const secret = readServer('STRIPE_WEBHOOK_SECRET');
   if (!secret) throw new Error('Missing STRIPE_WEBHOOK_SECRET');
   return secret;
@@ -35,7 +35,7 @@ export interface StripePriceIds {
   annual: string;
 }
 
-export function getStripePriceIds(): StripePriceIds {
+export function requireStripePriceIds(): StripePriceIds {
   const monthly = readServer('STRIPE_PRICE_MONTHLY');
   const annual = readServer('STRIPE_PRICE_ANNUAL');
   if (!monthly || !annual) throw new Error('Missing STRIPE_PRICE_MONTHLY / STRIPE_PRICE_ANNUAL');

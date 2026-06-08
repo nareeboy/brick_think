@@ -1,10 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { isBillingEnabled } from './env';
 
 const ORIG = { ...process.env };
 afterEach(() => {
   process.env = { ...ORIG };
-  vi.resetModules();
 });
 
 describe('isBillingEnabled', () => {
