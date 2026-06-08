@@ -1,7 +1,9 @@
 // scripts/convert-article-bodies-to-html.ts
 // One-time, idempotent: converts any article whose body is still Markdown
-// (does not start with '<') into sanitized HTML. Safe to re-run — already-HTML
-// rows are skipped. Run once per environment AFTER the rename migration.
+// into sanitized HTML. Safe to re-run — already-HTML rows are skipped (detected
+// via looksLikeArticleHtml, which requires a real block-level opening tag so
+// Markdown that starts with a stray '<' such as "<3 great ideas" is correctly
+// converted rather than skipped). Run once per environment AFTER the rename migration.
 // LOCAL example (never point this at prod casually):
 //   NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 \
 //   SUPABASE_SERVICE_ROLE_KEY=<local service_role key> \
@@ -10,7 +12,7 @@ import ws from 'ws';
 
 import { createClient } from '@supabase/supabase-js';
 
-import { renderArticleMarkdown } from '../lib/articles/markdown';
+import { looksLikeArticleHtml, renderArticleMarkdown } from '../lib/articles/markdown';
 import { sanitizeArticleHtml } from '../lib/articles/sanitizeHtml';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -34,7 +36,7 @@ async function main() {
   let failed = 0;
   for (const row of data ?? []) {
     const body = (row.body_html ?? '') as string;
-    if (body.trimStart().startsWith('<')) continue; // already HTML
+    if (looksLikeArticleHtml(body)) continue; // already HTML
     try {
       const html = sanitizeArticleHtml(renderArticleMarkdown(body));
       const { error: upErr } = await db

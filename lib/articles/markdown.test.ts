@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { renderArticleMarkdown, renderMarkdown } from './markdown';
+import { looksLikeArticleHtml, renderArticleMarkdown, renderMarkdown } from './markdown';
 import { sanitizeArticleHtml } from './sanitizeHtml';
 
 describe('renderMarkdown', () => {
@@ -64,5 +64,39 @@ describe('renderArticleMarkdown', () => {
   it('produces idempotency-safe output when piped through sanitizeArticleHtml', () => {
     const html = sanitizeArticleHtml(renderArticleMarkdown('# Title\n\nBody'));
     expect(html.trimStart().startsWith('<h2>')).toBe(true);
+  });
+});
+
+describe('looksLikeArticleHtml', () => {
+  it('recognises <p> as HTML', () => {
+    expect(looksLikeArticleHtml('<p>hi</p>')).toBe(true);
+  });
+  it('recognises <h2> as HTML', () => {
+    expect(looksLikeArticleHtml('<h2>Title</h2>')).toBe(true);
+  });
+  it('recognises <ul> with leading whitespace as HTML', () => {
+    expect(looksLikeArticleHtml('  <ul><li>x</li></ul>')).toBe(true);
+  });
+  it('recognises <blockquote> as HTML', () => {
+    expect(looksLikeArticleHtml('<blockquote>q</blockquote>')).toBe(true);
+  });
+  it('rejects Markdown heading', () => {
+    expect(looksLikeArticleHtml('# Heading')).toBe(false);
+  });
+  it('rejects plain prose', () => {
+    expect(looksLikeArticleHtml('Just prose.')).toBe(false);
+  });
+  it('rejects stray < followed by number — the key edge case', () => {
+    expect(looksLikeArticleHtml('<3 great ideas')).toBe(false);
+  });
+  it('rejects stray < followed by digits — numeric comparison prose', () => {
+    expect(looksLikeArticleHtml('<10ms is fast')).toBe(false);
+  });
+  it('rejects empty string', () => {
+    expect(looksLikeArticleHtml('')).toBe(false);
+  });
+  it('round-trip: converted output of "<3 great **ideas**" is recognised as HTML (idempotent)', () => {
+    const converted = sanitizeArticleHtml(renderArticleMarkdown('<3 great **ideas**'));
+    expect(looksLikeArticleHtml(converted)).toBe(true);
   });
 });
