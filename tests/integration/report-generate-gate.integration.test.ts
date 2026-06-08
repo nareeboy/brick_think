@@ -138,11 +138,13 @@ describe('generateSessionReport entitlement gate', () => {
 
     const res = await generateSessionReport(fx.session.id);
 
-    // The gate admitted the facilitator. The call will fail downstream
-    // (no models in the test session → `no_models`, or no Anthropic key →
-    // `no_claude_key`) but NOT with `upgrade_required`.
+    // The gate admitted the facilitator. The call then fails downstream at the
+    // first post-gate check — the test session has no models, so `collectSession`
+    // yields zero stages and the action returns `no_models` (which sits before
+    // the Anthropic-key lookup). Asserting the exact code proves the call passed
+    // the gate AND reached the model check, not merely that it wasn't denied.
     expect(res.ok).toBe(false);
     if (res.ok) throw new Error('expected !ok');
-    expect(res.code).not.toBe('upgrade_required');
+    expect(res.code).toBe('no_models');
   });
 });
