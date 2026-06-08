@@ -74,7 +74,10 @@ export default function BillingActions({ currentTier, status, renewsLabel }: Pro
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         {allTierMeta().map((meta) => (
-          <div key={meta.key} className="rounded-2xl border border-zinc-900/10 bg-white p-5">
+          <div
+            key={meta.key}
+            className="flex flex-col rounded-2xl border border-zinc-900/10 bg-white p-5"
+          >
             <h3 className="text-[15px] font-semibold text-zinc-950">{meta.name}</h3>
             <p className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
               €{meta.prices[interval].amount}
@@ -87,11 +90,14 @@ export default function BillingActions({ currentTier, status, renewsLabel }: Pro
                 <li key={b}>• {b}</li>
               ))}
             </ul>
+            {/* Spacer absorbs the equal-height grid slack so every Subscribe button
+                lines up at the bottom regardless of how many bullets a tier has. */}
+            <div className="grow" />
             <button
               type="button"
               disabled={pending}
               onClick={() => go(() => createSubscriptionCheckout(meta.key, interval))}
-              className="mt-4 w-full cursor-pointer rounded-full bg-zinc-900 px-5 py-2.5 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
+              className="mt-6 w-full cursor-pointer rounded-full bg-zinc-900 px-5 py-2.5 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
             >
               Subscribe
             </button>
