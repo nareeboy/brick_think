@@ -31,6 +31,7 @@ export const PLAY_SERIOUS_ARTICLE_URL =
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
   { href: '/articles', label: 'Articles' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
   { href: '/help', label: 'Help' },
   { href: '/contact', label: 'Contact' },
@@ -249,6 +250,11 @@ export async function Footer() {
             <li>
               <Link href="/#open-source" className="hover:text-zinc-950">
                 Open source
+              </Link>
+            </li>
+            <li>
+              <Link href="/pricing" className="hover:text-zinc-950">
+                Pricing
               </Link>
             </li>
             <li>

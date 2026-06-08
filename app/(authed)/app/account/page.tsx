@@ -8,8 +8,12 @@ import { getServiceSupabaseClient } from '@/lib/db/service';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
+import { isBillingEnabled } from '@/lib/billing/env';
+import { isEntitled } from '@/lib/billing/entitlements';
+
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
+import { BillingCard } from './BillingCard';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
@@ -46,6 +50,9 @@ export default async function AccountPage() {
     .select('anthropic_api_key_last4, updated_at')
     .eq('profile_id', user.id)
     .maybeSingle();
+
+  const billingEnabled = isBillingEnabled();
+  const entitled = billingEnabled ? await isEntitled(user.id) : false;
 
   const email = profileRes.data.email;
   const fullName = profileRes.data.full_name?.trim() || null;
@@ -86,6 +93,8 @@ export default async function AccountPage() {
           existingLast4={integration?.anthropic_api_key_last4 ?? null}
           existingUpdatedAt={integration?.updated_at ?? null}
         />
+
+        <BillingCard billingEnabled={billingEnabled} entitled={entitled} />
 
         <ContributionCard />
 
