@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState, useTransition, type ChangeEvent } from 'react';
+import { useState, useTransition, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { ARTICLE_BODY_MAX, ARTICLE_EXCERPT_MAX, ARTICLE_TITLE_MAX } from '@/lib/articles/constants';
-import { renderMarkdown } from '@/lib/articles/markdown';
 import { isValidSlug, slugify } from '@/lib/articles/slug';
 import type { ArticleDetail } from '@/lib/articles/types';
+import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 
 import {
   createArticleAction,
@@ -50,7 +50,7 @@ export function ArticleEditor({ mode, article }: Props) {
   const [slug, setSlug] = useState(article?.slug ?? '');
   const [slugTouched, setSlugTouched] = useState(Boolean(article?.slug));
   const [excerpt, setExcerpt] = useState(article?.excerpt ?? '');
-  const [body, setBody] = useState(article?.bodyMarkdown ?? '');
+  const [body, setBody] = useState(article?.bodyHtml ?? '');
   const [creditName, setCreditName] = useState(article?.coverCredit?.name ?? '');
   const [creditUrl, setCreditUrl] = useState(article?.coverCredit?.url ?? '');
   const [creditSource, setCreditSource] = useState(article?.coverCredit?.source ?? '');
@@ -76,8 +76,6 @@ export function ArticleEditor({ mode, article }: Props) {
 
   const slugLooksValid = slug.length === 0 || isValidSlug(slug);
   const titleLooksValid = title.trim().length > 0 && title.length <= ARTICLE_TITLE_MAX;
-
-  const previewHtml = useMemo(() => renderMarkdown(body), [body]);
 
   const status = article?.status ?? 'draft';
 
@@ -263,18 +261,9 @@ export function ArticleEditor({ mode, article }: Props) {
 
           <label className="block space-y-1">
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              Body (Markdown)
+              Body
             </span>
-            <textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              maxLength={ARTICLE_BODY_MAX}
-              rows={20}
-              placeholder={
-                '# Heading\n\nWrite the article in Markdown. **Bold**, *italic*, `code`, lists, links.'
-              }
-              className="block w-full resize-y rounded-xl border border-zinc-200 bg-white px-4 py-3 font-mono text-[13px] leading-6 text-zinc-900 outline-none focus:border-zinc-400"
-            />
+            <RichTextEditor name="body" initialHtml={article?.bodyHtml ?? ''} onChange={setBody} />
             <span className="block text-[11px] text-zinc-500">
               {body.length.toLocaleString()}/{ARTICLE_BODY_MAX.toLocaleString()}
             </span>
@@ -355,21 +344,6 @@ export function ArticleEditor({ mode, article }: Props) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-zinc-900/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              Preview
-            </div>
-            {body.trim().length === 0 ? (
-              <p className="text-[13px] text-zinc-500">
-                Write something to see the rendered output.
-              </p>
-            ) : (
-              <div
-                className="prose prose-zinc max-w-none text-[14px] leading-7"
-                dangerouslySetInnerHTML={{ __html: previewHtml }}
-              />
-            )}
-          </div>
         </div>
       </div>
     </div>
