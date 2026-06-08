@@ -7,7 +7,7 @@
 // Vitest isolates test files per worker, so the in-file env mutation cannot
 // bleed into other files.
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type Anthropic from '@anthropic-ai/sdk';
 
@@ -121,6 +121,15 @@ beforeEach(async () => {
   currentClient = await signInAs(fx.facilitator);
 });
 
+afterEach(async () => {
+  // Drop any subscription row a test inserted so it cannot leak into later
+  // tests regardless of execution order.
+  await getAdminClient()
+    .from('facilitator_subscriptions')
+    .delete()
+    .eq('profile_id', fx.facilitator.id);
+});
+
 // --- Helpers ----------------------------------------------------------------
 
 function stubAnthropicClient(cleanedText: string): Anthropic {
@@ -170,7 +179,7 @@ describe('saveNarration cleanup gate (billing enabled)', () => {
 
   it('entitled facilitator → cleanup runs', async () => {
     // Insert an active subscription row for the facilitator via the admin client.
-    await getAdminClient()
+    const subUpsert = await getAdminClient()
       .from('facilitator_subscriptions')
       .upsert(
         {
@@ -182,6 +191,7 @@ describe('saveNarration cleanup gate (billing enabled)', () => {
         },
         { onConflict: 'profile_id' },
       );
+    expect(subUpsert.error).toBeNull();
 
     vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
       ok: true,
