@@ -25,6 +25,17 @@ export async function getOrCreateStripeCustomer(
   const insert = await svc
     .from('stripe_customers')
     .insert({ profile_id: facilitatorId, stripe_customer_id: customer.id });
-  if (insert.error) throw new Error(`stripe_customers insert failed: ${insert.error.message}`);
+  if (insert.error) {
+    // A concurrent checkout for the same facilitator may have inserted first
+    // (profile_id PK / stripe_customer_id unique). Re-select and use the winner
+    // rather than failing — keeps the checkout entry point idempotent.
+    const raced = await svc
+      .from('stripe_customers')
+      .select('stripe_customer_id')
+      .eq('profile_id', facilitatorId)
+      .maybeSingle();
+    if (raced.data?.stripe_customer_id) return raced.data.stripe_customer_id;
+    throw new Error(`stripe_customers insert failed: ${insert.error.message}`);
+  }
   return customer.id;
 }
