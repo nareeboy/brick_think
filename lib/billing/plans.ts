@@ -1,4 +1,8 @@
-import 'server-only';
+// NOT server-only: this module is dual-use. Tier display metadata (allTierMeta,
+// tierMetaFor) is consumed by client components (the billing UI), while the
+// price-id catalog (priceCatalog/priceIdFor) is read server-side. It holds no
+// secrets — Stripe price IDs are not sensitive and STRIPE_SECRET_KEY never lives
+// here — so it is safe to bundle. (entitlements.ts keeps `server-only`: it does DB I/O.)
 
 export const TIERS = ['session_report', 'client_ready', 'full_findings'] as const;
 export type Tier = (typeof TIERS)[number];
