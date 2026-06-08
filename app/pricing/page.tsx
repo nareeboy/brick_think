@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: 'Pricing',
   description:
-    'BrickThink is free, open-source and self-hostable. Only two hosted features carry a subscription, to cover their real per-use cost. This is cost-recovery, not a tier wall.',
+    'BrickThink is free, open-source and self-hostable. A handful of hosted services we produce for you carry a subscription, to cover their real cost to run. This is cost-recovery, not a tier wall.',
 };
 
 type Faq = { q: string; a: string };
@@ -22,8 +22,8 @@ const FAQS: Faq[] = [
     a: 'Yes. The whole app is open source under Apache 2.0. Every stage, every feature on the canvas, no caps. Run it on our hosted site or your own server — the tool itself never costs anything.',
   },
   {
-    q: 'Then why charge for two features?',
-    a: 'Two features cost us money every time they run. PDF session reports burn server compute to render. Automatic transcript cleanup spends Claude tokens. We would rather cover that honestly with a small subscription than quietly degrade the free tool to pay for it.',
+    q: 'Then what do you charge for?',
+    a: 'Four services we produce and deliver on the hosted site: PDF session reports, automatic transcript cleanup, fully white-labelled reports, and a full written report with our findings from the session. Each one costs us money every time we run it, so each carries a subscription rather than quietly degrading the free tool to pay for it.',
   },
   {
     q: 'What will it cost?',
@@ -31,11 +31,11 @@ const FAQS: Faq[] = [
   },
   {
     q: 'Can I self-host to avoid paying?',
-    a: 'Yes. Run your own copy, bring your own Claude key, and you get everything — including PDF reports and transcript cleanup — for free. The subscription only exists on the hosted site at brickthink.io, where we carry the running cost for you.',
+    a: 'You can self-host the whole tool for free and run unlimited sessions — that part is yours under Apache 2.0. The four paid services are different: they are things we produce and deliver for you, so they live only on the hosted site at brickthink.io and are not part of the self-hosted tool.',
   },
   {
     q: 'Is there a free trial?',
-    a: 'No free trial. The rest of BrickThink is already free to use as much as you like, so you can judge the tool fully before you ever pay. The two paid features are the only thing behind a subscription.',
+    a: 'No free trial. The rest of BrickThink is already free to use as much as you like, so you can judge the tool fully before you ever pay. The paid services are the only thing behind a subscription.',
   },
 ];
 
@@ -45,7 +45,6 @@ export default function PricingPage() {
       <Hero />
       <CostRecoveryBand />
       <PaidFeaturesSection />
-      <FreeVsHostedSection />
       <FaqSection />
       <CtaBand />
     </MarketingShell>
@@ -64,12 +63,12 @@ function Hero() {
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[78px]">
             Free tool.
             <br />
-            Two features that <span className="text-[#c0613d]">cost us money</span>.
+            Four services that <span className="text-[#c0613d]">cost us money</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
-            BrickThink is free, open-source (Apache 2.0) and yours to self-host. Only two hosted
-            features carry a real per-use cost to run — so only those two carry a subscription.
-            Everything else stays free, for everyone, forever.
+            BrickThink is free, open-source (Apache 2.0) and yours to self-host. We also produce
+            four hosted services for you — each with a real cost to run — so each carries a
+            subscription. The tool itself stays free, for everyone, forever.
           </p>
         </div>
         <aside className="md:col-span-4">
@@ -77,8 +76,8 @@ function Hero() {
             {[
               ['Free', 'The whole app'],
               ['Apache 2.0', 'Code licence'],
-              ['2 features', 'Paid, on brickthink.io'],
-              ['Self-host', 'Everything, free'],
+              ['4 services', 'Paid, on brickthink.io'],
+              ['Self-host', 'The tool, free'],
             ].map(([val, label]) => (
               <div key={label}>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
@@ -107,10 +106,11 @@ function CostRecoveryBand() {
         </div>
         <div className="md:col-span-8">
           <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[34px]">
-            Everything stays free. We only charge for the two features with a real{' '}
-            <span className="text-[#d8a85d]">per-use cost</span> — the compute to render a PDF and
-            the Claude tokens to tidy a transcript — and only on the hosted site. Self-hosters who
-            bring their own Claude key get all of it for nothing.
+            The tool stays free. We only charge for the four services we produce for you, each with
+            a real <span className="text-[#d8a85d]">cost to run</span> — from the compute to render
+            a PDF to the AI tokens behind a written report — and only on the hosted site. Self-host
+            the tool and you run unlimited sessions free; the delivered services live on
+            brickthink.io.
           </p>
         </div>
       </div>
@@ -156,18 +156,69 @@ function SparkleGlyph({ className = '' }: { className?: string }) {
   );
 }
 
+function TagGlyph({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M3.6 11.4 11.4 3.6a2 2 0 0 1 1.4-.6H19a2 2 0 0 1 2 2v6.2a2 2 0 0 1-.6 1.4l-7.8 7.8a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8z" />
+      <path d="M16.4 7.6h.01" />
+    </svg>
+  );
+}
+
+function InsightGlyph({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m20 20-4.2-4.2" />
+      <path d="M8 10.5h5" />
+      <path d="M8 8h5" />
+      <path d="M8 13h3" />
+    </svg>
+  );
+}
+
 const PAID_FEATURES = [
   {
-    label: 'Paid feature 01',
+    label: 'Paid service 01',
     icon: PdfGlyph,
     title: 'PDF session reports',
     body: 'A clean, server-rendered PDF summary of a finished session — bricks, stories and the shared model — ready to send round the room.',
   },
   {
-    label: 'Paid feature 02',
+    label: 'Paid service 02',
     icon: SparkleGlyph,
     title: 'Automatic transcript cleanup',
-    body: 'Claude tidies your narration transcripts into readable notes, so spoken stories become something you can actually reuse.',
+    body: 'AI tidies your narration transcripts into readable notes, so spoken stories become something you can actually reuse.',
+  },
+  {
+    label: 'Paid service 03',
+    icon: TagGlyph,
+    title: 'Fully white-labelled reports',
+    body: 'A session report rendered entirely in your own brand — your logo, colours and name, none of ours — ready to hand to a client as your own deliverable.',
+  },
+  {
+    label: 'Paid service 04',
+    icon: InsightGlyph,
+    title: 'Full report with findings',
+    body: 'A complete written report of a workshop: the shared model and the stories, plus our suggestions and findings drawn from what actually happened in the room.',
   },
 ];
 
@@ -178,15 +229,15 @@ function PaidFeaturesSection() {
         <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              The two paid features
+              The four paid services
             </p>
             <h2 className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-              The only two things behind a subscription.
+              Everything we charge for, in one place.
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Both have a real marginal cost every time they run. On the hosted site, the subscription
-            covers it. Self-host and they are free.
+            Each one costs us money every time we run it, so the subscription on the hosted site
+            covers it. They are services we deliver — not part of the self-hosted tool.
           </p>
         </div>
 
@@ -216,92 +267,6 @@ function PaidFeaturesSection() {
         </ul>
       </div>
     </section>
-  );
-}
-
-const FREE_POINTS = [
-  'The whole app — every stage, every canvas feature, no caps.',
-  'Self-host your own copy under Apache 2.0, on any Node host.',
-  'Bring your own Claude key and the paid features are free too.',
-];
-
-const PAID_POINTS = [
-  'PDF session reports and automatic transcript cleanup.',
-  'Monthly or annual — annual works out at roughly two months free.',
-  'Per facilitator, no free trial, priced at launch once we see real usage.',
-];
-
-function FreeVsHostedSection() {
-  return (
-    <section className="border-b border-zinc-900/5">
-      <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-          What is free, what is paid
-        </p>
-        <h2 className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-          Free everywhere. Paid only on brickthink.io.
-        </h2>
-
-        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-          <div className="rounded-[28px] border border-zinc-900/10 bg-white p-7">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              Free, everywhere
-            </p>
-            <h3 className="mt-2 font-display text-[24px] font-medium leading-tight tracking-tight text-zinc-950">
-              The whole tool, for everyone.
-            </h3>
-            <ul className="mt-6 space-y-4 border-t border-zinc-900/10 pt-6">
-              {FREE_POINTS.map((p) => (
-                <li
-                  key={p}
-                  className="flex items-start gap-3 text-[14px] leading-relaxed text-zinc-700"
-                >
-                  <CheckGlyph className="mt-0.5 h-4 w-4 shrink-0 text-[#c0613d]" />
-                  <span className="max-w-[48ch]">{p}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="rounded-[28px] border border-zinc-900/10 bg-white p-7">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              Paid, on brickthink.io
-            </p>
-            <h3 className="mt-2 font-display text-[24px] font-medium leading-tight tracking-tight text-zinc-950">
-              The two cost-recovery features.
-            </h3>
-            <ul className="mt-6 space-y-4 border-t border-zinc-900/10 pt-6">
-              {PAID_POINTS.map((p) => (
-                <li
-                  key={p}
-                  className="flex items-start gap-3 text-[14px] leading-relaxed text-zinc-700"
-                >
-                  <CheckGlyph className="mt-0.5 h-4 w-4 shrink-0 text-[#c0613d]" />
-                  <span className="max-w-[48ch]">{p}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CheckGlyph({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M20 6 9 17l-5-5" />
-    </svg>
   );
 }
 
@@ -351,14 +316,15 @@ function CtaBand() {
           </div>
           <div className="relative max-w-xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              Free to start · paid only when it costs us
+              Free to start · paid only for what we deliver
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[48px]">
-              Start free. Add the rest when you need it.
+              Start free. Add a service when you need it.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              Make an account, run a session, use the whole tool. The two paid features are there in
-              your account when a PDF report or a tidy transcript is worth it to you.
+              Make an account, run a session, use the whole tool. The paid services are there in
+              your account whenever a report, a tidy transcript or a white-label deliverable is
+              worth it to you.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
