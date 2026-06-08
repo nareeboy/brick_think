@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(root),
+      'server-only': resolve(root, 'tests/stubs/server-only.ts'),
     },
   },
   test: {
