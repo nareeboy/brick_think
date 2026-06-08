@@ -11,11 +11,8 @@ import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
 import { getCombinedNarrationsForModelIds } from '@/lib/sessions/modelNarration';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
-import { getLatestSessionReport } from '../report-actions';
-
 import { DeleteSessionButton } from './DeleteSessionButton';
 import { FacilitatorNotesCard } from './FacilitatorNotesCard';
-import GenerateReportButton from './GenerateReportButton';
 import { PreSessionChecklist } from './PreSessionChecklist';
 import { RosterButton } from '@/components/session/RosterButton';
 import { SessionRoleChip } from './SessionRoleChip';
@@ -409,14 +406,6 @@ export default async function SessionDetailPage({
       : null;
   }
 
-  // Hydrate the Generate report button's initial state from the most recent
-  // session_reports row. Only fetch for facilitators on completed sessions —
-  // those are the only users who'll see the button.
-  const reportLatest =
-    canManageSession && session.status === 'completed'
-      ? await getLatestSessionReport(session.id)
-      : null;
-
   // Private notes are facilitator-only (not org-admin), and the helper itself
   // enforces that gate — call it for the facilitator's view and skip the
   // round-trip otherwise.
@@ -476,20 +465,6 @@ export default async function SessionDetailPage({
               <>
                 {session.join_code ? (
                   <RosterButton sessionId={session.id} joinCode={session.join_code} />
-                ) : null}
-                {session.status === 'completed' ? (
-                  <GenerateReportButton
-                    sessionId={session.id}
-                    initialPdfUrl={reportLatest && reportLatest.ok ? reportLatest.pdfUrl : null}
-                    initialGeneratedAt={
-                      reportLatest && reportLatest.ok ? reportLatest.generatedAt : null
-                    }
-                    initialError={
-                      reportLatest && reportLatest.ok && reportLatest.status === 'failed'
-                        ? reportLatest.errorMessage
-                        : undefined
-                    }
-                  />
                 ) : null}
                 <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
               </>
