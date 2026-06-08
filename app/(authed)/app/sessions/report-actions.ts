@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { isEntitled } from '@/lib/billing/entitlements';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
@@ -29,7 +30,8 @@ export type GenerateReportResult =
         | 'no_models'
         | 'claude_api_error'
         | 'render_failed'
-        | 'storage_upload_failed';
+        | 'storage_upload_failed'
+        | 'upgrade_required';
       message?: string;
     };
 
@@ -51,6 +53,7 @@ export async function generateSessionReport(sessionId: string): Promise<Generate
   if (!session) return { ok: false, code: 'not_facilitator' };
   if (session.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
   if (session.status !== 'completed') return { ok: false, code: 'session_not_completed' };
+  if (!(await isEntitled(user.id))) return { ok: false, code: 'upgrade_required' };
 
   const svc = getServiceSupabaseClient();
 

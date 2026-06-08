@@ -115,6 +115,8 @@ function messageForCode(code: string, fallback?: string): string {
       return "Couldn't render the PDF — please contact support.";
     case 'storage_upload_failed':
       return 'Upload failed — try again.';
+    case 'upgrade_required':
+      return 'Subscribe to generate PDF reports.';
     default:
       return fallback ?? 'Something went wrong.';
   }
