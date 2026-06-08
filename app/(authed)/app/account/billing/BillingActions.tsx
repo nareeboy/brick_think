@@ -6,7 +6,7 @@ import { createCheckoutSession, createPortalSession, type BillingActionResult } 
 interface Props {
   entitled: boolean;
   status: string | null;
-  periodEnd: string | null;
+  renewsLabel: string | null;
 }
 
 const ERROR_COPY: Record<string, string> = {
@@ -17,7 +17,7 @@ const ERROR_COPY: Record<string, string> = {
   stripe_error: 'Something went wrong talking to our payment provider. Please try again.',
 };
 
-export default function BillingActions({ entitled, status, periodEnd }: Props) {
+export default function BillingActions({ entitled, status, renewsLabel }: Props) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ export default function BillingActions({ entitled, status, periodEnd }: Props) {
       <div className="space-y-4">
         <p className="text-sm text-zinc-700">
           Status: <span className="font-medium">{status}</span>
-          {periodEnd ? ` · renews ${new Date(periodEnd).toLocaleDateString()}` : ''}
+          {renewsLabel ? ` · renews ${renewsLabel}` : ''}
         </p>
         <button
           type="button"
