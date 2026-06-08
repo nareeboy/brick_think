@@ -343,7 +343,6 @@ export function ArticleEditor({ mode, article }: Props) {
               </label>
             </div>
           </div>
-
         </div>
       </div>
     </div>

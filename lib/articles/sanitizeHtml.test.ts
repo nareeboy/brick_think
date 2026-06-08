@@ -3,7 +3,8 @@ import { sanitizeArticleHtml } from './sanitizeHtml';
 
 describe('sanitizeArticleHtml', () => {
   it('keeps allowed formatting tags', () => {
-    const html = '<p><strong>Bold</strong> and <em>italic</em></p><h2>Heading</h2><ul><li>One</li></ul>';
+    const html =
+      '<p><strong>Bold</strong> and <em>italic</em></p><h2>Heading</h2><ul><li>One</li></ul>';
     expect(sanitizeArticleHtml(html)).toBe(html);
   });
 

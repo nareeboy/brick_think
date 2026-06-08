@@ -37,7 +37,10 @@ async function main() {
     if (body.trimStart().startsWith('<')) continue; // already HTML
     try {
       const html = sanitizeArticleHtml(renderArticleMarkdown(body));
-      const { error: upErr } = await db.from('articles').update({ body_html: html }).eq('id', row.id);
+      const { error: upErr } = await db
+        .from('articles')
+        .update({ body_html: html })
+        .eq('id', row.id);
       if (upErr) throw upErr;
       converted++;
       // eslint-disable-next-line no-console -- intentional status output for a manually-run build script

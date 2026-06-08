@@ -315,11 +315,7 @@ describe('updateArticleAction', () => {
     const result = await updateArticleAction(fd);
     expect(result.ok).toBe(true);
 
-    const verify = await admin
-      .from('articles')
-      .select('title, body_html')
-      .eq('id', id)
-      .single();
+    const verify = await admin.from('articles').select('title, body_html').eq('id', id).single();
     expect(verify.data?.title).toBe('First article (edited)');
     expect(verify.data?.body_html).toBe('<h2>Updated</h2>');
   });
