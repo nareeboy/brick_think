@@ -84,8 +84,9 @@ test.describe('billing — open-source / self-host guarantee', () => {
     await page.goto('/app/account');
 
     // BillingCard returns null when billing is disabled — neither its
-    // "Subscription" heading nor its View plans / Manage subscription CTA exist.
-    await expect(page.getByRole('heading', { name: 'Subscription' })).toHaveCount(0);
+    // "Subscription" eyebrow (a <p>, not a heading) nor its View plans /
+    // Manage subscription CTA link exist.
+    await expect(page.getByText('Subscription', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'View plans' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Manage subscription' })).toHaveCount(0);
   });
