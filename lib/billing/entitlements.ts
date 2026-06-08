@@ -45,7 +45,6 @@ export async function sessionPurchaseTier(
 ): Promise<Tier | null> {
   if (!isBillingEnabled()) return 'full_findings';
   const svc = createServiceRoleSupabaseClient();
-  // @ts-expect-error session_purchases table not yet in generated types — added in Task 3 typegen
   const { data, error } = await svc
     .from('session_purchases')
     .select('tier, status')

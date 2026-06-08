@@ -320,6 +320,7 @@ export type Database = {
           profile_id: string
           status: string
           stripe_subscription_id: string
+          tier: string | null
           updated_at: string
         }
         Insert: {
@@ -327,6 +328,7 @@ export type Database = {
           profile_id: string
           status: string
           stripe_subscription_id: string
+          tier?: string | null
           updated_at?: string
         }
         Update: {
@@ -334,6 +336,7 @@ export type Database = {
           profile_id?: string
           status?: string
           stripe_subscription_id?: string
+          tier?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1004,6 +1007,54 @@ export type Database = {
           },
           {
             foreignKeyName: "session_participants_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      session_purchases: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          session_id: string
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          session_id: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          session_id?: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_purchases_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_purchases_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
