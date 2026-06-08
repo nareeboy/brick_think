@@ -8,7 +8,15 @@ import { useState } from 'react';
 // (`name`) so the surrounding <form> submits it to the server action, which
 // sanitizes before storing (see lib/careers/sanitizeHtml.ts). The editor-side
 // link config is for UX only — the server sanitizer is the security gate.
-export function RichTextEditor({ name, initialHtml = '' }: { name: string; initialHtml?: string }) {
+export function RichTextEditor({
+  name,
+  initialHtml = '',
+  onChange,
+}: {
+  name: string;
+  initialHtml?: string;
+  onChange?: (html: string) => void;
+}) {
   const [html, setHtml] = useState(initialHtml);
 
   const editor = useEditor({
@@ -32,7 +40,9 @@ export function RichTextEditor({ name, initialHtml = '' }: { name: string; initi
     },
     onUpdate: ({ editor }) => {
       // An "empty" editor still serialises to "<p></p>"; store '' instead.
-      setHtml(editor.isEmpty ? '' : editor.getHTML());
+      const next = editor.isEmpty ? '' : editor.getHTML();
+      setHtml(next);
+      onChange?.(next);
     },
   });
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-import { RichTextEditor } from '@/components/careers/RichTextEditor';
+import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { createRoleAction, updateRoleAction, type RoleActionResult } from './actions';
 
 interface RoleEditorProps {

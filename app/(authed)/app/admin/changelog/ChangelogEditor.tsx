@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 
-import { RichTextEditor } from '@/components/careers/RichTextEditor';
+import { RichTextEditor } from '@/components/richtext/RichTextEditor';
 import { CHANGELOG_CATEGORIES, CATEGORY_LABELS } from '@/lib/changelog/constants';
 import type { AdminChangelogEntry } from '@/lib/changelog/types';
 
