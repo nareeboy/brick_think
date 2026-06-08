@@ -29,15 +29,3 @@ export function requireStripeWebhookSecret(): string {
   if (!secret) throw new Error('Missing STRIPE_WEBHOOK_SECRET');
   return secret;
 }
-
-export interface StripePriceIds {
-  monthly: string;
-  annual: string;
-}
-
-export function requireStripePriceIds(): StripePriceIds {
-  const monthly = readServer('STRIPE_PRICE_MONTHLY');
-  const annual = readServer('STRIPE_PRICE_ANNUAL');
-  if (!monthly || !annual) throw new Error('Missing STRIPE_PRICE_MONTHLY / STRIPE_PRICE_ANNUAL');
-  return { monthly, annual };
-}
