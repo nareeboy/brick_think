@@ -78,11 +78,18 @@ export interface TierPrice {
   amount: number; // EUR, whole units
   stripeUnitAmount: number; // cents, for the Stripe setup runbook
 }
+/** A fuller explanation of one capability, shown in the "Full details" modal. */
+export interface TierDetail {
+  title: string;
+  body: string;
+}
 export interface TierMeta {
   key: Tier;
   name: string;
   tagline: string;
   bullets: string[];
+  /** Long-form explanation of what the tier includes (cumulative). */
+  details: TierDetail[];
   prices: Record<BillingMode, TierPrice>;
 }
 
@@ -96,6 +103,20 @@ const TIER_META: Record<Tier, TierMeta> = {
       'Automatic transcript cleanup',
       'No Anthropic key setup — BrickThink covers the AI cost',
     ],
+    details: [
+      {
+        title: 'Hosted PDF session report',
+        body: 'A polished, server-rendered PDF of the finished session — the shared model, the bricks and the stories behind them — generated on our infrastructure and ready to download and send round the room.',
+      },
+      {
+        title: 'Automatic transcript cleanup',
+        body: 'The spoken narration captured during the session is tidied by AI into clear, readable notes, so the stories your participants told become something you can actually reuse rather than a raw transcript.',
+      },
+      {
+        title: 'No API key to manage',
+        body: 'BrickThink runs the AI on its own key and covers the cost, so there is no Anthropic key to create, configure or pay for separately. Everything just works on the hosted site.',
+      },
+    ],
     prices: {
       once: { amount: 9, stripeUnitAmount: 900 },
       monthly: { amount: 29, stripeUnitAmount: 2900 },
@@ -107,6 +128,16 @@ const TIER_META: Record<Tier, TierMeta> = {
     name: 'Client-Ready',
     tagline: 'A branded deliverable for the facilitator billing a client.',
     bullets: ['Everything in Session Report', 'Fully white-labelled — your logo, colours, name'],
+    details: [
+      {
+        title: 'Everything in Session Report',
+        body: 'The hosted PDF report, automatic transcript cleanup and managed AI — all included, with nothing to set up.',
+      },
+      {
+        title: 'Fully white-labelled report',
+        body: 'The report is rendered entirely in your own brand — your logo, your colours and your name, none of ours — so you can hand it to a client as your own deliverable rather than something that looks like it came from us.',
+      },
+    ],
     prices: {
       once: { amount: 45, stripeUnitAmount: 4500 },
       monthly: { amount: 119, stripeUnitAmount: 11900 },
@@ -120,6 +151,16 @@ const TIER_META: Record<Tier, TierMeta> = {
     bullets: [
       'Everything in Client-Ready',
       'Full written report with synthesised findings & suggestions',
+    ],
+    details: [
+      {
+        title: 'Everything in Client-Ready',
+        body: 'The white-labelled report, plus everything in Session Report — the hosted PDF, transcript cleanup and managed AI.',
+      },
+      {
+        title: 'Full written findings & suggestions',
+        body: 'A complete written report of the workshop: the shared model and the stories behind it, plus synthesised findings and concrete suggestions drawn from what actually happened in the room — the analysis you would otherwise write up by hand.',
+      },
     ],
     prices: {
       once: { amount: 60, stripeUnitAmount: 6000 },

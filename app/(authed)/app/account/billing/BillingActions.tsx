@@ -7,6 +7,7 @@ import {
   type BillingActionResult,
 } from './actions';
 import { allTierMeta, tierMetaFor, type Tier } from '@/lib/billing/plans';
+import { TierDetailsModal } from './TierDetailsModal';
 
 interface Props {
   currentTier: Tier | null;
@@ -26,6 +27,7 @@ export default function BillingActions({ currentTier, status, renewsLabel }: Pro
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly');
+  const [detailsTier, setDetailsTier] = useState<Tier | null>(null);
 
   function go(action: () => Promise<BillingActionResult>) {
     setError(null);
@@ -128,11 +130,22 @@ export default function BillingActions({ currentTier, status, renewsLabel }: Pro
                   Subscribe
                 </button>
               )}
+              <button
+                type="button"
+                onClick={() => setDetailsTier(meta.key)}
+                className="mt-3 w-full cursor-pointer text-center text-[13px] text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+              >
+                Full details
+              </button>
             </div>
           );
         })}
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+      {detailsTier ? (
+        <TierDetailsModal tier={detailsTier} onClose={() => setDetailsTier(null)} />
+      ) : null}
     </div>
   );
 }
