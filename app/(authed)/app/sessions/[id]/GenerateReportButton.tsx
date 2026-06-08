@@ -44,7 +44,7 @@ export default function GenerateReportButton({
       } else if (res.code === 'upgrade_required') {
         setShowUpgrade(true);
       } else if (res.code === 'no_claude_key') {
-        setError('You have no Anthropic key yet.');
+        setError('AI report generation is not configured on this server.');
       } else {
         setError(messageForCode(res.code, res.message));
       }
@@ -98,12 +98,7 @@ export default function GenerateReportButton({
             ) : null}
             {error ? (
               <p className="text-xs text-red-700" role="status">
-                {error}{' '}
-                {error.includes('no Anthropic key') ? (
-                  <a href="/app/account" className="underline">
-                    Add one
-                  </a>
-                ) : null}
+                {error}
               </p>
             ) : null}
           </div>
@@ -119,8 +114,6 @@ function messageForCode(code: string, fallback?: string): string {
       return 'End the session first.';
     case 'no_models':
       return 'This session has no models to include.';
-    case 'decrypt_failed':
-      return "Your stored key can't be decrypted (encryption key changed?). Re-paste it on /app/account.";
     case 'claude_api_error':
       return `Anthropic error: ${fallback ?? 'unknown'}.`;
     case 'render_failed':
