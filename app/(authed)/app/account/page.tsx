@@ -71,7 +71,7 @@ export default async function AccountPage() {
             />
           </section>
 
-          {/* Right rail — stacked preference + walkthrough tiles. */}
+          {/* Right rail — stacked preference + walkthrough + tip-jar tiles. */}
           <div className="flex flex-col gap-4">
             <A11yPreferencesCard
               initialColourblindMode={
@@ -79,20 +79,18 @@ export default async function AccountPage() {
               }
             />
             <ReplayWalkthroughCard />
+            <BuyMeACoffeeCard />
             {billingEnabled ? (
               <BillingCard billingEnabled={billingEnabled} entitled={entitled} />
             ) : null}
           </div>
 
-          {/* Contribution — wide tile. */}
-          <div className="lg:col-span-2">
+          {/* Contribution — full-width tile so its label/CTA row has room to breathe. */}
+          <div className="lg:col-span-3">
             <ContributionCard />
           </div>
 
-          {/* Tip jar — single tile beside Contribute. */}
-          <BuyMeACoffeeCard />
-
-          {/* Danger zone — full-bleed footer tile. */}
+          {/* Danger zone — full-width footer tile. */}
           <div className="lg:col-span-3">
             <DangerZone email={email} />
           </div>
