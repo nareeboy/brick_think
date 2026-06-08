@@ -101,7 +101,7 @@ function FeaturedOnBand() {
               alt="LEGO® SERIOUS PLAY® Community DACH"
               width={596}
               height={216}
-              className="h-14 w-auto object-contain"
+              className="h-[calc(var(--spacing)*28)] w-auto object-contain"
             />
             <span className="sr-only">— visit the LEGO® SERIOUS PLAY® Community DACH website</span>
           </a>
@@ -116,7 +116,7 @@ function FeaturedOnBand() {
               alt="Play Serious Akademie"
               width={340}
               height={156}
-              className="h-14 w-auto object-contain"
+              className="h-[calc(var(--spacing)*28)] w-auto object-contain"
             />
             <span className="sr-only">
               — read the Play Serious Akademie article about BrickThink
