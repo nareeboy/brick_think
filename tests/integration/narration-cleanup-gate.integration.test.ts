@@ -63,13 +63,13 @@ vi.mock('@/lib/integrations/anthropic', async (orig) => {
   const actual = (await orig()) as typeof AnthropicModule;
   return {
     ...actual,
-    getAnthropicClientForProfile: vi.fn(),
+    getServerAnthropicClient: vi.fn(),
   };
 });
 
 // Import AFTER mocks are registered.
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
-import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
+import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
 
 // --- Fixture ----------------------------------------------------------------
 
@@ -117,7 +117,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  vi.mocked(getAnthropicClientForProfile).mockReset();
+  vi.mocked(getServerAnthropicClient).mockReset();
   currentClient = await signInAs(fx.facilitator);
 });
 
@@ -149,7 +149,7 @@ describe('saveNarration cleanup gate (billing enabled)', () => {
     // No facilitator_subscriptions row exists for the facilitator by default.
     // The Anthropic mock is a SUCCEEDING client — to PROVE the gate, not the
     // key, is what skips cleanup.
-    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
+    vi.mocked(getServerAnthropicClient).mockReturnValue({
       ok: true,
       client: stubAnthropicClient('Polished text.'),
     });
@@ -164,7 +164,7 @@ describe('saveNarration cleanup gate (billing enabled)', () => {
     expect(res.transcript).toBe('raw spoken words');
 
     // The gate short-circuits before the key lookup.
-    expect(vi.mocked(getAnthropicClientForProfile)).not.toHaveBeenCalled();
+    expect(vi.mocked(getServerAnthropicClient)).not.toHaveBeenCalled();
 
     // DB row must reflect raw text + cleaned=false.
     const row = await getAdminClient()
@@ -193,7 +193,7 @@ describe('saveNarration cleanup gate (billing enabled)', () => {
       );
     expect(subUpsert.error).toBeNull();
 
-    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
+    vi.mocked(getServerAnthropicClient).mockReturnValue({
       ok: true,
       client: stubAnthropicClient('Polished text.'),
     });
@@ -205,6 +205,6 @@ describe('saveNarration cleanup gate (billing enabled)', () => {
     expect(res.cleaned).toBe(true);
     expect(res.cleanupStatus).toBe('succeeded');
     expect(res.transcript).toBe('Polished text.');
-    expect(vi.mocked(getAnthropicClientForProfile)).toHaveBeenCalledWith(fx.facilitator.id);
+    expect(vi.mocked(getServerAnthropicClient)).toHaveBeenCalled();
   });
 });

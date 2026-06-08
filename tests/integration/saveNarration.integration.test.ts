@@ -38,14 +38,14 @@ vi.mock('@/lib/integrations/anthropic', async (orig) => {
   const actual = (await orig()) as typeof AnthropicModule;
   return {
     ...actual,
-    getAnthropicClientForProfile: vi.fn(),
+    getServerAnthropicClient: vi.fn(),
   };
 });
 
 // Import AFTER mocks are registered (Vitest hoists `vi.mock` but ergonomic
 // to keep the convention consistent with the other integration suites).
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
-import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
+import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
 
 // --- Fixture ------------------------------------------------------------
 
@@ -91,7 +91,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  vi.mocked(getAnthropicClientForProfile).mockReset();
+  vi.mocked(getServerAnthropicClient).mockReset();
   currentClient = await signInAs(fx.owner);
 });
 
@@ -111,7 +111,7 @@ function stubAnthropicClient(cleanedText: string): Anthropic {
 
 describe('saveNarration (integration)', () => {
   it('owner save, no Anthropic key → raw stored, cleanupStatus skipped', async () => {
-    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
+    vi.mocked(getServerAnthropicClient).mockReturnValue({
       ok: false,
       code: 'no_claude_key',
     });
@@ -135,7 +135,7 @@ describe('saveNarration (integration)', () => {
   });
 
   it('owner save, key present + cleanup succeeds → cleaned text stored, succeeded', async () => {
-    vi.mocked(getAnthropicClientForProfile).mockResolvedValue({
+    vi.mocked(getServerAnthropicClient).mockReturnValue({
       ok: true,
       client: stubAnthropicClient('Spoken words here.'),
     });
@@ -174,9 +174,8 @@ describe('saveNarration (integration)', () => {
     expect(res).toEqual({ ok: false, code: 'not_owner' });
   });
 
-  it("participant records → the SESSION FACILITATOR's key does the cleanup", async () => {
-    // A participant (non-facilitator) owns their own canvas in fx.session, which
-    // is facilitated by fx.owner. Only the facilitator has a key.
+  it('a participant recording in a facilitated session gets cleanup (server key)', async () => {
+    // A participant (non-facilitator) owns their own canvas in fx.session.
     const admin = getAdminClient();
     const m = await admin
       .from('models')
@@ -192,14 +191,12 @@ describe('saveNarration (integration)', () => {
     if (m.error || !m.data) throw new Error(`participant model insert failed: ${m.error?.message}`);
     const participantModelId = m.data.id as string;
 
-    // Resolve key by profile id: only the facilitator (fx.owner) has one.
-    vi.mocked(getAnthropicClientForProfile).mockImplementation(async (profileId: string) =>
-      profileId === fx.owner.id
-        ? { ok: true as const, client: stubAnthropicClient('Polished via facilitator key.') }
-        : { ok: false as const, code: 'no_claude_key' as const },
-    );
+    // With a single server key there is no per-profile lookup.
+    vi.mocked(getServerAnthropicClient).mockReturnValue({
+      ok: true,
+      client: stubAnthropicClient('Polished via server key.'),
+    });
 
-    // The recorder is the participant, who has no key of their own.
     currentClient = await signInAs(fx.nonOwner);
     const res = await saveNarration(participantModelId, 'attendee telling their story', 1500);
 
@@ -207,9 +204,6 @@ describe('saveNarration (integration)', () => {
     if (!res.ok) throw new Error('expected ok');
     expect(res.cleaned).toBe(true);
     expect(res.cleanupStatus).toBe('succeeded');
-    expect(res.transcript).toBe('Polished via facilitator key.');
-    // The key looked up must be the facilitator's, never the recorder's.
-    expect(vi.mocked(getAnthropicClientForProfile)).toHaveBeenCalledWith(fx.owner.id);
-    expect(vi.mocked(getAnthropicClientForProfile)).not.toHaveBeenCalledWith(fx.nonOwner.id);
+    expect(res.transcript).toBe('Polished via server key.');
   });
 });
