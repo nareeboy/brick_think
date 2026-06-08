@@ -8,6 +8,9 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function periodEndIso(sub: Stripe.Subscription): string | null {
+  // Single-Price subscription (checkout creates exactly one line item), so the
+  // billing period lives on the first/only item. Stripe v22 moved current_period_end
+  // off the top-level Subscription onto each item.
   const epochSeconds = sub.items.data[0]?.current_period_end;
   return typeof epochSeconds === 'number' ? new Date(epochSeconds * 1000).toISOString() : null;
 }
@@ -24,6 +27,10 @@ async function upsertSubscription(sub: Stripe.Subscription): Promise<void> {
       .select('profile_id')
       .eq('stripe_customer_id', customerId)
       .maybeSingle();
+    if (cust.error) {
+      // Transient read failure — throw so Stripe retries rather than dropping the event.
+      throw new Error(`stripe_customers lookup failed: ${cust.error.message}`);
+    }
     profileId = cust.data?.profile_id ?? null;
   }
   if (!profileId) {
@@ -65,9 +72,14 @@ export async function POST(request: Request) {
     switch (event.type) {
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-      case 'customer.subscription.deleted':
-        await upsertSubscription(event.data.object as Stripe.Subscription);
+      case 'customer.subscription.deleted': {
+        const evtSub = event.data.object as Stripe.Subscription;
+        // Events can arrive out of order; re-fetch current state so a stale
+        // 'updated' delivered after 'deleted' can't resurrect entitlement.
+        const sub: Stripe.Subscription = await getStripe().subscriptions.retrieve(evtSub.id);
+        await upsertSubscription(sub);
         break;
+      }
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.subscription) {
