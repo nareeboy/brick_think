@@ -8,7 +8,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
 import { isBillingEnabled } from '@/lib/billing/env';
-import { isEntitled } from '@/lib/billing/entitlements';
+import { subscriptionTier } from '@/lib/billing/entitlements';
 
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
@@ -41,7 +41,7 @@ export default async function AccountPage() {
   }
 
   const billingEnabled = isBillingEnabled();
-  const entitled = billingEnabled ? await isEntitled(user.id) : false;
+  const tier = billingEnabled ? await subscriptionTier(user.id) : null;
 
   const email = profileRes.data.email;
   const fullName = profileRes.data.full_name?.trim() || null;
@@ -80,9 +80,7 @@ export default async function AccountPage() {
             />
             <ReplayWalkthroughCard />
             <BuyMeACoffeeCard />
-            {billingEnabled ? (
-              <BillingCard billingEnabled={billingEnabled} entitled={entitled} />
-            ) : null}
+            {billingEnabled ? <BillingCard billingEnabled={billingEnabled} tier={tier} /> : null}
           </div>
 
           {/* Contribution — full-width tile so its label/CTA row has room to breathe. */}

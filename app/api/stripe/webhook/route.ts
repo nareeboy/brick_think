@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { isBillingEnabled, requireStripeWebhookSecret } from '@/lib/billing/env';
 import { getStripe } from '@/lib/billing/stripe';
 import { createServiceRoleSupabaseClient } from '@/lib/db/serviceRole';
+import { tierForPriceId } from '@/lib/billing/plans';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -38,11 +39,15 @@ async function upsertSubscription(sub: Stripe.Subscription): Promise<void> {
     return;
   }
 
+  const priceId = sub.items.data[0]?.price?.id ?? null;
+  const tier = priceId ? (tierForPriceId(priceId)?.tier ?? null) : null;
+
   const upsert = await svc.from('facilitator_subscriptions').upsert(
     {
       profile_id: profileId,
       stripe_subscription_id: sub.id,
       status: sub.status,
+      tier,
       current_period_end: periodEndIso(sub),
       updated_at: new Date().toISOString(),
     },
@@ -50,6 +55,38 @@ async function upsertSubscription(sub: Stripe.Subscription): Promise<void> {
   );
   if (upsert.error) {
     throw new Error(`facilitator_subscriptions upsert failed: ${upsert.error.message}`);
+  }
+}
+
+async function recordSessionPurchase(session: Stripe.Checkout.Session): Promise<void> {
+  const md = session.metadata ?? {};
+  const profileId =
+    (typeof md.profile_id === 'string' && md.profile_id) || session.client_reference_id || null;
+  const sessionId = typeof md.session_id === 'string' ? md.session_id : null;
+  const tier = typeof md.tier === 'string' ? md.tier : null;
+  if (!profileId || !sessionId || !tier) {
+    console.error('[stripe webhook] payment checkout missing metadata', session.id);
+    return;
+  }
+  const paymentIntentId =
+    typeof session.payment_intent === 'string'
+      ? session.payment_intent
+      : (session.payment_intent?.id ?? null);
+
+  const svc = createServiceRoleSupabaseClient();
+  const upsert = await svc.from('session_purchases').upsert(
+    {
+      profile_id: profileId,
+      session_id: sessionId,
+      tier,
+      status: 'paid',
+      stripe_checkout_session_id: session.id,
+      stripe_payment_intent_id: paymentIntentId,
+    },
+    { onConflict: 'profile_id,session_id' },
+  );
+  if (upsert.error) {
+    throw new Error(`session_purchases upsert failed: ${upsert.error.message}`);
   }
 }
 
@@ -82,19 +119,25 @@ export async function POST(request: Request) {
       }
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === 'payment') {
+          await recordSessionPurchase(session);
+          break;
+        }
         if (session.subscription) {
           const subId =
             typeof session.subscription === 'string'
               ? session.subscription
               : session.subscription.id;
           const sub: Stripe.Subscription = await getStripe().subscriptions.retrieve(subId);
-          // Persist profile_id onto the subscription metadata so later events resolve directly.
           if (
             session.client_reference_id &&
             sub.metadata?.profile_id !== session.client_reference_id
           ) {
             await getStripe().subscriptions.update(subId, {
-              metadata: { profile_id: session.client_reference_id },
+              metadata: {
+                profile_id: session.client_reference_id,
+                ...(sub.metadata?.tier ? { tier: sub.metadata.tier } : {}),
+              },
             });
             sub.metadata = { ...sub.metadata, profile_id: session.client_reference_id };
           }

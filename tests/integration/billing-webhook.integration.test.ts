@@ -2,17 +2,18 @@
 // contract on `facilitator_subscriptions`.
 //
 // Verifies:
-//   * An active subscription row inserted by the service role reads back as
-//     entitled via the pure `isSubscriptionEntitled` rule.
-//   * A canceled subscription reads back as not entitled.
+//   * An active subscription row inserted by the service role resolves to its
+//     tier via the pure `subscriptionTierFromRow` rule.
+//   * A canceled subscription resolves to null (no tier).
+//   * `tierForPriceId` maps a configured Stripe price id to its {tier, mode}.
 //   * RLS: an authenticated user may SELECT only their own row.
 //   * RLS: a different authenticated user cannot see another user's row.
 //   * RLS: no authenticated client may INSERT a subscription row.
 //
 // Note: the local test stack runs with billing DISABLED (BILLING_ENABLED is
-// not set in .env.test), so `isEntitled()` short-circuits to `true` and cannot
-// exercise the DB-read path. This suite tests the DB layer + pure entitlement
-// rule + RLS directly instead.
+// not set in .env.test), so `isEntitled()` short-circuits and cannot exercise
+// the DB-read path. This suite tests the DB layer + pure entitlement rule +
+// RLS directly instead.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -23,7 +24,8 @@ import {
   signInAs,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-import { isSubscriptionEntitled } from '@/lib/billing/entitlements';
+import { subscriptionTierFromRow } from '@/lib/billing/entitlements';
+import { tierForPriceId } from '@/lib/billing/plans';
 
 describe('billing: facilitator_subscriptions entitlement + RLS', () => {
   const admin = getAdminClient();
@@ -42,13 +44,14 @@ describe('billing: facilitator_subscriptions entitlement + RLS', () => {
     await cleanupTestUser(other.id);
   });
 
-  it('active subscription within period reads back as entitled', async () => {
+  it('active subscription within period resolves to its tier', async () => {
     const future = new Date(Date.now() + 30 * 86400_000).toISOString();
     const up = await admin.from('facilitator_subscriptions').upsert(
       {
         profile_id: owner.id,
         stripe_subscription_id: `sub_test_${owner.id.slice(0, 8)}`,
         status: 'active',
+        tier: 'client_ready',
         current_period_end: future,
         updated_at: new Date().toISOString(),
       },
@@ -58,23 +61,39 @@ describe('billing: facilitator_subscriptions entitlement + RLS', () => {
 
     const { data } = await admin
       .from('facilitator_subscriptions')
-      .select('status, current_period_end')
+      .select('status, current_period_end, tier')
       .eq('profile_id', owner.id)
       .maybeSingle();
-    expect(isSubscriptionEntitled(data, new Date())).toBe(true);
+    expect(subscriptionTierFromRow(data, new Date())).toBe('client_ready');
   });
 
-  it('canceled subscription reads back as not entitled', async () => {
+  it('canceled subscription resolves to null', async () => {
     await admin
       .from('facilitator_subscriptions')
       .update({ status: 'canceled' })
       .eq('profile_id', owner.id);
     const { data } = await admin
       .from('facilitator_subscriptions')
-      .select('status, current_period_end')
+      .select('status, current_period_end, tier')
       .eq('profile_id', owner.id)
       .maybeSingle();
-    expect(isSubscriptionEntitled(data, new Date())).toBe(false);
+    expect(subscriptionTierFromRow(data, new Date())).toBeNull();
+  });
+
+  it('tierForPriceId maps a configured price id to its tier', () => {
+    const ENV_KEY = 'STRIPE_PRICE_CLIENT_READY_MONTHLY';
+    const saved = process.env[ENV_KEY];
+    try {
+      process.env[ENV_KEY] = 'price_test_cr_monthly';
+      expect(tierForPriceId('price_test_cr_monthly')).toEqual({
+        tier: 'client_ready',
+        mode: 'monthly',
+      });
+      expect(tierForPriceId('price_unknown')).toBeNull();
+    } finally {
+      if (saved === undefined) delete process.env[ENV_KEY];
+      else process.env[ENV_KEY] = saved;
+    }
   });
 
   it('RLS: owner can read their own subscription row', async () => {

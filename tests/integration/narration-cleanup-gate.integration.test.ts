@@ -186,6 +186,7 @@ describe('saveNarration cleanup gate (billing enabled)', () => {
           profile_id: fx.facilitator.id,
           stripe_subscription_id: `sub_gate_${fx.facilitator.id.slice(0, 8)}`,
           status: 'active',
+          tier: 'session_report',
           current_period_end: new Date(Date.now() + 30 * 86400_000).toISOString(),
           updated_at: new Date().toISOString(),
         },

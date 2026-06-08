@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { isEntitled } from '@/lib/billing/entitlements';
+import { entitledTier, hasTierRank } from '@/lib/billing/entitlements';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
@@ -52,7 +52,10 @@ export async function generateSessionReport(sessionId: string): Promise<Generate
   if (!session) return { ok: false, code: 'not_facilitator' };
   if (session.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
   if (session.status !== 'completed') return { ok: false, code: 'session_not_completed' };
-  if (!(await isEntitled(user.id))) return { ok: false, code: 'upgrade_required' };
+  // A per-session unlock for THIS session satisfies the gate (entitledTier passes sessionId),
+  // as does any active subscription at session_report tier or above.
+  const tier = await entitledTier(user.id, sessionId);
+  if (!hasTierRank(tier, 'session_report')) return { ok: false, code: 'upgrade_required' };
 
   const svc = getServiceSupabaseClient();
 

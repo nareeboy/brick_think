@@ -1,10 +1,15 @@
 'use client';
 
 import { useTransition, useState } from 'react';
-import { createCheckoutSession, createPortalSession, type BillingActionResult } from './actions';
+import {
+  createSubscriptionCheckout,
+  createPortalSession,
+  type BillingActionResult,
+} from './actions';
+import { allTierMeta, tierMetaFor, type Tier } from '@/lib/billing/plans';
 
 interface Props {
-  entitled: boolean;
+  currentTier: Tier | null;
   status: string | null;
   renewsLabel: string | null;
 }
@@ -17,9 +22,10 @@ const ERROR_COPY: Record<string, string> = {
   stripe_error: 'Something went wrong talking to our payment provider. Please try again.',
 };
 
-export default function BillingActions({ entitled, status, renewsLabel }: Props) {
+export default function BillingActions({ currentTier, status, renewsLabel }: Props) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   function go(action: () => Promise<BillingActionResult>) {
     setError(null);
@@ -30,18 +36,20 @@ export default function BillingActions({ entitled, status, renewsLabel }: Props)
     });
   }
 
-  if (entitled) {
+  if (currentTier) {
+    const meta = tierMetaFor(currentTier);
     return (
       <div className="space-y-4">
         <p className="text-sm text-zinc-700">
-          Status: <span className="font-medium">{status}</span>
+          Plan: <span className="font-medium">{meta.name}</span> · Status:{' '}
+          <span className="font-medium">{status}</span>
           {renewsLabel ? ` · renews ${renewsLabel}` : ''}
         </p>
         <button
           type="button"
           disabled={pending}
           onClick={() => go(createPortalSession)}
-          className="rounded-full border border-zinc-900/15 bg-white px-5 py-3 text-sm hover:bg-zinc-50 disabled:opacity-50"
+          className="cursor-pointer rounded-full border border-zinc-900/15 bg-white px-5 py-3 text-sm hover:bg-zinc-50 disabled:opacity-50"
         >
           Manage subscription
         </button>
@@ -51,27 +59,44 @@ export default function BillingActions({ entitled, status, renewsLabel }: Props)
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-sm text-zinc-700">
-        Subscribe to unlock PDF session reports and automatic transcript cleanup.
-      </p>
-      <div className="flex gap-3">
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => go(() => createCheckoutSession('monthly'))}
-          className="rounded-full bg-zinc-900 px-5 py-3 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
-        >
-          Subscribe monthly
-        </button>
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => go(() => createCheckoutSession('annual'))}
-          className="rounded-full border border-zinc-900/15 bg-white px-5 py-3 text-sm hover:bg-zinc-50 disabled:opacity-50"
-        >
-          Subscribe annually
-        </button>
+    <div className="space-y-5">
+      <div className="inline-flex rounded-full border border-zinc-900/15 p-1 text-sm">
+        {(['monthly', 'yearly'] as const).map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => setInterval(opt)}
+            className={`cursor-pointer rounded-full px-4 py-1.5 ${interval === opt ? 'bg-zinc-900 text-white' : 'text-zinc-700'}`}
+          >
+            {opt === 'monthly' ? 'Monthly' : 'Yearly'}
+          </button>
+        ))}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {allTierMeta().map((meta) => (
+          <div key={meta.key} className="rounded-2xl border border-zinc-900/10 bg-white p-5">
+            <h3 className="text-[15px] font-semibold text-zinc-950">{meta.name}</h3>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">
+              €{meta.prices[interval].amount}
+              <span className="text-sm font-normal text-zinc-500">
+                {interval === 'monthly' ? ' / month' : ' / year'}
+              </span>
+            </p>
+            <ul className="mt-3 space-y-1 text-[13px] text-zinc-600">
+              {meta.bullets.map((b) => (
+                <li key={b}>• {b}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => go(() => createSubscriptionCheckout(meta.key, interval))}
+              className="mt-4 w-full cursor-pointer rounded-full bg-zinc-900 px-5 py-2.5 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
+            >
+              Subscribe
+            </button>
+          </div>
+        ))}
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>

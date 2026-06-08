@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { isBillingEnabled } from '@/lib/billing/env';
-import { isSubscriptionEntitled } from '@/lib/billing/entitlements';
+import { subscriptionTierFromRow } from '@/lib/billing/entitlements';
+import { type Tier } from '@/lib/billing/plans';
 import { PageBanner } from '@/components/app/PageBanner';
 import BillingActions from './BillingActions';
 
@@ -18,17 +19,17 @@ export default async function BillingPage() {
 
   const billingOn = isBillingEnabled();
 
-  let entitled = false;
+  let currentTier: Tier | null = null;
   let status: string | null = null;
   let renewsLabel: string | null = null;
 
   if (billingOn) {
     const { data: sub } = await supabase
       .from('facilitator_subscriptions')
-      .select('status, current_period_end')
+      .select('status, current_period_end, tier')
       .eq('profile_id', user.id)
       .maybeSingle();
-    entitled = isSubscriptionEntitled(sub ?? null, new Date());
+    currentTier = subscriptionTierFromRow(sub ?? null, new Date());
     status = sub?.status ?? null;
     renewsLabel = sub?.current_period_end
       ? new Date(sub.current_period_end).toLocaleDateString('en-GB', {
@@ -48,7 +49,7 @@ export default async function BillingPage() {
             Billing is not enabled on this instance — all features are available for free.
           </p>
         ) : (
-          <BillingActions entitled={entitled} status={status} renewsLabel={renewsLabel} />
+          <BillingActions currentTier={currentTier} status={status} renewsLabel={renewsLabel} />
         )}
       </div>
     </main>
