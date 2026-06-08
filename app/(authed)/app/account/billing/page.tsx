@@ -40,16 +40,14 @@ export default async function BillingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1200px] px-5 py-10">
-      <div className="max-w-[640px]">
-        {!billingOn ? (
-          <p className="text-sm text-zinc-600">
-            Billing is not enabled on this instance — all features are available for free.
-          </p>
-        ) : (
-          <BillingActions currentTier={currentTier} status={status} renewsLabel={renewsLabel} />
-        )}
-      </div>
+    <div className="mx-auto max-w-[1040px] px-5 py-10">
+      {!billingOn ? (
+        <p className="text-sm text-zinc-600">
+          Billing is not enabled on this instance — all features are available for free.
+        </p>
+      ) : (
+        <BillingActions currentTier={currentTier} status={status} renewsLabel={renewsLabel} />
+      )}
     </div>
   );
 }

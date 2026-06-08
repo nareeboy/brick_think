@@ -46,12 +46,8 @@ export default async function AccountLayout({ children }: { children: ReactNode 
         title="Account"
         titleTestId="account-heading"
         subtitle={createdLabel ? `Joined ${createdLabel}.` : undefined}
+        actions={billingEnabled ? <AccountTabs showBilling /> : undefined}
       />
-      {billingEnabled ? (
-        <div className="mx-auto max-w-[1200px] px-5 pt-8">
-          <AccountTabs showBilling />
-        </div>
-      ) : null}
       {children}
     </main>
   );

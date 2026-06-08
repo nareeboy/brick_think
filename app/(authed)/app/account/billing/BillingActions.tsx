@@ -60,7 +60,7 @@ export default function BillingActions({ currentTier, status, renewsLabel }: Pro
 
   return (
     <div className="space-y-5">
-      <div className="inline-flex rounded-full border border-zinc-900/15 p-1 text-sm">
+      <div className="mx-auto flex w-fit rounded-full border border-zinc-900/15 p-1 text-sm">
         {(['monthly', 'yearly'] as const).map((opt) => (
           <button
             key={opt}
