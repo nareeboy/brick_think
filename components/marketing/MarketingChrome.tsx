@@ -3,6 +3,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+import { BetaListBadge } from '@/components/marketing/BetaListBadge';
 import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
 import { NickLaunchesBadge } from '@/components/marketing/NickLaunchesBadge';
 import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
@@ -112,6 +113,7 @@ function FeaturedOnBand() {
           <PeerlistBadge />
           <SaasHubBadge />
           <NickLaunchesBadge />
+          <BetaListBadge />
         </div>
       </div>
     </div>
