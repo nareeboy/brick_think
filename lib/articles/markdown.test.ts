@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { renderMarkdown } from './markdown';
+import { renderArticleMarkdown, renderMarkdown } from './markdown';
+import { sanitizeArticleHtml } from './sanitizeHtml';
 
 describe('renderMarkdown', () => {
   it('escapes raw HTML', () => {
@@ -40,5 +41,28 @@ describe('renderMarkdown', () => {
     const html = renderMarkdown('[BT](https://brickthink.io)');
     expect(html).toContain('<a href="https://brickthink.io"');
     expect(html).toContain('>BT</a>');
+  });
+});
+
+describe('renderArticleMarkdown', () => {
+  it('maps h1 -> h2', () => {
+    const html = renderArticleMarkdown('# Hello');
+    expect(html).toContain('<h2>Hello</h2>');
+    expect(html).not.toContain('<h1>');
+  });
+  it('passes h2 through unchanged', () => {
+    expect(renderArticleMarkdown('## Sub')).toContain('<h2>Sub</h2>');
+  });
+  it('passes h3 through unchanged', () => {
+    expect(renderArticleMarkdown('### Three')).toContain('<h3>Three</h3>');
+  });
+  it('maps h4 -> h3', () => {
+    const html = renderArticleMarkdown('#### Four');
+    expect(html).toContain('<h3>Four</h3>');
+    expect(html).not.toContain('<h4>');
+  });
+  it('produces idempotency-safe output when piped through sanitizeArticleHtml', () => {
+    const html = sanitizeArticleHtml(renderArticleMarkdown('# Title\n\nBody'));
+    expect(html.trimStart().startsWith('<h2>')).toBe(true);
   });
 });

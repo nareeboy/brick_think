@@ -148,3 +148,13 @@ export function renderMarkdown(input: string): string {
 
   return out.join('\n');
 }
+
+// Article bodies support only h2/h3 headings (the WYSIWYG toolbar's range; the
+// article's sole h1 is the page title). Map legacy Markdown headings into that
+// range so sanitizeArticleHtml (which allows only h2/h3) never strips a heading
+// down to a bare text node: h1 -> h2, h4/h5/h6 -> h3. h2/h3 pass through.
+export function renderArticleMarkdown(markdown: string): string {
+  return renderMarkdown(markdown)
+    .replace(/<(\/?)h1>/g, '<$1h2>')
+    .replace(/<(\/?)h[456]>/g, '<$1h3>');
+}
