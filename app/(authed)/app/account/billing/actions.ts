@@ -3,7 +3,8 @@
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { isBillingEnabled, requireStripePriceIds } from '@/lib/billing/env';
+import { isBillingEnabled } from '@/lib/billing/env';
+import { priceIdFor, type Tier, type BillingMode } from '@/lib/billing/plans';
 import { getStripe } from '@/lib/billing/stripe';
 import { getOrCreateStripeCustomer } from '@/lib/billing/customers';
 import { createServiceRoleSupabaseClient } from '@/lib/db/serviceRole';
@@ -28,20 +29,18 @@ async function originUrl(): Promise<string> {
 
 export type BillingActionResult = { ok: true; url: string } | { ok: false; code: string };
 
-export async function createCheckoutSession(
-  interval: 'monthly' | 'annual',
+export async function createSubscriptionCheckout(
+  tier: Tier,
+  interval: 'monthly' | 'yearly',
 ): Promise<BillingActionResult> {
   if (!isBillingEnabled()) return { ok: false, code: 'billing_disabled' };
   const { user } = await requireUser();
   if (!user.email) return { ok: false, code: 'no_email' };
 
-  const prices = requireStripePriceIds();
-  const price = interval === 'annual' ? prices.annual : prices.monthly;
-
   try {
+    const price = priceIdFor(tier, interval as BillingMode);
     const customerId = await getOrCreateStripeCustomer(user.id, user.email);
     const origin = await originUrl();
-
     const session = await getStripe().checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
@@ -49,11 +48,42 @@ export async function createCheckoutSession(
       success_url: `${origin}/app/account/billing?success=1`,
       cancel_url: `${origin}/app/account/billing?canceled=1`,
       client_reference_id: user.id,
+      subscription_data: { metadata: { profile_id: user.id, tier } },
     });
     if (!session.url) return { ok: false, code: 'no_url' };
     return { ok: true, url: session.url };
   } catch (err) {
-    console.error('[billing] checkout session failed', err);
+    console.error('[billing] subscription checkout failed', err);
+    return { ok: false, code: 'stripe_error' };
+  }
+}
+
+export async function createSessionCheckout(
+  tier: Tier,
+  sessionId: string,
+): Promise<BillingActionResult> {
+  if (!isBillingEnabled()) return { ok: false, code: 'billing_disabled' };
+  const { user } = await requireUser();
+  if (!user.email) return { ok: false, code: 'no_email' };
+
+  try {
+    const price = priceIdFor(tier, 'once');
+    const customerId = await getOrCreateStripeCustomer(user.id, user.email);
+    const origin = await originUrl();
+    const session = await getStripe().checkout.sessions.create({
+      mode: 'payment',
+      customer: customerId,
+      line_items: [{ price, quantity: 1 }],
+      success_url: `${origin}/app/sessions/${sessionId}?report_unlocked=1`,
+      cancel_url: `${origin}/app/sessions/${sessionId}?report_canceled=1`,
+      client_reference_id: user.id,
+      payment_intent_data: { metadata: { profile_id: user.id, session_id: sessionId, tier } },
+      metadata: { profile_id: user.id, session_id: sessionId, tier },
+    });
+    if (!session.url) return { ok: false, code: 'no_url' };
+    return { ok: true, url: session.url };
+  } catch (err) {
+    console.error('[billing] session checkout failed', err);
     return { ok: false, code: 'stripe_error' };
   }
 }
