@@ -59,32 +59,44 @@ export default async function AccountPage() {
         title="Account"
         titleTestId="account-heading"
         subtitle={`Joined ${createdLabel}.`}
-        maxWidthClassName="max-w-[640px]"
       />
-      <div className="mx-auto flex max-w-[640px] flex-col gap-8 px-5 py-10">
-        <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
-          <AccountForm
-            initialFullName={fullName}
-            email={email}
-            initialAvatarUrl={initialAvatarUrl}
-          />
-        </section>
+      <div className="mx-auto max-w-[1200px] px-5 py-10">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+          {/* Profile — the anchor tile, two columns wide. */}
+          <section className="rounded-2xl border border-zinc-900/10 bg-white p-6 lg:col-span-2">
+            <AccountForm
+              initialFullName={fullName}
+              email={email}
+              initialAvatarUrl={initialAvatarUrl}
+            />
+          </section>
 
-        <ReplayWalkthroughCard />
+          {/* Right rail — stacked preference + walkthrough tiles. */}
+          <div className="flex flex-col gap-4">
+            <A11yPreferencesCard
+              initialColourblindMode={
+                normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
+              }
+            />
+            <ReplayWalkthroughCard />
+            {billingEnabled ? (
+              <BillingCard billingEnabled={billingEnabled} entitled={entitled} />
+            ) : null}
+          </div>
 
-        <A11yPreferencesCard
-          initialColourblindMode={
-            normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
-          }
-        />
+          {/* Contribution — wide tile. */}
+          <div className="lg:col-span-2">
+            <ContributionCard />
+          </div>
 
-        <BillingCard billingEnabled={billingEnabled} entitled={entitled} />
+          {/* Tip jar — single tile beside Contribute. */}
+          <BuyMeACoffeeCard />
 
-        <ContributionCard />
-
-        <BuyMeACoffeeCard />
-
-        <DangerZone email={email} />
+          {/* Danger zone — full-bleed footer tile. */}
+          <div className="lg:col-span-3">
+            <DangerZone email={email} />
+          </div>
+        </div>
       </div>
     </main>
   );
