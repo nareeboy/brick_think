@@ -42,14 +42,19 @@ export default async function AccountPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10">
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-        {/* Profile — the anchor tile, two columns wide. */}
-        <section className="rounded-2xl border border-zinc-900/10 bg-white p-6 lg:col-span-2">
-          <AccountForm
-            initialFullName={fullName}
-            email={email}
-            initialAvatarUrl={initialAvatarUrl}
-          />
-        </section>
+        {/* Left column — profile anchor tile with the contribution tile beneath it. */}
+        <div className="flex flex-col gap-4 lg:col-span-2">
+          <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
+            <AccountForm
+              initialFullName={fullName}
+              email={email}
+              initialAvatarUrl={initialAvatarUrl}
+            />
+          </section>
+
+          {/* Contribution — sits directly under the profile section. */}
+          <ContributionCard />
+        </div>
 
         {/* Right rail — stacked preference + walkthrough + tip-jar tiles. */}
         <div className="flex flex-col gap-4">
@@ -60,11 +65,6 @@ export default async function AccountPage() {
           />
           <ReplayWalkthroughCard />
           <BuyMeACoffeeCard />
-        </div>
-
-        {/* Contribution — full-width tile so its label/CTA row has room to breathe. */}
-        <div className="lg:col-span-3">
-          <ContributionCard />
         </div>
 
         {/* Danger zone — full-width footer tile. */}
