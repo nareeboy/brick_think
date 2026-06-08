@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { getServiceSupabaseClient } from '@/lib/db/service';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
@@ -17,7 +16,6 @@ import { BillingCard } from './BillingCard';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
-import { IntegrationsCard } from './IntegrationsCard';
 import { ReplayWalkthroughCard } from './ReplayWalkthroughCard';
 
 export const metadata: Metadata = { title: 'Account' };
@@ -41,15 +39,6 @@ export default async function AccountPage() {
   if (profileRes.error) {
     throw new Error(`Failed to load profile: ${profileRes.error.message}`);
   }
-
-  // user_integrations carries the encrypted Anthropic key + a last4 surface
-  // for the connected display. Ciphertext is never selected here.
-  const svc = getServiceSupabaseClient();
-  const { data: integration } = await svc
-    .from('user_integrations')
-    .select('anthropic_api_key_last4, updated_at')
-    .eq('profile_id', user.id)
-    .maybeSingle();
 
   const billingEnabled = isBillingEnabled();
   const entitled = billingEnabled ? await isEntitled(user.id) : false;
@@ -87,11 +76,6 @@ export default async function AccountPage() {
           initialColourblindMode={
             normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
           }
-        />
-
-        <IntegrationsCard
-          existingLast4={integration?.anthropic_api_key_last4 ?? null}
-          existingUpdatedAt={integration?.updated_at ?? null}
         />
 
         <BillingCard billingEnabled={billingEnabled} entitled={entitled} />

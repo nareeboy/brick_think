@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
+import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
 import { cleanupTranscript } from '@/lib/sessions/narrationCleanup';
 import type { NarrationCleanupStatus } from '@/lib/sessions/modelNarration';
 import { isEntitled } from '@/lib/billing/entitlements';
@@ -90,7 +90,7 @@ export async function saveNarration(
   }
 
   if (facilitatorId && (await isEntitled(facilitatorId))) {
-    const anthropic = await getAnthropicClientForProfile(facilitatorId);
+    const anthropic = getServerAnthropicClient();
     if (anthropic.ok) {
       const result = await cleanupTranscript(anthropic.client, trimmed);
       if (result.ok) {
