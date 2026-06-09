@@ -30,6 +30,7 @@ import type { StageRoomSummary } from './RoomsPanel';
 import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types';
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
+import { ActiveStageBar } from '@/components/session/ActiveStageBar';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
@@ -109,6 +110,7 @@ export default async function SessionDetailPage({
     throw new Error(`Failed to load stages: ${stagesRes.error.message}`);
   }
   const stages = (stagesRes.data ?? []) as unknown as LiveStageRow[];
+  const completedStageCount = stages.filter((s) => s.status === 'completed').length;
   const initialSession: SessionRow = {
     id: session.id,
     current_stage_id: session.current_stage_id,
@@ -485,6 +487,16 @@ export default async function SessionDetailPage({
             />
           </div>
         }
+        subtitle={
+          <span className="flex items-baseline gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              Workshop flow
+            </span>
+            <span className="text-[12px] text-zinc-600">
+              {stages.length} stages · {completedStageCount} done
+            </span>
+          </span>
+        }
         actions={
           <>
             {canManageSession ? (
@@ -559,12 +571,21 @@ export default async function SessionDetailPage({
             <ParticipantCoachMark />
           </div>
           {isFacilitator ? (
-            <aside className="w-full shrink-0 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
-              <FacilitatorNotesCard
+            <aside className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
+              <ActiveStageBar
                 sessionId={session.id}
-                initialValue={facilitatorNotes}
-                fillHeight
+                sessionTitle={session.title}
+                initialStages={stages}
+                initialSession={initialSession}
+                canManageSession={canManageSession}
               />
+              <div className="min-h-0 flex-1">
+                <FacilitatorNotesCard
+                  sessionId={session.id}
+                  initialValue={facilitatorNotes}
+                  fillHeight
+                />
+              </div>
             </aside>
           ) : null}
         </div>
