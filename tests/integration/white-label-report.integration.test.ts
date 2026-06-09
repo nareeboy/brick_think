@@ -197,6 +197,33 @@ describe('generateSessionReport white-label gating', () => {
     expect(row.data?.brand_profile_id).toBe(fx.aliceBrandId);
   });
 
+  test('explicit null clears a remembered brand (renders unbranded BrickThink default)', async () => {
+    currentClient = await signInAs(fx.alice);
+    vi.mocked(entitledTier).mockResolvedValue('client_ready');
+
+    // First: generate WITH a brand so the session remembers it.
+    const first = await generateSessionReport(fx.session.id, fx.aliceBrandId);
+    expect(first.ok).toBe(true);
+    expect(lastBrandingArg()).not.toBeNull();
+
+    vi.mocked(renderSessionReportPdf).mockClear();
+
+    // Then: the user explicitly picks "BrickThink default" (null). This must
+    // render the standard report — NOT silently fall back to the remembered brand.
+    const second = await generateSessionReport(fx.session.id, null);
+    expect(second.ok).toBe(true);
+    expect(lastBrandingArg()).toBeNull();
+
+    // …and the explicit choice is persisted so the remembered brand is cleared.
+    const admin = getAdminClient();
+    const { data: row } = await admin
+      .from('sessions')
+      .select('brand_profile_id')
+      .eq('id', fx.session.id)
+      .single();
+    expect(row?.brand_profile_id).toBeNull();
+  });
+
   test("client_ready tier with another user's preset resolves to null branding", async () => {
     currentClient = await signInAs(fx.alice);
     vi.mocked(entitledTier).mockResolvedValue('client_ready');

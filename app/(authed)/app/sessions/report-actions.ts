@@ -68,25 +68,32 @@ export async function generateSessionReport(
   // render the standard BrickThink report regardless of any brandProfileId passed.
   let branding: ResolvedBranding | null = null;
   if (hasTierRank(tier, 'client_ready')) {
-    // Use the explicit choice, else fall back to whatever the session remembers.
-    let chosenId = brandProfileId ?? null;
-    if (chosenId === null) {
+    // An explicit `null` means "no branding — the BrickThink default" and an
+    // explicit id means that preset. Only `undefined` (no argument at all) falls
+    // back to whatever the session last remembered, for one-click re-generation.
+    // Treating an explicit null as "use the remembered brand" is the bug that
+    // made the BrickThink-default regenerate silently render the last brand.
+    let chosenId: string | null;
+    if (brandProfileId === undefined) {
       const remembered = await supabase
         .from('sessions')
         .select('brand_profile_id')
         .eq('id', sessionId)
         .maybeSingle();
       chosenId = remembered.data?.brand_profile_id ?? null;
+    } else {
+      chosenId = brandProfileId;
     }
     if (chosenId) {
       branding = await resolveBranding(chosenId, user.id);
-      // Persist the choice for one-click re-generation — only when it actually
-      // resolved (resolveBranding proves the preset exists AND is owned by the
-      // facilitator), so the stored id always reflects what was rendered.
-      if (branding) {
-        await svc.from('sessions').update({ brand_profile_id: chosenId }).eq('id', sessionId);
-      }
+      // resolveBranding proves the preset exists AND is owned by the facilitator;
+      // if it didn't resolve, fall back to the standard report and don't remember
+      // a dangling id.
+      if (!branding) chosenId = null;
     }
+    // Persist what was actually rendered (including null → cleared) so the
+    // session's remembered brand always matches the latest report.
+    await svc.from('sessions').update({ brand_profile_id: chosenId }).eq('id', sessionId);
   }
 
   const collected = await collectSession(svc, sessionId);
