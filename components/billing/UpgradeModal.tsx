@@ -79,11 +79,11 @@ export default function UpgradeModal({
     <ModalBackdrop onClose={onClose} titleId={titleId} panelClassName="w-full max-w-2xl">
       <div className="rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
         <h2 id={titleId} className="font-display text-lg font-medium text-zinc-900">
-          {sessionId ? 'Unlock this report' : 'Subscribe to continue'}
+          {sessionId ? 'Purchase this report' : 'Subscribe to continue'}
         </h2>
         <p className="mt-2 text-sm text-zinc-600">
           {feature} is a paid feature on brickthink.io.
-          {sessionId ? ' Unlock it just for this session, or subscribe for every session.' : ''}
+          {sessionId ? ' Purchase it just for this session, or subscribe for every session.' : ''}
         </p>
         {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
 
@@ -175,7 +175,7 @@ export default function UpgradeModal({
                       >
                         {pending && busyKey === onceKey
                           ? 'Starting…'
-                          : `Unlock — ${euros(onceAmount)}`}
+                          : `Purchase — ${euros(onceAmount)}`}
                       </button>
                     </div>
                   </div>
