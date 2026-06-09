@@ -108,10 +108,15 @@ export function PreSessionChecklist({
       data-testid="presession-fullbody"
       className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5"
     >
-      <header className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-[20px] leading-tight text-zinc-900">Before you start</h2>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-[20px] leading-tight text-zinc-900">Before you start</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Quick prep before you run the session with your group.
+          </p>
+        </div>
         {readyToStart && (
-          <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-medium text-emerald-800 ring-1 ring-emerald-200">
+          <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-medium text-emerald-800 ring-1 ring-emerald-200">
             Ready to start
           </span>
         )}
