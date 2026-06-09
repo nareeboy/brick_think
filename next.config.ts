@@ -1,10 +1,20 @@
 import type { NextConfig } from 'next';
 
+import { buildCsp, shouldSendXFrameOptionsDeny } from './lib/security/csp';
+
 // Baseline Content-Security-Policy applied to every response. Intentionally
 // narrow: only the directives that are pure additions and can't break the
 // existing OAuth, Supabase, or Yjs flows. A fuller script-src/connect-src
 // CSP would need per-request nonces via middleware, which is a follow-up.
-const BASELINE_CSP = ["frame-ancestors 'none'", "base-uri 'self'", "object-src 'none'"].join('; ');
+//
+// Embeddability is driven by the FRAME_ANCESTORS env var (whitespace/comma
+// separated origins). Unset → framing denied (hardened default). To embed
+// BrickThink as a WorkAdventure co-website, set it per environment, e.g.
+// `FRAME_ANCESTORS="https://*.workadventu.re https://workadventu.re"` for the
+// WorkAdventure cloud, or `FRAME_ANCESTORS="*"` to allow any (incl. self-hosted)
+// WorkAdventure instance. See lib/security/csp.ts.
+const FRAME_ANCESTORS = process.env.FRAME_ANCESTORS;
+const BASELINE_CSP = buildCsp(FRAME_ANCESTORS);
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -33,7 +43,12 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [
           { key: 'Content-Security-Policy', value: BASELINE_CSP },
-          { key: 'X-Frame-Options', value: 'DENY' },
+          // X-Frame-Options can't express an allow-list, so it's only emitted
+          // when no embedder is configured; once FRAME_ANCESTORS is set, its
+          // DENY would override frame-ancestors in older browsers.
+          ...(shouldSendXFrameOptionsDeny(FRAME_ANCESTORS)
+            ? [{ key: 'X-Frame-Options', value: 'DENY' }]
+            : []),
           { key: 'X-Content-Type-Options', value: 'nosniff' },
         ],
       },
