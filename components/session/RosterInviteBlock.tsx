@@ -209,7 +209,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder={emails.length === 0 ? 'Enter email addresses...' : ''}
-            className="flex-1 bg-white px-2 py-1 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+            className="flex-1 bg-white px-2 py-1 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-500 focus:outline-none"
             autoComplete="off"
           />
         </div>

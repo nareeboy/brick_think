@@ -158,7 +158,7 @@ export function TagEditor({ modelId, initialTags, allTags, onClose, onSaved }: P
         aria-label="Add a tag"
         data-testid={`tag-editor-input-${modelId}`}
         autoComplete="off"
-        className="mt-3 h-9 w-full rounded-lg border border-zinc-900/10 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-400 focus:border-[#a8482a] focus:outline-none"
+        className="mt-3 h-9 w-full rounded-lg border border-zinc-900/10 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-500 focus:border-[#a8482a] focus:outline-none"
       />
       {suggestions.length > 0 ? (
         <div className="mt-2">
