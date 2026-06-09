@@ -1,5 +1,5 @@
 import { BRAND_FOOTER_MAX, BRAND_NAME_MAX, type FontChoice } from './types';
-import { CURATED_FONT_KEYS } from './curatedFonts';
+import { CURATED_FONT_KEYS } from './curatedFontsCatalog';
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 

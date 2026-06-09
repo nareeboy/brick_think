@@ -8,6 +8,7 @@ import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
+import { BrandPresetsCard } from './branding/BrandPresetsCard';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
@@ -63,6 +64,7 @@ export default async function AccountPage() {
               normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
             }
           />
+          <BrandPresetsCard />
           <ReplayWalkthroughCard />
           <BuyMeACoffeeCard />
         </div>
