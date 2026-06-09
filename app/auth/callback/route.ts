@@ -1,19 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 
 export const dynamic = 'force-dynamic';
-
-// Railway's proxy sets `host` to the internal port-bound address
-// (e.g. `localhost:8080`) and exposes the public hostname via
-// `x-forwarded-host`. NextRequest.url uses `host`, so deriving the
-// redirect origin from `request.url` produces `https://localhost:8080`.
-function publicOrigin(request: NextRequest): string {
-  const proto = request.headers.get('x-forwarded-proto') ?? 'https';
-  const host =
-    request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? 'localhost:3000';
-  return `${proto}://${host}`;
-}
 
 // Map raw Supabase errors to UI-friendly codes that /sign-in renders into
 // contextual help. The most common in-the-wild case is the PKCE verifier
@@ -36,7 +26,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const next = url.searchParams.get('next') ?? '/app/my-designs';
 
   const safeNext = next.startsWith('/') ? next : '/app/my-designs';
-  const origin = publicOrigin(request);
+  const origin = publicOriginFromHeaders(request.headers);
   const redirectUrl = new URL(safeNext, origin);
 
   if (errorDescription) {
