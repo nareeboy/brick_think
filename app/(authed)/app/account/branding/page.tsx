@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { entitledTier, hasTierRank } from '@/lib/billing/entitlements';
@@ -27,7 +28,25 @@ export default async function BrandingPage() {
 
   return (
     <div className="mx-auto max-w-[900px] px-5 py-10">
-      <h1 className="font-display text-2xl text-zinc-900">Brand presets</h1>
+      <Link
+        href="/app/account"
+        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-zinc-600 transition-colors hover:text-zinc-900"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-4 w-4"
+          aria-hidden="true"
+        >
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        Back to settings
+      </Link>
+      <h1 className="mt-4 font-display text-2xl text-zinc-900">Brand presets</h1>
       <p className="mt-2 max-w-prose text-sm text-zinc-600">
         White-label your PDF reports — your logo, colours, fonts and name. Pick a preset when you
         generate a report. {entitled ? null : 'Branded reports are part of the Client-Ready plan.'}

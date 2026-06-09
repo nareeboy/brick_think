@@ -3,8 +3,8 @@ import Link from 'next/link';
 export function BrandPresetsCard() {
   return (
     <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
-      <h2 className="font-display text-lg text-zinc-900">Brand presets</h2>
-      <p className="mt-2 text-sm text-zinc-600">
+      <h2 className="text-[16px] font-semibold tracking-tight text-zinc-950">Brand presets</h2>
+      <p className="mt-1 text-[13px] text-zinc-600">
         White-label your PDF reports with your own logo, colours and fonts.
       </p>
       <Link
