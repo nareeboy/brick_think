@@ -13,6 +13,8 @@ interface Props {
   currentTier: Tier | null;
   status: string | null;
   renewsLabel: string | null;
+  /** True when the active subscription is set to end at the period end (cancelled, still usable). */
+  cancelAtPeriodEnd: boolean;
 }
 
 const ERROR_COPY: Record<string, string> = {
@@ -23,7 +25,12 @@ const ERROR_COPY: Record<string, string> = {
   stripe_error: 'Something went wrong talking to our payment provider. Please try again.',
 };
 
-export default function BillingActions({ currentTier, status, renewsLabel }: Props) {
+export default function BillingActions({
+  currentTier,
+  status,
+  renewsLabel,
+  cancelAtPeriodEnd,
+}: Props) {
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly');
@@ -43,9 +50,20 @@ export default function BillingActions({ currentTier, status, renewsLabel }: Pro
       {currentTier ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-zinc-700">
-            Plan: <span className="font-medium">{tierMetaFor(currentTier).name}</span> · Status:{' '}
-            <span className="font-medium">{status}</span>
-            {renewsLabel ? ` · renews ${renewsLabel}` : ''}
+            Plan: <span className="font-medium">{tierMetaFor(currentTier).name}</span>
+            {cancelAtPeriodEnd ? (
+              <>
+                {' · '}
+                <span className="font-medium text-amber-700">Cancelled</span>
+                {renewsLabel ? ` — active until ${renewsLabel}` : ''}
+              </>
+            ) : (
+              <>
+                {' · Status: '}
+                <span className="font-medium">{status}</span>
+                {renewsLabel ? ` · renews ${renewsLabel}` : ''}
+              </>
+            )}
           </p>
           <button
             type="button"
@@ -84,9 +102,15 @@ export default function BillingActions({ currentTier, status, renewsLabel }: Pro
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-[15px] font-semibold text-zinc-950">{meta.name}</h3>
                 {isCurrent ? (
-                  <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-emerald-700">
-                    Current plan
-                  </span>
+                  cancelAtPeriodEnd ? (
+                    <span className="inline-flex items-center rounded-md bg-amber-500/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-amber-700">
+                      Cancelled
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-emerald-700">
+                      Current plan
+                    </span>
+                  )
                 ) : null}
               </div>
               <p className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900">

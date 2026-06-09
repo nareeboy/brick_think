@@ -23,16 +23,18 @@ export default async function BillingPage() {
   let currentTier: Tier | null = null;
   let status: string | null = null;
   let renewsLabel: string | null = null;
+  let cancelAtPeriodEnd = false;
   let invoices: InvoiceSummary[] = [];
 
   if (billingOn) {
     const { data: sub } = await supabase
       .from('facilitator_subscriptions')
-      .select('status, current_period_end, tier')
+      .select('status, current_period_end, tier, cancel_at_period_end')
       .eq('profile_id', user.id)
       .maybeSingle();
     currentTier = subscriptionTierFromRow(sub ?? null, new Date());
     status = sub?.status ?? null;
+    cancelAtPeriodEnd = sub?.cancel_at_period_end ?? false;
     renewsLabel = sub?.current_period_end
       ? new Date(sub.current_period_end).toLocaleDateString('en-GB', {
           day: 'numeric',
@@ -51,7 +53,12 @@ export default async function BillingPage() {
         </p>
       ) : (
         <div className="space-y-8">
-          <BillingActions currentTier={currentTier} status={status} renewsLabel={renewsLabel} />
+          <BillingActions
+            currentTier={currentTier}
+            status={status}
+            renewsLabel={renewsLabel}
+            cancelAtPeriodEnd={cancelAtPeriodEnd}
+          />
           <InvoiceList invoices={invoices} />
         </div>
       )}

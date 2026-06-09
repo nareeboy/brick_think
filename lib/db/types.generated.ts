@@ -316,6 +316,7 @@ export type Database = {
       }
       facilitator_subscriptions: {
         Row: {
+          cancel_at_period_end: boolean
           current_period_end: string | null
           profile_id: string
           status: string
@@ -324,6 +325,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cancel_at_period_end?: boolean
           current_period_end?: string | null
           profile_id: string
           status: string
@@ -332,6 +334,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cancel_at_period_end?: boolean
           current_period_end?: string | null
           profile_id?: string
           status?: string

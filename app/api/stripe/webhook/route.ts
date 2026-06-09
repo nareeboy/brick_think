@@ -49,6 +49,7 @@ async function upsertSubscription(sub: Stripe.Subscription): Promise<void> {
       status: sub.status,
       tier,
       current_period_end: periodEndIso(sub),
+      cancel_at_period_end: sub.cancel_at_period_end ?? false,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'profile_id' },
