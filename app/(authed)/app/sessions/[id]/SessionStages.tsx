@@ -175,58 +175,11 @@ export function SessionStages({
   useNarrationSavedRefresh(sessionId);
 
   const sorted = [...stages].sort((a, b) => a.position - b.position);
-  const completed = sorted.filter((s) => s.status === 'completed');
   const modelByStageId = new Map(ownedModels.map((m) => [m.stage_id, m]));
-
-  const activeStage = sorted.find((s) => s.status === 'active') ?? null;
-  const activeRemaining = activeStage ? computeRemainingMs(activeStage, nowMs) : null;
-  const activeLabel = activeStage
-    ? (activeStage.title ?? stageLabel(activeStage.stage_type as StageType))
-    : null;
 
   return (
     <NarrationControlProvider sessionId={sessionId}>
       <div className="flex flex-col gap-4" data-testid="session-stage-list">
-        <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-1">
-          <div className="flex items-baseline gap-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              Workshop flow
-            </p>
-            <p className="text-[12px] text-zinc-600">
-              {sorted.length} stages · {completed.length} done
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {activeStage ? (
-              <div className="flex items-center gap-2">
-                <StatusDot status="active" />
-                <span className="text-[12px] text-zinc-700">
-                  Now · Stage {activeStage.position + 1} · {activeLabel}
-                </span>
-                {activeRemaining !== null ? (
-                  <span
-                    suppressHydrationWarning
-                    className="font-mono tabular-nums text-[12px] font-medium text-zinc-900"
-                  >
-                    {formatRemaining(activeRemaining)}
-                  </span>
-                ) : null}
-              </div>
-            ) : session.status === 'completed' ? (
-              <p className="text-[12px] text-zinc-500">Session complete</p>
-            ) : (
-              <p className="text-[12px] text-zinc-500">Awaiting start</p>
-            )}
-            {canManageSession && session.status !== 'completed' ? (
-              <EndSessionButton
-                sessionId={sessionId}
-                sessionTitle={sessionTitle}
-                stageName={activeLabel}
-              />
-            ) : null}
-          </div>
-        </header>
-
         <ol className="flex flex-col gap-4">
           {sorted.map((stage, index) => (
             <StageRow
@@ -995,7 +948,7 @@ function StopIcon({ className }: { className?: string }) {
   );
 }
 
-function EndSessionButton({
+export function EndSessionButton({
   sessionId,
   sessionTitle,
   stageName = null,

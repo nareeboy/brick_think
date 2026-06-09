@@ -1,16 +1,19 @@
 import { Page, Text, View } from '@react-pdf/renderer';
 
 import { PageFooter } from './ExecutiveSummary';
-import { styles } from './styles';
+import type { ReportStyles } from './styles';
 
 interface Props {
   body: string;
   sessionTitle: string;
   pageNumber: number;
   totalPages: number;
+  styles: ReportStyles['sheet'];
+  footerLabel: string;
 }
 
 export function Closing(props: Props) {
+  const { styles } = props;
   const paragraphs = props.body.split(/\n{2,}/).filter(Boolean);
   return (
     <Page size="A4" style={styles.page}>
@@ -21,7 +24,13 @@ export function Closing(props: Props) {
           {p}
         </Text>
       ))}
-      <PageFooter title={props.sessionTitle} page={props.pageNumber} total={props.totalPages} />
+      <PageFooter
+        label={props.footerLabel}
+        title={props.sessionTitle}
+        page={props.pageNumber}
+        total={props.totalPages}
+        styles={styles}
+      />
     </Page>
   );
 }

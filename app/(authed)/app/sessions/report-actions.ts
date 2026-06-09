@@ -2,7 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 
-import { isEntitled } from '@/lib/billing/entitlements';
+import { entitledTier, hasTierRank } from '@/lib/billing/entitlements';
+import { resolveBranding } from '@/lib/branding/resolve';
+import type { ResolvedBranding } from '@/lib/branding/types';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
@@ -34,7 +36,10 @@ export type GenerateReportResult =
       message?: string;
     };
 
-export async function generateSessionReport(sessionId: string): Promise<GenerateReportResult> {
+export async function generateSessionReport(
+  sessionId: string,
+  brandProfileId?: string | null,
+): Promise<GenerateReportResult> {
   if (!UUID_RE.test(sessionId)) return { ok: false, code: 'invalid_uuid' };
 
   const supabase = await createServerSupabaseClient();
@@ -52,9 +57,37 @@ export async function generateSessionReport(sessionId: string): Promise<Generate
   if (!session) return { ok: false, code: 'not_facilitator' };
   if (session.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
   if (session.status !== 'completed') return { ok: false, code: 'session_not_completed' };
-  if (!(await isEntitled(user.id))) return { ok: false, code: 'upgrade_required' };
+  // A per-session unlock for THIS session satisfies the gate (entitledTier passes sessionId),
+  // as does any active subscription at session_report tier or above.
+  const tier = await entitledTier(user.id, sessionId);
+  if (!hasTierRank(tier, 'session_report')) return { ok: false, code: 'upgrade_required' };
 
   const svc = getServiceSupabaseClient();
+
+  // White-label branding is a client_ready-tier capability. Lower tiers always
+  // render the standard BrickThink report regardless of any brandProfileId passed.
+  let branding: ResolvedBranding | null = null;
+  if (hasTierRank(tier, 'client_ready')) {
+    // Use the explicit choice, else fall back to whatever the session remembers.
+    let chosenId = brandProfileId ?? null;
+    if (chosenId === null) {
+      const remembered = await supabase
+        .from('sessions')
+        .select('brand_profile_id')
+        .eq('id', sessionId)
+        .maybeSingle();
+      chosenId = remembered.data?.brand_profile_id ?? null;
+    }
+    if (chosenId) {
+      branding = await resolveBranding(chosenId, user.id);
+      // Persist the choice for one-click re-generation — only when it actually
+      // resolved (resolveBranding proves the preset exists AND is owned by the
+      // facilitator), so the stored id always reflects what was rendered.
+      if (branding) {
+        await svc.from('sessions').update({ brand_profile_id: chosenId }).eq('id', sessionId);
+      }
+    }
+  }
 
   const collected = await collectSession(svc, sessionId);
   if (!collected) return { ok: false, code: 'not_facilitator' };
@@ -108,16 +141,19 @@ export async function generateSessionReport(sessionId: string): Promise<Generate
 
   let pdfBuffer: Buffer;
   try {
-    pdfBuffer = await renderSessionReportPdf({
-      sessionTitle: collected.sessionTitle,
-      orgName: collected.orgName,
-      facilitatorName: collected.facilitatorName,
-      date: collected.date,
-      participantCount: collected.participantCount,
-      execSummary: synthesis.execSummary,
-      closing: synthesis.closing,
-      stages,
-    });
+    pdfBuffer = await renderSessionReportPdf(
+      {
+        sessionTitle: collected.sessionTitle,
+        orgName: collected.orgName,
+        facilitatorName: collected.facilitatorName,
+        date: collected.date,
+        participantCount: collected.participantCount,
+        execSummary: synthesis.execSummary,
+        closing: synthesis.closing,
+        stages,
+      },
+      branding,
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown';
     await upsertReportRow(svc, {

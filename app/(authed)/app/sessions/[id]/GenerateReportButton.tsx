@@ -3,14 +3,20 @@
 import { useEffect, useState, useTransition } from 'react';
 
 import UpgradeModal from '@/components/billing/UpgradeModal';
+import type { BrandProfileSummary } from '@/lib/branding/types';
 
 import { generateSessionReport } from '../report-actions';
+import { BrandPickerDialog } from './BrandPickerDialog';
 
 interface Props {
   sessionId: string;
   initialPdfUrl: string | null;
   initialGeneratedAt: string | null;
   initialError?: string;
+  canBrand?: boolean;
+  brandProfiles?: BrandProfileSummary[];
+  fontOptions?: Array<{ key: string; label: string }>;
+  rememberedBrandProfileId?: string | null;
 }
 
 export default function GenerateReportButton({
@@ -18,11 +24,25 @@ export default function GenerateReportButton({
   initialPdfUrl,
   initialGeneratedAt,
   initialError,
+  canBrand = false,
+  brandProfiles = [],
+  fontOptions = [],
+  rememberedBrandProfileId = null,
 }: Props) {
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl);
   const [generatedAt, setGeneratedAt] = useState(initialGeneratedAt);
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showBrandPicker, setShowBrandPicker] = useState(false);
+  const [brandId, setBrandId] = useState<string | null>(rememberedBrandProfileId ?? null);
+  // Brand the current report was actually generated with (vs. `brandId`, the
+  // pending picker selection). Seeds from the session's remembered choice.
+  const [generatedBrandId, setGeneratedBrandId] = useState<string | null>(
+    rememberedBrandProfileId ?? null,
+  );
+  // Generation errors raised from inside the brand picker stay in the picker
+  // (the row's `error` is for the non-branding direct-generate path).
+  const [genError, setGenError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   // Formatted client-side after mount: `toLocaleString()` resolves in the
@@ -34,10 +54,11 @@ export default function GenerateReportButton({
     setGeneratedLabel(generatedAt ? new Date(generatedAt).toLocaleString() : null);
   }, [generatedAt]);
 
+  // Non-branding direct path: generate with whatever brand is remembered.
   function run() {
     setError(null);
     startTransition(async () => {
-      const res = await generateSessionReport(sessionId);
+      const res = await generateSessionReport(sessionId, brandId);
       if (res.ok) {
         setPdfUrl(res.pdfUrl);
         setGeneratedAt(res.generatedAt);
@@ -51,18 +72,72 @@ export default function GenerateReportButton({
     });
   }
 
+  // Branding path: triggered from the picker with the chosen brand. Errors render
+  // inside the picker; on success the picker closes and the row shows the result.
+  function generateWithBrand(id: string | null) {
+    setGenError(null);
+    setBrandId(id);
+    startTransition(async () => {
+      const res = await generateSessionReport(sessionId, id);
+      if (res.ok) {
+        setPdfUrl(res.pdfUrl);
+        setGeneratedAt(res.generatedAt);
+        setGeneratedBrandId(id);
+        setShowBrandPicker(false);
+      } else if (res.code === 'upgrade_required') {
+        setShowBrandPicker(false);
+        setShowUpgrade(true);
+      } else if (res.code === 'no_claude_key') {
+        setGenError('AI report generation is not configured on this server.');
+      } else {
+        setGenError(messageForCode(res.code, res.message));
+      }
+    });
+  }
+
   return (
     <>
       <UpgradeModal
         open={showUpgrade}
         onClose={() => setShowUpgrade(false)}
         feature="PDF session reports"
+        sessionId={sessionId}
+        // Offer the standard report (€9) and the white-labelled report (€45) as a
+        // one-off ladder. full_findings (€60) is omitted — that deliverable isn't built.
+        tiers={['session_report', 'client_ready']}
       />
+      {canBrand && showBrandPicker ? (
+        <BrandPickerDialog
+          profiles={brandProfiles}
+          fontOptions={fontOptions}
+          selectedId={brandId}
+          currentPdfUrl={pdfUrl}
+          currentBrandId={generatedBrandId}
+          generating={pending}
+          genError={genError}
+          onGenerate={generateWithBrand}
+          onClose={pending ? () => {} : () => setShowBrandPicker(false)}
+        />
+      ) : null}
       {/* `relative` + absolutely-positioned messages keep this column's width equal
           to the button alone. Otherwise a long error/generated-at line would widen
           the flex item and shove the sibling header buttons to the left. */}
       <div className="relative flex flex-col items-end">
-        {pdfUrl ? (
+        {canBrand ? (
+          // The primary button opens the brand picker, which is the generation hub
+          // (pick branding → generate, or download the current report).
+          <button
+            type="button"
+            onClick={() => {
+              setGenError(null);
+              setShowBrandPicker(true);
+            }}
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-zinc-900 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-zinc-800 active:scale-[0.98]"
+            data-testid="report-button"
+          >
+            {pdfUrl ? 'Download PDF' : 'Generate report'}
+          </button>
+        ) : pdfUrl ? (
           <div className="flex items-center gap-2">
             <a
               href={pdfUrl}
@@ -86,7 +161,7 @@ export default function GenerateReportButton({
             type="button"
             onClick={run}
             disabled={pending}
-            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-zinc-900 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-zinc-800 active:scale-[0.98] disabled:opacity-50"
           >
             {pending ? 'Generating…' : 'Generate report'}
           </button>

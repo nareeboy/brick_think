@@ -47,7 +47,9 @@ jobs:
         with:
           version: latest
       - name: Push migrations (via IPv4 session pooler)
-        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        # --include-all: apply pending migrations even when a newer-timestamped
+        # one is already on the remote (out-of-order merges across branches).
+        run: supabase db push --include-all --db-url "$SUPABASE_DB_URL"
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_NONPROD }}
 
@@ -62,6 +64,8 @@ jobs:
         with:
           version: latest
       - name: Push migrations (via IPv4 session pooler)
-        run: supabase db push --db-url "$SUPABASE_DB_URL"
+        # --include-all: apply pending migrations even when a newer-timestamped
+        # one is already on the remote (out-of-order merges across branches).
+        run: supabase db push --include-all --db-url "$SUPABASE_DB_URL"
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL_PROD }}

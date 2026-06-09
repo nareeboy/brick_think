@@ -87,7 +87,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!fx) return;
-  // Remove subscription row first (cascade would handle it, but be explicit).
+  // Remove billing rows first (cascade would handle it, but be explicit).
+  await getAdminClient().from('session_purchases').delete().eq('profile_id', fx.facilitator.id);
   await getAdminClient()
     .from('facilitator_subscriptions')
     .delete()
@@ -100,8 +101,9 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  // Drop any subscription row a test inserted so it cannot leak into later
+  // Drop any billing rows a test inserted so they cannot leak into later
   // tests regardless of execution order.
+  await getAdminClient().from('session_purchases').delete().eq('profile_id', fx.facilitator.id);
   await getAdminClient()
     .from('facilitator_subscriptions')
     .delete()
@@ -129,6 +131,7 @@ describe('generateSessionReport entitlement gate', () => {
           profile_id: fx.facilitator.id,
           stripe_subscription_id: `sub_rptgate_${fx.facilitator.id.slice(0, 8)}`,
           status: 'active',
+          tier: 'session_report',
           current_period_end: new Date(Date.now() + 30 * 86400_000).toISOString(),
           updated_at: new Date().toISOString(),
         },
@@ -143,6 +146,26 @@ describe('generateSessionReport entitlement gate', () => {
     // yields zero stages and the action returns `no_models` (which sits before
     // the Anthropic-key lookup). Asserting the exact code proves the call passed
     // the gate AND reached the model check, not merely that it wasn't denied.
+    expect(res.ok).toBe(false);
+    if (res.ok) throw new Error('expected !ok');
+    expect(res.code).toBe('no_models');
+  });
+
+  it('per-session unlock (no subscription) → NOT upgrade_required (gate admits via session_purchases)', async () => {
+    // No facilitator_subscriptions row — the only entitlement is a one-time
+    // per-session unlock recorded in session_purchases by the service role.
+    const purchase = await getAdminClient().from('session_purchases').insert({
+      profile_id: fx.facilitator.id,
+      session_id: fx.session.id,
+      tier: 'session_report',
+      status: 'paid',
+    });
+    expect(purchase.error).toBeNull();
+
+    const res = await generateSessionReport(fx.session.id);
+
+    // Per-session entitlement clears the gate; the call then reaches the model
+    // check and returns `no_models` (the test session has no models).
     expect(res.ok).toBe(false);
     if (res.ok) throw new Error('expected !ok');
     expect(res.code).toBe('no_models');

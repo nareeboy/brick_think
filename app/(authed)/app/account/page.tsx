@@ -1,18 +1,17 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
 import { isBillingEnabled } from '@/lib/billing/env';
-import { isEntitled } from '@/lib/billing/entitlements';
 
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
-import { BillingCard } from './BillingCard';
+import { AccountTabs } from './AccountTabs';
+import { BrandPresetsCard } from './branding/BrandPresetsCard';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
@@ -20,6 +19,11 @@ import { ReplayWalkthroughCard } from './ReplayWalkthroughCard';
 
 export const metadata: Metadata = { title: 'Account' };
 export const dynamic = 'force-dynamic';
+
+/** Section divider title between the stacked utility cards in the left column. */
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h2 className="mt-3 px-1 font-display text-xl text-zinc-900">{children}</h2>;
+}
 
 export default async function AccountPage() {
   if (!isSupabaseConfigured()) {
@@ -33,37 +37,27 @@ export default async function AccountPage() {
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, created_at, avatar_url, a11y_preferences')
+    .select('full_name, email, avatar_url, a11y_preferences')
     .eq('id', user.id)
     .single();
   if (profileRes.error) {
     throw new Error(`Failed to load profile: ${profileRes.error.message}`);
   }
 
-  const billingEnabled = isBillingEnabled();
-  const entitled = billingEnabled ? await isEntitled(user.id) : false;
-
   const email = profileRes.data.email;
   const fullName = profileRes.data.full_name?.trim() || null;
   const initialAvatarUrl = profileRes.data.avatar_url ?? null;
-  const createdAt = new Date(profileRes.data.created_at);
-  const createdLabel = createdAt.toLocaleDateString('en-GB', {
-    month: 'long',
-    year: 'numeric',
-  });
 
   return (
-    <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <PageBanner
-        eyebrow="BrickThink"
-        title="Account"
-        titleTestId="account-heading"
-        subtitle={`Joined ${createdLabel}.`}
-      />
-      <div className="mx-auto max-w-[1200px] px-5 py-10">
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-          {/* Profile — the anchor tile, two columns wide. */}
-          <section className="rounded-2xl border border-zinc-900/10 bg-white p-6 lg:col-span-2">
+    <div className="mx-auto max-w-[1200px] px-5 py-10">
+      <div className="mb-6">
+        <AccountTabs showBilling={isBillingEnabled()} />
+      </div>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        {/* Left column — profile anchor, then the titled utility sections beneath it. */}
+        <div className="flex flex-col gap-4 lg:col-span-2">
+          <SectionTitle>Profile</SectionTitle>
+          <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
             <AccountForm
               initialFullName={fullName}
               email={email}
@@ -71,31 +65,35 @@ export default async function AccountPage() {
             />
           </section>
 
-          {/* Right rail — stacked preference + walkthrough + tip-jar tiles. */}
-          <div className="flex flex-col gap-4">
-            <A11yPreferencesCard
-              initialColourblindMode={
-                normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
-              }
-            />
-            <ReplayWalkthroughCard />
-            <BuyMeACoffeeCard />
-            {billingEnabled ? (
-              <BillingCard billingEnabled={billingEnabled} entitled={entitled} />
-            ) : null}
-          </div>
+          <SectionTitle>Preferences</SectionTitle>
+          <A11yPreferencesCard
+            initialColourblindMode={
+              normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
+            }
+          />
 
-          {/* Contribution — full-width tile so its label/CTA row has room to breathe. */}
-          <div className="lg:col-span-3">
-            <ContributionCard />
-          </div>
+          <SectionTitle>Onboarding</SectionTitle>
+          <ReplayWalkthroughCard />
 
-          {/* Danger zone — full-width footer tile. */}
-          <div className="lg:col-span-3">
-            <DangerZone email={email} />
-          </div>
+          <SectionTitle>Support</SectionTitle>
+          <BuyMeACoffeeCard />
+        </div>
+
+        {/* Right rail — brand presets + contribution, each under a section title. */}
+        <div className="flex flex-col gap-4">
+          <SectionTitle>Branding</SectionTitle>
+          <BrandPresetsCard />
+
+          <SectionTitle>Open source</SectionTitle>
+          <ContributionCard />
+        </div>
+
+        {/* Danger zone — matches the left container width. */}
+        <div className="flex flex-col gap-4 lg:col-span-2">
+          <SectionTitle>Danger zone</SectionTitle>
+          <DangerZone email={email} />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

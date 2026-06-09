@@ -15,9 +15,10 @@
 // app with NO paywall UI, while the public pricing page still renders.
 //
 // What this covers:
-//   1. Public /pricing renders (no auth): heading, cost-recovery message, both
-//      paid features (PDF + transcript), and the primary CTA linking to the
-//      billing page behind sign-in.
+//   1. Public /pricing renders (no auth): the "Pricing" eyebrow, the
+//      cost-recovery message, the three tier names (Session Report,
+//      Client-Ready, Full Findings) with a price line, and the primary CTA
+//      linking to the billing page behind sign-in.
 //   2. Self-host guarantee — /app/account/billing shows the billing-disabled
 //      "all features are available for free" copy and NO subscribe / manage
 //      buttons.
@@ -42,19 +43,20 @@ test.describe('billing — open-source / self-host guarantee', () => {
   test('public pricing page renders the cost-recovery story', async ({ signedInPage: page }) => {
     await page.goto('/pricing');
 
-    // The "Pricing" eyebrow badge is the page's "Pricing" label (the H1 is
-    // "Free tool. Two features that cost us money.").
+    // The "Pricing" eyebrow badge is the page's "Pricing" label (the H1 is now
+    // "Free tool. Three tiers that cost us money.").
     await expect(page.getByText('Pricing', { exact: true }).first()).toBeVisible();
-    await expect(
-      page.getByRole('heading', { name: /Free tool\.\s*Two features that cost us money\./i }),
-    ).toBeVisible();
 
-    // Cost-recovery, not a tier wall.
+    // Cost-recovery, not a tier wall (the dark band copy still holds).
     await expect(page.getByText(/cost-recovery, not a tier wall/i).first()).toBeVisible();
 
-    // Both paid features are named.
-    await expect(page.getByText(/PDF session reports/i).first()).toBeVisible();
-    await expect(page.getByText(/transcript cleanup/i).first()).toBeVisible();
+    // The three tier cards are named.
+    await expect(page.getByText('Session Report').first()).toBeVisible();
+    await expect(page.getByText('Client-Ready').first()).toBeVisible();
+    await expect(page.getByText('Full Findings').first()).toBeVisible();
+
+    // Each tier renders a price line — assert the Session Report one.
+    await expect(page.getByText(/€9\s*\/\s*session/).first()).toBeVisible();
 
     // Primary CTA links to the billing page behind sign-in.
     await expect(page.locator(`a[href="${BILLING_CTA_HREF}"]`).first()).toBeVisible();

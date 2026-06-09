@@ -1,15 +1,18 @@
 import { Page, Text, View } from '@react-pdf/renderer';
 
-import { styles } from './styles';
+import type { ReportStyles } from './styles';
 
 interface Props {
   sessionTitle: string;
   body: string;
   pageNumber: number;
   totalPages: number;
+  styles: ReportStyles['sheet'];
+  footerLabel: string;
 }
 
 export function ExecutiveSummary(props: Props) {
+  const { styles } = props;
   const paragraphs = props.body.split(/\n{2,}/).filter(Boolean);
   return (
     <Page size="A4" style={styles.page}>
@@ -20,15 +23,35 @@ export function ExecutiveSummary(props: Props) {
           {p}
         </Text>
       ))}
-      <PageFooter title={props.sessionTitle} page={props.pageNumber} total={props.totalPages} />
+      <PageFooter
+        label={props.footerLabel}
+        title={props.sessionTitle}
+        page={props.pageNumber}
+        total={props.totalPages}
+        styles={styles}
+      />
     </Page>
   );
 }
 
-export function PageFooter({ title, page, total }: { title: string; page: number; total: number }) {
+export function PageFooter({
+  label,
+  title,
+  page,
+  total,
+  styles,
+}: {
+  label: string;
+  title: string;
+  page: number;
+  total: number;
+  styles: ReportStyles['sheet'];
+}) {
   return (
     <View style={styles.pageFooter} fixed>
-      <Text>BrickThink · {title}</Text>
+      <Text>
+        {label} · {title}
+      </Text>
       <Text>
         {page} / {total}
       </Text>

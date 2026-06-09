@@ -7,6 +7,7 @@ import {
   MarketingShell,
   PlusGlyph,
 } from '@/components/marketing/MarketingChrome';
+import { PricingTiers } from '@/components/marketing/PricingTiers';
 
 export const metadata: Metadata = {
   title: 'Pricing',
@@ -23,19 +24,19 @@ const FAQS: Faq[] = [
   },
   {
     q: 'Then what do you charge for?',
-    a: 'Four services we produce and deliver on the hosted site: PDF session reports, automatic transcript cleanup, fully white-labelled reports, and a full written report with our findings from the session. Each one costs us money every time we run it, so each carries a subscription rather than quietly degrading the free tool to pay for it.',
+    a: 'Three hosted tiers, each a superset of the one below. Session Report gives you a hosted PDF and automatic transcript cleanup, with no Anthropic key to manage. Client-Ready adds a fully white-labelled deliverable — your logo, colours and name. Full Findings adds a complete written report with synthesised findings and suggestions. Each tier costs us money every time we run it, so it carries a subscription on the hosted site rather than quietly degrading the free tool to pay for it.',
   },
   {
     q: 'What will it cost?',
-    a: 'We have not set a price yet. We are watching real usage first, then we will set it at launch — monthly or annual, per facilitator, with annual working out at roughly two months free. We would rather price it once, fairly, than guess now.',
+    a: 'Session Report is €9 per session, or €29/month or €290/year. Client-Ready is €45 per session, €119/month or €1,190/year. Full Findings is €60 per session, €159/month or €1,590/year. A per-session unlock covers a single deliverable; the monthly and yearly subscriptions cover unlimited use of that tier, with yearly working out at roughly two months free.',
   },
   {
     q: 'Can I self-host to avoid paying?',
-    a: 'You can self-host the whole tool for free and run unlimited sessions — that part is yours under Apache 2.0. The four paid services are different: they are things we produce and deliver for you, so they live only on the hosted site at brickthink.io and are not part of the self-hosted tool.',
+    a: 'You can self-host the whole tool for free and run unlimited sessions — that part is yours under Apache 2.0. The paid tiers are different: they are things we produce and deliver for you, so they live only on the hosted site at brickthink.io and are not part of the self-hosted tool.',
   },
   {
     q: 'Is there a free trial?',
-    a: 'No free trial. The rest of BrickThink is already free to use as much as you like, so you can judge the tool fully before you ever pay. The paid services are the only thing behind a subscription.',
+    a: 'No free trial. The rest of BrickThink is already free to use as much as you like, so you can judge the tool fully before you ever pay. The paid tiers are the only thing behind a subscription.',
   },
 ];
 
@@ -44,7 +45,7 @@ export default function PricingPage() {
     <MarketingShell>
       <Hero />
       <CostRecoveryBand />
-      <PaidFeaturesSection />
+      <PricingTiers />
       <FaqSection />
       <CtaBand />
     </MarketingShell>
@@ -63,11 +64,11 @@ function Hero() {
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[78px]">
             Free tool.
             <br />
-            Four services that <span className="text-[#c0613d]">cost us money</span>.
+            Three tiers that <span className="text-[#c0613d]">cost us money</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
             BrickThink is free, open-source (Apache 2.0) and yours to self-host. We also produce
-            four hosted services for you — each with a real cost to run — so each carries a
+            three hosted tiers for you — each with a real cost to run — so each carries a
             subscription. The tool itself stays free, for everyone, forever.
           </p>
         </div>
@@ -76,7 +77,7 @@ function Hero() {
             {[
               ['Free', 'The whole app'],
               ['Apache 2.0', 'Code licence'],
-              ['4 services', 'Paid, on brickthink.io'],
+              ['3 tiers', 'Paid, on brickthink.io'],
               ['Self-host', 'The tool, free'],
             ].map(([val, label]) => (
               <div key={label}>
@@ -106,165 +107,13 @@ function CostRecoveryBand() {
         </div>
         <div className="md:col-span-8">
           <p className="font-display text-[24px] font-normal leading-[1.25] tracking-[-0.01em] md:text-[34px]">
-            The tool stays free. We only charge for the four services we produce for you, each with
-            a real <span className="text-[#d8a85d]">cost to run</span> — from the compute to render
-            a PDF to the AI tokens behind a written report — and only on the hosted site. Self-host
+            The tool stays free. We only charge for the hosted tiers we produce for you, each with a
+            real <span className="text-[#d8a85d]">cost to run</span> — from the compute to render a
+            PDF to the AI tokens behind a written report — and only on the hosted site. Self-host
             the tool and you run unlimited sessions free; the delivered services live on
             brickthink.io.
           </p>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function PdfGlyph({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
-      <path d="M14 3v5h5" />
-      <path d="M8.5 13h7" />
-      <path d="M8.5 16.5h7" />
-    </svg>
-  );
-}
-
-function SparkleGlyph({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
-      <path d="M18.5 16.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" />
-    </svg>
-  );
-}
-
-function TagGlyph({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M3.6 11.4 11.4 3.6a2 2 0 0 1 1.4-.6H19a2 2 0 0 1 2 2v6.2a2 2 0 0 1-.6 1.4l-7.8 7.8a2 2 0 0 1-2.8 0l-6.2-6.2a2 2 0 0 1 0-2.8z" />
-      <path d="M16.4 7.6h.01" />
-    </svg>
-  );
-}
-
-function InsightGlyph({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="10.5" cy="10.5" r="6.5" />
-      <path d="m20 20-4.2-4.2" />
-      <path d="M8 10.5h5" />
-      <path d="M8 8h5" />
-      <path d="M8 13h3" />
-    </svg>
-  );
-}
-
-const PAID_FEATURES = [
-  {
-    label: 'Paid service 01',
-    icon: PdfGlyph,
-    title: 'PDF session reports',
-    body: 'A clean, server-rendered PDF summary of a finished session — bricks, stories and the shared model — ready to send round the room.',
-  },
-  {
-    label: 'Paid service 02',
-    icon: SparkleGlyph,
-    title: 'Automatic transcript cleanup',
-    body: 'AI tidies your narration transcripts into readable notes, so spoken stories become something you can actually reuse.',
-  },
-  {
-    label: 'Paid service 03',
-    icon: TagGlyph,
-    title: 'Fully white-labelled reports',
-    body: 'A session report rendered entirely in your own brand — your logo, colours and name, none of ours — ready to hand to a client as your own deliverable.',
-  },
-  {
-    label: 'Paid service 04',
-    icon: InsightGlyph,
-    title: 'Full report with findings',
-    body: 'A complete written report of a workshop: the shared model and the stories, plus our suggestions and findings drawn from what actually happened in the room.',
-  },
-];
-
-function PaidFeaturesSection() {
-  return (
-    <section className="border-b border-zinc-900/5">
-      <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              The four paid services
-            </p>
-            <h2 className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-              Everything we charge for, in one place.
-            </h2>
-          </div>
-          <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Each one costs us money every time we run it, so the subscription on the hosted site
-            covers it. They are services we deliver — not part of the self-hosted tool.
-          </p>
-        </div>
-
-        <ul className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-          {PAID_FEATURES.map((f) => {
-            const Icon = f.icon;
-            return (
-              <li
-                key={f.title}
-                className="group relative flex flex-col overflow-hidden rounded-[28px] border border-zinc-900/10 bg-white p-7 transition-shadow duration-300 hover:shadow-[0_30px_60px_-30px_rgba(60,30,15,0.25)]"
-              >
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-900/10 bg-[#FAF7F1] text-[#c0613d]">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <p className="mt-5 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-                  {f.label}
-                </p>
-                <h3 className="mt-2 max-w-[28ch] font-display text-[24px] font-medium leading-tight tracking-tight text-zinc-950">
-                  {f.title}
-                </h3>
-                <p className="mt-3 max-w-[48ch] text-[14px] leading-relaxed text-zinc-700">
-                  {f.body}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
       </div>
     </section>
   );
