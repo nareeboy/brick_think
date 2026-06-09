@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
+import { celebrate } from '@/lib/onboarding/celebrate';
+
 import { useOnboardingState } from './useOnboardingState';
 import { WelcomeModal } from './WelcomeModal';
 
@@ -42,13 +44,21 @@ export function FacilitatorChecklist({ progress }: Props) {
     }
   }, [hydrated, checklistComplete]);
 
+  // Guards the one-shot celebration against React StrictMode's double-invoke
+  // and any incidental re-runs of the effect below.
+  const celebrated = useRef(false);
   useEffect(() => {
     if (!hydrated || role !== 'facilitator' || checklistDismissed || !allDone) return;
     if (completeAtHydration.current) {
       // User already saw the complete card on a previous visit — auto-dismiss.
       dismissChecklist();
     } else {
-      // First time reaching all-done: mark it so the next visit auto-dismisses.
+      // First time reaching all-done: celebrate, then mark it so the next visit
+      // auto-dismisses (and never re-celebrates).
+      if (!celebrated.current) {
+        celebrated.current = true;
+        void celebrate();
+      }
       markChecklistComplete();
     }
   }, [allDone, checklistDismissed, dismissChecklist, hydrated, markChecklistComplete, role]);
