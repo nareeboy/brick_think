@@ -16,12 +16,27 @@ interface Props {
   fontOptions: FontOption[];
   /** Currently-applied preset id, or null for the BrickThink default. */
   selectedId: string | null;
-  /** Apply the chosen preset (id) or the default (null) to the report. */
-  onApply: (id: string | null) => void;
+  /** Signed URL of the already-generated report, if any (download from here). */
+  currentPdfUrl: string | null;
+  /** True while a generation request is in flight. */
+  generating: boolean;
+  /** Error from the last generation attempt, shown inline. */
+  genError: string | null;
+  /** Generate (or regenerate) the report with the chosen preset (id) or default (null). */
+  onGenerate: (id: string | null) => void;
   onClose: () => void;
 }
 
-export function BrandPickerDialog({ profiles, fontOptions, selectedId, onApply, onClose }: Props) {
+export function BrandPickerDialog({
+  profiles,
+  fontOptions,
+  selectedId,
+  currentPdfUrl,
+  generating,
+  genError,
+  onGenerate,
+  onClose,
+}: Props) {
   const router = useRouter();
   const titleId = useId();
   const [choice, setChoice] = useState<string | null>(selectedId);
@@ -55,20 +70,56 @@ export function BrandPickerDialog({ profiles, fontOptions, selectedId, onApply, 
     );
   }
 
+  const generateLabel = currentPdfUrl
+    ? generating
+      ? 'Regenerating…'
+      : 'Regenerate report'
+    : generating
+      ? 'Generating…'
+      : 'Generate report';
+
   return (
     <ModalBackdrop onClose={onClose} titleId={titleId} panelClassName="w-full max-w-lg">
       <div className="rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
         <h2 id={titleId} className="font-display text-lg font-medium text-zinc-900">
-          Choose branding
+          {currentPdfUrl ? 'Your report' : 'Generate report'}
         </h2>
         <p className="mt-2 text-sm text-zinc-600">
-          Pick a preset to white-label this report, or use the BrickThink default.
+          White-label this report with a brand preset, or use the BrickThink default.
         </p>
 
+        {currentPdfUrl ? (
+          <a
+            href={currentPdfUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-zinc-900/10 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 transition-colors hover:bg-zinc-100"
+          >
+            <span className="font-medium">Download the latest report (PDF)</span>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="h-4 w-4 shrink-0 text-zinc-500"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+        ) : null}
+
+        <p className="mt-5 text-xs font-medium uppercase tracking-[0.14em] text-zinc-500">
+          Branding
+        </p>
         <div
           role="radiogroup"
           aria-label="Brand preset"
-          className="mt-4 flex max-h-[50vh] flex-col gap-2 overflow-auto"
+          className="mt-2 flex max-h-[42vh] flex-col gap-2 overflow-auto"
         >
           <ChoiceRow selected={choice === null} onSelect={() => setChoice(null)}>
             <div className="flex min-w-0 flex-1 flex-col text-left">
@@ -106,8 +157,9 @@ export function BrandPickerDialog({ profiles, fontOptions, selectedId, onApply, 
         <button
           type="button"
           onClick={() => setAdding(true)}
+          disabled={generating}
           data-testid="brand-add-preset"
-          className="mt-3 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-300 px-3 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+          className="mt-3 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-300 px-3 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50"
         >
           <span aria-hidden="true" className="text-base leading-none">
             +
@@ -115,23 +167,29 @@ export function BrandPickerDialog({ profiles, fontOptions, selectedId, onApply, 
           Add preset
         </button>
 
+        {genError ? (
+          <p className="mt-4 text-sm text-red-600" role="status">
+            {genError}
+          </p>
+        ) : null}
+
         <div className="mt-5 flex flex-wrap justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="cursor-pointer rounded-full border border-zinc-900/15 bg-white px-4 py-2 text-sm hover:bg-zinc-50"
+            disabled={generating}
+            className="cursor-pointer rounded-full border border-zinc-900/15 bg-white px-4 py-2 text-sm hover:bg-zinc-50 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="button"
-            onClick={() => {
-              onApply(choice);
-              onClose();
-            }}
-            className="cursor-pointer rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800"
+            onClick={() => onGenerate(choice)}
+            disabled={generating}
+            data-testid="brand-generate"
+            className="cursor-pointer rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
           >
-            Use preset
+            {generateLabel}
           </button>
         </div>
       </div>

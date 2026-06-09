@@ -32,8 +32,8 @@ function profile(id: string, name: string): BrandProfileSummary {
     brandColour: '#111111',
     accentColour: '#1d4ed8',
     logoUrl: null,
-    headingFont: { kind: 'curated', key: 'inter' },
-    bodyFont: { kind: 'curated', key: 'inter' },
+    headingFont: { kind: 'curated', key: 'fraunces' },
+    bodyFont: { kind: 'curated', key: 'geist' },
     headingFontUrl: null,
     bodyFontUrl: null,
   };
@@ -41,19 +41,27 @@ function profile(id: string, name: string): BrandProfileSummary {
 
 const profiles = [profile('p1', 'Acme'), profile('p2', 'Blue')];
 
+function renderPicker(overrides: Partial<Parameters<typeof BrandPickerDialog>[0]> = {}) {
+  const props = {
+    profiles,
+    fontOptions: [],
+    selectedId: null,
+    currentPdfUrl: null,
+    generating: false,
+    genError: null,
+    onGenerate: vi.fn(),
+    onClose: vi.fn(),
+    ...overrides,
+  };
+  render(<BrandPickerDialog {...props} />);
+  return props;
+}
+
 afterEach(cleanup);
 
 describe('<BrandPickerDialog>', () => {
   it('renders the default option plus one row per preset, default selected when none chosen', () => {
-    render(
-      <BrandPickerDialog
-        profiles={profiles}
-        fontOptions={[]}
-        selectedId={null}
-        onApply={() => {}}
-        onClose={() => {}}
-      />,
-    );
+    renderPicker();
     const radios = screen.getAllByRole('radio');
     expect(radios).toHaveLength(3); // default + 2 presets
     expect(radios[0]!.getAttribute('aria-checked')).toBe('true'); // default
@@ -61,44 +69,38 @@ describe('<BrandPickerDialog>', () => {
     expect(screen.getByText('Blue')).toBeTruthy();
   });
 
-  it('applies the chosen preset only after "Use preset" is clicked', async () => {
-    const onApply = vi.fn();
-    const onClose = vi.fn();
-    render(
-      <BrandPickerDialog
-        profiles={profiles}
-        fontOptions={[]}
-        selectedId={null}
-        onApply={onApply}
-        onClose={onClose}
-      />,
-    );
+  it('generates with the default (null) when nothing is selected', async () => {
+    const { onGenerate } = renderPicker();
+    await userEvent.click(screen.getByTestId('brand-generate'));
+    expect(onGenerate).toHaveBeenCalledWith(null);
+  });
 
-    // Selecting a row alone doesn't apply.
+  it('generates with the chosen preset after selecting its row', async () => {
+    const { onGenerate } = renderPicker();
     await userEvent.click(screen.getAllByRole('radio')[1]!); // Acme
-    expect(onApply).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Generate report' }));
+    expect(onGenerate).toHaveBeenCalledWith('p1');
+  });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Use preset' }));
-    expect(onApply).toHaveBeenCalledWith('p1');
-    expect(onClose).toHaveBeenCalledTimes(1);
+  it('shows the current report download link and a Regenerate action when a report exists', () => {
+    renderPicker({ currentPdfUrl: 'https://example.com/report.pdf' });
+    expect(screen.getByRole('link', { name: /download the latest report/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Regenerate report' })).toBeTruthy();
+  });
+
+  it('reflects the generating state and surfaces a generation error', () => {
+    renderPicker({ generating: true, genError: 'Upload failed — try again.' });
+    const generate = screen.getByTestId('brand-generate');
+    expect(generate.getAttribute('disabled')).not.toBeNull();
+    expect(generate.textContent).toContain('Generating…');
+    expect(screen.getByText('Upload failed — try again.')).toBeTruthy();
   });
 
   it('opens the brand editor inline when "Add preset" is clicked', async () => {
-    render(
-      <BrandPickerDialog
-        profiles={profiles}
-        fontOptions={[]}
-        selectedId={null}
-        onApply={() => {}}
-        onClose={() => {}}
-      />,
-    );
-
-    expect(screen.getByRole('heading', { name: 'Choose branding' })).toBeTruthy();
+    renderPicker();
+    expect(screen.getByRole('heading', { name: 'Generate report' })).toBeTruthy();
     await userEvent.click(screen.getByTestId('brand-add-preset'));
-
-    // The editor replaces the picker (single modal at a time).
     expect(screen.getByTestId('brand-editor')).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Choose branding' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Generate report' })).toBeNull();
   });
 });

@@ -35,9 +35,10 @@ export default function GenerateReportButton({
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
   const [brandId, setBrandId] = useState<string | null>(rememberedBrandProfileId ?? null);
+  // Generation errors raised from inside the brand picker stay in the picker
+  // (the row's `error` is for the non-branding direct-generate path).
+  const [genError, setGenError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-
-  const brandLabel = brandProfiles.find((p) => p.id === brandId)?.name ?? 'Default';
 
   // Formatted client-side after mount: `toLocaleString()` resolves in the
   // viewer's locale/timezone, which never matches the server's (Railway = UTC),
@@ -48,6 +49,7 @@ export default function GenerateReportButton({
     setGeneratedLabel(generatedAt ? new Date(generatedAt).toLocaleString() : null);
   }, [generatedAt]);
 
+  // Non-branding direct path: generate with whatever brand is remembered.
   function run() {
     setError(null);
     startTransition(async () => {
@@ -65,6 +67,28 @@ export default function GenerateReportButton({
     });
   }
 
+  // Branding path: triggered from the picker with the chosen brand. Errors render
+  // inside the picker; on success the picker closes and the row shows the result.
+  function generateWithBrand(id: string | null) {
+    setGenError(null);
+    setBrandId(id);
+    startTransition(async () => {
+      const res = await generateSessionReport(sessionId, id);
+      if (res.ok) {
+        setPdfUrl(res.pdfUrl);
+        setGeneratedAt(res.generatedAt);
+        setShowBrandPicker(false);
+      } else if (res.code === 'upgrade_required') {
+        setShowBrandPicker(false);
+        setShowUpgrade(true);
+      } else if (res.code === 'no_claude_key') {
+        setGenError('AI report generation is not configured on this server.');
+      } else {
+        setGenError(messageForCode(res.code, res.message));
+      }
+    });
+  }
+
   return (
     <>
       <UpgradeModal
@@ -76,13 +100,16 @@ export default function GenerateReportButton({
         // one-off ladder. full_findings (€60) is omitted — that deliverable isn't built.
         tiers={['session_report', 'client_ready']}
       />
-      {showBrandPicker ? (
+      {canBrand && showBrandPicker ? (
         <BrandPickerDialog
           profiles={brandProfiles}
           fontOptions={fontOptions}
           selectedId={brandId}
-          onApply={setBrandId}
-          onClose={() => setShowBrandPicker(false)}
+          currentPdfUrl={pdfUrl}
+          generating={pending}
+          genError={genError}
+          onGenerate={generateWithBrand}
+          onClose={pending ? () => {} : () => setShowBrandPicker(false)}
         />
       ) : null}
       {/* `relative` + absolutely-positioned messages keep this column's width equal
@@ -90,27 +117,20 @@ export default function GenerateReportButton({
           the flex item and shove the sibling header buttons to the left. */}
       <div className="relative flex flex-col items-end">
         {canBrand ? (
+          // The primary button opens the brand picker, which is the generation hub
+          // (pick branding → generate, or download the current report).
           <button
             type="button"
-            onClick={() => setShowBrandPicker(true)}
-            className="mb-1 inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-zinc-300 px-2 py-1 text-xs text-zinc-700 transition-colors hover:bg-zinc-50"
-            data-testid="branding-button"
+            onClick={() => {
+              setGenError(null);
+              setShowBrandPicker(true);
+            }}
+            className="inline-flex h-10 items-center justify-center rounded-xl bg-zinc-900 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-zinc-800 active:scale-[0.98]"
+            data-testid="report-button"
           >
-            <span className="text-zinc-500">Branding:</span>
-            <span className="font-medium">{brandLabel}</span>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="h-3.5 w-3.5 text-zinc-400"
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            {pdfUrl ? 'Download PDF' : 'Generate report'}
           </button>
-        ) : null}
-        {pdfUrl ? (
+        ) : pdfUrl ? (
           <div className="flex items-center gap-2">
             <a
               href={pdfUrl}
