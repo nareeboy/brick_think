@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
+import { celebrate } from '@/lib/onboarding/celebrate';
+
 import { useOnboardingState } from './useOnboardingState';
 
 interface Step {
@@ -213,6 +215,9 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
             type="button"
             onClick={() => {
               if (isLast) {
+                // Genuine completion — celebrate. (Skip/Esc also call finish()
+                // but deliberately get no confetti.)
+                void celebrate();
                 finish();
                 return;
               }
