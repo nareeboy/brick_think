@@ -9,7 +9,8 @@ export type NotificationKind =
   | 'org_added'
   | 'session_started'
   | 'participant_joined'
-  | 'session_invitation_claimed';
+  | 'session_invitation_claimed'
+  | 'session_ended';
 
 interface DispatchOrgAddedArgs {
   recipientProfileId: string;
@@ -88,6 +89,57 @@ export async function dispatchSessionStartedNotifications(
   const { error } = await svc.from('notifications').insert(rows);
   if (error) {
     console.error('dispatchSessionStartedNotifications insert failed', error);
+  }
+}
+
+interface DispatchSessionEndedArgs {
+  sessionId: string;
+  orgId: string;
+  facilitatorProfileId: string;
+  facilitatorDisplay: string;
+}
+
+/**
+ * Insert one `session_ended` notification per org member (excluding the
+ * facilitator) when the facilitator stops a session. Mirrors
+ * dispatchSessionStartedNotifications — a single batched insert keeps it to one
+ * round-trip. Called from endSessionAction, which is idempotent on
+ * already-completed sessions, so this fires at most once per session end.
+ */
+export async function dispatchSessionEndedNotifications(
+  args: DispatchSessionEndedArgs,
+): Promise<void> {
+  const svc = getServiceSupabaseClient();
+
+  const membersRes = await svc
+    .from('org_memberships')
+    .select('profile_id')
+    .eq('org_id', args.orgId);
+  if (membersRes.error) {
+    console.error('dispatchSessionEndedNotifications members fetch failed', membersRes.error);
+    return;
+  }
+
+  const recipients = (membersRes.data ?? [])
+    .map((r) => r.profile_id as string)
+    .filter((id) => id !== args.facilitatorProfileId);
+
+  if (recipients.length === 0) return;
+
+  const rows = recipients.map((profileId) => ({
+    recipient_profile_id: profileId,
+    kind: 'session_ended' as const,
+    title: `${args.facilitatorDisplay} ended the session`,
+    body: 'This session is now complete.',
+    link_url: `/app/sessions/${args.sessionId}`,
+    actor_profile_id: args.facilitatorProfileId,
+    org_id: args.orgId,
+    session_id: args.sessionId,
+  }));
+
+  const { error } = await svc.from('notifications').insert(rows);
+  if (error) {
+    console.error('dispatchSessionEndedNotifications insert failed', error);
   }
 }
 
