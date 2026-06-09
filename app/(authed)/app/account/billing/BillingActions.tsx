@@ -47,6 +47,19 @@ export default function BillingActions({
 
   return (
     <div className="space-y-5">
+      <div className="mx-auto flex w-fit rounded-full border border-zinc-900/15 p-1 text-sm">
+        {(['monthly', 'yearly'] as const).map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => setInterval(opt)}
+            className={`cursor-pointer rounded-full px-4 py-1.5 ${interval === opt ? 'bg-zinc-900 text-white' : 'text-zinc-700'}`}
+          >
+            {opt === 'monthly' ? 'Monthly' : 'Yearly'}
+          </button>
+        ))}
+      </div>
+
       {currentTier ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-zinc-700">
@@ -75,19 +88,6 @@ export default function BillingActions({
           </button>
         </div>
       ) : null}
-
-      <div className="mx-auto flex w-fit rounded-full border border-zinc-900/15 p-1 text-sm">
-        {(['monthly', 'yearly'] as const).map((opt) => (
-          <button
-            key={opt}
-            type="button"
-            onClick={() => setInterval(opt)}
-            className={`cursor-pointer rounded-full px-4 py-1.5 ${interval === opt ? 'bg-zinc-900 text-white' : 'text-zinc-700'}`}
-          >
-            {opt === 'monthly' ? 'Monthly' : 'Yearly'}
-          </button>
-        ))}
-      </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         {allTierMeta().map((meta) => {
