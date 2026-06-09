@@ -93,4 +93,26 @@ describe('useOnboardingState', () => {
     expect(result.current.checklistComplete).toBe(false);
     expect(result.current.role).toBe('participant');
   });
+
+  it('walkthroughReplay defaults to false', () => {
+    const { result } = renderHook(() => useOnboardingState());
+    expect(result.current.walkthroughReplay).toBe(false);
+  });
+
+  it('replayAll sets the walkthrough-replay flag so a finished checklist re-shows its steps', () => {
+    const { result } = renderHook(() => useOnboardingState());
+    act(() => result.current.replayAll());
+    expect(localStorage.getItem('bt_walkthrough_replay')).toBe('1');
+    expect(result.current.walkthroughReplay).toBe(true);
+  });
+
+  it('dismissChecklist ends replay/preview mode by clearing the flag', () => {
+    const { result } = renderHook(() => useOnboardingState());
+    act(() => result.current.replayAll());
+    expect(result.current.walkthroughReplay).toBe(true);
+    act(() => result.current.dismissChecklist());
+    expect(localStorage.getItem('bt_walkthrough_replay')).toBeNull();
+    expect(result.current.walkthroughReplay).toBe(false);
+    expect(result.current.checklistDismissed).toBe(true);
+  });
 });

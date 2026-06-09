@@ -10,6 +10,11 @@ const KEYS = {
   checklistComplete: 'bt_checklist_complete',
   checklistDismissed: 'bt_checklist_dismissed',
   sessionTourSeen: 'bt_session_tour_seen',
+  // Set by replayAll(). While present, the FacilitatorChecklist re-shows its
+  // three steps even for a user who has already completed the funnel (whose
+  // server-derived progress is all-done) — so "Replay walkthrough" actually
+  // replays the steps instead of bouncing straight to the "complete" card.
+  walkthroughReplay: 'bt_walkthrough_replay',
 } as const;
 
 const STORAGE_KEYS = Object.values(KEYS);
@@ -32,6 +37,9 @@ export interface OnboardingState {
   checklistComplete: boolean;
   checklistDismissed: boolean;
   sessionTourSeen: boolean;
+  /** True after replayAll() until the checklist is dismissed — forces the
+   *  checklist to re-show its steps regardless of server-derived progress. */
+  walkthroughReplay: boolean;
   hydrated: boolean;
   markWelcomeSeen: () => void;
   markChecklistComplete: () => void;
@@ -50,6 +58,7 @@ export function useOnboardingState(): OnboardingState {
   const [checklistComplete, setChecklistComplete] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [sessionTourSeen, setSessionTourSeen] = useState(false);
+  const [walkthroughReplay, setWalkthroughReplay] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -59,6 +68,7 @@ export function useOnboardingState(): OnboardingState {
       setChecklistComplete(readFlag(KEYS.checklistComplete));
       setChecklistDismissed(readFlag(KEYS.checklistDismissed));
       setSessionTourSeen(readFlag(KEYS.sessionTourSeen));
+      setWalkthroughReplay(readFlag(KEYS.walkthroughReplay));
     };
     sync();
     setHydrated(true);
@@ -81,7 +91,11 @@ export function useOnboardingState(): OnboardingState {
 
   const dismissChecklist = useCallback(() => {
     window.localStorage.setItem(KEYS.checklistDismissed, '1');
+    // Dismissing also ends any replay/preview — the funnel steps stop being
+    // forced and the checklist reverts to its normal (data-driven) behaviour.
+    window.localStorage.removeItem(KEYS.walkthroughReplay);
     setChecklistDismissed(true);
+    setWalkthroughReplay(false);
   }, []);
 
   const markSessionTourSeen = useCallback(() => {
@@ -94,10 +108,14 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.removeItem(KEYS.checklistComplete);
     window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
+    // Enter replay/preview so the checklist re-shows its steps even when the
+    // user's real progress is all-done.
+    window.localStorage.setItem(KEYS.walkthroughReplay, '1');
     setWelcomeSeen(false);
     setChecklistComplete(false);
     setChecklistDismissed(false);
     setSessionTourSeen(false);
+    setWalkthroughReplay(true);
   }, []);
 
   return {
@@ -106,6 +124,7 @@ export function useOnboardingState(): OnboardingState {
     checklistComplete,
     checklistDismissed,
     sessionTourSeen,
+    walkthroughReplay,
     hydrated,
     markWelcomeSeen,
     markChecklistComplete,

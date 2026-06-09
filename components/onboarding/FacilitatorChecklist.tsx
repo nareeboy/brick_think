@@ -24,8 +24,10 @@ interface Props {
 export function FacilitatorChecklist({ progress }: Props) {
   const {
     role,
+    welcomeSeen,
     checklistComplete,
     checklistDismissed,
+    walkthroughReplay,
     hydrated,
     markChecklistComplete,
     dismissChecklist,
@@ -45,10 +47,15 @@ export function FacilitatorChecklist({ progress }: Props) {
   }, [hydrated, checklistComplete]);
 
   // Guards the one-shot celebration against React StrictMode's double-invoke
-  // and any incidental re-runs of the effect below.
+  // and any incidental re-runs of the effects below.
   const celebrated = useRef(false);
+
+  // Normal first-run flow. Suspended during a replay/preview: we must not
+  // auto-dismiss the deliberately re-shown steps, and the preview effect below
+  // owns the celebration (fired at a better moment than first paint).
   useEffect(() => {
-    if (!hydrated || role !== 'facilitator' || checklistDismissed || !allDone) return;
+    if (!hydrated || role !== 'facilitator' || checklistDismissed || walkthroughReplay || !allDone)
+      return;
     if (completeAtHydration.current) {
       // User already saw the complete card on a previous visit — auto-dismiss.
       dismissChecklist();
@@ -61,11 +68,33 @@ export function FacilitatorChecklist({ progress }: Props) {
       }
       markChecklistComplete();
     }
-  }, [allDone, checklistDismissed, dismissChecklist, hydrated, markChecklistComplete, role]);
+  }, [
+    allDone,
+    checklistDismissed,
+    dismissChecklist,
+    hydrated,
+    markChecklistComplete,
+    role,
+    walkthroughReplay,
+  ]);
+
+  // Replay/preview celebration. Fire once the welcome modal has been dismissed
+  // and the (re-shown) checklist is all-done, so the confetti lands when the
+  // user is actually looking at the finished checklist — not behind the modal
+  // at first paint. Also covers completing the last step during a preview.
+  useEffect(() => {
+    if (!hydrated || role !== 'facilitator' || !walkthroughReplay) return;
+    if (welcomeSeen && allDone && !celebrated.current) {
+      celebrated.current = true;
+      void celebrate();
+    }
+  }, [hydrated, role, walkthroughReplay, welcomeSeen, allDone]);
 
   if (!hydrated || role !== 'facilitator' || checklistDismissed) return null;
 
-  if (allDone) {
+  // In replay/preview, always show the steps (even when allDone) so "Replay
+  // walkthrough" actually replays them rather than showing the complete card.
+  if (allDone && !walkthroughReplay) {
     return (
       <section
         id={WelcomeModal.CHECKLIST_ANCHOR_ID}
