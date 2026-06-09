@@ -188,8 +188,33 @@ export function BrandPickerDialog({
             onClick={() => onGenerate(choice)}
             disabled={generating}
             data-testid="brand-generate"
-            className="cursor-pointer rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
+            aria-busy={generating}
+            className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:cursor-default disabled:opacity-70"
           >
+            {generating ? (
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-4 w-4 animate-spin"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  className="opacity-25"
+                />
+                <path
+                  d="M12 2a10 10 0 0 1 10 10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  className="opacity-90"
+                />
+              </svg>
+            ) : null}
             {generateLabel}
           </button>
         </div>
