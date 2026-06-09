@@ -96,6 +96,59 @@ export type Database = {
           },
         ]
       }
+      brand_profiles: {
+        Row: {
+          accent_colour: string
+          body_font: Json
+          brand_colour: string
+          created_at: string
+          display_name: string
+          footer_contact: string | null
+          heading_font: Json
+          id: string
+          logo_path: string | null
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          accent_colour: string
+          body_font: Json
+          brand_colour: string
+          created_at?: string
+          display_name: string
+          footer_contact?: string | null
+          heading_font: Json
+          id?: string
+          logo_path?: string | null
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          accent_colour?: string
+          body_font?: Json
+          brand_colour?: string
+          created_at?: string
+          display_name?: string
+          footer_contact?: string | null
+          heading_font?: Json
+          id?: string
+          logo_path?: string | null
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_profiles_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       brick_comments: {
         Row: {
           body: string
@@ -1118,6 +1171,7 @@ export type Database = {
       }
       sessions: {
         Row: {
+          brand_profile_id: string | null
           brief_text: string | null
           created_at: string
           current_stage: Database["public"]["Enums"]["stage_type"] | null
@@ -1136,6 +1190,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          brand_profile_id?: string | null
           brief_text?: string | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
@@ -1154,6 +1209,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          brand_profile_id?: string | null
           brief_text?: string | null
           created_at?: string
           current_stage?: Database["public"]["Enums"]["stage_type"] | null
@@ -1172,6 +1228,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sessions_brand_profile_id_fkey"
+            columns: ["brand_profile_id"]
+            isOneToOne: false
+            referencedRelation: "brand_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sessions_current_stage_id_fkey"
             columns: ["current_stage_id"]

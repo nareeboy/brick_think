@@ -59,9 +59,6 @@ export function DangerZone({ email }: Props) {
   return (
     <section className="rounded-2xl border border-red-200 bg-white p-6">
       <div className="flex flex-col gap-1">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-red-700">
-          Danger zone
-        </p>
         <h2 className="text-[18px] font-semibold tracking-tight text-red-900">Delete account</h2>
         <p className="mt-1 text-[13px] leading-relaxed text-zinc-600">
           Removes your sign-in credentials, your personal designs, and any workshops you own alone.

@@ -28,7 +28,13 @@ export type SessionRow = {
   status: string;
 };
 
-export function useSessionStages(sessionId: string): {
+export function useSessionStages(
+  sessionId: string,
+  // Optional suffix so a second consumer on the same page (e.g. the sidebar
+  // active-stage bar) subscribes on a distinct Realtime topic — Phoenix rejects
+  // two joins to the same topic on one socket, so the channel name must differ.
+  channelKey?: string,
+): {
   stages: StageRow[];
   session: SessionRow | null;
   ready: boolean;
@@ -83,7 +89,7 @@ export function useSessionStages(sessionId: string): {
 
       let hasSubscribedBefore = false;
       channel = supabase
-        .channel(`session:${sessionId}`)
+        .channel(`session:${sessionId}${channelKey ? `:${channelKey}` : ''}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'stages', filter: `session_id=eq.${sessionId}` },
@@ -134,7 +140,7 @@ export function useSessionStages(sessionId: string): {
       cancelled = true;
       if (channel) void supabase.removeChannel(channel);
     };
-  }, [sessionId]);
+  }, [sessionId, channelKey]);
 
   return { stages, session, ready };
 }

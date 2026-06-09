@@ -5,9 +5,6 @@ export function ContributionCard() {
   return (
     <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
       <div className="flex flex-col gap-1">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Open source
-        </p>
         <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">Contribute</h2>
         <p className="text-[12px] text-zinc-500">
           BrickThink is Apache&nbsp;2.0 and built in the open. If it&rsquo;s useful, the easiest way
@@ -15,12 +12,10 @@ export function ContributionCard() {
         </p>
       </div>
 
-      <div className="mt-5 flex flex-col gap-3 rounded-xl border border-zinc-900/10 bg-[#FBF7F1] p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-[14px] font-semibold text-zinc-900">
-              nareeboy/brick_think
-            </span>
+      <div className="mt-5 flex flex-col gap-4 rounded-xl border border-zinc-900/10 bg-[#FBF7F1] p-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[14px] font-semibold text-zinc-900">nareeboy/brick_think</span>
             <span className="inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
               Apache 2.0
             </span>
@@ -29,7 +24,7 @@ export function ContributionCard() {
             Next.js, Supabase, Yjs, Konva — the entire stack is on GitHub.
           </p>
         </div>
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2">
           <a
             href={GITHUB_URL}
             target="_blank"

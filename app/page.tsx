@@ -13,6 +13,7 @@ import {
   NavBar,
 } from '@/components/marketing/MarketingChrome';
 import { HeroVideo } from '@/components/marketing/HeroVideo';
+import { PricingTiers } from '@/components/marketing/PricingTiers';
 
 export const metadata: Metadata = { title: 'BrickThink' };
 
@@ -95,6 +96,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <PersonasSection />
         <FidelitySection />
         <OpenSourceSection />
+        <PricingTiers />
         <CtaBand />
       </main>
       <Footer />
@@ -743,11 +745,12 @@ function OpenSourceSection() {
               id="open-source-heading"
               className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
-              Free to use. Always.
+              Our platform and virtual sessions are free to use. Always…
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Use our site. Or run your own copy. The whole codebase is on GitHub.
+            Running workshops is free — on our site or your own copy. You only pay for the
+            deliverables we produce, below.
           </p>
         </div>
 
@@ -760,8 +763,9 @@ function OpenSourceSection() {
               </span>
             </div>
             <p className="mt-6 max-w-[42ch] text-[14px] leading-relaxed text-zinc-600">
-              Sign in. Run a session. No setup. No bill. Your data stays in the EU. Built to work
-              with screen readers from day one.
+              Sign in and run unlimited workshops — no setup, free to facilitate. Your data stays in
+              the EU, built for screen readers from day one. You only pay if you want a deliverable
+              we produce.
             </p>
             <Link
               href="/sign-in"

@@ -22,6 +22,31 @@ function formatAmount(total: number, currency: string): string {
   }).format(total / 100);
 }
 
+/**
+ * Loading placeholder shown while the live Stripe `invoices.list` call streams
+ * in behind a <Suspense> boundary on the billing page. Mirrors the card shape so
+ * the page doesn't shift when the real list arrives.
+ */
+export function InvoiceListSkeleton() {
+  return (
+    <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
+      <h2 className="text-[15px] font-semibold text-zinc-950">Billing history</h2>
+      <p className="mt-1 text-[13px] text-zinc-600">Your invoices and receipts.</p>
+      <ul className="mt-4 divide-y divide-zinc-900/10 border-t border-zinc-900/10">
+        {[0, 1, 2].map((i) => (
+          <li key={i} className="flex items-center justify-between gap-3 py-3">
+            <div className="min-w-0 space-y-2">
+              <div className="h-3.5 w-40 animate-pulse rounded bg-zinc-900/10" />
+              <div className="h-3 w-20 animate-pulse rounded bg-zinc-900/5" />
+            </div>
+            <div className="h-4 w-14 animate-pulse rounded bg-zinc-900/10" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function InvoiceList({ invoices }: { invoices: InvoiceSummary[] }) {
   return (
     <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">

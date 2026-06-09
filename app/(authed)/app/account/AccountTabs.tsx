@@ -32,7 +32,10 @@ export function AccountTabs({ showBilling }: { showBilling: boolean }) {
       className="inline-flex rounded-full border border-zinc-900/15 bg-white p-1 text-sm"
     >
       {tabs.map((tab) => {
-        const active = pathname === tab.href;
+        // Billing is active only on its own subtree; Settings owns every other
+        // account path (incl. sub-pages like /app/account/branding).
+        const onBilling = pathname.startsWith('/app/account/billing');
+        const active = tab.href === '/app/account/billing' ? onBilling : !onBilling;
         return (
           <Link
             key={tab.href}

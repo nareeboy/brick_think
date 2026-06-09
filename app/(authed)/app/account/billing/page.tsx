@@ -1,15 +1,28 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { isBillingEnabled } from '@/lib/billing/env';
 import { subscriptionTierFromRow } from '@/lib/billing/entitlements';
 import { type Tier } from '@/lib/billing/plans';
-import { listInvoicesForProfile, type InvoiceSummary } from '@/lib/billing/invoices';
+import { listInvoicesForProfile } from '@/lib/billing/invoices';
+import { AccountTabs } from '../AccountTabs';
 import BillingActions from './BillingActions';
-import { InvoiceList } from './InvoiceList';
+import { InvoiceList, InvoiceListSkeleton } from './InvoiceList';
 
 export const metadata: Metadata = { title: 'Billing' };
 export const dynamic = 'force-dynamic';
+
+/**
+ * Invoices come from a live Stripe API call. Isolating it in its own async
+ * component lets the page shell (tabs + subscription summary, both DB-only)
+ * paint immediately while this streams in behind <Suspense> — instead of the
+ * whole page blocking on Stripe's latency.
+ */
+async function BillingInvoices({ profileId }: { profileId: string }) {
+  const invoices = await listInvoicesForProfile(profileId);
+  return <InvoiceList invoices={invoices} />;
+}
 
 export default async function BillingPage() {
   const supabase = await createServerSupabaseClient();
@@ -24,7 +37,6 @@ export default async function BillingPage() {
   let status: string | null = null;
   let renewsLabel: string | null = null;
   let cancelAtPeriodEnd = false;
-  let invoices: InvoiceSummary[] = [];
 
   if (billingOn) {
     const { data: sub } = await supabase
@@ -42,11 +54,13 @@ export default async function BillingPage() {
           year: 'numeric',
         })
       : null;
-    invoices = await listInvoicesForProfile(user.id);
   }
 
   return (
-    <div className="mx-auto max-w-[1040px] px-5 py-10">
+    <div className="mx-auto max-w-[1200px] px-5 py-10">
+      <div className="mb-6">
+        <AccountTabs showBilling={billingOn} />
+      </div>
       {!billingOn ? (
         <p className="text-sm text-zinc-600">
           Billing is not enabled on this instance — all features are available for free.
@@ -59,7 +73,9 @@ export default async function BillingPage() {
             renewsLabel={renewsLabel}
             cancelAtPeriodEnd={cancelAtPeriodEnd}
           />
-          <InvoiceList invoices={invoices} />
+          <Suspense fallback={<InvoiceListSkeleton />}>
+            <BillingInvoices profileId={user.id} />
+          </Suspense>
         </div>
       )}
     </div>

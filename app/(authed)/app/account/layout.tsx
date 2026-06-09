@@ -4,16 +4,13 @@ import { redirect } from 'next/navigation';
 import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { isBillingEnabled } from '@/lib/billing/env';
-
-import { AccountTabs } from './AccountTabs';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Shared chrome for the account area: the page banner + the Settings/Billing tab
- * bar. The two routes (/app/account and /app/account/billing) render only their
- * inner content; the banner and tabs live here so they stay put while switching.
+ * Shared chrome for the account area: just the page banner. Each route renders
+ * its own body content (and the Settings/Billing tab bar lives in the body,
+ * top-left, on the settings and billing pages).
  */
 export default async function AccountLayout({ children }: { children: ReactNode }) {
   if (!isSupabaseConfigured()) {
@@ -37,8 +34,6 @@ export default async function AccountLayout({ children }: { children: ReactNode 
       })
     : null;
 
-  const billingEnabled = isBillingEnabled();
-
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <PageBanner
@@ -46,7 +41,6 @@ export default async function AccountLayout({ children }: { children: ReactNode 
         title="Account"
         titleTestId="account-heading"
         subtitle={createdLabel ? `Joined ${createdLabel}.` : undefined}
-        actions={billingEnabled ? <AccountTabs showBilling /> : undefined}
       />
       {children}
     </main>

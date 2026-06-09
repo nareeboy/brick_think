@@ -11,6 +11,10 @@ import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
 import { getCombinedNarrationsForModelIds } from '@/lib/sessions/modelNarration';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
+import { entitledTier, hasTierRank } from '@/lib/billing/entitlements';
+import { listBrandProfiles } from '@/app/(authed)/app/account/branding/actions';
+import { CURATED_FONTS } from '@/lib/branding/curatedFonts';
+
 import { getLatestSessionReport } from '../report-actions';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
@@ -27,6 +31,7 @@ import type { StageRoomSummary } from './RoomsPanel';
 import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types';
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
+import { ActiveStageBar } from '@/components/session/ActiveStageBar';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
@@ -69,7 +74,7 @@ export default async function SessionDetailPage({
   const sessionRes = await supabase
     .from('sessions')
     .select(
-      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, organisations:org_id ( id, name )',
+      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, brand_profile_id, organisations:org_id ( id, name )',
     )
     .eq('id', id)
     .maybeSingle();
@@ -88,6 +93,7 @@ export default async function SessionDetailPage({
     brief_text: string | null;
     pre_session_check: Record<string, unknown> | null;
     join_code: string | null;
+    brand_profile_id: string | null;
     organisations: { id: string; name: string } | null;
   };
 
@@ -105,6 +111,7 @@ export default async function SessionDetailPage({
     throw new Error(`Failed to load stages: ${stagesRes.error.message}`);
   }
   const stages = (stagesRes.data ?? []) as unknown as LiveStageRow[];
+  const completedStageCount = stages.filter((s) => s.status === 'completed').length;
   const initialSession: SessionRow = {
     id: session.id,
     current_stage_id: session.current_stage_id,
@@ -417,6 +424,16 @@ export default async function SessionDetailPage({
       ? await getLatestSessionReport(session.id)
       : null;
 
+  // White-label branding picker: only client_ready+ facilitators on a completed
+  // session can choose a brand preset. Lower tiers get the unchanged button.
+  const reportTier =
+    canManageSession && session.status === 'completed'
+      ? await entitledTier(user.id, session.id)
+      : null;
+  const canBrand = hasTierRank(reportTier, 'client_ready');
+  const brandProfiles = canBrand ? await listBrandProfiles() : [];
+  const brandFontOptions = CURATED_FONTS.map((f) => ({ key: f.key, label: f.label }));
+
   // Private notes are facilitator-only (not org-admin), and the helper itself
   // enforces that gate — call it for the facilitator's view and skip the
   // round-trip otherwise.
@@ -462,13 +479,23 @@ export default async function SessionDetailPage({
           </>
         }
         title={
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <SessionTitle
               sessionId={session.id}
               initialTitle={session.title}
               canRename={canManageSession}
             />
           </div>
+        }
+        subtitle={
+          <span className="flex items-baseline gap-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              Workshop flow
+            </span>
+            <span className="text-[12px] text-zinc-600">
+              {stages.length} stages · {completedStageCount} done
+            </span>
+          </span>
         }
         actions={
           <>
@@ -489,6 +516,10 @@ export default async function SessionDetailPage({
                         ? reportLatest.errorMessage
                         : undefined
                     }
+                    canBrand={canBrand}
+                    brandProfiles={brandProfiles}
+                    fontOptions={brandFontOptions}
+                    rememberedBrandProfileId={session.brand_profile_id}
                   />
                 ) : null}
                 <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
@@ -541,12 +572,21 @@ export default async function SessionDetailPage({
             <ParticipantCoachMark />
           </div>
           {isFacilitator ? (
-            <aside className="w-full shrink-0 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
-              <FacilitatorNotesCard
+            <aside className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
+              <ActiveStageBar
                 sessionId={session.id}
-                initialValue={facilitatorNotes}
-                fillHeight
+                sessionTitle={session.title}
+                initialStages={stages}
+                initialSession={initialSession}
+                canManageSession={canManageSession}
               />
+              <div className="min-h-0 flex-1">
+                <FacilitatorNotesCard
+                  sessionId={session.id}
+                  initialValue={facilitatorNotes}
+                  fillHeight
+                />
+              </div>
             </aside>
           ) : null}
         </div>

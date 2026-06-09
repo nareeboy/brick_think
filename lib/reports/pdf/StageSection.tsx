@@ -2,7 +2,7 @@ import { Page, Text, View } from '@react-pdf/renderer';
 
 import { ModelCard, type ModelCardData } from './ModelCard';
 import { PageFooter } from './ExecutiveSummary';
-import { styles } from './styles';
+import type { ReportStyles } from './styles';
 
 const STAGE_LABELS: Record<string, string> = {
   skill_building: 'Skill building',
@@ -26,9 +26,23 @@ interface Props {
   sessionTitle: string;
   pageNumber: number;
   totalPages: number;
+  styles: ReportStyles['sheet'];
+  footerLabel: string;
+  primary: string;
+  mutedInk: string;
 }
 
-export function StageSection({ stageType, models, sessionTitle, pageNumber, totalPages }: Props) {
+export function StageSection({
+  stageType,
+  models,
+  sessionTitle,
+  pageNumber,
+  totalPages,
+  styles,
+  footerLabel,
+  primary,
+  mutedInk,
+}: Props) {
   return (
     <Page size="A4" style={styles.page}>
       <Text style={styles.h2}>{STAGE_LABELS[stageType] ?? stageType}</Text>
@@ -36,10 +50,16 @@ export function StageSection({ stageType, models, sessionTitle, pageNumber, tota
       <View style={styles.divider} />
       <View style={styles.cardGrid}>
         {models.map((m) => (
-          <ModelCard key={m.id} data={m} />
+          <ModelCard key={m.id} data={m} styles={styles} primary={primary} mutedInk={mutedInk} />
         ))}
       </View>
-      <PageFooter title={sessionTitle} page={pageNumber} total={totalPages} />
+      <PageFooter
+        label={footerLabel}
+        title={sessionTitle}
+        page={pageNumber}
+        total={totalPages}
+        styles={styles}
+      />
     </Page>
   );
 }
