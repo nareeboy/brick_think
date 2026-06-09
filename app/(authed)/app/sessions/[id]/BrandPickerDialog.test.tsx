@@ -47,6 +47,7 @@ function renderPicker(overrides: Partial<Parameters<typeof BrandPickerDialog>[0]
     fontOptions: [],
     selectedId: null,
     currentPdfUrl: null,
+    currentBrandId: null,
     generating: false,
     genError: null,
     onGenerate: vi.fn(),
@@ -82,10 +83,16 @@ describe('<BrandPickerDialog>', () => {
     expect(onGenerate).toHaveBeenCalledWith('p1');
   });
 
-  it('shows the current report download link and a Regenerate action when a report exists', () => {
-    renderPicker({ currentPdfUrl: 'https://example.com/report.pdf' });
+  it('shows the current report download link with its brand, plus a Regenerate action', () => {
+    renderPicker({ currentPdfUrl: 'https://example.com/report.pdf', currentBrandId: 'p1' });
     expect(screen.getByRole('link', { name: /download the latest report/i })).toBeTruthy();
+    expect(screen.getByText('(Acme)')).toBeTruthy(); // brand the PDF was generated with
     expect(screen.getByRole('button', { name: 'Regenerate report' })).toBeTruthy();
+  });
+
+  it('labels the download link as the default brand when none was applied', () => {
+    renderPicker({ currentPdfUrl: 'https://example.com/report.pdf', currentBrandId: null });
+    expect(screen.getByText('(BrickThink default)')).toBeTruthy();
   });
 
   it('reflects the generating state and surfaces a generation error', () => {

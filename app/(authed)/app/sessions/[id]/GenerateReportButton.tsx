@@ -35,6 +35,11 @@ export default function GenerateReportButton({
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [showBrandPicker, setShowBrandPicker] = useState(false);
   const [brandId, setBrandId] = useState<string | null>(rememberedBrandProfileId ?? null);
+  // Brand the current report was actually generated with (vs. `brandId`, the
+  // pending picker selection). Seeds from the session's remembered choice.
+  const [generatedBrandId, setGeneratedBrandId] = useState<string | null>(
+    rememberedBrandProfileId ?? null,
+  );
   // Generation errors raised from inside the brand picker stay in the picker
   // (the row's `error` is for the non-branding direct-generate path).
   const [genError, setGenError] = useState<string | null>(null);
@@ -77,6 +82,7 @@ export default function GenerateReportButton({
       if (res.ok) {
         setPdfUrl(res.pdfUrl);
         setGeneratedAt(res.generatedAt);
+        setGeneratedBrandId(id);
         setShowBrandPicker(false);
       } else if (res.code === 'upgrade_required') {
         setShowBrandPicker(false);
@@ -106,6 +112,7 @@ export default function GenerateReportButton({
           fontOptions={fontOptions}
           selectedId={brandId}
           currentPdfUrl={pdfUrl}
+          currentBrandId={generatedBrandId}
           generating={pending}
           genError={genError}
           onGenerate={generateWithBrand}

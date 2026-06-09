@@ -18,6 +18,8 @@ interface Props {
   selectedId: string | null;
   /** Signed URL of the already-generated report, if any (download from here). */
   currentPdfUrl: string | null;
+  /** Brand the current report was generated with (preset id, or null for default). */
+  currentBrandId: string | null;
   /** True while a generation request is in flight. */
   generating: boolean;
   /** Error from the last generation attempt, shown inline. */
@@ -32,6 +34,7 @@ export function BrandPickerDialog({
   fontOptions,
   selectedId,
   currentPdfUrl,
+  currentBrandId,
   generating,
   genError,
   onGenerate,
@@ -95,7 +98,12 @@ export function BrandPickerDialog({
             rel="noreferrer"
             className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-zinc-900/10 bg-zinc-50 px-4 py-3 text-sm text-zinc-900 transition-colors hover:bg-zinc-100"
           >
-            <span className="font-medium">Download the latest report (PDF)</span>
+            <span className="flex flex-col">
+              <span className="font-medium">Download the latest report (PDF)</span>
+              <span className="text-xs text-zinc-500">
+                ({profiles.find((p) => p.id === currentBrandId)?.name ?? 'BrickThink default'})
+              </span>
+            </span>
             <svg
               viewBox="0 0 24 24"
               fill="none"
