@@ -63,7 +63,7 @@ export function PageBanner({
         <div className="flex min-w-0 items-center gap-3">
           {avatar ? <div className="shrink-0">{avatar}</div> : null}
           <div className="min-w-0">
-            {leading ? <div className="mb-2">{leading}</div> : null}
+            {leading ? <div className="mb-3">{leading}</div> : null}
             {eyebrow ? (
               <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
                 {eyebrow}

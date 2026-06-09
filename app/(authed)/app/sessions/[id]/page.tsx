@@ -479,7 +479,7 @@ export default async function SessionDetailPage({
           </>
         }
         title={
-          <div className="mt-1 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
             <SessionTitle
               sessionId={session.id}
               initialTitle={session.title}

@@ -63,7 +63,7 @@ export function SessionTitle({
   if (!canRename) {
     return (
       <h1
-        className="mt-1 text-[26px] font-semibold tracking-tight text-zinc-950"
+        className="mt-1 text-[26px] font-semibold leading-tight tracking-tight text-zinc-950"
         data-testid="session-title"
       >
         {title}
@@ -90,7 +90,7 @@ export function SessionTitle({
         }
       }}
       autoComplete="off"
-      className="-mx-1.5 mt-1 w-[calc(100%+0.75rem)] rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[26px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d]"
+      className="-mx-1.5 mt-1 w-[calc(100%+0.75rem)] rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[26px] font-semibold leading-tight tracking-tight text-zinc-950 outline-none focus:border-[#c0613d]"
     />
   ) : (
     <button
@@ -100,7 +100,7 @@ export function SessionTitle({
       title="Rename session"
       aria-label="Rename session"
       data-testid="session-title"
-      className="group -mx-1.5 mt-1 flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left text-[26px] font-semibold tracking-tight text-zinc-950 hover:bg-zinc-900/5 disabled:cursor-default disabled:opacity-70"
+      className="group -mx-1.5 mt-1 flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left text-[26px] font-semibold leading-tight tracking-tight text-zinc-950 hover:bg-zinc-900/5 disabled:cursor-default disabled:opacity-70"
     >
       <span className="truncate">{title}</span>
       <PencilIcon className="h-4 w-4 shrink-0 text-zinc-400 transition-colors group-hover:text-zinc-600" />
