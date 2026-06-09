@@ -27,7 +27,8 @@ interface Props {
   existing: BrandProfileSummary | null;
   fontOptions: FontOption[];
   onClose: () => void;
-  onSaved: () => void;
+  /** Receives the id of the saved preset so callers can auto-select it. */
+  onSaved: (savedId: string) => void;
 }
 
 // Maps a non-ok action result code to human copy (mirrors the articles editor
@@ -190,7 +191,7 @@ export function BrandProfileEditor({ existing, fontOptions, onClose, onSaved }: 
         }
       }
 
-      onSaved();
+      onSaved(id);
     });
   }
 

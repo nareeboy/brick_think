@@ -13,6 +13,7 @@ import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
 import { entitledTier, hasTierRank } from '@/lib/billing/entitlements';
 import { listBrandProfiles } from '@/app/(authed)/app/account/branding/actions';
+import { CURATED_FONTS } from '@/lib/branding/curatedFonts';
 
 import { getLatestSessionReport } from '../report-actions';
 
@@ -430,9 +431,8 @@ export default async function SessionDetailPage({
       ? await entitledTier(user.id, session.id)
       : null;
   const canBrand = hasTierRank(reportTier, 'client_ready');
-  const brandPresets = canBrand
-    ? (await listBrandProfiles()).map((p) => ({ id: p.id, name: p.name }))
-    : [];
+  const brandProfiles = canBrand ? await listBrandProfiles() : [];
+  const brandFontOptions = CURATED_FONTS.map((f) => ({ key: f.key, label: f.label }));
 
   // Private notes are facilitator-only (not org-admin), and the helper itself
   // enforces that gate — call it for the facilitator's view and skip the
@@ -517,7 +517,8 @@ export default async function SessionDetailPage({
                         : undefined
                     }
                     canBrand={canBrand}
-                    brandPresets={brandPresets}
+                    brandProfiles={brandProfiles}
+                    fontOptions={brandFontOptions}
                     rememberedBrandProfileId={session.brand_profile_id}
                   />
                 ) : null}
