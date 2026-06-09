@@ -57,6 +57,27 @@ describe('<UpgradeModal>', () => {
     expect(await screen.findByText('Could not start checkout. Please try again.')).toBeTruthy();
   });
 
+  it('offers a one-off ladder (€9 + €45) when given multiple tiers, forwarding each', async () => {
+    mockedCheckout.mockResolvedValue({ ok: false, code: 'stripe_error' });
+    render(
+      <UpgradeModal
+        open
+        onClose={() => {}}
+        feature="PDF session reports"
+        sessionId="sess-9"
+        tiers={['session_report', 'client_ready']}
+      />,
+    );
+
+    // Both price points are present, and the €45 row names the white-label benefit.
+    expect(screen.getByRole('button', { name: 'Unlock — €9' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Unlock — €45' })).toBeTruthy();
+    expect(screen.getByText(/white-labelled/i)).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Unlock — €45' }));
+    expect(mockedCheckout).toHaveBeenCalledWith('client_ready', 'sess-9');
+  });
+
   it('omits the unlock button entirely when no sessionId is given', () => {
     render(<UpgradeModal open onClose={() => {}} feature="PDF session reports" />);
     expect(screen.queryByRole('button', { name: /^Unlock —/ })).toBeNull();

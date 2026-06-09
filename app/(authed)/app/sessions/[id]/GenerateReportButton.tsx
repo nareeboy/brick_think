@@ -65,6 +65,9 @@ export default function GenerateReportButton({
         onClose={() => setShowUpgrade(false)}
         feature="PDF session reports"
         sessionId={sessionId}
+        // Offer the standard report (€9) and the white-labelled report (€45) as a
+        // one-off ladder. full_findings (€60) is omitted — that deliverable isn't built.
+        tiers={['session_report', 'client_ready']}
       />
       {/* `relative` + absolutely-positioned messages keep this column's width equal
           to the button alone. Otherwise a long error/generated-at line would widen
