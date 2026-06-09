@@ -32,6 +32,10 @@ export interface BrandProfileSummary {
   logoUrl: string | null; // signed URL for preview, null if no logo
   headingFont: FontChoice;
   bodyFont: FontChoice;
+  // Signed URLs for the uploaded TTF of each role when its font is custom, so the
+  // editor/list can render the real font in the preview. null for curated fonts.
+  headingFontUrl: string | null;
+  bodyFontUrl: string | null;
 }
 
 /**

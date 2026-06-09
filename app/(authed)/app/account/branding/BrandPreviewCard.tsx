@@ -7,11 +7,22 @@ interface Props {
   accentColour: string;
   displayName: string;
   logoUrl: string | null;
+  // Resolved CSS font-family values for the heading / body text. When omitted the
+  // preview keeps its default look (Fraunces display heading, app body font).
+  headingFontFamily?: string;
+  bodyFontFamily?: string;
 }
 
 // Presentational approximation of the report cover. Used both in the list
 // (driven by a saved profile) and live in the editor (driven by form state).
-export function BrandPreviewCard({ brandColour, accentColour, displayName, logoUrl }: Props) {
+export function BrandPreviewCard({
+  brandColour,
+  accentColour,
+  displayName,
+  logoUrl,
+  headingFontFamily,
+  bodyFontFamily,
+}: Props) {
   const ink = inkOn(brandColour);
   return (
     <div
@@ -29,12 +40,21 @@ export function BrandPreviewCard({ brandColour, accentColour, displayName, logoU
             className="h-8 w-auto max-w-[140px] object-contain object-left"
           />
         ) : null}
-        <div className="font-display text-lg leading-tight" style={{ color: ink }}>
+        <div
+          className="font-display text-lg leading-tight"
+          style={{ color: ink, fontFamily: headingFontFamily }}
+        >
           {displayName || 'Your brand'}
         </div>
         <div
+          className="text-[12px] leading-snug"
+          style={{ color: ink, fontFamily: bodyFontFamily }}
+        >
+          The quick brown fox jumps over the lazy dog.
+        </div>
+        <div
           className="text-[11px] uppercase tracking-[0.18em]"
-          style={{ color: ink, opacity: 0.7 }}
+          style={{ color: ink, opacity: 0.7, fontFamily: bodyFontFamily }}
         >
           Report preview
         </div>

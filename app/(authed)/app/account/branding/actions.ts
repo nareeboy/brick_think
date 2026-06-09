@@ -283,15 +283,19 @@ export async function listBrandProfiles(): Promise<BrandProfileSummary[]> {
     .order('created_at', { ascending: false });
   if (error || !data) return [];
 
+  // Sign a private brand-assets object path; null on missing path or failure.
+  const sign = async (path: string | null | undefined): Promise<string | null> => {
+    if (!path) return null;
+    const signed = await supabase.storage
+      .from(BRAND_ASSETS_BUCKET)
+      .createSignedUrl(path, SIGNED_URL_TTL);
+    return signed.data?.signedUrl ?? null;
+  };
+
   const out: BrandProfileSummary[] = [];
   for (const row of data) {
-    let logoUrl: string | null = null;
-    if (row.logo_path) {
-      const signed = await supabase.storage
-        .from(BRAND_ASSETS_BUCKET)
-        .createSignedUrl(row.logo_path, SIGNED_URL_TTL);
-      logoUrl = signed.data?.signedUrl ?? null;
-    }
+    const headingFont = row.heading_font as unknown as FontChoice;
+    const bodyFont = row.body_font as unknown as FontChoice;
     out.push({
       id: row.id,
       name: row.name,
@@ -299,9 +303,12 @@ export async function listBrandProfiles(): Promise<BrandProfileSummary[]> {
       footerContact: row.footer_contact,
       brandColour: row.brand_colour,
       accentColour: row.accent_colour,
-      logoUrl,
-      headingFont: row.heading_font as unknown as FontChoice,
-      bodyFont: row.body_font as unknown as FontChoice,
+      logoUrl: await sign(row.logo_path),
+      headingFont,
+      bodyFont,
+      // Custom fonts get a signed URL so the browser preview can load the real TTF.
+      headingFontUrl: headingFont.kind === 'custom' ? await sign(headingFont.path) : null,
+      bodyFontUrl: bodyFont.kind === 'custom' ? await sign(bodyFont.path) : null,
     });
   }
   return out;

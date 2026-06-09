@@ -7,8 +7,8 @@ import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import type { BrandProfileSummary } from '@/lib/branding/types';
 
 import { deleteBrandProfileAction } from './actions';
-import { BrandPreviewCard } from './BrandPreviewCard';
 import { BrandProfileEditor } from './BrandProfileEditor';
+import { LiveBrandPreview } from './LiveBrandPreview';
 
 type FontOption = { key: string; label: string };
 
@@ -68,11 +68,16 @@ export function BrandProfilesManager({ initialProfiles, entitled, fontOptions }:
               className="flex items-center gap-4 rounded-2xl border border-zinc-900/10 bg-white p-4"
             >
               <div className="w-44 shrink-0">
-                <BrandPreviewCard
+                <LiveBrandPreview
+                  previewKey={`row-${profile.id}`}
                   brandColour={profile.brandColour}
                   accentColour={profile.accentColour}
                   displayName={profile.displayName}
                   logoUrl={profile.logoUrl}
+                  headingChoice={profile.headingFont}
+                  bodyChoice={profile.bodyFont}
+                  headingFontUrl={profile.headingFontUrl}
+                  bodyFontUrl={profile.bodyFontUrl}
                 />
               </div>
               <div className="min-w-0 flex-1">

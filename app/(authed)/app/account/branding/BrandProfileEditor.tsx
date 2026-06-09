@@ -18,8 +18,8 @@ import {
   uploadBrandFontAction,
   uploadBrandLogoAction,
 } from './actions';
-import { BrandPreviewCard } from './BrandPreviewCard';
 import { ColourField } from './ColourField';
+import { LiveBrandPreview } from './LiveBrandPreview';
 
 type FontOption = { key: string; label: string };
 
@@ -294,11 +294,18 @@ export function BrandProfileEditor({ existing, fontOptions, onClose, onSaved }: 
                 Preview
               </span>
               <div className="mt-2">
-                <BrandPreviewCard
+                <LiveBrandPreview
+                  previewKey="editor"
                   brandColour={isValidHexColour(brandColour) ? brandColour : DEFAULT_BRAND}
                   accentColour={isValidHexColour(accentColour) ? accentColour : DEFAULT_ACCENT}
                   displayName={displayName}
                   logoUrl={logoPreview}
+                  headingChoice={headingFont}
+                  bodyChoice={bodyFont}
+                  headingFile={headingFile}
+                  bodyFile={bodyFile}
+                  headingFontUrl={existing?.headingFontUrl ?? null}
+                  bodyFontUrl={existing?.bodyFontUrl ?? null}
                 />
               </div>
             </div>
