@@ -128,13 +128,24 @@ export default function BillingActions({
                   at the bottom regardless of how many bullets a tier has. */}
               <div className="grow" />
               {isCurrent ? (
-                <button
-                  type="button"
-                  disabled
-                  className="mt-6 w-full cursor-default rounded-full border border-zinc-900/15 bg-zinc-50 px-5 py-2.5 text-sm font-medium text-zinc-500"
-                >
-                  Active
-                </button>
+                cancelAtPeriodEnd ? (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => go(createPortalSession)}
+                    className="mt-6 w-full cursor-pointer rounded-full bg-zinc-900 px-5 py-2.5 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
+                  >
+                    Re-activate
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="mt-6 w-full cursor-default rounded-full border border-zinc-900/15 bg-zinc-50 px-5 py-2.5 text-sm font-medium text-zinc-500"
+                  >
+                    Active
+                  </button>
+                )
               ) : currentTier ? (
                 <button
                   type="button"
