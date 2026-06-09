@@ -12,7 +12,12 @@ const BASE_LINKS = [
   { href: '/app/scenarios', label: 'Scenarios' },
 ] as const;
 
-const ADMIN_LINK = { href: '/app/admin', label: 'Admin' } as const;
+// Admin-only links (rendered when showAdmin is true). Toast test is a dev/QA
+// harness, not a user-facing feature, so it lives here rather than in BASE_LINKS.
+const ADMIN_LINKS = [
+  { href: '/app/toast-test', label: 'Toast test' },
+  { href: '/app/admin', label: 'Admin' },
+] as const;
 
 interface Props {
   showAdmin?: boolean;
@@ -29,7 +34,7 @@ export function HeaderNav({ showAdmin = false, sessions = [] }: Props) {
         key={link.href}
         href={link.href}
         aria-current={active ? 'page' : undefined}
-        data-testid={link.href === ADMIN_LINK.href ? 'nav-admin' : undefined}
+        data-testid={link.href === '/app/admin' ? 'nav-admin' : undefined}
         className={`inline-flex h-10 cursor-pointer items-center rounded-xl px-3 text-[13px] font-medium transition-colors ${
           active
             ? 'bg-[#a8482a]/10 text-[#a8482a]'
@@ -45,7 +50,7 @@ export function HeaderNav({ showAdmin = false, sessions = [] }: Props) {
     <nav aria-label="Primary" className="flex items-center gap-1">
       {BASE_LINKS.map(renderLink)}
       <SessionNavLink sessions={sessions} />
-      {showAdmin && renderLink(ADMIN_LINK)}
+      {showAdmin && ADMIN_LINKS.map(renderLink)}
     </nav>
   );
 }
