@@ -2,6 +2,7 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 
+import { getAuthCookieOptions } from './cookie-options';
 import { requireSupabasePublicEnv } from './env';
 import type { Database } from './types.generated';
 
@@ -12,6 +13,8 @@ let cached: BrowserSupabaseClient | null = null;
 export function getBrowserSupabaseClient(): BrowserSupabaseClient {
   if (cached) return cached;
   const env = requireSupabasePublicEnv();
-  cached = createBrowserClient<Database>(env.url, env.anonKey);
+  cached = createBrowserClient<Database>(env.url, env.anonKey, {
+    cookieOptions: getAuthCookieOptions(),
+  });
   return cached;
 }
