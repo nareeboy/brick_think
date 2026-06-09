@@ -5,5 +5,9 @@
 // Adding a key: extend this tuple, update the server-action shape if needed,
 // and document in supabase/CLAUDE.md ("sessions.pre_session_check schema").
 
-export const ALLOWED_PRE_SESSION_KEYS = ['a11y_reviewed', 'recording_consent'] as const;
+export const ALLOWED_PRE_SESSION_KEYS = [
+  'a11y_reviewed',
+  'recording_consent',
+  'colourblind_mode',
+] as const;
 export type PreSessionCheckKey = (typeof ALLOWED_PRE_SESSION_KEYS)[number];
