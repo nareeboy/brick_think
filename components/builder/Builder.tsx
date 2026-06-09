@@ -24,8 +24,10 @@ import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
 import { ScenarioPanel, type BuilderScenario } from './ScenarioPanel';
 import { useBrickComments } from './useBrickComments';
+import { useBrickOverlays } from './useBrickOverlays';
 import { useBrickReactions } from './useBrickReactions';
 import { useFeedbackVisible } from './useFeedbackVisible';
+import { resolveBrickOverlays } from '@/lib/a11y/overlays';
 import { ExportMenu } from '@/components/exports/ExportMenu';
 import { FacilitatorNotesButton } from '@/app/(authed)/app/designs/[id]/FacilitatorNotesButton';
 import { NarrationParticipantTrigger } from '@/components/session/NarrationParticipantTrigger';
@@ -51,7 +53,15 @@ interface BuilderProps {
   sessionContext?: SessionContext | null;
   liveMode?: boolean;
   self?: { userId: string; displayName: string; avatarUrl: string | null } | null;
+  /** The viewer's own `/app/account` pattern-overlay default. */
   colourblindMode?: boolean;
+  /**
+   * The facilitator forced pattern overlays on for the whole session
+   * (`pre_session_check.colourblind_mode`). When true, every viewer gets a
+   * per-canvas opt-out toggle and overlays default on regardless of their
+   * personal preference.
+   */
+  sessionColourblindMode?: boolean;
   sourceStageLabel?: string | null;
   alreadyImported?: boolean;
   /** True when the signed-in caller is the parent session's facilitator. */
@@ -90,6 +100,7 @@ export function Builder({
   liveMode = false,
   self = null,
   colourblindMode = false,
+  sessionColourblindMode = false,
   sourceStageLabel = null,
   alreadyImported = false,
   isSessionFacilitator = false,
@@ -140,6 +151,7 @@ export function Builder({
                 <CanvasStage
                   orgId={orgId}
                   colourblindMode={colourblindMode}
+                  sessionColourblindMode={sessionColourblindMode}
                   sessionContext={sessionContext}
                   isSessionFacilitator={isSessionFacilitator}
                   facilitatorNotes={facilitatorNotes}
@@ -332,6 +344,7 @@ function SaveToast() {
 function CanvasStage({
   orgId,
   colourblindMode = false,
+  sessionColourblindMode = false,
   sessionContext = null,
   isSessionFacilitator = false,
   facilitatorNotes = null,
@@ -347,6 +360,7 @@ function CanvasStage({
 }: {
   orgId: string | null;
   colourblindMode?: boolean;
+  sessionColourblindMode?: boolean;
   sessionContext?: SessionContext | null;
   isSessionFacilitator?: boolean;
   facilitatorNotes?: string | null;
@@ -363,6 +377,15 @@ function CanvasStage({
   const { awareness, selfClientId, view, self, modelId } = useBuilderState();
   const presence = usePeerPresence(awareness, selfClientId, self ?? null);
   const [feedbackVisible, toggleFeedback] = useFeedbackVisible();
+  const [overlaysToggle, toggleOverlays] = useBrickOverlays();
+  // Pattern overlays render from the viewer's personal default unless the
+  // facilitator forced them on for the whole session, in which case the
+  // per-canvas toggle governs (default on) and we surface an opt-out button.
+  const { overlaysOn, showToggle: showOverlayToggle } = resolveBrickOverlays({
+    sessionForced: sessionColourblindMode,
+    personalPref: colourblindMode,
+    viewerToggle: overlaysToggle,
+  });
 
   // Chrome buttons sit absolutely positioned in the canvas top-right, laid
   // out right-to-left from a fixed gutter that clears the always-present
@@ -401,6 +424,7 @@ function CanvasStage({
   const exportRight = placeChrome(showExport, ICON_BTN_WIDTH);
   const notesRight = placeChrome(showNotes, NOTES_BTN_WIDTH);
   const feedbackToggleRight = placeChrome(showFeedbackToggle, ICON_BTN_WIDTH);
+  const overlayToggleRight = placeChrome(showOverlayToggle, ICON_BTN_WIDTH);
 
   // Live-presence avatar strip sits in the same row as the chrome buttons,
   // just to the left of the leftmost one so it never sits behind them. After
@@ -433,7 +457,7 @@ function CanvasStage({
           }}
         />
 
-        <BuilderCanvasLoader colourblindMode={colourblindMode} />
+        <BuilderCanvasLoader colourblindMode={overlaysOn} />
 
         <PresenceCursors
           awareness={awareness}
@@ -481,6 +505,13 @@ function CanvasStage({
             rightPx={feedbackToggleRight}
             visible={feedbackVisible}
             onToggle={toggleFeedback}
+          />
+        ) : null}
+        {overlayToggleRight !== null ? (
+          <OverlayToggleButton
+            rightPx={overlayToggleRight}
+            on={overlaysOn}
+            onToggle={toggleOverlays}
           />
         ) : null}
         {scenario ? <ScenarioPanel scenario={scenario} /> : null}
@@ -540,6 +571,52 @@ function FeedbackToggleButton({
       >
         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
         {!visible ? <line x1="4" y1="20" x2="20" y2="4" /> : null}
+      </svg>
+    </button>
+  );
+}
+
+/**
+ * Per-viewer pattern-overlay opt-out. Only rendered when the facilitator forced
+ * overlays on for the session; lets a participant switch the patterns off (or
+ * back on) for their own canvas.
+ */
+function OverlayToggleButton({
+  rightPx,
+  on,
+  onToggle,
+}: {
+  rightPx: number;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  const label = on ? 'Hide brick patterns' : 'Show brick patterns';
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={label}
+      aria-pressed={on}
+      title={label}
+      data-testid="overlay-toggle-button"
+      style={{ right: rightPx }}
+      className="absolute top-5 z-30 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-2xl border border-zinc-900/10 bg-white/85 text-zinc-700 shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] backdrop-blur transition-colors hover:bg-white hover:text-zinc-900"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-5 w-5"
+        aria-hidden="true"
+      >
+        <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" />
+        <path d="M6 14 L14 6" />
+        <path d="M6 18 L18 6" />
+        <path d="M10 18 L18 10" />
+        {!on ? <line x1="4" y1="4" x2="20" y2="20" /> : null}
       </svg>
     </button>
   );
