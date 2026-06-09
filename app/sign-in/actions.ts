@@ -4,17 +4,11 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 
 function safeNext(value: FormDataEntryValue | null): string {
   if (typeof value !== 'string') return '/app/my-designs';
   return value.startsWith('/') ? value : '/app/my-designs';
-}
-
-async function originFromHeaders(): Promise<string> {
-  const h = await headers();
-  const proto = h.get('x-forwarded-proto') ?? 'http';
-  const host = h.get('host') ?? 'localhost:3000';
-  return `${proto}://${host}`;
 }
 
 export interface SignInState {
@@ -34,7 +28,7 @@ export async function sendMagicLink(
   }
 
   const supabase = await createServerSupabaseClient();
-  const origin = await originFromHeaders();
+  const origin = publicOriginFromHeaders(await headers());
   // Token-hash strategy: the magic_link email template appends
   // &token_hash=...&type=magiclink to this URL, landing the user on
   // /auth/confirm which verifies server-side. Survives cross-browser opens
@@ -60,7 +54,7 @@ export async function sendMagicLink(
 export async function signInWithGoogle(formData: FormData): Promise<void> {
   const next = safeNext(formData.get('next'));
   const supabase = await createServerSupabaseClient();
-  const origin = await originFromHeaders();
+  const origin = publicOriginFromHeaders(await headers());
   const redirectTo = `${origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
