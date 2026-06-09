@@ -105,11 +105,11 @@ function Hero() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-20 md:grid-cols-12 md:items-end md:gap-12 md:pb-24 md:pt-28">
         <div className="md:col-span-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 backdrop-blur">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             What is LSP?
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[80px]">
-            What is <span className="text-[#c0613d]">LEGO®</span>
+            What is <span className="text-[#a8482a]">LEGO®</span>
             <br />
             SERIOUS PLAY®?
           </h1>
@@ -312,7 +312,7 @@ function TrademarkSection() {
         <div className="md:col-span-8 space-y-5 text-[15px] leading-relaxed text-zinc-700">
           <p>
             The LSP method is open under{' '}
-            <span className="font-mono text-[13px] text-[#c0613d]">CC BY-SA 3.0</span>. Anyone can
+            <span className="font-mono text-[13px] text-[#a8482a]">CC BY-SA 3.0</span>. Anyone can
             teach it. Anyone can build on it. The names{' '}
             <em className="not-italic font-medium">LEGO®</em>,{' '}
             <em className="not-italic font-medium">SERIOUS PLAY®</em>,{' '}

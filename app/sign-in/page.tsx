@@ -143,7 +143,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             </section>
 
             <div
-              className="my-8 flex items-center gap-4 text-[10px] uppercase tracking-[0.2em] text-zinc-400"
+              className="my-8 flex items-center gap-4 text-[10px] uppercase tracking-[0.2em] text-zinc-500"
               aria-hidden="true"
             >
               <span className="h-px flex-1 bg-zinc-900/10" />
@@ -231,7 +231,7 @@ function BrandPanel() {
         Virtual LEGO® SERIOUS PLAY®, remote-native
       </p>
       <h2 className="mt-3 font-display text-[34px] font-medium leading-[0.98] tracking-[-0.02em] text-zinc-950 md:text-[44px]">
-        Build <span className="text-[#c0613d]">one model</span>
+        Build <span className="text-[#a8482a]">one model</span>
         <br />
         <span className="text-zinc-700">your team believes in.</span>
       </h2>
@@ -253,12 +253,12 @@ function BrandPanel() {
             </span>
             <span className="flex-1 text-[13px] font-medium text-zinc-800">{label}</span>
             {i === 2 ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#c0613d] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#a8482a] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white">
                 <span className="inline-flex h-1 w-1 animate-pulse rounded-full bg-white" />
                 Live
               </span>
             ) : (
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-400">
+              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
                 ready
               </span>
             )}
@@ -279,7 +279,7 @@ function BrandPanel() {
 
       {/* decorative bricks */}
       <div className="pointer-events-none absolute -right-6 -top-6" aria-hidden="true">
-        <Brick color="#c0613d" w={56} studs={2} />
+        <Brick color="#a8482a" w={56} studs={2} />
       </div>
     </div>
   );
@@ -313,7 +313,7 @@ function Brick({ color, w, studs }: { color: string; w: number; studs: number })
 
 function BrickGlyph() {
   return (
-    <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#c0613d] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18),0_2px_0_rgba(255,255,255,0.4)_inset]">
+    <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#a8482a] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18),0_2px_0_rgba(255,255,255,0.4)_inset]">
       <span className="absolute left-1/2 top-1.5 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-black/20" />
       <span className="absolute right-1/4 top-1.5 h-1.5 w-1.5 translate-x-1/2 rounded-full bg-black/20" />
     </span>

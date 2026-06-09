@@ -33,7 +33,7 @@ export function AdminSideNav() {
         aria-current={pathname === '/app/admin' ? 'page' : undefined}
         className={`block rounded-md px-3 py-2 font-medium ${
           pathname === '/app/admin'
-            ? 'bg-[#c0613d]/10 text-[#c0613d]'
+            ? 'bg-[#a8482a]/10 text-[#a8482a]'
             : 'text-zinc-700 hover:bg-zinc-900/5 hover:text-zinc-900'
         }`}
       >
@@ -54,7 +54,7 @@ export function AdminSideNav() {
                     aria-current={active ? 'page' : undefined}
                     className={`block rounded-md px-3 py-2 ${
                       active
-                        ? 'bg-[#c0613d]/10 text-[#c0613d]'
+                        ? 'bg-[#a8482a]/10 text-[#a8482a]'
                         : 'text-zinc-700 hover:bg-zinc-900/5 hover:text-zinc-900'
                     }`}
                   >

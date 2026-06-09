@@ -60,7 +60,7 @@ export function ScenarioDetailModal({ scenario, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 items-center rounded-xl bg-[#c0613d] px-3 text-[13px] font-medium text-white transition-colors hover:bg-[#a85432]"
+            className="inline-flex h-10 items-center rounded-xl bg-[#a8482a] px-3 text-[13px] font-medium text-white transition-colors hover:bg-[#a85432]"
           >
             Close
           </button>

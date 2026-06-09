@@ -179,13 +179,13 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
             data-testid="avatar-drop-zone"
             className={`mt-6 flex h-56 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-[#FBF7F1] px-6 text-center transition-colors ${
               dragging
-                ? 'border-[#c0613d] bg-[#c0613d]/10'
-                : 'border-zinc-300 hover:border-[#c0613d]/40 hover:bg-[#c0613d]/5'
+                ? 'border-[#a8482a] bg-[#a8482a]/10'
+                : 'border-zinc-300 hover:border-[#a8482a]/40 hover:bg-[#a8482a]/5'
             }`}
           >
             <span className="text-[14px] text-zinc-700">
               Drag a photo here, or{' '}
-              <span className="font-semibold text-[#c0613d]">choose a file</span>
+              <span className="font-semibold text-[#a8482a]">choose a file</span>
             </span>
             <span className="text-[12px] text-zinc-500">PNG, JPG, WEBP · up to 5 MB</span>
           </button>
@@ -226,7 +226,7 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
                 value={zoom}
                 onChange={(e) => setZoom(Number(e.target.value))}
                 aria-label="Zoom"
-                className="h-1 flex-1 cursor-pointer accent-[#c0613d]"
+                className="h-1 flex-1 cursor-pointer accent-[#a8482a]"
               />
             </div>
             <button
@@ -263,7 +263,7 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
             onClick={handleSave}
             disabled={pending || imageSrc === null}
             data-testid="avatar-upload-save"
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
           >
             {pending ? 'Saving…' : 'Save'}
           </button>

@@ -64,7 +64,7 @@ export function ColourField({ label, value, onChange }: Props) {
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="#1f1f1f"
-          className="h-9 w-32 rounded-lg border border-zinc-300 px-2 font-mono text-[13px] text-zinc-900 focus:border-[#c0613d] focus:outline-none"
+          className="h-9 w-32 rounded-lg border border-zinc-300 px-2 font-mono text-[13px] text-zinc-900 focus:border-[#a8482a] focus:outline-none"
         />
 
         {open ? (
@@ -74,7 +74,7 @@ export function ColourField({ label, value, onChange }: Props) {
         ) : null}
       </div>
       {!valid ? (
-        <p className="mt-1 text-[12px] text-[#c0613d]">Enter a hex colour like #1f1f1f.</p>
+        <p className="mt-1 text-[12px] text-[#a8482a]">Enter a hex colour like #1f1f1f.</p>
       ) : null}
     </div>
   );

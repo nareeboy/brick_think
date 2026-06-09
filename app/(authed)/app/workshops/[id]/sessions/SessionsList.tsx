@@ -58,7 +58,7 @@ export function SessionsList({ sessions }: { sessions: SessionRow[] }) {
             <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
               {row.status}
             </p>
-            <h3 className="text-[18px] font-semibold tracking-tight text-zinc-950 group-hover:text-[#c0613d]">
+            <h3 className="text-[18px] font-semibold tracking-tight text-zinc-950 group-hover:text-[#a8482a]">
               {row.title}
             </h3>
             <p className="mt-auto text-[12px] text-zinc-500">

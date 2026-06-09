@@ -267,7 +267,7 @@ export function ManageRoomsDialog({ stageId, orgMembers, initialRooms, onClose }
             onClick={save}
             disabled={pending}
             data-testid="save-rooms-button"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
           >
             {pending ? 'Saving…' : 'Save rooms'}
           </button>
@@ -290,7 +290,7 @@ function RoomPicker({
     <select
       value={value === null ? '' : String(value)}
       onChange={(e) => onChange(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))}
-      className="h-7 cursor-pointer rounded-md border border-zinc-900/10 bg-white px-1.5 font-mono text-[11px] text-zinc-700 outline-none hover:bg-zinc-900/5"
+      className="h-7 cursor-pointer rounded-md border border-zinc-900/10 bg-white px-1.5 font-mono text-[11px] text-zinc-700 outline-none hover:bg-zinc-900/5 focus-visible:border-[#a8482a] focus-visible:ring-2 focus-visible:ring-[#a8482a]/40"
       aria-label="Move to room"
     >
       <option value="">Unassigned</option>

@@ -58,7 +58,7 @@ export function ScenariosList({ scenarios }: Props) {
             value={filter.search}
             onChange={(e) => setFilter((f) => ({ ...f, search: e.target.value }))}
             placeholder="Search…"
-            className="h-10 w-56 rounded-xl border border-zinc-200 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-500 focus:outline focus:outline-2 focus:outline-[#c0613d]/40"
+            className="h-10 w-56 rounded-xl border border-zinc-200 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-500 focus:outline focus:outline-2 focus:outline-[#a8482a]/40"
           />
         </label>
       </div>
@@ -109,7 +109,7 @@ function ChipGroup<T extends string>({ ariaLabel, value, onChange, options }: Ch
             onClick={() => onChange(opt.value)}
             className={`inline-flex h-9 items-center rounded-full px-3 text-[12px] font-medium transition-colors ${
               active
-                ? 'bg-[#c0613d] text-white'
+                ? 'bg-[#a8482a] text-white'
                 : 'bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-900/5'
             }`}
           >

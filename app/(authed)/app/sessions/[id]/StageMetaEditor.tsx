@@ -128,7 +128,7 @@ export function StageMetaEditor({
             }
           }}
           autoComplete="off"
-          className="-mx-1.5 rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[16px] font-serif text-zinc-950 outline-none focus:border-[#c0613d]"
+          className="-mx-1.5 rounded-md border border-[#a8482a]/40 bg-[#a8482a]/5 px-1.5 py-0.5 text-[16px] font-serif text-zinc-950 outline-none focus:border-[#a8482a]"
         />
         <textarea
           value={draftDescription}
@@ -144,14 +144,14 @@ export function StageMetaEditor({
             }
           }}
           rows={2}
-          className="-mx-1.5 resize-none rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[12px] leading-snug text-zinc-700 outline-none focus:border-[#c0613d]"
+          className="-mx-1.5 resize-none rounded-md border border-[#a8482a]/40 bg-[#a8482a]/5 px-1.5 py-0.5 text-[12px] leading-snug text-zinc-700 outline-none focus:border-[#a8482a]"
         />
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={commit}
             disabled={pending}
-            className="inline-flex h-7 cursor-pointer items-center justify-center rounded-md bg-[#c0613d] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+            className="inline-flex h-7 cursor-pointer items-center justify-center rounded-md bg-[#a8482a] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
           >
             Save
           </button>
@@ -166,7 +166,7 @@ export function StageMetaEditor({
           <span className="text-[11px] text-zinc-500">Leave blank to use the default.</span>
         </div>
         {error ? (
-          <p className="text-[12px] text-[#c0613d]" role="alert">
+          <p className="text-[12px] text-[#a8482a]" role="alert">
             {error}
           </p>
         ) : null}

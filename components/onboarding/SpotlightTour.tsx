@@ -220,7 +220,7 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
               setStepIndex((i) => i + 1);
             }}
             data-testid="onboarding-spotlight-next"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
           >
             {isLast ? 'Got it' : 'Next'}
           </button>

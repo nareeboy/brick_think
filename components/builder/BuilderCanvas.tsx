@@ -100,9 +100,9 @@ function BrickNode({
       // through to the canvas-level pan handler instead of moving the piece.
       draggable={interactive}
       listening={interactive}
-      stroke={selected ? '#c0613d' : undefined}
+      stroke={selected ? '#a8482a' : undefined}
       strokeWidth={selected ? 3 : 0}
-      shadowColor={selected ? '#c0613d' : 'transparent'}
+      shadowColor={selected ? '#a8482a' : 'transparent'}
       shadowBlur={selected ? 18 : 0}
       shadowOpacity={selected ? 0.35 : 0}
       onMouseDown={() => onSelect(brick.id)}
@@ -622,8 +622,8 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
                 keepRatio
                 enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']}
                 anchorSize={10}
-                borderStroke="#c0613d"
-                anchorStroke="#c0613d"
+                borderStroke="#a8482a"
+                anchorStroke="#a8482a"
                 anchorFill="#ffffff"
                 anchorCornerRadius={2}
                 // Suppress resize-handle interaction while space-pan is held

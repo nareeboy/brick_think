@@ -105,16 +105,16 @@ export function PricingTiers() {
               <li
                 key={m.key}
                 className={`group relative flex flex-col overflow-hidden rounded-[28px] border bg-white p-7 transition-shadow duration-300 hover:shadow-[0_30px_60px_-30px_rgba(60,30,15,0.25)] ${
-                  isPopular ? 'border-[#c0613d]/40 ring-1 ring-[#c0613d]/30' : 'border-zinc-900/10'
+                  isPopular ? 'border-[#a8482a]/40 ring-1 ring-[#a8482a]/30' : 'border-zinc-900/10'
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-900/10 bg-[#FAF7F1] text-[#c0613d]">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-zinc-900/10 bg-[#FAF7F1] text-[#a8482a]">
                     <Icon className="h-5 w-5" />
                   </span>
                   {isPopular ? (
-                    <span className="inline-flex items-center gap-2 rounded-full border border-[#c0613d]/30 bg-[#FAF7F1] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#c0613d]">
-                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+                    <span className="inline-flex items-center gap-2 rounded-full border border-[#a8482a]/30 bg-[#FAF7F1] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#a8482a]">
+                      <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
                       Most popular
                     </span>
                   ) : null}
@@ -134,7 +134,7 @@ export function PricingTiers() {
                       key={b}
                       className="flex items-start gap-2.5 text-[14px] leading-relaxed text-zinc-700"
                     >
-                      <span className="mt-1.5 inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#c0613d]" />
+                      <span className="mt-1.5 inline-flex h-1.5 w-1.5 shrink-0 rounded-full bg-[#a8482a]" />
                       <span>{b}</span>
                     </li>
                   ))}
@@ -142,7 +142,7 @@ export function PricingTiers() {
                 <div className="mt-7 flex grow items-end">
                   <Link
                     href="/sign-in?next=%2Fapp%2Faccount%2Fbilling"
-                    className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 active:translate-y-[1px] ${
+                    className={`inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 active:translate-y-[1px] ${
                       isPopular
                         ? 'bg-zinc-900 text-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.4)] hover:bg-zinc-800'
                         : 'border border-zinc-900/15 bg-white text-zinc-900 hover:bg-zinc-50'

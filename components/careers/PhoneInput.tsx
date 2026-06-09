@@ -29,7 +29,7 @@ export function PhoneInput({ label = 'Contact number' }: { label?: string }) {
           id={selectId}
           value={iso}
           onChange={(e) => setIso(e.target.value)}
-          className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-900 focus:border-[#c0613d] focus:outline-none focus:ring-1 focus:ring-[#c0613d]"
+          className="cursor-pointer rounded-md border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-900 focus:border-[#a8482a] focus:outline-none focus:ring-1 focus:ring-[#a8482a]"
         >
           {COUNTRY_CODES.map((c) => (
             <option key={c.iso} value={c.iso}>
@@ -45,7 +45,7 @@ export function PhoneInput({ label = 'Contact number' }: { label?: string }) {
           value={number}
           onChange={(e) => setNumber(e.target.value)}
           placeholder="7700 900123"
-          className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#c0613d] focus:outline-none focus:ring-1 focus:ring-[#c0613d]"
+          className="min-w-0 flex-1 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#a8482a] focus:outline-none focus:ring-1 focus:ring-[#a8482a]"
         />
       </div>
       <input type="hidden" name="phone" value={composed} />

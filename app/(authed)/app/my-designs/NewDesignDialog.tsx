@@ -170,7 +170,7 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
                     type="button"
                     data-testid="new-session-inline-toggle"
                     onClick={() => setCreateInline(true)}
-                    className="mt-2 inline-flex cursor-pointer items-center justify-start gap-2 rounded-xl px-4 py-3 text-[13px] font-semibold text-[#c0613d] hover:bg-[#FAF7F1]"
+                    className="mt-2 inline-flex cursor-pointer items-center justify-start gap-2 rounded-xl px-4 py-3 text-[13px] font-semibold text-[#a8482a] hover:bg-[#FAF7F1]"
                   >
                     + New session
                   </button>
@@ -195,7 +195,7 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
                       data-testid="new-session-submit"
                       onClick={submitInlineSession}
                       disabled={pending}
-                      className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[#c0613d] px-3 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
+                      className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[#a8482a] px-3 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
                     >
                       {pending ? 'Creating…' : 'Create and continue'}
                     </button>

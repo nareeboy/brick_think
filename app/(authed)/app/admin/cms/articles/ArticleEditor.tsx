@@ -230,7 +230,7 @@ export function ArticleEditor({ mode, article }: Props) {
                 onChange={handleSlug}
                 placeholder="article-slug"
                 aria-invalid={!slugLooksValid}
-                className={`block flex-1 rounded-r-xl border bg-white px-3 py-2 font-mono text-[13px] outline-none ${
+                className={`block flex-1 rounded-r-xl border bg-white px-3 py-2 font-mono text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a]/40 ${
                   slugLooksValid ? 'border-zinc-200 focus:border-zinc-400' : 'border-red-300'
                 }`}
               />

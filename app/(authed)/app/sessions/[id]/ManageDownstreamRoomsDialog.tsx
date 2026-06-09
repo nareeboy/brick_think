@@ -199,7 +199,7 @@ export function ManageDownstreamRoomsDialog({
                           aria-pressed={checked}
                           className={`inline-flex h-8 cursor-pointer items-center rounded-lg border px-3 text-[12px] transition-colors ${
                             checked
-                              ? 'border-[#c0613d] bg-[#c0613d] text-white hover:bg-[#cf6e47]'
+                              ? 'border-[#a8482a] bg-[#a8482a] text-white hover:bg-[#cf6e47]'
                               : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
                           }`}
                         >
@@ -245,7 +245,7 @@ export function ManageDownstreamRoomsDialog({
             onClick={save}
             disabled={pending || upstreamRooms.length === 0}
             data-testid="save-downstream-rooms-button"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
           >
             {pending ? 'Saving…' : 'Save rooms'}
           </button>

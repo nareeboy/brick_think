@@ -49,7 +49,7 @@ export function BrandProfilesManager({ initialProfiles, entitled, fontOptions }:
           disabled={!entitled}
           onClick={() => setEditing('new')}
           title={entitled ? undefined : 'Branded reports are part of the Client-Ready plan.'}
-          className="inline-flex h-9 cursor-pointer items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
+          className="inline-flex h-9 cursor-pointer items-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
           data-testid="add-brand-preset"
         >
           Add preset
@@ -133,7 +133,7 @@ export function BrandProfilesManager({ initialProfiles, entitled, fontOptions }:
                 already generated are unaffected.
               </span>
               {deleteError ? (
-                <span className="mt-2 block text-[#c0613d]" role="alert">
+                <span className="mt-2 block text-[#a8482a]" role="alert">
                   {deleteError}
                 </span>
               ) : null}

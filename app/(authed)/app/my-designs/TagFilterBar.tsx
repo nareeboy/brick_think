@@ -48,7 +48,7 @@ export function TagFilterBar({ tags, active }: Props) {
         aria-pressed={active.length === 0}
         className={`inline-flex h-7 cursor-pointer items-center rounded-full border px-3 text-[12px] font-medium transition-colors ${
           active.length === 0
-            ? 'border-[#c0613d] bg-[#c0613d] text-white'
+            ? 'border-[#a8482a] bg-[#a8482a] text-white'
             : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
         }`}
       >
@@ -65,7 +65,7 @@ export function TagFilterBar({ tags, active }: Props) {
             data-testid={`tag-chip-${tag}`}
             className={`inline-flex h-7 cursor-pointer items-center rounded-full border px-3 font-mono text-[11px] uppercase tracking-[0.12em] transition-colors ${
               on
-                ? 'border-[#c0613d] bg-[#c0613d] text-white'
+                ? 'border-[#a8482a] bg-[#a8482a] text-white'
                 : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
             }`}
           >

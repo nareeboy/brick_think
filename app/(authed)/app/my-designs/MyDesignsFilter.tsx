@@ -164,7 +164,7 @@ function CheckIcon() {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      className="h-4 w-4 text-[#c0613d]"
+      className="h-4 w-4 text-[#a8482a]"
       aria-hidden="true"
     >
       <path d="m5 13 4 4 10-12" strokeLinecap="round" strokeLinejoin="round" />

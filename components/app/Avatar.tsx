@@ -56,7 +56,7 @@ export function Avatar({ url, name, size = 'md', className = '' }: AvatarProps) 
   return (
     <span
       aria-label={name}
-      className={`${base} inline-flex items-center justify-center bg-[#c0613d]/15 ${spec.text} font-semibold text-[#c0613d] ${className}`.trim()}
+      className={`${base} inline-flex items-center justify-center bg-[#a8482a]/15 ${spec.text} font-semibold text-[#a8482a] ${className}`.trim()}
     >
       {initialFor(name)}
     </span>

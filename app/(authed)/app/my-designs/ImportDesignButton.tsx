@@ -101,7 +101,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={submit}
             disabled={pending || !file}
-            className="inline-flex h-9 cursor-pointer items-center rounded-md bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+            className="inline-flex h-9 cursor-pointer items-center rounded-md bg-[#a8482a] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
           >
             {pending ? 'Importing…' : 'Import'}
           </button>
