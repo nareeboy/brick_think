@@ -55,6 +55,7 @@ export const test = base.extend<Fixtures>({
       window.localStorage.setItem('bt_welcome_seen', '1');
       window.localStorage.setItem('bt_checklist_dismissed', '1');
       window.localStorage.setItem('bt_session_tour_seen', '1');
+      window.localStorage.setItem('bt_canvas_tutorial_seen', '1');
     });
     const res = await page.request.post('/api/test/sign-in', {
       data: { email: signedInEmail },

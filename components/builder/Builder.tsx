@@ -39,6 +39,7 @@ import type { ModelDetail } from '@/lib/models/types';
 import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
 import { StageTimerContainer } from '@/components/session/StageTimerContainer';
+import { CanvasBuilderTutorial } from '@/components/onboarding/CanvasBuilderTutorial';
 
 interface BuilderProps {
   initialModel?: ModelDetail;
@@ -157,6 +158,7 @@ export function Builder({
           </div>
         </div>
         <SaveToast />
+        <CanvasBuilderTutorial />
       </BringInPreviousModelProvider>
     </BuilderProvider>
   );
@@ -411,6 +413,7 @@ function CanvasStage({
     <DragPieceProvider>
       <section
         data-testid="builder-canvas"
+        data-tour-id="canvas-area"
         data-drop-target={CANVAS_DROP_TARGET}
         className="relative min-h-[400px] flex-1 overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#FBF7F1] md:min-h-0"
       >
@@ -646,7 +649,7 @@ function ExportButton({ rightPx }: { rightPx: number }) {
   stageRef.current = stage;
   if (!modelId) return null;
   return (
-    <div className="absolute top-5 z-30" style={{ right: rightPx }}>
+    <div className="absolute top-5 z-30" style={{ right: rightPx }} data-tour-id="builder-toolbar">
       <ExportMenu
         source={{
           kind: 'stage',

@@ -78,6 +78,7 @@ export function ModelTitle() {
           onClick={startEditing}
           title="Rename model"
           aria-label="Rename model"
+          data-tour-id="model-title-edit"
           className="group -mx-1.5 mt-1 flex w-[calc(100%+0.75rem)] items-center gap-1.5 rounded-md px-1.5 py-0.5 text-left text-[22px] font-semibold tracking-tight text-zinc-950 hover:bg-zinc-900/5"
         >
           <span className="truncate">{title}</span>
