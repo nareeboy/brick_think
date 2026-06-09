@@ -11,11 +11,20 @@ const KEYS = {
   checklistDismissed: 'bt_checklist_dismissed',
   sessionTourSeen: 'bt_session_tour_seen',
   // Set by replayAll(). While present, the FacilitatorChecklist re-shows its
-  // three steps even for a user who has already completed the funnel (whose
-  // server-derived progress is all-done) — so "Replay walkthrough" actually
-  // replays the steps instead of bouncing straight to the "complete" card.
+  // three steps (driven by real progress) even for a user who has already
+  // completed the funnel — so "Replay walkthrough" shows the steps instead of
+  // bouncing straight to the "complete" card.
   walkthroughReplay: 'bt_walkthrough_replay',
+  // JSON array of the checklist steps ('org' | 'session' | 'model') that have
+  // already had their per-step confetti. Owned by FacilitatorChecklist, but
+  // registered here so it participates in cross-tab sync and is cleared by
+  // replayAll() (which re-arms every step for a replayed walkthrough).
+  checklistCelebrated: 'bt_checklist_celebrated',
 } as const;
+
+/** localStorage key holding the JSON array of confetti-celebrated checklist
+ *  steps. Read/written by FacilitatorChecklist; cleared by replayAll(). */
+export const CHECKLIST_CELEBRATED_KEY = KEYS.checklistCelebrated;
 
 const STORAGE_KEYS = Object.values(KEYS);
 
@@ -109,8 +118,9 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
     // Enter replay/preview so the checklist re-shows its steps even when the
-    // user's real progress is all-done.
+    // user's real progress is all-done, and re-arm per-step confetti.
     window.localStorage.setItem(KEYS.walkthroughReplay, '1');
+    window.localStorage.removeItem(KEYS.checklistCelebrated);
     setWelcomeSeen(false);
     setChecklistComplete(false);
     setChecklistDismissed(false);

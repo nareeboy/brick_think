@@ -106,6 +106,13 @@ describe('useOnboardingState', () => {
     expect(result.current.walkthroughReplay).toBe(true);
   });
 
+  it('replayAll re-arms per-step confetti by clearing the celebrated steps', () => {
+    localStorage.setItem('bt_checklist_celebrated', JSON.stringify(['org', 'session']));
+    const { result } = renderHook(() => useOnboardingState());
+    act(() => result.current.replayAll());
+    expect(localStorage.getItem('bt_checklist_celebrated')).toBeNull();
+  });
+
   it('dismissChecklist ends replay/preview mode by clearing the flag', () => {
     const { result } = renderHook(() => useOnboardingState());
     act(() => result.current.replayAll());

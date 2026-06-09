@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { useOnboardingState } from './useOnboardingState';
+import { CHECKLIST_CELEBRATED_KEY, useOnboardingState } from './useOnboardingState';
 import { WelcomeModal } from './WelcomeModal';
 
 export interface FacilitatorChecklistProgress {
@@ -21,17 +21,29 @@ interface Props {
   progress: FacilitatorChecklistProgress;
 }
 
-// What a brand-new facilitator sees: every step empty, no deep-link targets.
-// "Replay walkthrough" re-runs the first-time experience, so in replay/preview
-// we show this instead of the user's real (all-done) progress — the tick state
-// is derived from real account data that replay can't (and shouldn't) reset.
-const FRESH_PROGRESS: FacilitatorChecklistProgress = {
-  hasOrg: false,
-  hasSessionInAnyOrg: false,
-  hasOwnedSessionDesign: false,
-  firstOrgId: null,
-  firstSessionId: null,
-};
+// The three funnel steps, in order, paired with their done-flag.
+type StepKey = 'org' | 'session' | 'model';
+function doneStepKeys(progress: FacilitatorChecklistProgress): StepKey[] {
+  const keys: StepKey[] = [];
+  if (progress.hasOrg) keys.push('org');
+  if (progress.hasSessionInAnyOrg) keys.push('session');
+  if (progress.hasOwnedSessionDesign) keys.push('model');
+  return keys;
+}
+
+function readCelebratedSteps(): StepKey[] | null {
+  const raw = window.localStorage.getItem(CHECKLIST_CELEBRATED_KEY);
+  if (raw === null) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((s): s is StepKey => s === 'org' || s === 'session' || s === 'model');
+    }
+  } catch {
+    // Corrupt value — treat as nothing celebrated yet.
+  }
+  return [];
+}
 
 export function FacilitatorChecklist({ progress }: Props) {
   const {
@@ -43,10 +55,10 @@ export function FacilitatorChecklist({ progress }: Props) {
     markChecklistComplete,
     dismissChecklist,
   } = useOnboardingState();
-  // In replay/preview the checklist shows the fresh first-run state regardless
-  // of real progress, so the steps render empty (not crossed-out as done).
-  const view = walkthroughReplay ? FRESH_PROGRESS : progress;
-  const allDone = view.hasOrg && view.hasSessionInAnyOrg && view.hasOwnedSessionDesign;
+  // The checklist tracks the user's real, server-derived progress. (Replay
+  // doesn't fake an empty state — it just re-shows the steps instead of the
+  // "complete" card; on a fresh account those steps are naturally empty.)
+  const allDone = progress.hasOrg && progress.hasSessionInAnyOrg && progress.hasOwnedSessionDesign;
 
   // Capture the checklistComplete value at hydration time (i.e. what was in
   // localStorage when the page loaded). We use a ref so re-renders caused by
@@ -60,32 +72,58 @@ export function FacilitatorChecklist({ progress }: Props) {
     }
   }, [hydrated, checklistComplete]);
 
-  // Guards the one-shot celebration against React StrictMode's double-invoke
-  // and any incidental re-runs of the effect below.
-  const celebrated = useRef(false);
-
-  // First-run completion flow. In replay/preview `allDone` is forced false (the
-  // steps render empty), so this effect naturally no-ops there — replay never
-  // auto-dismisses and never fakes the completion confetti.
+  // Per-step confetti. On first sighting we baseline to whatever's already done
+  // (no retroactive bursts for an existing account); after that, each step that
+  // newly completes fires one burst. replayAll() clears the baseline, so a
+  // replayed walkthrough re-arms every step (and a fresh account celebrates each
+  // step as it's created). Keyed off real progress, independent of replay.
   useEffect(() => {
-    if (!hydrated || role !== 'facilitator' || checklistDismissed || !allDone) return;
+    if (!hydrated || role !== 'facilitator') return;
+    const doneNow = doneStepKeys(progress);
+    const celebratedSteps = readCelebratedSteps();
+    if (celebratedSteps === null) {
+      // First sighting — baseline silently.
+      window.localStorage.setItem(CHECKLIST_CELEBRATED_KEY, JSON.stringify(doneNow));
+      return;
+    }
+    const fresh = doneNow.filter((s) => !celebratedSteps.includes(s));
+    if (fresh.length > 0) {
+      void celebrate();
+      window.localStorage.setItem(
+        CHECKLIST_CELEBRATED_KEY,
+        JSON.stringify([...celebratedSteps, ...fresh]),
+      );
+    }
+  }, [hydrated, role, progress]);
+
+  // Completion bookkeeping (show the "complete" card for one visit, then
+  // auto-dismiss). Confetti is owned by the per-step effect above. Suspended
+  // during replay so the steps stay visible instead of auto-dismissing.
+  useEffect(() => {
+    if (!hydrated || role !== 'facilitator' || checklistDismissed || walkthroughReplay || !allDone)
+      return;
     if (completeAtHydration.current) {
       // User already saw the complete card on a previous visit — auto-dismiss.
       dismissChecklist();
     } else {
-      // First time reaching all-done: celebrate, then mark it so the next visit
-      // auto-dismisses (and never re-celebrates).
-      if (!celebrated.current) {
-        celebrated.current = true;
-        void celebrate();
-      }
+      // First time reaching all-done: mark it so the next visit auto-dismisses.
       markChecklistComplete();
     }
-  }, [allDone, checklistDismissed, dismissChecklist, hydrated, markChecklistComplete, role]);
+  }, [
+    allDone,
+    checklistDismissed,
+    dismissChecklist,
+    hydrated,
+    markChecklistComplete,
+    role,
+    walkthroughReplay,
+  ]);
 
   if (!hydrated || role !== 'facilitator' || checklistDismissed) return null;
 
-  if (allDone) {
+  // In replay, always show the steps (even when allDone) rather than the terse
+  // complete card, so "Replay walkthrough" actually re-shows the checklist.
+  if (allDone && !walkthroughReplay) {
     return (
       <section
         id={WelcomeModal.CHECKLIST_ANCHOR_ID}
@@ -134,45 +172,45 @@ export function FacilitatorChecklist({ progress }: Props) {
       </h2>
       <ol className="mt-4 flex flex-col gap-3">
         <ChecklistRow
-          done={view.hasOrg}
+          done={progress.hasOrg}
           label="Create your first workshop"
           href="/app/workshops"
           testid="onboarding-step-org"
-          isNext={!view.hasOrg}
+          isNext={!progress.hasOrg}
         />
         <ChecklistRow
-          done={view.hasSessionInAnyOrg}
+          done={progress.hasSessionInAnyOrg}
           label="Create a session inside it"
           // Until the step is done, deep-link to the org and trigger the
           // "Create session" spotlight there (CreateSessionSpotlight reads this
           // param). From the org page itself firstOrgId is the current org, so
           // it's a same-page nav; from elsewhere it routes to the first org.
           href={
-            view.firstOrgId
-              ? `/app/workshops/${view.firstOrgId}${
-                  view.hasSessionInAnyOrg ? '' : '?onboarding=create-session'
+            progress.firstOrgId
+              ? `/app/workshops/${progress.firstOrgId}${
+                  progress.hasSessionInAnyOrg ? '' : '?onboarding=create-session'
                 }`
               : '/app/workshops'
           }
           testid="onboarding-step-session"
-          isNext={view.hasOrg && !view.hasSessionInAnyOrg}
+          isNext={progress.hasOrg && !progress.hasSessionInAnyOrg}
         />
         <ChecklistRow
-          done={view.hasOwnedSessionDesign}
+          done={progress.hasOwnedSessionDesign}
           label="Open a stage and start your first model"
           // Until done, deep-link to the session and run the start-model
           // spotlight there (StartModelSpotlight reads this param). On the
           // session page firstSessionId is the current session (same-page nav);
           // from elsewhere it routes to the user's first session.
           href={
-            view.firstSessionId
-              ? `/app/sessions/${view.firstSessionId}${
-                  view.hasOwnedSessionDesign ? '' : '?onboarding=start-model'
+            progress.firstSessionId
+              ? `/app/sessions/${progress.firstSessionId}${
+                  progress.hasOwnedSessionDesign ? '' : '?onboarding=start-model'
                 }`
               : '/app/workshops'
           }
           testid="onboarding-step-model"
-          isNext={view.hasOrg && view.hasSessionInAnyOrg && !view.hasOwnedSessionDesign}
+          isNext={progress.hasOrg && progress.hasSessionInAnyOrg && !progress.hasOwnedSessionDesign}
         />
       </ol>
     </section>
