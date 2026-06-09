@@ -157,6 +157,7 @@ export function LayersPanel() {
     <section
       className={`flex min-h-0 flex-col ${open ? 'flex-1' : 'shrink-0'}`}
       aria-label="Layers"
+      data-tour-id="layers-panel"
     >
       <div className="flex shrink-0 items-center justify-between">
         <button

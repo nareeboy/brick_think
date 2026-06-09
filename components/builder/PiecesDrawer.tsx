@@ -62,6 +62,7 @@ export function PiecesDrawer() {
         type="button"
         aria-label={open ? 'Close pieces' : 'Open pieces'}
         aria-expanded={open}
+        data-tour-id="pieces-drawer-toggle"
         onClick={() => setOpen((v) => !v)}
         className={`absolute right-5 top-5 z-30 inline-flex h-11 w-11 !cursor-pointer items-center justify-center rounded-2xl border transition-colors ${
           open
