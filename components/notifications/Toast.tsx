@@ -89,7 +89,7 @@ export function Toast({ variant, title, description, action, onDismiss, classNam
         <Icon className="h-5 w-5" />
       </span>
 
-      <div className={`flex min-w-0 flex-1 flex-col gap-1 ${onDismiss ? 'pr-7' : ''}`}>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="text-[16px] font-semibold leading-tight tracking-tight text-zinc-900">
           {title}
         </p>
@@ -101,8 +101,13 @@ export function Toast({ variant, title, description, action, onDismiss, classNam
       {action ? (
         <button
           type="button"
-          onClick={action.onClick}
-          className="ml-1 inline-flex h-10 shrink-0 cursor-pointer items-center self-center rounded-xl border border-zinc-300 bg-white px-4 text-[14px] font-medium text-zinc-800 transition-colors hover:bg-zinc-50 active:scale-[0.98]"
+          onClick={(e) => {
+            // Don't let a wrapping <Link> navigate when the action is clicked.
+            e.preventDefault();
+            e.stopPropagation();
+            action.onClick();
+          }}
+          className="inline-flex h-10 shrink-0 cursor-pointer items-center self-center rounded-xl border border-zinc-300 bg-white px-4 text-[14px] font-medium text-zinc-800 transition-colors hover:bg-zinc-50 active:scale-[0.98]"
         >
           {action.label}
         </button>
@@ -111,9 +116,15 @@ export function Toast({ variant, title, description, action, onDismiss, classNam
       {onDismiss ? (
         <button
           type="button"
-          onClick={onDismiss}
+          onClick={(e) => {
+            // Stop the click from bubbling to a wrapping <Link> so dismissing
+            // doesn't also navigate.
+            e.preventDefault();
+            e.stopPropagation();
+            onDismiss();
+          }}
           aria-label="Dismiss notification"
-          className="absolute right-3 top-3 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-900/5 hover:text-zinc-600"
+          className="-mr-1 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center self-start rounded-lg text-zinc-400 transition-colors hover:bg-zinc-900/5 hover:text-zinc-600"
         >
           <CloseIcon className="h-4 w-4" />
         </button>
