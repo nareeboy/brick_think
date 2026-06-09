@@ -21,6 +21,10 @@ if (!url || !key) {
   throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
 }
 
+// Echo the target so the operator can confirm prod vs non-prod before any write.
+// eslint-disable-next-line no-console -- intentional status output for a manually-run build script
+console.log(`Target database: ${url}`);
+
 const db = createClient(url, key, {
   auth: { persistSession: false, autoRefreshToken: false },
   // ws transport: required on Node < 22 which lacks native WebSocket.
@@ -57,4 +61,17 @@ async function main() {
   if (failed > 0) process.exit(1);
 }
 
-void main();
+main().catch((err: unknown) => {
+  const e = (err ?? {}) as { message?: string; details?: string; hint?: string; code?: string };
+  console.error(
+    [
+      `Conversion failed: ${e.message ?? String(err)}`,
+      e.code ? `  code: ${e.code}` : '',
+      e.details ? `  details: ${e.details}` : '',
+      e.hint ? `  hint: ${e.hint}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
+  );
+  process.exit(1);
+});

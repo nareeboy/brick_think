@@ -12,6 +12,7 @@ import {
   GitHubGlyph,
   NavBar,
 } from '@/components/marketing/MarketingChrome';
+import { HeroVideo } from '@/components/marketing/HeroVideo';
 
 export const metadata: Metadata = { title: 'BrickThink' };
 
@@ -144,16 +145,12 @@ function EventBanner() {
 function Hero() {
   return (
     <section className="relative isolate overflow-hidden bg-[#140d07]">
-      {/* video background */}
-      <video
-        className="absolute inset-0 -z-20 h-full w-full object-cover"
+      {/* video background — playback is JS-gated on prefers-reduced-motion
+          (see HeroVideo) to satisfy WCAG 2.2.2; the CSS reduced-motion reset
+          does not stop <video>. */}
+      <HeroVideo
         src="/lego-video.mp4"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="metadata"
-        aria-hidden="true"
+        className="absolute inset-0 -z-20 h-full w-full object-cover"
       />
       {/* base dark overlay — solid at top, fades to transparent at the bottom so it dissolves with the video */}
       <div

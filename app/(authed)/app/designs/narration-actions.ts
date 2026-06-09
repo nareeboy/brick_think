@@ -4,9 +4,10 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import { getAnthropicClientForProfile } from '@/lib/integrations/anthropic';
+import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
 import { cleanupTranscript } from '@/lib/sessions/narrationCleanup';
 import type { NarrationCleanupStatus } from '@/lib/sessions/modelNarration';
+import { subscriptionTier, hasTierRank } from '@/lib/billing/entitlements';
 
 // ~4000 words (~20 min of speech). Haiku's max_tokens (2048) comfortably
 // covers cleaning a transcript of this size; longer input is truncated.
@@ -88,8 +89,11 @@ export async function saveNarration(
     facilitatorId = sessRes.data?.facilitator_id ?? null;
   }
 
-  if (facilitatorId) {
-    const anthropic = await getAnthropicClientForProfile(facilitatorId);
+  // Live cleanup runs before any finished session/report exists, so it requires a
+  // SUBSCRIPTION (per-session unlocks don't apply here). No sub → skip, keep raw text.
+  const subTier = facilitatorId ? await subscriptionTier(facilitatorId) : null;
+  if (facilitatorId && hasTierRank(subTier, 'session_report')) {
+    const anthropic = getServerAnthropicClient();
     if (anthropic.ok) {
       const result = await cleanupTranscript(anthropic.client, trimmed);
       if (result.ok) {

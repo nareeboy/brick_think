@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
-import { PageBanner } from '@/components/app/PageBanner';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { getServiceSupabaseClient } from '@/lib/db/service';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
@@ -13,7 +11,6 @@ import { AccountForm } from './AccountForm';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
-import { IntegrationsCard } from './IntegrationsCard';
 import { ReplayWalkthroughCard } from './ReplayWalkthroughCard';
 
 export const metadata: Metadata = { title: 'Account' };
@@ -31,68 +28,50 @@ export default async function AccountPage() {
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, created_at, avatar_url, a11y_preferences')
+    .select('full_name, email, avatar_url, a11y_preferences')
     .eq('id', user.id)
     .single();
   if (profileRes.error) {
     throw new Error(`Failed to load profile: ${profileRes.error.message}`);
   }
 
-  // user_integrations carries the encrypted Anthropic key + a last4 surface
-  // for the connected display. Ciphertext is never selected here.
-  const svc = getServiceSupabaseClient();
-  const { data: integration } = await svc
-    .from('user_integrations')
-    .select('anthropic_api_key_last4, updated_at')
-    .eq('profile_id', user.id)
-    .maybeSingle();
-
   const email = profileRes.data.email;
   const fullName = profileRes.data.full_name?.trim() || null;
   const initialAvatarUrl = profileRes.data.avatar_url ?? null;
-  const createdAt = new Date(profileRes.data.created_at);
-  const createdLabel = createdAt.toLocaleDateString('en-GB', {
-    month: 'long',
-    year: 'numeric',
-  });
 
   return (
-    <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <PageBanner
-        eyebrow="BrickThink"
-        title="Account"
-        titleTestId="account-heading"
-        subtitle={`Joined ${createdLabel}.`}
-        maxWidthClassName="max-w-[640px]"
-      />
-      <div className="mx-auto flex max-w-[640px] flex-col gap-8 px-5 py-10">
-        <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
-          <AccountForm
-            initialFullName={fullName}
-            email={email}
-            initialAvatarUrl={initialAvatarUrl}
+    <div className="mx-auto max-w-[1200px] px-5 py-10">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        {/* Left column — profile anchor tile with the contribution tile beneath it. */}
+        <div className="flex flex-col gap-4 lg:col-span-2">
+          <section className="rounded-2xl border border-zinc-900/10 bg-white p-6">
+            <AccountForm
+              initialFullName={fullName}
+              email={email}
+              initialAvatarUrl={initialAvatarUrl}
+            />
+          </section>
+
+          {/* Contribution — sits directly under the profile section. */}
+          <ContributionCard />
+        </div>
+
+        {/* Right rail — stacked preference + walkthrough + tip-jar tiles. */}
+        <div className="flex flex-col gap-4">
+          <A11yPreferencesCard
+            initialColourblindMode={
+              normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
+            }
           />
-        </section>
+          <ReplayWalkthroughCard />
+          <BuyMeACoffeeCard />
+        </div>
 
-        <ReplayWalkthroughCard />
-
-        <A11yPreferencesCard
-          initialColourblindMode={
-            normaliseA11yPreferences(profileRes.data.a11y_preferences).colourblindMode
-          }
-        />
-
-        <IntegrationsCard
-          existingLast4={integration?.anthropic_api_key_last4 ?? null}
-          existingUpdatedAt={integration?.updated_at ?? null}
-        />
-
-        <ContributionCard />
-
-        <BuyMeACoffeeCard />
-
-        <DangerZone email={email} />
+        {/* Danger zone — full-width footer tile. */}
+        <div className="lg:col-span-3">
+          <DangerZone email={email} />
+        </div>
       </div>
-    </main>
+    </div>
   );
 }

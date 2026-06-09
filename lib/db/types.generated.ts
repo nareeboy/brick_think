@@ -314,6 +314,44 @@ export type Database = {
         }
         Relationships: []
       }
+      facilitator_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          current_period_end: string | null
+          profile_id: string
+          status: string
+          stripe_subscription_id: string
+          tier: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          current_period_end?: string | null
+          profile_id: string
+          status: string
+          stripe_subscription_id: string
+          tier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          current_period_end?: string | null
+          profile_id?: string
+          status?: string
+          stripe_subscription_id?: string
+          tier?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facilitator_subscriptions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       model_imports: {
         Row: {
           id: string
@@ -979,6 +1017,54 @@ export type Database = {
           },
         ]
       }
+      session_purchases: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          session_id: string
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          session_id: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          session_id?: string
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          tier?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_purchases_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_purchases_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_reports: {
         Row: {
           claude_model: string
@@ -1394,31 +1480,25 @@ export type Database = {
           },
         ]
       }
-      user_integrations: {
+      stripe_customers: {
         Row: {
-          anthropic_api_key_ciphertext: string | null
-          anthropic_api_key_last4: string | null
-          anthropic_api_key_nonce: string | null
+          created_at: string
           profile_id: string
-          updated_at: string
+          stripe_customer_id: string
         }
         Insert: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
+          created_at?: string
           profile_id: string
-          updated_at?: string
+          stripe_customer_id: string
         }
         Update: {
-          anthropic_api_key_ciphertext?: string | null
-          anthropic_api_key_last4?: string | null
-          anthropic_api_key_nonce?: string | null
+          created_at?: string
           profile_id?: string
-          updated_at?: string
+          stripe_customer_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "user_integrations_profile_id_fkey"
+            foreignKeyName: "stripe_customers_profile_id_fkey"
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"

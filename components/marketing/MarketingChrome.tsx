@@ -24,13 +24,14 @@ export const TIKTOK_URL = 'https://www.tiktok.com/@brickthink';
 export const SLACK_URL =
   'https://join.slack.com/t/brickthink/shared_invite/zt-3zy9dg1hi-ZVZCdIlfSS_6OYLrQj2R0w';
 export const LEGO_SERIOUS_PLAY_URL = 'https://www.lego.com/en-ch/themes/serious-play';
-export const LSP_DACH_COMMUNITY_URL = 'https://seriousplay.community/dach/';
+export const LSP_DACH_COMMUNITY_URL = 'https://www.linkedin.com/groups/19163025/';
 export const PLAY_SERIOUS_ARTICLE_URL =
   'https://www.play-serious.org/brickthink-virtuelle-haptik-ueberholt-lego/';
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
   { href: '/articles', label: 'Articles' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
   { href: '/help', label: 'Help' },
   { href: '/contact', label: 'Contact' },
@@ -249,6 +250,11 @@ export async function Footer() {
             <li>
               <Link href="/#open-source" className="hover:text-zinc-950">
                 Open source
+              </Link>
+            </li>
+            <li>
+              <Link href="/pricing" className="hover:text-zinc-950">
+                Pricing
               </Link>
             </li>
             <li>
