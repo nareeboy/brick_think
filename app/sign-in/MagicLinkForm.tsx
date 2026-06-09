@@ -61,7 +61,7 @@ export function MagicLinkForm({ next }: MagicLinkFormProps) {
           autoComplete="email"
           required
           placeholder="you@studio.example"
-          className="w-full rounded-xl border border-zinc-900/10 bg-white py-3 pl-10 pr-3.5 text-[15px] text-zinc-900 placeholder:text-zinc-400 outline-none transition-colors focus:border-zinc-900/30 focus-visible:ring-2 focus-visible:ring-[#a8482a]/40"
+          className="w-full rounded-xl border border-zinc-900/10 bg-white py-3 pl-10 pr-3.5 text-[15px] text-zinc-900 placeholder:text-zinc-500 outline-none transition-colors focus:border-zinc-900/30 focus-visible:ring-2 focus-visible:ring-[#a8482a]/40"
         />
       </div>
       <p className="text-[12px] leading-snug text-zinc-500">
