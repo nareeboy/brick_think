@@ -87,7 +87,7 @@ export function PricingTiers() {
               Three tiers, one ladder
             </p>
             <h2 className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]">
-              Our services are chargeable, because they cost us.
+              But our services are chargeable, because they cost us.
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
