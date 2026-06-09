@@ -131,6 +131,9 @@ export async function generateSessionReport(
         const buf = await getCanvasImageBuffer({
           thumbnailUrl: m.thumbnailUrl,
           canvasState: m.canvasState,
+          // Models can be large; render at a higher source width so the
+          // full-width card image stays crisp.
+          maxWidth: 1600,
         });
         const imageDataUri = buf ? `data:image/png;base64,${buf.toString('base64')}` : null;
         return {
@@ -140,6 +143,7 @@ export async function generateSessionReport(
           imageDataUri,
           description:
             synthesis.modelDescriptions[m.id] ?? 'No description was generated for this model.',
+          transcript: m.narration?.transcript ?? null,
         };
       }),
     );
