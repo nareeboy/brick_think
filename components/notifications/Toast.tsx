@@ -75,16 +75,23 @@ export interface ToastProps {
 export function Toast({ variant, title, description, action, onDismiss, className }: ToastProps) {
   const v = VARIANTS[variant];
   const Icon = v.icon;
+  // Single-line toasts (no body) read better centred against the icon chip;
+  // multi-line ones top-align so the icon/title sit at the first line.
+  const hasBody = Boolean(description);
 
   return (
     <div
       role={v.role}
       aria-live={v.ariaLive}
-      className={`relative flex items-start gap-4 rounded-2xl border px-5 py-4 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.25)] ${v.surface} ${className ?? ''}`}
+      className={`relative flex gap-4 rounded-2xl border px-5 py-4 shadow-[0_12px_30px_-18px_rgba(0,0,0,0.25)] ${
+        hasBody ? 'items-start' : 'items-center'
+      } ${v.surface} ${className ?? ''}`}
     >
       <span
         aria-hidden="true"
-        className={`mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${v.chip}`}
+        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white ${
+          hasBody ? 'mt-0.5' : ''
+        } ${v.chip}`}
       >
         <Icon className="h-5 w-5" />
       </span>
@@ -124,7 +131,9 @@ export function Toast({ variant, title, description, action, onDismiss, classNam
             onDismiss();
           }}
           aria-label="Dismiss notification"
-          className="-mr-1 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center self-start rounded-lg text-zinc-400 transition-colors hover:bg-zinc-900/5 hover:text-zinc-600"
+          className={`-mr-1 inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-900/5 hover:text-zinc-600 ${
+            hasBody ? 'self-start' : 'self-center'
+          }`}
         >
           <CloseIcon className="h-4 w-4" />
         </button>
