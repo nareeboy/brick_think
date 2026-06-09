@@ -22,7 +22,7 @@ beforeEach(() => vi.clearAllMocks());
 describe('<UpgradeModal>', () => {
   it('renders the session_report price (€9) by default', () => {
     render(<UpgradeModal open onClose={() => {}} feature="PDF session reports" sessionId="s1" />);
-    expect(screen.getByRole('button', { name: 'Unlock — €9' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Purchase — €9' })).toBeTruthy();
   });
 
   it.each([
@@ -38,7 +38,7 @@ describe('<UpgradeModal>', () => {
         tier={tier}
       />,
     );
-    expect(screen.getByRole('button', { name: `Unlock — ${label}` })).toBeTruthy();
+    expect(screen.getByRole('button', { name: `Purchase — ${label}` })).toBeTruthy();
   });
 
   it('forwards the selected tier and sessionId to createSessionCheckout on unlock', async () => {
@@ -55,7 +55,7 @@ describe('<UpgradeModal>', () => {
       />,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'Unlock — €60' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Purchase — €60' }));
 
     expect(mockedCheckout).toHaveBeenCalledTimes(1);
     expect(mockedCheckout).toHaveBeenCalledWith('full_findings', 'sess-42');
@@ -75,11 +75,11 @@ describe('<UpgradeModal>', () => {
     );
 
     // Both price points are present, and the €45 row names the white-label benefit.
-    expect(screen.getByRole('button', { name: 'Unlock — €9' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Unlock — €45' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Purchase — €9' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Purchase — €45' })).toBeTruthy();
     expect(screen.getByText(/white-labelled/i)).toBeTruthy();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Unlock — €45' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Purchase — €45' }));
     expect(mockedCheckout).toHaveBeenCalledWith('client_ready', 'sess-9');
   });
 
@@ -116,7 +116,7 @@ describe('<UpgradeModal>', () => {
 
   it('omits the unlock button entirely when no sessionId is given', () => {
     render(<UpgradeModal open onClose={() => {}} feature="PDF session reports" />);
-    expect(screen.queryByRole('button', { name: /^Unlock —/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Purchase —/ })).toBeNull();
     expect(screen.getByRole('link', { name: 'View plans' })).toBeTruthy();
   });
 });
