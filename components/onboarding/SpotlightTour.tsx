@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
+import { celebrate } from '@/lib/onboarding/celebrate';
+
 import { useOnboardingState } from './useOnboardingState';
 
 interface Step {
@@ -88,15 +90,16 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
     const tick = () => {
       const el = document.querySelector(step.selector);
       if (!el) {
-        // Silent skip — advance to the next step (finish past the end).
+        // Silent skip — advance to the next step (finish past the end). Keep
+        // the state updater pure: decide finish-vs-advance from the current
+        // stepIndex and call finish() directly, never inside setStepIndex (that
+        // runs during render and would update other components mid-render).
         setRect(null);
-        setStepIndex((i) => {
-          const next = i + 1;
-          if (next >= visibleSteps.length) {
-            finish();
-          }
-          return next;
-        });
+        if (stepIndex + 1 >= visibleSteps.length) {
+          finish();
+        } else {
+          setStepIndex((i) => i + 1);
+        }
         return; // effect re-runs for the new step; schedule no further frames
       }
       // Bring an off-screen target (e.g. a stage card below the fold) into
@@ -213,6 +216,9 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
             type="button"
             onClick={() => {
               if (isLast) {
+                // Genuine completion — celebrate. (Skip/Esc also call finish()
+                // but deliberately get no confetti.)
+                void celebrate();
                 finish();
                 return;
               }
@@ -220,7 +226,7 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
               setStepIndex((i) => i + 1);
             }}
             data-testid="onboarding-spotlight-next"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
           >
             {isLast ? 'Got it' : 'Next'}
           </button>

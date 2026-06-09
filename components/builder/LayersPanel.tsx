@@ -313,7 +313,7 @@ function GroupBlock({
   return (
     <div className="mt-3 first:mt-1">
       {hint?.kind === 'group-edge' && hint.groupId === group.id && hint.side === 'before' ? (
-        <div className="mx-2 mb-1 h-[2px] rounded-full bg-[#c0613d]" />
+        <div className="mx-2 mb-1 h-[2px] rounded-full bg-[#a8482a]" />
       ) : null}
       <div
         role="button"
@@ -325,9 +325,9 @@ function GroupBlock({
         onClick={() => onSetActive(group.id)}
         onKeyDown={handleHeaderKeyDown}
         className={`flex w-full cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] transition-colors ${
-          active ? 'bg-[#c0613d]/10 text-zinc-900' : 'text-zinc-800 hover:bg-zinc-900/5'
+          active ? 'bg-[#a8482a]/10 text-zinc-900' : 'text-zinc-800 hover:bg-zinc-900/5'
         } ${dimmed ? 'opacity-60' : ''} ${
-          hint?.kind === 'group-top' && hint.groupId === group.id ? 'ring-2 ring-[#c0613d]/50' : ''
+          hint?.kind === 'group-top' && hint.groupId === group.id ? 'ring-2 ring-[#a8482a]/50' : ''
         }`}
       >
         <button
@@ -344,7 +344,7 @@ function GroupBlock({
             className={`h-3 w-3 transition-transform ${group.collapsed ? '-rotate-90' : ''}`}
           />
         </button>
-        <FolderIcon className="h-3.5 w-3.5 text-[#c0613d]" />
+        <FolderIcon className="h-3.5 w-3.5 text-[#a8482a]" />
         {editing ? (
           <input
             ref={inputRef}
@@ -365,7 +365,7 @@ function GroupBlock({
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 rounded border border-[#c0613d]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
+            className="flex-1 rounded border border-[#a8482a]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
           />
         ) : (
           <span
@@ -431,7 +431,7 @@ function GroupBlock({
       ) : null}
 
       {hint?.kind === 'group-edge' && hint.groupId === group.id && hint.side === 'after' ? (
-        <div className="mx-2 mt-1 h-[2px] rounded-full bg-[#c0613d]" />
+        <div className="mx-2 mt-1 h-[2px] rounded-full bg-[#a8482a]" />
       ) : null}
     </div>
   );
@@ -481,7 +481,7 @@ export function BrickRow({
   const label = pieceLabel(brick);
   return (
     <div>
-      {showBefore ? <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" /> : null}
+      {showBefore ? <div className="mx-2 h-[2px] rounded-full bg-[#a8482a]" /> : null}
       <div
         role="button"
         tabIndex={0}
@@ -508,7 +508,7 @@ export function BrickRow({
           }
         }}
         className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors ${
-          selected ? 'bg-[#c0613d]/12 text-zinc-900' : 'text-zinc-700 hover:bg-zinc-900/5'
+          selected ? 'bg-[#a8482a]/12 text-zinc-900' : 'text-zinc-700 hover:bg-zinc-900/5'
         } ${dimmed ? 'opacity-50' : ''}`}
       >
         <span
@@ -543,7 +543,7 @@ export function BrickRow({
               }
             }}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 rounded border border-[#c0613d]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
+            className="flex-1 rounded border border-[#a8482a]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
           />
         ) : (
           <span
@@ -580,7 +580,7 @@ export function BrickRow({
           <TrashIcon className="h-3.5 w-3.5" />
         </IconButton>
       </div>
-      {showAfter ? <div className="mx-2 h-[2px] rounded-full bg-[#c0613d]" /> : null}
+      {showAfter ? <div className="mx-2 h-[2px] rounded-full bg-[#a8482a]" /> : null}
     </div>
   );
 }

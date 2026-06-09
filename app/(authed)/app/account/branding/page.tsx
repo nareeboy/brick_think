@@ -46,7 +46,7 @@ export default async function BrandingPage() {
         </svg>
         Back to settings
       </Link>
-      <h1 className="mt-4 font-display text-2xl text-zinc-900">Brand presets</h1>
+      <h2 className="mt-4 font-display text-2xl text-zinc-900">Brand presets</h2>
       <p className="mt-2 max-w-prose text-sm text-zinc-600">
         White-label your PDF reports — your logo, colours, fonts and name. Pick a preset when you
         generate a report. {entitled ? null : 'Branded reports are part of the Client-Ready plan.'}

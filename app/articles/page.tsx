@@ -33,13 +33,13 @@ function Hero({ count }: { count: number }) {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-20 md:grid-cols-12 md:items-end md:gap-12 md:pb-20 md:pt-28">
         <div className="md:col-span-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 backdrop-blur">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             Field notes
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[78px]">
             Notes from the
             <br />
-            <span className="text-[#c0613d]">workshop floor</span>.
+            <span className="text-[#a8482a]">workshop floor</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
             Short pieces on LEGO® SERIOUS PLAY®, remote facilitation, and how this product is built.
@@ -109,7 +109,7 @@ function Featured({ article }: { article: PublishedArticleSummary }) {
         </Link>
         <div className="md:col-span-5">
           <div className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             Latest
             <span aria-hidden="true">·</span>
             <time dateTime={isoDate(article.publishedAt)}>
@@ -133,7 +133,7 @@ function Featured({ article }: { article: PublishedArticleSummary }) {
             {article.authorName ? <span>{article.authorName}</span> : null}
             <Link
               href={`/articles/${article.slug}`}
-              className="inline-flex items-center gap-1.5 font-medium text-zinc-900 transition-colors hover:text-[#c0613d]"
+              className="inline-flex items-center gap-1.5 font-medium text-zinc-900 transition-colors hover:text-[#a8482a]"
             >
               Read it
               <ArrowRight className="h-3.5 w-3.5" />
@@ -170,7 +170,7 @@ function Archive({ articles }: { articles: PublishedArticleSummary[] }) {
                   </time>
                 </div>
                 <div className="md:col-span-7">
-                  <h3 className="font-display text-[22px] font-medium leading-snug tracking-tight text-zinc-950 transition-colors group-hover:text-[#c0613d]">
+                  <h3 className="font-display text-[22px] font-medium leading-snug tracking-tight text-zinc-950 transition-colors group-hover:text-[#a8482a]">
                     {article.title}
                   </h3>
                   {article.excerpt ? (
@@ -180,7 +180,7 @@ function Archive({ articles }: { articles: PublishedArticleSummary[] }) {
                   ) : null}
                 </div>
                 <div className="md:col-span-3 md:text-right text-[13px] text-zinc-600">
-                  <span className="inline-flex items-center gap-1.5 transition-colors group-hover:text-[#c0613d]">
+                  <span className="inline-flex items-center gap-1.5 transition-colors group-hover:text-[#a8482a]">
                     Read
                     <ArrowRight className="h-3.5 w-3.5" />
                   </span>
@@ -211,7 +211,7 @@ function Empty() {
             href="https://github.com/nareeboy/brick_think"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[#c0613d] underline underline-offset-4 hover:text-[#9a4a2c]"
+            className="text-[#a8482a] underline underline-offset-4 hover:text-[#9a4a2c]"
           >
             GitHub
           </a>
@@ -231,7 +231,7 @@ function CoverFallback() {
         {Array.from({ length: 24 }).map((_, i) => (
           <span
             key={i}
-            className="rounded-md bg-[#c0613d]/15"
+            className="rounded-md bg-[#a8482a]/15"
             style={{ aspectRatio: '2 / 1' }}
             aria-hidden="true"
           />

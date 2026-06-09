@@ -249,7 +249,7 @@ function SaveBuildButton({ canSaveVersion }: { canSaveVersion: boolean }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group mt-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#c0613d] py-4 text-[15px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-all hover:bg-[#cf6e47] active:translate-y-[1px]"
+        className="group mt-auto inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#a8482a] py-4 text-[15px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-all hover:bg-[#cf6e47] active:translate-y-[1px]"
       >
         {savedFlash ? 'Version saved' : 'Save version'}
       </button>
@@ -310,7 +310,7 @@ function SaveToast() {
       className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4"
     >
       <div className="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-zinc-900/10 bg-white px-4 py-3 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#c0613d]/12 text-[#c0613d]">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#a8482a]/12 text-[#a8482a]">
           <CheckIcon className="h-4 w-4" />
         </span>
         <span className="text-[13px] font-medium text-zinc-900">{toast.message}</span>

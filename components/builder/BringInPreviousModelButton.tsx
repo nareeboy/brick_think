@@ -155,12 +155,12 @@ export function BringInPreviousModelCard() {
           onClick={handleClick}
           disabled={pending}
           data-testid="bring-in-previous-model"
-          className="mt-4 inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white shadow-[0_10px_24px_-12px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47] disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-4 inline-flex h-11 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white shadow-[0_10px_24px_-12px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? 'Bringing in…' : 'Bring in my previous model'}
         </button>
         {error ? (
-          <p role="alert" className="mt-3 text-[12px] text-[#c0613d]">
+          <p role="alert" className="mt-3 text-[12px] text-[#a8482a]">
             {error}
           </p>
         ) : null}
@@ -180,7 +180,7 @@ export function BringInPreviousModelReopenButton() {
       type="button"
       onClick={() => setDismissed(false)}
       data-testid="bring-in-previous-model-reopen"
-      className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#c0613d]/30 bg-[#c0613d]/5 px-3 py-2.5 text-[13px] font-medium text-[#c0613d] transition-colors hover:bg-[#c0613d]/10"
+      className="inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#a8482a]/30 bg-[#a8482a]/5 px-3 py-2.5 text-[13px] font-medium text-[#a8482a] transition-colors hover:bg-[#a8482a]/10"
     >
       Bring in my previous model
     </button>

@@ -95,7 +95,7 @@ function FeaturedOnBand() {
             href={LSP_DACH_COMMUNITY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
+            className="inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
           >
             <Image
               src="/dach-logo.png"
@@ -110,7 +110,7 @@ function FeaturedOnBand() {
             href={PLAY_SERIOUS_ARTICLE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
+            className="inline-flex rounded-md transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
           >
             <Image
               src="/play-serious-akademie-logo.png"
@@ -331,18 +331,27 @@ export async function Footer() {
               endorse this product.
             </p>
           </div>
-          <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5 gap-y-1">
-            <Link href="/terms" className="hover:text-zinc-800">
+          <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5">
+            <Link
+              href="/terms"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
               Terms
             </Link>
-            <Link href="/privacy" className="hover:text-zinc-800">
+            <Link
+              href="/privacy"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
               Privacy
             </Link>
-            <ManageCookiesButton className="cursor-pointer text-[12px] text-zinc-500 transition-colors hover:text-zinc-800" />
+            <ManageCookiesButton className="inline-flex min-h-[24px] cursor-pointer items-center text-[12px] text-zinc-500 transition-colors hover:text-zinc-800" />
             {versionTag ? (
-              <span className="text-[12px] text-zinc-500">
+              <span className="inline-flex min-h-[24px] items-center text-[12px] text-zinc-500">
                 {'— '}
-                <Link href="/changelog" className="text-zinc-500 hover:text-zinc-800">
+                <Link
+                  href="/changelog"
+                  className="ml-1 inline-flex min-h-[24px] items-center text-zinc-500 hover:text-zinc-800"
+                >
                   {versionTag}
                 </Link>
               </span>
@@ -356,7 +365,7 @@ export async function Footer() {
 
 export function BrickGlyph() {
   return (
-    <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#c0613d] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18),0_2px_0_rgba(255,255,255,0.4)_inset]">
+    <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#a8482a] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18),0_2px_0_rgba(255,255,255,0.4)_inset]">
       <span className="absolute left-1/2 top-1.5 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-black/20" />
       <span className="absolute right-1/4 top-1.5 h-1.5 w-1.5 translate-x-1/2 rounded-full bg-black/20" />
     </span>

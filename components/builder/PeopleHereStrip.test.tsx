@@ -14,7 +14,7 @@ function peer(overrides: Partial<PeerSummary>): PeerSummary {
     userId: overrides.userId ?? 'u-x',
     displayName: overrides.displayName ?? 'X',
     avatarUrl: overrides.avatarUrl ?? null,
-    color: overrides.color ?? '#c0613d',
+    color: overrides.color ?? '#a8482a',
     isSelf: overrides.isSelf ?? false,
     selectedBrickId: overrides.selectedBrickId ?? null,
   };

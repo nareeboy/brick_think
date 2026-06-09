@@ -69,7 +69,7 @@ export function NewSessionDialog({ orgId, onClose }: Props) {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             autoComplete="off"
-            className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#c0613d]"
+            className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#a8482a]"
           />
         </label>
 
@@ -92,7 +92,7 @@ export function NewSessionDialog({ orgId, onClose }: Props) {
             type="submit"
             data-testid="new-session-submit"
             disabled={pending}
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[#a8482a] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
           >
             {pending ? 'Creating…' : 'Create session'}
           </button>

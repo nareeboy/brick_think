@@ -43,7 +43,7 @@ function CreditLink({ href, children }: { href: string | null; children: React.R
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-zinc-700 underline decoration-zinc-300 underline-offset-[3px] transition-colors hover:text-[#c0613d] hover:decoration-[#c0613d]/60"
+      className="text-zinc-700 underline decoration-zinc-300 underline-offset-[3px] transition-colors hover:text-[#a8482a] hover:decoration-[#a8482a]/60"
     >
       {children}
     </a>

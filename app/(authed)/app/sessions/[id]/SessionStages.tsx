@@ -498,7 +498,7 @@ function ParticipantsPanel({
                         aria-pressed={isSpotlit}
                         className={`inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border px-3 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                           isSpotlit
-                            ? 'border-[#c0613d] bg-[#c0613d] text-white hover:bg-[#a8543a]'
+                            ? 'border-[#a8482a] bg-[#a8482a] text-white hover:bg-[#a8543a]'
                             : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
                         }`}
                       >
@@ -591,7 +591,7 @@ function ModelAction({
           <Link
             href={`/app/designs/${ownedModel.id}`}
             data-testid={`open-model-${stageType}`}
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors transition-transform duration-150 ease-out hover:bg-[#cf6e47] active:scale-[0.98]"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors transition-transform duration-150 ease-out hover:bg-[#cf6e47] active:scale-[0.98]"
           >
             Open model
           </Link>
@@ -858,7 +858,7 @@ function StageDurationEditor({ stage }: { stage: LiveStageRow }) {
           onKeyDown={onKeyDown}
           disabled={pending}
           data-testid="stage-duration-input"
-          className="w-14 bg-transparent text-right font-mono text-base tabular-nums text-zinc-900 outline-none disabled:opacity-50"
+          className="w-14 rounded bg-transparent text-right font-mono text-base tabular-nums text-zinc-900 outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a]/50 disabled:opacity-50"
         />
         <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">min</span>
         <button

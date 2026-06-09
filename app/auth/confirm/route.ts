@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,13 +23,6 @@ const ALLOWED_TYPES = new Set([
   'signup',
 ]);
 
-function publicOrigin(request: NextRequest): string {
-  const proto = request.headers.get('x-forwarded-proto') ?? 'https';
-  const host =
-    request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? 'localhost:3000';
-  return `${proto}://${host}`;
-}
-
 function safeNext(value: string | null): string {
   if (!value || !value.startsWith('/')) return '/app/my-designs';
   return value;
@@ -40,7 +34,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const type = url.searchParams.get('type');
   const code = url.searchParams.get('code');
   const next = safeNext(url.searchParams.get('next'));
-  const origin = publicOrigin(request);
+  const origin = publicOriginFromHeaders(request.headers);
 
   // Fallback for the built-in {{ .ConfirmationURL }} template: if a Supabase
   // project (or a local stack started before the custom token-hash templates

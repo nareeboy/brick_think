@@ -76,7 +76,7 @@ export function AccountForm({ initialFullName, email, initialAvatarUrl }: Props)
                   onClick={handleRemove}
                   disabled={removing}
                   data-testid="avatar-remove-confirm"
-                  className="cursor-pointer font-semibold text-[#c0613d] underline-offset-2 hover:underline disabled:opacity-40"
+                  className="cursor-pointer font-semibold text-[#a8482a] underline-offset-2 hover:underline disabled:opacity-40"
                 >
                   {removing ? 'Removing…' : 'Confirm'}
                 </button>
@@ -149,7 +149,7 @@ export function AccountForm({ initialFullName, email, initialAvatarUrl }: Props)
             aria-label="Display name"
             data-testid="account-name-input"
             autoComplete="name"
-            className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#c0613d]"
+            className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#a8482a]"
           />
           <span className="text-[12px] text-zinc-500">
             Shown in the header and on shared sessions. Leave blank to fall back to your email.
@@ -168,7 +168,7 @@ export function AccountForm({ initialFullName, email, initialAvatarUrl }: Props)
             type="submit"
             disabled={!dirty || pending}
             data-testid="account-save-button"
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
           >
             {pending ? 'Saving…' : 'Save'}
           </button>

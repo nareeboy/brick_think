@@ -78,7 +78,7 @@ export default async function OrgsPage() {
         actions={
           <Link
             href="/app/workshops/new"
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
           >
             New workshop
           </Link>
@@ -115,12 +115,16 @@ export default async function OrgsPage() {
                     />
                   </div>
                   <div className="flex max-w-full items-center gap-1.5">
-                    <span className="inline-block max-w-full truncate rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-600">
-                      {o.name}
-                    </span>
-                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+                    <span
+                      className={`inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] ${
+                        o.role === 'owner'
+                          ? 'bg-sky-50 text-sky-700'
+                          : 'bg-orange-100 text-orange-900'
+                      }`}
+                    >
                       {o.role}
                     </span>
+                    <span className="truncate text-[12px] text-zinc-600">{o.name}</span>
                   </div>
                   <p className="mt-2 text-[12px] text-zinc-600">
                     {o.member_count} member{o.member_count === 1 ? '' : 's'}

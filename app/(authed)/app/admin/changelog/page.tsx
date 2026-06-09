@@ -17,7 +17,7 @@ export default async function AdminChangelogPage() {
         <h1 className="font-display text-2xl text-zinc-950">Changelog</h1>
         <Link
           href="/app/admin/changelog/new"
-          className="inline-flex cursor-pointer items-center rounded-md bg-[#c0613d] px-4 py-2 text-sm font-medium text-white hover:bg-[#a8512f]"
+          className="inline-flex cursor-pointer items-center rounded-md bg-[#a8482a] px-4 py-2 text-sm font-medium text-white hover:bg-[#a8512f]"
         >
           New entry
         </Link>

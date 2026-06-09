@@ -37,14 +37,15 @@ export function ExecutiveSummary(props: Props) {
 export function PageFooter({
   label,
   title,
-  page,
-  total,
   styles,
 }: {
   label: string;
   title: string;
-  page: number;
-  total: number;
+  /** Accepted for backwards-compat with callers; page numbers are now
+   *  computed dynamically by @react-pdf so footers stay correct when a stage
+   *  spans more than one page. */
+  page?: number;
+  total?: number;
   styles: ReportStyles['sheet'];
 }) {
   return (
@@ -52,9 +53,7 @@ export function PageFooter({
       <Text>
         {label} · {title}
       </Text>
-      <Text>
-        {page} / {total}
-      </Text>
+      <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   );
 }

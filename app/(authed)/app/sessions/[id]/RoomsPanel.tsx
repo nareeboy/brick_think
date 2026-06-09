@@ -134,7 +134,7 @@ export function RoomsPanel({
                       data-testid={`spotlight-room-${room.position}`}
                       className={`inline-flex h-8 cursor-pointer items-center justify-center rounded-lg border px-3 text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                         isSpotlit
-                          ? 'border-[#c0613d] bg-[#c0613d] text-white hover:bg-[#a8543a]'
+                          ? 'border-[#a8482a] bg-[#a8482a] text-white hover:bg-[#a8543a]'
                           : 'border-zinc-900/10 bg-white text-zinc-700 hover:bg-zinc-900/5'
                       }`}
                     >
@@ -187,7 +187,7 @@ export function RoomsPanel({
           <Link
             href={`/app/designs/${myRoom.modelId}`}
             data-testid="open-my-room"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#cf6e47]"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white hover:bg-[#cf6e47]"
           >
             Open my room
           </Link>

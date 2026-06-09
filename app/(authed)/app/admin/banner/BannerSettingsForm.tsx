@@ -16,7 +16,7 @@ import type { AdminSiteBanner } from '@/lib/banner/types';
 import { saveBannerAction, type BannerActionResult } from './actions';
 
 const inputClass =
-  'mt-1.5 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#c0613d] focus:outline-none focus:ring-1 focus:ring-[#c0613d]';
+  'mt-1.5 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#a8482a] focus:outline-none focus:ring-1 focus:ring-[#a8482a]';
 
 const CODE_MESSAGES: Record<string, string> = {
   forbidden: 'You do not have permission to do that.',
@@ -77,7 +77,7 @@ export function BannerSettingsForm({ initial }: { initial: AdminSiteBanner }) {
           aria-label="Banner Active"
           onClick={() => setActive((v) => !v)}
           className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-            active ? 'bg-[#c0613d]' : 'bg-zinc-300'
+            active ? 'bg-[#a8482a]' : 'bg-zinc-300'
           }`}
         >
           <span
@@ -121,7 +121,7 @@ export function BannerSettingsForm({ initial }: { initial: AdminSiteBanner }) {
           rows={3}
           className={inputClass}
         />
-        <div className="mt-1 text-right text-xs text-zinc-400">
+        <div className="mt-1 text-right text-xs text-zinc-500">
           {message.length}/{BANNER_MESSAGE_MAX}
         </div>
       </div>
@@ -143,7 +143,7 @@ export function BannerSettingsForm({ initial }: { initial: AdminSiteBanner }) {
       <button
         type="submit"
         disabled={saving}
-        className="cursor-pointer rounded-md bg-[#c0613d] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        className="cursor-pointer rounded-md bg-[#a8482a] px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         {saving ? 'Saving…' : 'Save banner'}
       </button>

@@ -29,7 +29,7 @@ export default async function RolePage({ params }: { params: Promise<{ slug: str
   return (
     <MarketingShell>
       <section className="mx-auto max-w-3xl px-6 pb-20 pt-16">
-        <Link href="/careers" className="text-sm text-[#c0613d] hover:underline">
+        <Link href="/careers" className="text-sm text-[#a8482a] hover:underline">
           ← All roles
         </Link>
         <h1 className="mt-5 font-display text-[40px] font-medium leading-[1.05] tracking-[-0.02em] text-zinc-950">

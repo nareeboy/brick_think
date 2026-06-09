@@ -78,7 +78,7 @@ export function NotificationsBell() {
         {badge ? (
           <span
             aria-hidden="true"
-            className="absolute right-1 top-1 inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-[#c0613d] px-1 font-mono text-[9px] font-semibold leading-none text-white ring-2 ring-white"
+            className="absolute right-1 top-1 inline-flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-[#a8482a] px-1 font-mono text-[9px] font-semibold leading-none text-white ring-2 ring-white"
           >
             {badge}
           </span>
@@ -139,7 +139,7 @@ function NotificationRowButton({
       <span
         aria-hidden="true"
         className={`mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full ${
-          unread ? 'bg-[#c0613d]' : 'bg-transparent'
+          unread ? 'bg-[#a8482a]' : 'bg-transparent'
         }`}
       />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">

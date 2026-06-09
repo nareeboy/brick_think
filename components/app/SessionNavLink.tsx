@@ -14,7 +14,7 @@ interface Props {
 function pillClasses(active: boolean): string {
   return `inline-flex h-10 cursor-pointer items-center rounded-xl px-3 text-[13px] font-medium transition-colors ${
     active
-      ? 'bg-[#c0613d]/10 text-[#c0613d]'
+      ? 'bg-[#a8482a]/10 text-[#a8482a]'
       : 'text-zinc-600 hover:bg-zinc-900/5 hover:text-zinc-900'
   }`;
 }

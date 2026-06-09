@@ -95,13 +95,13 @@ function Hero() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-20 md:grid-cols-12 md:items-end md:gap-12 md:pb-24 md:pt-28">
         <div className="md:col-span-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 backdrop-blur">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             Roadmap
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[78px]">
             Honest dates.
             <br />
-            Not <span className="text-[#c0613d]">vapour</span>.
+            Not <span className="text-[#a8482a]">vapour</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
             Where BrickThink is going, phase by phase. What is shipped, what we are doing right now,
@@ -134,7 +134,7 @@ function Hero() {
 
 const STATUS_STYLES: Record<PhaseStatus, string> = {
   Done: 'border-zinc-900/15 bg-white text-zinc-600',
-  Now: 'border-transparent bg-[#c0613d] text-white',
+  Now: 'border-transparent bg-[#a8482a] text-white',
   Next: 'border-zinc-900/15 bg-white text-zinc-700',
   Later: 'border-zinc-900/10 bg-white/60 text-zinc-500',
 };
@@ -167,7 +167,7 @@ function Timeline() {
                 aria-current={isNow ? 'step' : undefined}
                 className={`grid grid-cols-1 gap-6 rounded-[28px] border p-7 md:grid-cols-12 md:p-9 ${
                   isNow
-                    ? 'border-[#c0613d]/40 bg-[#FBF7F1] shadow-[0_8px_24px_-16px_rgba(192,97,61,0.5)]'
+                    ? 'border-[#a8482a]/40 bg-[#FBF7F1] shadow-[0_8px_24px_-16px_rgba(192,97,61,0.5)]'
                     : 'border-zinc-900/10 bg-white'
                 }`}
               >
@@ -199,7 +199,7 @@ function Timeline() {
                           phase.status === 'Done'
                             ? 'bg-emerald-500'
                             : isNow
-                              ? 'bg-[#c0613d]'
+                              ? 'bg-[#a8482a]'
                               : 'bg-zinc-300'
                         }`}
                       />

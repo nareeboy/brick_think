@@ -26,7 +26,7 @@ export function ScenarioCard({ scenario, onOpen }: Props) {
       onClick={() => onOpen(scenario)}
       aria-label={scenario.title}
       data-scroll-target=""
-      className="group flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 text-left transition-shadow hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#c0613d]/40 active:scale-[0.99]"
+      className="group flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 text-left transition-shadow hover:shadow-[0_8px_24px_-12px_rgba(0,0,0,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#a8482a]/40 active:scale-[0.99]"
     >
       <h3 className="font-serif text-[20px] leading-tight text-zinc-900">{scenario.title}</h3>
 

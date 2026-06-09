@@ -97,14 +97,14 @@ export function ManageTagsDialog({ tags, onClose }: Props) {
                       aria-label={`New name for ${tag}`}
                       data-testid={`manage-tags-input-${tag}`}
                       autoComplete="off"
-                      className="h-8 flex-1 rounded-lg border border-zinc-900/10 bg-white px-3 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-400 focus:border-[#c0613d] focus:outline-none"
+                      className="h-8 flex-1 rounded-lg border border-zinc-900/10 bg-white px-3 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-500 focus:border-[#a8482a] focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => commitEdit(tag)}
                       disabled={pending}
                       data-testid={`manage-tags-save-${tag}`}
-                      className="inline-flex h-8 cursor-pointer items-center rounded-lg bg-[#c0613d] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:opacity-60"
+                      className="inline-flex h-8 cursor-pointer items-center rounded-lg bg-[#a8482a] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:opacity-60"
                     >
                       {pending ? 'Saving…' : 'Save'}
                     </button>

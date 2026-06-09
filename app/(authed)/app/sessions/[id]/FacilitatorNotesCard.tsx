@@ -39,7 +39,7 @@ export function FacilitatorNotesCard({ sessionId, initialValue, fillHeight }: Pr
     >
       <header className="flex items-start justify-between">
         <div>
-          <h3 className="font-serif text-[16px] text-zinc-900">Private notes</h3>
+          <h3 className="font-serif text-[20px] leading-tight text-zinc-900">Private notes</h3>
           <p className="text-xs text-zinc-500">Only you can see these.</p>
         </div>
         <button

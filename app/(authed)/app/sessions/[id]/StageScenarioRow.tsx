@@ -234,7 +234,7 @@ function ScenarioEditor({
             onClick={save}
             disabled={pending}
             data-testid={`scenario-body-save-${stageId}`}
-            className="inline-flex h-8 items-center rounded-lg bg-[#c0613d] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#a85432] disabled:opacity-50"
+            className="inline-flex h-8 items-center rounded-lg bg-[#a8482a] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#a85432] disabled:opacity-50"
           >
             {pending ? 'Saving…' : 'Save'}
           </button>

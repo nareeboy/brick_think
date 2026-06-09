@@ -43,7 +43,7 @@ export default async function ApplicationsPage() {
                     </div>
                     <div className="mt-1 space-y-0.5 text-sm text-zinc-600">
                       <div>
-                        <a href={`mailto:${a.email}`} className="text-[#c0613d] hover:underline">
+                        <a href={`mailto:${a.email}`} className="text-[#a8482a] hover:underline">
                           {a.email}
                         </a>
                       </div>
@@ -53,7 +53,7 @@ export default async function ApplicationsPage() {
                         href={a.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#c0613d] hover:underline"
+                        className="text-[#a8482a] hover:underline"
                       >
                         LinkedIn profile
                       </a>

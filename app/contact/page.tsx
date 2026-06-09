@@ -99,13 +99,13 @@ function Hero() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-20 md:grid-cols-12 md:items-end md:gap-12 md:pb-20 md:pt-28">
         <div className="md:col-span-8">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 backdrop-blur">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             Contact
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[78px]">
             We answer
             <br />
-            <span className="text-[#c0613d]">our own</span> email.
+            <span className="text-[#a8482a]">our own</span> email.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
             No form. No bot. No outsourcing. Pick the right address below and write to a real
@@ -199,7 +199,7 @@ function ChannelCard({ channel }: { channel: Channel }) {
         {channel.description}
       </p>
       <div className="mt-6 flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-zinc-900/10 pt-5">
-        <span className="font-mono text-[12px] text-zinc-900 group-hover:text-[#c0613d]">
+        <span className="font-mono text-[12px] text-zinc-900 group-hover:text-[#a8482a]">
           {channel.action.label}
         </span>
         {channel.detail ? (

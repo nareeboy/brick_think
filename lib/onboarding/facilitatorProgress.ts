@@ -49,20 +49,23 @@ export async function computeFacilitatorChecklistProgress(
     firstOrgId = sortedOrgs[0]?.id ?? null;
   }
 
-  const hasOrg = orgIds.length > 0;
+  const orgCount = orgIds.length;
+  const hasOrg = orgCount > 0;
 
   let hasSessionInAnyOrg = false;
   let firstSessionId: string | null = null;
+  let sessionCount = 0;
   if (orgIds.length > 0) {
     const sessionRes = await supabase
       .from('sessions')
-      .select('id')
+      .select('id', { count: 'exact' })
       .in('org_id', orgIds)
       .order('created_at', { ascending: true })
       .limit(1);
     if (sessionRes.error) {
       throw new Error(`Onboarding session check failed: ${sessionRes.error.message}`);
     }
+    sessionCount = sessionRes.count ?? 0;
     const first = sessionRes.data?.[0];
     if (first) {
       hasSessionInAnyOrg = true;
@@ -80,7 +83,17 @@ export async function computeFacilitatorChecklistProgress(
   if (designRes.error) {
     throw new Error(`Onboarding design check failed: ${designRes.error.message}`);
   }
-  const hasOwnedSessionDesign = (designRes.count ?? 0) > 0;
+  const ownedSessionDesignCount = designRes.count ?? 0;
+  const hasOwnedSessionDesign = ownedSessionDesignCount > 0;
 
-  return { hasOrg, hasSessionInAnyOrg, hasOwnedSessionDesign, firstOrgId, firstSessionId };
+  return {
+    hasOrg,
+    hasSessionInAnyOrg,
+    hasOwnedSessionDesign,
+    firstOrgId,
+    firstSessionId,
+    orgCount,
+    sessionCount,
+    ownedSessionDesignCount,
+  };
 }
