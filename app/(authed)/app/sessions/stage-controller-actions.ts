@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import {
+  dispatchSessionEndedNotifications,
   dispatchSessionStartedNotifications,
   resolveActorDisplay,
 } from '@/lib/notifications/dispatch';
@@ -587,7 +588,7 @@ export async function endSessionAction(sessionId: string): Promise<StageActionRe
 
   const sessRes = await supabase
     .from('sessions')
-    .select('id, facilitator_id, current_stage_id, status')
+    .select('id, facilitator_id, current_stage_id, status, org_id')
     .eq('id', sessionId)
     .maybeSingle();
   if (sessRes.error) {
@@ -623,6 +624,25 @@ export async function endSessionAction(sessionId: string): Promise<StageActionRe
   if (sUpd.error) {
     throw new Error(`endSession session update failed: ${sUpd.error.message}`);
   }
+
+  // Session-ended fan-out: notify every org member (except the facilitator)
+  // that the session has wrapped up. The already-completed guard above keeps
+  // this to a single fire per session end.
+  const facilitatorRes = await svc
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', user.id)
+    .maybeSingle();
+  const facilitatorDisplay = resolveActorDisplay({
+    fullName: facilitatorRes.data?.full_name,
+    email: facilitatorRes.data?.email,
+  });
+  await dispatchSessionEndedNotifications({
+    sessionId,
+    orgId: sessRes.data.org_id,
+    facilitatorProfileId: user.id,
+    facilitatorDisplay,
+  });
 
   revalidate(sessionId);
   return { ok: true };

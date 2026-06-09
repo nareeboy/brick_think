@@ -2,7 +2,8 @@ export type NotificationKind =
   | 'org_added'
   | 'session_started'
   | 'participant_joined'
-  | 'session_invitation_claimed';
+  | 'session_invitation_claimed'
+  | 'session_ended';
 
 export interface NotificationRow {
   id: string;
