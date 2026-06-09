@@ -4,6 +4,7 @@ import { useId, useState, useTransition } from 'react';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import { createSessionCheckout } from '@/app/(authed)/app/account/billing/actions';
+import { tierMetaFor, type Tier } from '@/lib/billing/plans';
 
 interface Props {
   open: boolean;
@@ -11,23 +12,38 @@ interface Props {
   feature: string;
   /** When set, the modal offers a one-time per-session unlock alongside subscribing. */
   sessionId?: string;
+  /**
+   * Which tier the one-time unlock buys. Defaults to `session_report` (€9), the
+   * cheapest path and the only tier with a working deliverable today. Higher tiers
+   * (client_ready €45, full_findings €60) light up the moment a caller passes their
+   * tier — price and Stripe checkout derive from `tierMetaFor(tier)`, no rewiring.
+   */
+  tier?: Tier;
 }
 
-export default function UpgradeModal({ open, onClose, feature, sessionId }: Props) {
+export default function UpgradeModal({
+  open,
+  onClose,
+  feature,
+  sessionId,
+  tier = 'session_report',
+}: Props) {
   const titleId = useId();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
 
+  // plans.ts is dual-use (not server-only) — its display metadata is meant for
+  // client components like this one, so the price is read from the single source
+  // of truth rather than hardcoded.
+  const amount = tierMetaFor(tier).prices.once.amount;
+
   function unlock() {
     if (!sessionId) return;
     setError(null);
     startTransition(async () => {
-      // session_report (€9) is the cheapest path to the PDF. The price mirrors
-      // tierMetaFor('session_report').prices.once.amount; it is inlined here because
-      // plans.ts is `server-only` and cannot be imported into a client component.
-      const res = await createSessionCheckout('session_report', sessionId);
+      const res = await createSessionCheckout(tier, sessionId);
       if (res.ok) window.location.href = res.url;
       else setError('Could not start checkout. Please try again.');
     });
@@ -66,7 +82,7 @@ export default function UpgradeModal({ open, onClose, feature, sessionId }: Prop
               disabled={pending}
               className="cursor-pointer rounded-full bg-zinc-900 px-4 py-2 text-sm text-white hover:bg-zinc-800 disabled:opacity-50"
             >
-              {pending ? 'Starting…' : 'Unlock this report — €9'}
+              {pending ? 'Starting…' : `Unlock — €${amount}`}
             </button>
           ) : null}
         </div>
