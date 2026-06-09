@@ -106,11 +106,20 @@ describe('useOnboardingState', () => {
     expect(result.current.walkthroughReplay).toBe(true);
   });
 
-  it('replayAll re-arms per-step confetti by clearing the celebrated steps', () => {
+  it('replayAll re-arms per-step confetti and the baseline by clearing both keys', () => {
     localStorage.setItem('bt_checklist_celebrated', JSON.stringify(['org', 'session']));
+    localStorage.setItem('bt_checklist_baseline', JSON.stringify({ org: 1, session: 1, model: 1 }));
     const { result } = renderHook(() => useOnboardingState());
     act(() => result.current.replayAll());
     expect(localStorage.getItem('bt_checklist_celebrated')).toBeNull();
+    expect(localStorage.getItem('bt_checklist_baseline')).toBeNull();
+  });
+
+  it('dismissChecklist clears the replay baseline', () => {
+    localStorage.setItem('bt_checklist_baseline', JSON.stringify({ org: 1, session: 1, model: 1 }));
+    const { result } = renderHook(() => useOnboardingState());
+    act(() => result.current.dismissChecklist());
+    expect(localStorage.getItem('bt_checklist_baseline')).toBeNull();
   });
 
   it('dismissChecklist ends replay/preview mode by clearing the flag', () => {
