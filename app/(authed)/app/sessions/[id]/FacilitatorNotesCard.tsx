@@ -33,7 +33,7 @@ export function FacilitatorNotesCard({ sessionId, initialValue, fillHeight }: Pr
 
   return (
     <section
-      className={`flex flex-col rounded-lg border border-zinc-200 bg-white p-4 ${
+      className={`flex flex-col rounded-2xl border border-zinc-200 bg-white p-4 ${
         fillHeight && !collapsed ? 'lg:h-full' : ''
       }`}
     >
