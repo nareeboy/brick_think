@@ -745,7 +745,7 @@ function OpenSourceSection() {
               id="open-source-heading"
               className="mt-3 max-w-2xl font-display text-[34px] font-medium leading-[1.02] tracking-[-0.015em] text-zinc-950 md:text-[44px]"
             >
-              Free to use. Always.
+              Our platform and virtual sessions are free to use. Always.
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
