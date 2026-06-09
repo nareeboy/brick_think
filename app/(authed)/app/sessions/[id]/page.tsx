@@ -11,6 +11,9 @@ import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
 import { getCombinedNarrationsForModelIds } from '@/lib/sessions/modelNarration';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
+import { entitledTier, hasTierRank } from '@/lib/billing/entitlements';
+import { listBrandProfiles } from '@/app/(authed)/app/account/branding/actions';
+
 import { getLatestSessionReport } from '../report-actions';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
@@ -69,7 +72,7 @@ export default async function SessionDetailPage({
   const sessionRes = await supabase
     .from('sessions')
     .select(
-      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, organisations:org_id ( id, name )',
+      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, brand_profile_id, organisations:org_id ( id, name )',
     )
     .eq('id', id)
     .maybeSingle();
@@ -88,6 +91,7 @@ export default async function SessionDetailPage({
     brief_text: string | null;
     pre_session_check: Record<string, unknown> | null;
     join_code: string | null;
+    brand_profile_id: string | null;
     organisations: { id: string; name: string } | null;
   };
 
@@ -417,6 +421,17 @@ export default async function SessionDetailPage({
       ? await getLatestSessionReport(session.id)
       : null;
 
+  // White-label branding picker: only client_ready+ facilitators on a completed
+  // session can choose a brand preset. Lower tiers get the unchanged button.
+  const reportTier =
+    canManageSession && session.status === 'completed'
+      ? await entitledTier(user.id, session.id)
+      : null;
+  const canBrand = hasTierRank(reportTier, 'client_ready');
+  const brandPresets = canBrand
+    ? (await listBrandProfiles()).map((p) => ({ id: p.id, name: p.name }))
+    : [];
+
   // Private notes are facilitator-only (not org-admin), and the helper itself
   // enforces that gate — call it for the facilitator's view and skip the
   // round-trip otherwise.
@@ -489,6 +504,9 @@ export default async function SessionDetailPage({
                         ? reportLatest.errorMessage
                         : undefined
                     }
+                    canBrand={canBrand}
+                    brandPresets={brandPresets}
+                    rememberedBrandProfileId={session.brand_profile_id}
                   />
                 ) : null}
                 <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />

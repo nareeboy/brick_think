@@ -11,6 +11,9 @@ interface Props {
   initialPdfUrl: string | null;
   initialGeneratedAt: string | null;
   initialError?: string;
+  canBrand?: boolean;
+  brandPresets?: Array<{ id: string; name: string }>;
+  rememberedBrandProfileId?: string | null;
 }
 
 export default function GenerateReportButton({
@@ -18,11 +21,15 @@ export default function GenerateReportButton({
   initialPdfUrl,
   initialGeneratedAt,
   initialError,
+  canBrand = false,
+  brandPresets = [],
+  rememberedBrandProfileId = null,
 }: Props) {
   const [pdfUrl, setPdfUrl] = useState(initialPdfUrl);
   const [generatedAt, setGeneratedAt] = useState(initialGeneratedAt);
   const [error, setError] = useState<string | null>(initialError ?? null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [brandId, setBrandId] = useState<string | null>(rememberedBrandProfileId ?? null);
   const [pending, startTransition] = useTransition();
 
   // Formatted client-side after mount: `toLocaleString()` resolves in the
@@ -37,7 +44,7 @@ export default function GenerateReportButton({
   function run() {
     setError(null);
     startTransition(async () => {
-      const res = await generateSessionReport(sessionId);
+      const res = await generateSessionReport(sessionId, brandId);
       if (res.ok) {
         setPdfUrl(res.pdfUrl);
         setGeneratedAt(res.generatedAt);
@@ -63,6 +70,27 @@ export default function GenerateReportButton({
           to the button alone. Otherwise a long error/generated-at line would widen
           the flex item and shove the sibling header buttons to the left. */}
       <div className="relative flex flex-col items-end">
+        {canBrand && brandPresets.length > 0 ? (
+          <label className="mb-1 flex items-center gap-1.5 text-xs text-zinc-600">
+            <span>Branding</span>
+            <select
+              value={brandId ?? ''}
+              onChange={(e) => setBrandId(e.target.value || null)}
+              className="rounded-md border border-zinc-300 px-2 py-1 text-xs"
+            >
+              <option value="">BrickThink default</option>
+              {brandPresets.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : canBrand ? (
+          <a href="/app/account/branding" className="mb-1 text-xs text-zinc-600 underline">
+            Create a brand preset
+          </a>
+        ) : null}
         {pdfUrl ? (
           <div className="flex items-center gap-2">
             <a
