@@ -7,7 +7,7 @@ import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import type { BrandProfileSummary } from '@/lib/branding/types';
 
 import { BrandProfileEditor } from '@/app/(authed)/app/account/branding/BrandProfileEditor';
-import { LiveBrandPreview } from '@/app/(authed)/app/account/branding/LiveBrandPreview';
+import { inkOn } from '@/lib/branding/contrast';
 
 type FontOption = { key: string; label: string };
 
@@ -130,19 +130,12 @@ export function BrandPickerDialog({
 
           {profiles.map((p) => (
             <ChoiceRow key={p.id} selected={choice === p.id} onSelect={() => setChoice(p.id)}>
-              <div className="w-24 shrink-0">
-                <LiveBrandPreview
-                  previewKey={`pick-${p.id}`}
-                  brandColour={p.brandColour}
-                  accentColour={p.accentColour}
-                  displayName={p.displayName}
-                  logoUrl={p.logoUrl}
-                  headingChoice={p.headingFont}
-                  bodyChoice={p.bodyFont}
-                  headingFontUrl={p.headingFontUrl}
-                  bodyFontUrl={p.bodyFontUrl}
-                />
-              </div>
+              <BrandSwatch
+                brandColour={p.brandColour}
+                accentColour={p.accentColour}
+                logoUrl={p.logoUrl}
+                label={p.displayName || p.name}
+              />
               <div className="flex min-w-0 flex-1 flex-col text-left">
                 <span className="truncate text-[14px] font-medium text-zinc-900">{p.name}</span>
                 <span className="truncate text-[13px] text-zinc-600">{p.displayName}</span>
@@ -194,6 +187,45 @@ export function BrandPickerDialog({
         </div>
       </div>
     </ModalBackdrop>
+  );
+}
+
+// Compact brand identity tile for a picker row — brand colour, an accent stripe,
+// and the logo (or the brand initial). Keeps rows short; the full report-style
+// preview lives on the /app/account/branding page.
+function BrandSwatch({
+  brandColour,
+  accentColour,
+  logoUrl,
+  label,
+}: {
+  brandColour: string;
+  accentColour: string;
+  logoUrl: string | null;
+  label: string;
+}) {
+  const initial = label.trim().charAt(0).toUpperCase() || '?';
+  return (
+    <div
+      aria-hidden="true"
+      className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-900/10"
+      style={{ backgroundColor: brandColour }}
+    >
+      <div style={{ height: 4, backgroundColor: accentColour }} />
+      <div className="flex h-[calc(100%-4px)] items-center justify-center p-1.5">
+        {logoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoUrl} alt="" className="max-h-full max-w-full object-contain" />
+        ) : (
+          <span
+            className="font-display text-lg font-semibold leading-none"
+            style={{ color: inkOn(brandColour) }}
+          >
+            {initial}
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
