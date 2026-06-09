@@ -252,10 +252,8 @@ function ChoiceRow({
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
-      className={`flex items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
-        selected
-          ? 'border-zinc-900 ring-1 ring-zinc-900'
-          : 'cursor-pointer border-zinc-900/10 hover:bg-zinc-50'
+      className={`flex items-center gap-3 rounded-2xl border-2 p-3 text-left transition-colors ${
+        selected ? 'border-zinc-900' : 'cursor-pointer border-zinc-900/10 hover:bg-zinc-50'
       }`}
     >
       {children}
