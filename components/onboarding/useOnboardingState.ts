@@ -25,6 +25,10 @@ const KEYS = {
   // session / model is created beyond that baseline. Owned by
   // FacilitatorChecklist; cleared by replayAll() (re-capture) and on dismiss.
   checklistBaseline: 'bt_checklist_baseline',
+  // First-visit canvas-builder spotlight tutorial. Set when the user finishes
+  // or skips the tutorial; cleared by replayAll() so "Replay walkthrough"
+  // re-triggers it. Gated on this flag ALONE (not role) so participants see it.
+  canvasTutorialSeen: 'bt_canvas_tutorial_seen',
 } as const;
 
 /** localStorage key holding the JSON array of confetti-celebrated checklist
@@ -55,6 +59,8 @@ export interface OnboardingState {
   checklistComplete: boolean;
   checklistDismissed: boolean;
   sessionTourSeen: boolean;
+  /** True once the canvas-builder tutorial has been finished or skipped. */
+  canvasTutorialSeen: boolean;
   /** True after replayAll() until the checklist is dismissed — forces the
    *  checklist to re-show its steps regardless of server-derived progress. */
   walkthroughReplay: boolean;
@@ -63,6 +69,7 @@ export interface OnboardingState {
   markChecklistComplete: () => void;
   dismissChecklist: () => void;
   markSessionTourSeen: () => void;
+  markCanvasTutorialSeen: () => void;
   replayAll: () => void;
 }
 
@@ -76,6 +83,7 @@ export function useOnboardingState(): OnboardingState {
   const [checklistComplete, setChecklistComplete] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [sessionTourSeen, setSessionTourSeen] = useState(false);
+  const [canvasTutorialSeen, setCanvasTutorialSeen] = useState(false);
   const [walkthroughReplay, setWalkthroughReplay] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -86,6 +94,7 @@ export function useOnboardingState(): OnboardingState {
       setChecklistComplete(readFlag(KEYS.checklistComplete));
       setChecklistDismissed(readFlag(KEYS.checklistDismissed));
       setSessionTourSeen(readFlag(KEYS.sessionTourSeen));
+      setCanvasTutorialSeen(readFlag(KEYS.canvasTutorialSeen));
       setWalkthroughReplay(readFlag(KEYS.walkthroughReplay));
     };
     sync();
@@ -122,11 +131,17 @@ export function useOnboardingState(): OnboardingState {
     setSessionTourSeen(true);
   }, []);
 
+  const markCanvasTutorialSeen = useCallback(() => {
+    window.localStorage.setItem(KEYS.canvasTutorialSeen, '1');
+    setCanvasTutorialSeen(true);
+  }, []);
+
   const replayAll = useCallback(() => {
     window.localStorage.removeItem(KEYS.welcomeSeen);
     window.localStorage.removeItem(KEYS.checklistComplete);
     window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
+    window.localStorage.removeItem(KEYS.canvasTutorialSeen);
     // Enter replay/preview so the checklist re-shows its steps even when the
     // user's real progress is all-done, and re-arm per-step confetti. Clearing
     // the baseline makes the checklist re-capture the current counts on its next
@@ -138,6 +153,7 @@ export function useOnboardingState(): OnboardingState {
     setChecklistComplete(false);
     setChecklistDismissed(false);
     setSessionTourSeen(false);
+    setCanvasTutorialSeen(false);
     setWalkthroughReplay(true);
   }, []);
 
@@ -147,12 +163,14 @@ export function useOnboardingState(): OnboardingState {
     checklistComplete,
     checklistDismissed,
     sessionTourSeen,
+    canvasTutorialSeen,
     walkthroughReplay,
     hydrated,
     markWelcomeSeen,
     markChecklistComplete,
     dismissChecklist,
     markSessionTourSeen,
+    markCanvasTutorialSeen,
     replayAll,
   };
 }
