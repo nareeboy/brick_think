@@ -20,11 +20,20 @@ const KEYS = {
   // registered here so it participates in cross-tab sync and is cleared by
   // replayAll() (which re-arms every step for a replayed walkthrough).
   checklistCelebrated: 'bt_checklist_celebrated',
+  // JSON snapshot of the user's entity counts captured at replay start, so a
+  // replayed checklist shows empty and only ticks a step once a NEW workshop /
+  // session / model is created beyond that baseline. Owned by
+  // FacilitatorChecklist; cleared by replayAll() (re-capture) and on dismiss.
+  checklistBaseline: 'bt_checklist_baseline',
 } as const;
 
 /** localStorage key holding the JSON array of confetti-celebrated checklist
  *  steps. Read/written by FacilitatorChecklist; cleared by replayAll(). */
 export const CHECKLIST_CELEBRATED_KEY = KEYS.checklistCelebrated;
+
+/** localStorage key holding the replay-start entity-count baseline. Read/written
+ *  by FacilitatorChecklist; cleared by replayAll() and dismissChecklist(). */
+export const CHECKLIST_BASELINE_KEY = KEYS.checklistBaseline;
 
 const STORAGE_KEYS = Object.values(KEYS);
 
@@ -100,9 +109,10 @@ export function useOnboardingState(): OnboardingState {
 
   const dismissChecklist = useCallback(() => {
     window.localStorage.setItem(KEYS.checklistDismissed, '1');
-    // Dismissing also ends any replay/preview — the funnel steps stop being
-    // forced and the checklist reverts to its normal (data-driven) behaviour.
+    // Dismissing also ends any replay/preview — drop the replay flag and the
+    // captured baseline so the checklist reverts to its normal behaviour.
     window.localStorage.removeItem(KEYS.walkthroughReplay);
+    window.localStorage.removeItem(KEYS.checklistBaseline);
     setChecklistDismissed(true);
     setWalkthroughReplay(false);
   }, []);
@@ -118,9 +128,12 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
     // Enter replay/preview so the checklist re-shows its steps even when the
-    // user's real progress is all-done, and re-arm per-step confetti.
+    // user's real progress is all-done, and re-arm per-step confetti. Clearing
+    // the baseline makes the checklist re-capture the current counts on its next
+    // render, so the steps start empty and only tick on genuinely new entities.
     window.localStorage.setItem(KEYS.walkthroughReplay, '1');
     window.localStorage.removeItem(KEYS.checklistCelebrated);
+    window.localStorage.removeItem(KEYS.checklistBaseline);
     setWelcomeSeen(false);
     setChecklistComplete(false);
     setChecklistDismissed(false);
