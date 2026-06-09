@@ -90,15 +90,16 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
     const tick = () => {
       const el = document.querySelector(step.selector);
       if (!el) {
-        // Silent skip — advance to the next step (finish past the end).
+        // Silent skip — advance to the next step (finish past the end). Keep
+        // the state updater pure: decide finish-vs-advance from the current
+        // stepIndex and call finish() directly, never inside setStepIndex (that
+        // runs during render and would update other components mid-render).
         setRect(null);
-        setStepIndex((i) => {
-          const next = i + 1;
-          if (next >= visibleSteps.length) {
-            finish();
-          }
-          return next;
-        });
+        if (stepIndex + 1 >= visibleSteps.length) {
+          finish();
+        } else {
+          setStepIndex((i) => i + 1);
+        }
         return; // effect re-runs for the new step; schedule no further frames
       }
       // Bring an off-screen target (e.g. a stage card below the fold) into
