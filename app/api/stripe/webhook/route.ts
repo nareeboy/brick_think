@@ -49,7 +49,10 @@ async function upsertSubscription(sub: Stripe.Subscription): Promise<void> {
       status: sub.status,
       tier,
       current_period_end: periodEndIso(sub),
-      cancel_at_period_end: sub.cancel_at_period_end ?? false,
+      // "Scheduled to cancel" — the Customer Portal may express this as the
+      // cancel_at_period_end flag OR as a concrete cancel_at timestamp. Treat
+      // either as cancelling (the sub stays active until current_period_end).
+      cancel_at_period_end: sub.cancel_at_period_end === true || sub.cancel_at != null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: 'profile_id' },
