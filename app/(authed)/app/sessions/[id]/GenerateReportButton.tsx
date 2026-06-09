@@ -83,7 +83,9 @@ export default function GenerateReportButton({
         setPdfUrl(res.pdfUrl);
         setGeneratedAt(res.generatedAt);
         setGeneratedBrandId(id);
-        setShowBrandPicker(false);
+        // Keep the picker open so the user sees the refreshed report (the
+        // download link + brand label update in place) and can download or
+        // regenerate again without reopening the hub.
       } else if (res.code === 'upgrade_required') {
         setShowBrandPicker(false);
         setShowUpgrade(true);
