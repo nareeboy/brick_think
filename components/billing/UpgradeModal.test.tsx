@@ -4,12 +4,17 @@ import userEvent from '@testing-library/user-event';
 
 vi.mock('@/app/(authed)/app/account/billing/actions', () => ({
   createSessionCheckout: vi.fn(),
+  createSubscriptionCheckout: vi.fn(),
 }));
 
-import { createSessionCheckout } from '@/app/(authed)/app/account/billing/actions';
+import {
+  createSessionCheckout,
+  createSubscriptionCheckout,
+} from '@/app/(authed)/app/account/billing/actions';
 import UpgradeModal from './UpgradeModal';
 
 const mockedCheckout = vi.mocked(createSessionCheckout);
+const mockedSub = vi.mocked(createSubscriptionCheckout);
 
 afterEach(cleanup);
 beforeEach(() => vi.clearAllMocks());
@@ -76,6 +81,37 @@ describe('<UpgradeModal>', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Unlock — €45' }));
     expect(mockedCheckout).toHaveBeenCalledWith('client_ready', 'sess-9');
+  });
+
+  it('shows per-card subscription pricing and toggles monthly/yearly, forwarding the interval', async () => {
+    mockedSub.mockResolvedValue({ ok: false, code: 'stripe_error' });
+    render(
+      <UpgradeModal
+        open
+        onClose={() => {}}
+        feature="PDF session reports"
+        sessionId="s1"
+        tiers={['session_report', 'client_ready']}
+      />,
+    );
+
+    // Monthly is the default — client_ready's monthly headline is €119.
+    expect(screen.getByText('€119')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Monthly' }).getAttribute('aria-checked')).toBe(
+      'true',
+    );
+
+    // Switching to yearly swaps the headline prices.
+    await userEvent.click(screen.getByRole('radio', { name: 'Yearly' }));
+    expect(screen.getByText('€290')).toBeTruthy(); // session_report yearly
+    expect(screen.getByText('€1,190')).toBeTruthy(); // client_ready yearly
+
+    // Subscribing forwards the tier + the currently-selected interval.
+    // First Subscribe button = first card = session_report (cards follow `tiers` order).
+    const [firstSubscribe] = screen.getAllByRole('button', { name: 'Subscribe' });
+    await userEvent.click(firstSubscribe!);
+    expect(mockedSub).toHaveBeenCalledWith('session_report', 'yearly');
+    expect(mockedCheckout).not.toHaveBeenCalled();
   });
 
   it('omits the unlock button entirely when no sessionId is given', () => {
