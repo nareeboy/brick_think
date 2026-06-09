@@ -118,10 +118,10 @@ function EventBanner() {
       >
         <div className="mx-auto flex max-w-7xl flex-col gap-x-5 gap-y-2 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3 sm:items-center">
-            <span className="mt-px inline-flex shrink-0 items-center gap-2 rounded-full border border-[#c0613d]/40 bg-[#c0613d]/15 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#e7a282] sm:mt-0">
+            <span className="mt-px inline-flex shrink-0 items-center gap-2 rounded-full border border-[#a8482a]/40 bg-[#a8482a]/15 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#e7a282] sm:mt-0">
               <span className="relative inline-flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#c0613d] opacity-75 motion-reduce:hidden" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#a8482a] opacity-75 motion-reduce:hidden" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
               </span>
               Live demo
             </span>
@@ -177,14 +177,14 @@ function Hero() {
       <div className="relative mx-auto grid min-h-[115dvh] max-w-7xl grid-cols-1 px-6 pb-48 pt-20 md:grid-cols-12 md:items-center md:gap-10 md:pb-56 md:pt-28">
         <div className="md:col-span-8 lg:col-span-7">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-200 backdrop-blur">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             Run your LSP workshop online
           </div>
 
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[0.98] tracking-[-0.02em] text-white drop-shadow-[0_2px_24px_rgba(0,0,0,0.45)] sm:text-[58px] md:text-[78px]">
-            Build <span className="text-[#c0613d]">one model</span>
+            Build <span className="text-[#a8482a]">one model</span>
             <br />
-            your team believes in, <span className="text-[#c0613d]">remotely</span>.
+            your team believes in, <span className="text-[#a8482a]">remotely</span>.
           </h1>
 
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-200/95 drop-shadow-[0_1px_12px_rgba(0,0,0,0.45)]">
@@ -398,7 +398,7 @@ function FeatureCard({
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">{label}</p>
         {status === 'roadmap' ? (
           <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-900/10 bg-zinc-50 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             On the roadmap
           </span>
         ) : null}
@@ -515,7 +515,7 @@ function NarrationVisual() {
   return (
     <div className="rounded-2xl border border-zinc-900/10 bg-zinc-50 p-4" aria-hidden="true">
       <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-        <span className="inline-flex h-2 w-2 rounded-full bg-[#c0613d]" />
+        <span className="inline-flex h-2 w-2 rounded-full bg-[#a8482a]" />
         recording · 00:42
       </div>
       <div className="mt-3 flex h-12 items-center gap-[3px]">
@@ -543,7 +543,7 @@ function ToolingVisual() {
     <div className="space-y-2.5" aria-hidden="true">
       <div className="flex items-center justify-between rounded-xl border border-zinc-900/10 bg-zinc-50 px-3.5 py-2.5">
         <div className="flex items-center gap-2.5 text-[12px] text-zinc-700">
-          <Dot className="h-1.5 w-1.5 bg-[#c0613d]" />
+          <Dot className="h-1.5 w-1.5 bg-[#a8482a]" />
           Stage 03 — Shared model
         </div>
         <span className="font-mono text-[11px] tabular-nums text-zinc-500">17:42</span>
@@ -566,7 +566,7 @@ function ToolingVisual() {
       </div>
       <div className="flex items-center gap-2 rounded-xl border border-zinc-900/10 bg-zinc-50 px-3.5 py-2.5">
         <RosterPill name="Maren" color="#3b6f8a" />
-        <RosterPill name="Idris" color="#c0613d" />
+        <RosterPill name="Idris" color="#a8482a" />
         <RosterPill name="Yuki" color="#8a9a78" />
         <RosterPill name="Tomás" color="#5b3a8a" />
         <span className="ml-auto font-mono text-[10px] uppercase tracking-[0.16em] text-zinc-500">
@@ -779,7 +779,7 @@ function OpenSourceSection() {
           <div className="flex flex-col rounded-3xl border border-zinc-900 bg-zinc-950 p-7 text-zinc-100">
             <div className="flex items-center justify-between">
               <p className="text-[15px] font-medium tracking-tight">Run your own copy</p>
-              <span className="rounded-full bg-[#c0613d] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white">
+              <span className="rounded-full bg-[#a8482a] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-white">
                 Apache 2.0
               </span>
             </div>

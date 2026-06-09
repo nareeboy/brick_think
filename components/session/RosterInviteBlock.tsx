@@ -219,7 +219,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
           type="button"
           onClick={handleSendInvites}
           disabled={emails.length === 0 || pending}
-          className="h-9 w-full cursor-pointer rounded-lg bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-9 w-full cursor-pointer rounded-lg bg-[#a8482a] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? 'Sending…' : 'Send invites'}
         </button>

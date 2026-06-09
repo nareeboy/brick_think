@@ -69,7 +69,7 @@ export function SearchInput({ initialValue, inputId }: Props) {
         aria-label="Search designs by title"
         data-testid="my-designs-search"
         autoComplete="off"
-        className="h-10 w-full rounded-xl border border-zinc-900/10 bg-white pl-9 pr-9 text-[13px] text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-[#c0613d] focus:outline-none"
+        className="h-10 w-full rounded-xl border border-zinc-900/10 bg-white pl-9 pr-9 text-[13px] text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-[#a8482a] focus:outline-none"
       />
       {value.length > 0 ? (
         <button

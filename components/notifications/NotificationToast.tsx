@@ -19,7 +19,7 @@ export function NotificationToast() {
     <div className="pointer-events-auto inline-flex max-w-[min(420px,calc(100vw-2rem))] items-start gap-3 rounded-2xl border border-zinc-900/10 bg-white px-4 py-3 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]">
       <span
         aria-hidden="true"
-        className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#c0613d]/12 text-[#c0613d]"
+        className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#a8482a]/12 text-[#a8482a]"
       >
         <BellDotIcon className="h-4 w-4" />
       </span>

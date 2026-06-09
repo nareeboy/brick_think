@@ -135,7 +135,7 @@ export function ShareModal({
             type="button"
             onClick={onCreate}
             disabled={busy}
-            className="inline-flex items-center rounded-md bg-[#c0613d] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-50"
+            className="inline-flex items-center rounded-md bg-[#a8482a] px-3 py-1.5 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-50"
           >
             Create link
           </button>

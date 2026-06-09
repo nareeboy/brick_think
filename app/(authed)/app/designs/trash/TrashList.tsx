@@ -91,7 +91,7 @@ export function TrashList({ items }: TrashListProps) {
                   })
                 }
                 disabled={pendingEmpty}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
               >
                 {pendingEmpty ? 'Emptying…' : 'Empty trash'}
               </button>
@@ -173,7 +173,7 @@ function TrashCard({ item }: { item: TrashedModelSummary & { daysRemainingLabel:
                   })
                 }
                 disabled={pendingPurge}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
               >
                 {pendingPurge ? 'Deleting…' : 'Delete'}
               </button>

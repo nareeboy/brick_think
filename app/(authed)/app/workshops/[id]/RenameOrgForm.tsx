@@ -98,7 +98,7 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
           disabled={pending}
           aria-label="Workshop name"
           autoComplete="off"
-          className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-900/10 bg-white px-3 text-[20px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d] disabled:opacity-60"
+          className="h-11 min-w-0 flex-1 rounded-xl border border-zinc-900/10 bg-white px-3 text-[20px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#a8482a] disabled:opacity-60"
         />
         <button
           type="button"
@@ -111,7 +111,7 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
         <button
           type="submit"
           disabled={pending}
-          className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-[#c0613d] px-4 text-[12px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+          className="inline-flex h-10 shrink-0 cursor-pointer items-center justify-center rounded-md bg-[#a8482a] px-4 text-[12px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
         >
           {pending ? 'Saving…' : 'Save'}
         </button>

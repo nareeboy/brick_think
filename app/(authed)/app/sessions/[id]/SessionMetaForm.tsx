@@ -147,7 +147,7 @@ export function SessionMetaForm({
           type="submit"
           disabled={pending}
           data-testid="session-meta-save"
-          className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47] disabled:cursor-default disabled:opacity-60"
+          className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47] disabled:cursor-default disabled:opacity-60"
         >
           {pending ? 'Saving…' : 'Save settings'}
         </button>

@@ -130,7 +130,7 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="teammate@example.com"
             autoComplete="email"
-            className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#c0613d]"
+            className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#a8482a]"
           />
         </label>
 
@@ -159,7 +159,7 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
           >
             {pending ? 'Adding…' : 'Add'}
           </button>

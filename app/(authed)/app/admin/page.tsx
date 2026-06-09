@@ -18,7 +18,7 @@ export default function AdminOverviewPage() {
         <li>
           <Link
             href="/app/admin/cms/articles"
-            className="group flex h-full flex-col justify-between rounded-2xl border border-zinc-900/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-[#c0613d]/30"
+            className="group flex h-full flex-col justify-between rounded-2xl border border-zinc-900/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition-colors hover:border-[#a8482a]/30"
           >
             <div className="space-y-1">
               <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
@@ -30,7 +30,7 @@ export default function AdminOverviewPage() {
                 visible to anyone — drafts stay invisible until you flip the switch.
               </p>
             </div>
-            <div className="mt-4 text-[13px] font-medium text-[#c0613d] transition-colors group-hover:underline">
+            <div className="mt-4 text-[13px] font-medium text-[#a8482a] transition-colors group-hover:underline">
               Open CMS →
             </div>
           </Link>

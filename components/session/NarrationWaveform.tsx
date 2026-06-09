@@ -41,7 +41,7 @@ export function NarrationWaveform({ active }: Props) {
       {BARS.map((delay, i) => (
         <span
           key={i}
-          className={`bt-wave-bar h-5 w-[3px] rounded-full bg-[#c0613d] transition-transform duration-200 ${
+          className={`bt-wave-bar h-5 w-[3px] rounded-full bg-[#a8482a] transition-transform duration-200 ${
             active ? 'bt-wave-bar--active' : ''
           }`}
           style={{

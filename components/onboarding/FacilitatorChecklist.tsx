@@ -63,7 +63,7 @@ export function FacilitatorChecklist({ progress }: Props) {
         className="rounded-2xl border border-zinc-900/10 bg-white p-5 text-[13px] text-zinc-700"
       >
         Walkthrough complete — replay from{' '}
-        <Link href="/app/account" className="text-[#c0613d] underline-offset-2 hover:underline">
+        <Link href="/app/account" className="text-[#a8482a] underline-offset-2 hover:underline">
           account settings
         </Link>
         .
@@ -163,7 +163,7 @@ function ChecklistRow({ done, label, href, testid, isNext }: RowProps) {
       <span
         aria-hidden="true"
         className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-          done ? 'border-[#c0613d] bg-[#c0613d] text-white' : 'border-zinc-300 bg-white'
+          done ? 'border-[#a8482a] bg-[#a8482a] text-white' : 'border-zinc-300 bg-white'
         }`}
       >
         {done ? (
@@ -190,7 +190,7 @@ function ChecklistRow({ done, label, href, testid, isNext }: RowProps) {
           done
             ? 'text-zinc-500 line-through decoration-zinc-400'
             : isNext
-              ? 'font-semibold text-[#c0613d]'
+              ? 'font-semibold text-[#a8482a]'
               : 'text-zinc-800'
         }`}
       >

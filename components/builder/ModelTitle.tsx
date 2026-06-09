@@ -70,7 +70,7 @@ export function ModelTitle() {
               cancel();
             }
           }}
-          className="mt-1 w-full rounded-md border border-[#c0613d]/40 bg-[#c0613d]/5 px-1.5 py-0.5 text-[22px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#c0613d]"
+          className="mt-1 w-full rounded-md border border-[#a8482a]/40 bg-[#a8482a]/5 px-1.5 py-0.5 text-[22px] font-semibold tracking-tight text-zinc-950 outline-none focus:border-[#a8482a]"
         />
       ) : (
         <button

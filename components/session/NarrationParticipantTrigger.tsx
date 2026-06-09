@@ -245,7 +245,7 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
               type="button"
               onClick={beginRecording}
               data-testid="narration-participant-retry"
-              className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
+              className="mt-3 inline-flex h-10 items-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
             >
               Try again
             </button>
@@ -291,7 +291,7 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
                 type="button"
                 onClick={beginRecording}
                 data-testid="narration-participant-record"
-                className="mt-3 inline-flex h-10 w-fit items-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
+                className="mt-3 inline-flex h-10 w-fit items-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white hover:bg-[#a85432]"
               >
                 {noticeSeen ? 'Tap to record' : 'Allow mic & record'}
               </button>

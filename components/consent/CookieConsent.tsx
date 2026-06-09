@@ -120,7 +120,7 @@ function ConsentCard({
           <button
             type="button"
             onClick={onAcceptAll}
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-[#c0613d] px-4 text-[13px] font-medium text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.18)] transition-colors hover:bg-[#a8512f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-md bg-[#a8482a] px-4 text-[13px] font-medium text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.18)] transition-colors hover:bg-[#a8512f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FAF7F1]"
           >
             Accept analytics
           </button>

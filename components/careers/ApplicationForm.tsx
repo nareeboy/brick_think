@@ -22,7 +22,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 const inputClass =
-  'mt-1.5 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#c0613d] focus:outline-none focus:ring-1 focus:ring-[#c0613d]';
+  'mt-1.5 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#a8482a] focus:outline-none focus:ring-1 focus:ring-[#a8482a]';
 
 export function ApplicationForm({ roleId, roleTitle }: { roleId: string; roleTitle: string }) {
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success'>('idle');
@@ -50,7 +50,7 @@ export function ApplicationForm({ roleId, roleTitle }: { roleId: string; roleTit
 
   if (status === 'success') {
     return (
-      <div className="rounded-lg border border-[#c0613d]/30 bg-[#c0613d]/5 p-6">
+      <div className="rounded-lg border border-[#a8482a]/30 bg-[#a8482a]/5 p-6">
         <h3 className="font-display text-xl text-zinc-950">Application received</h3>
         <p className="mt-2 text-sm text-zinc-700">
           Thanks for applying for {roleTitle}. We&apos;ll be in touch via the LinkedIn profile you
@@ -150,7 +150,7 @@ export function ApplicationForm({ roleId, roleTitle }: { roleId: string; roleTit
         />
         <span>
           I accept the{' '}
-          <a href="/terms" target="_blank" className="text-[#c0613d] underline">
+          <a href="/terms" target="_blank" className="text-[#a8482a] underline">
             terms and conditions
           </a>{' '}
           and consent to BrickThink storing my application for the purpose of recruitment.
@@ -166,7 +166,7 @@ export function ApplicationForm({ roleId, roleTitle }: { roleId: string; roleTit
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="inline-flex cursor-pointer items-center rounded-md bg-[#c0613d] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#a8512f] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex cursor-pointer items-center rounded-md bg-[#a8482a] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#a8512f] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {status === 'submitting' ? 'Submitting…' : 'Submit application'}
       </button>

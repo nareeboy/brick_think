@@ -220,7 +220,7 @@ export function BrandProfileEditor({ existing, fontOptions, onClose, onSaved }: 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Acme Consulting"
-                className="h-9 w-full rounded-lg border border-zinc-300 px-2 text-[13px] text-zinc-900 focus:border-[#c0613d] focus:outline-none"
+                className="h-9 w-full rounded-lg border border-zinc-300 px-2 text-[13px] text-zinc-900 focus:border-[#a8482a] focus:outline-none"
               />
             </Field>
 
@@ -231,7 +231,7 @@ export function BrandProfileEditor({ existing, fontOptions, onClose, onSaved }: 
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Acme Consulting Ltd"
-                className="h-9 w-full rounded-lg border border-zinc-300 px-2 text-[13px] text-zinc-900 focus:border-[#c0613d] focus:outline-none"
+                className="h-9 w-full rounded-lg border border-zinc-300 px-2 text-[13px] text-zinc-900 focus:border-[#a8482a] focus:outline-none"
               />
             </Field>
 
@@ -242,7 +242,7 @@ export function BrandProfileEditor({ existing, fontOptions, onClose, onSaved }: 
                 value={footerContact}
                 onChange={(e) => setFooterContact(e.target.value)}
                 placeholder="hello@acme.com · acme.com"
-                className="h-9 w-full rounded-lg border border-zinc-300 px-2 text-[13px] text-zinc-900 focus:border-[#c0613d] focus:outline-none"
+                className="h-9 w-full rounded-lg border border-zinc-300 px-2 text-[13px] text-zinc-900 focus:border-[#a8482a] focus:outline-none"
               />
             </Field>
 
@@ -335,7 +335,7 @@ export function BrandProfileEditor({ existing, fontOptions, onClose, onSaved }: 
           <button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
+            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#a44f30] disabled:cursor-not-allowed disabled:bg-zinc-300"
           >
             {pending ? 'Saving…' : existing ? 'Save changes' : 'Create preset'}
           </button>
@@ -400,7 +400,7 @@ function FontSelector({
         id={selectId}
         value={selectValue}
         onChange={(e) => onSelectCurated(e.target.value)}
-        className="mt-1.5 h-9 w-full rounded-lg border border-zinc-300 bg-white px-2 text-[13px] text-zinc-900 focus:border-[#c0613d] focus:outline-none"
+        className="mt-1.5 h-9 w-full rounded-lg border border-zinc-300 bg-white px-2 text-[13px] text-zinc-900 focus:border-[#a8482a] focus:outline-none"
       >
         {isCustom ? (
           <option value={CUSTOM_FONT_VALUE} disabled>
@@ -441,7 +441,7 @@ function FontSelector({
               type="checkbox"
               checked={rights}
               onChange={(e) => onRightsChange(e.target.checked)}
-              className="mt-0.5 accent-[#c0613d]"
+              className="mt-0.5 accent-[#a8482a]"
             />
             <span>I have the right to embed this font.</span>
           </label>

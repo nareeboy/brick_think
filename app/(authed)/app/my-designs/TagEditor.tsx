@@ -158,7 +158,7 @@ export function TagEditor({ modelId, initialTags, allTags, onClose, onSaved }: P
         aria-label="Add a tag"
         data-testid={`tag-editor-input-${modelId}`}
         autoComplete="off"
-        className="mt-3 h-9 w-full rounded-lg border border-zinc-900/10 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-400 focus:border-[#c0613d] focus:outline-none"
+        className="mt-3 h-9 w-full rounded-lg border border-zinc-900/10 bg-white px-3 text-[13px] text-zinc-900 placeholder:text-zinc-400 focus:border-[#a8482a] focus:outline-none"
       />
       {suggestions.length > 0 ? (
         <div className="mt-2">
@@ -201,7 +201,7 @@ export function TagEditor({ modelId, initialTags, allTags, onClose, onSaved }: P
           onClick={save}
           disabled={pending}
           data-testid={`tag-editor-save-${modelId}`}
-          className="inline-flex h-8 cursor-pointer items-center rounded-lg bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:opacity-60"
+          className="inline-flex h-8 cursor-pointer items-center rounded-lg bg-[#a8482a] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:opacity-60"
         >
           {pending ? 'Saving…' : 'Save'}
         </button>
