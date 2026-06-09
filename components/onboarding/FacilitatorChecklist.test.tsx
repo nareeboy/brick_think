@@ -33,13 +33,19 @@ describe('FacilitatorChecklist', () => {
     expect(screen.queryByTestId('onboarding-checklist')).toBeNull();
   });
 
-  it('re-shows the three steps in replay/preview mode even when all tasks are done', async () => {
+  it('re-shows the three steps as empty (not done) in replay/preview mode, even when all tasks are done', async () => {
     localStorage.setItem('bt_walkthrough_replay', '1');
     render(<FacilitatorChecklist progress={ALL_DONE} />);
     expect(await screen.findByTestId('onboarding-checklist')).toBeTruthy();
     expect(screen.queryByTestId('onboarding-checklist-complete')).toBeNull();
-    expect(screen.getByTestId('onboarding-step-org')).toBeTruthy();
-    expect(screen.getByTestId('onboarding-step-session')).toBeTruthy();
-    expect(screen.getByTestId('onboarding-step-model')).toBeTruthy();
+    // The steps must look like a brand-new user's — empty, not crossed-out —
+    // even though the real account progress is all-done.
+    for (const testid of [
+      'onboarding-step-org',
+      'onboarding-step-session',
+      'onboarding-step-model',
+    ]) {
+      expect(screen.getByTestId(testid).getAttribute('data-done')).toBe('0');
+    }
   });
 });
