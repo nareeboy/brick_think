@@ -41,6 +41,7 @@
     "db:push": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase db push --linked"
   },
   "dependencies": {
+    "@brickthink/premium": "workspace:*",
     "@anthropic-ai/sdk": "^0.97.1",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/ssr": "^0.10.3",

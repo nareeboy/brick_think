@@ -1,0 +1,13 @@
+{
+  "name": "@brickthink/premium",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Stub of the BrickThink premium overlay. Real implementation lives in the private platform repo and overrides this package at deploy time.",
+  "exports": {
+    ".": "./src/types.ts",
+    "./server": "./src/server.ts",
+    "./client": "./src/client.tsx",
+    "./overlay": "./src/overlay.ts"
+  }
+}
