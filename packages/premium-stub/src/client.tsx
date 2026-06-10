@@ -1,4 +1,8 @@
-import type { AccountNavSlotProps, BrandingSettingsSlotProps, ReportActionsSlotProps } from './types';
+import type {
+  AccountNavSlotProps,
+  BrandingSettingsSlotProps,
+  ReportActionsSlotProps,
+} from './types';
 
 /**
  * Stub slot: renders nothing. On a self-host build there is no report button,
