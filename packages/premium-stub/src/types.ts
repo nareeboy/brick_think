@@ -17,10 +17,7 @@ export type NarrationCleanupContext = {
 
 /** Server-side premium hooks. Stub = no-ops; real impl in the private repo. */
 export interface PremiumServer {
-  cleanupNarration(
-    raw: string,
-    ctx: NarrationCleanupContext,
-  ): Promise<NarrationCleanupOutcome>;
+  cleanupNarration(raw: string, ctx: NarrationCleanupContext): Promise<NarrationCleanupOutcome>;
 }
 
 /** One file the premium package wants copied into the app tree at build time. */

@@ -9,5 +9,8 @@
     "./server": "./src/server.ts",
     "./client": "./src/client.tsx",
     "./overlay": "./src/overlay.ts"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }

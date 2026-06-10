@@ -196,7 +196,11 @@ importers:
         specifier: ^3.0.4
         version: 3.2.4(@types/node@22.19.18)(happy-dom@20.9.0)(jiti@2.7.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(lightningcss@1.32.0)(tsx@4.21.0)
 
-  packages/premium-stub: {}
+  packages/premium-stub:
+    dependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.2.6
 
 packages:
 
