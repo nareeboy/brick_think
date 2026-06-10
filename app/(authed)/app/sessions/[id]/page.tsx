@@ -69,7 +69,7 @@ export default async function SessionDetailPage({
   const sessionRes = await supabase
     .from('sessions')
     .select(
-      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, brand_profile_id, organisations:org_id ( id, name )',
+      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, organisations:org_id ( id, name )',
     )
     .eq('id', id)
     .maybeSingle();
@@ -88,7 +88,6 @@ export default async function SessionDetailPage({
     brief_text: string | null;
     pre_session_check: Record<string, unknown> | null;
     join_code: string | null;
-    brand_profile_id: string | null;
     organisations: { id: string; name: string } | null;
   };
 
