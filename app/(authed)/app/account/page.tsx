@@ -8,10 +8,11 @@ import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
 import { isBillingEnabled } from '@/lib/billing/env';
 
+import { BrandingSettingsSlot } from '@/lib/premium/client';
+
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
 import { AccountTabs } from './AccountTabs';
-import { BrandPresetsCard } from './branding/BrandPresetsCard';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
@@ -81,8 +82,7 @@ export default async function AccountPage() {
 
         {/* Right rail — brand presets + contribution, each under a section title. */}
         <div className="flex flex-col gap-4">
-          <SectionTitle>Branding</SectionTitle>
-          <BrandPresetsCard />
+          <BrandingSettingsSlot />
 
           <SectionTitle>Open source</SectionTitle>
           <ContributionCard />
