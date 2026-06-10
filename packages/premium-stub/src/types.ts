@@ -35,3 +35,6 @@ export type ReportActionsSlotProps = {
   tier?: string | null;
   children?: ReactNode;
 };
+
+/** Account-settings branding section. No props — premium resolves the user itself. */
+export type BrandingSettingsSlotProps = Record<string, never>;
