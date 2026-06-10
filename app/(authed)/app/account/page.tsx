@@ -6,13 +6,10 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
-import { isBillingEnabled } from '@/lib/billing/env';
-
-import { BrandingSettingsSlot } from '@/lib/premium/client';
+import { AccountNavSlot, BrandingSettingsSlot } from '@/lib/premium/client';
 
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';
-import { AccountTabs } from './AccountTabs';
 import { BuyMeACoffeeCard } from './BuyMeACoffeeCard';
 import { ContributionCard } from './ContributionCard';
 import { DangerZone } from './DangerZone';
@@ -52,7 +49,7 @@ export default async function AccountPage() {
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-10">
       <div className="mb-6">
-        <AccountTabs showBilling={isBillingEnabled()} />
+        <AccountNavSlot />
       </div>
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         {/* Left column — profile anchor, then the titled utility sections beneath it. */}
