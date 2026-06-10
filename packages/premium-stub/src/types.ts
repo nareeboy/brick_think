@@ -38,3 +38,6 @@ export type ReportActionsSlotProps = {
 
 /** Account-settings branding section. No props — premium resolves the user itself. */
 export type BrandingSettingsSlotProps = Record<string, never>;
+
+/** Account sub-navigation (Settings / Billing tabs). Premium owns the billing tab. */
+export type AccountNavSlotProps = Record<string, never>;

@@ -1,4 +1,4 @@
-import type { BrandingSettingsSlotProps, ReportActionsSlotProps } from './types';
+import type { AccountNavSlotProps, BrandingSettingsSlotProps, ReportActionsSlotProps } from './types';
 
 /**
  * Stub slot: renders nothing. On a self-host build there is no report button,
@@ -10,5 +10,10 @@ export function ReportActionsSlot(_props: ReportActionsSlotProps): null {
 
 /** Stub: no brand-profile management on the open core. */
 export function BrandingSettingsSlot(_props: BrandingSettingsSlotProps): null {
+  return null;
+}
+
+/** Stub: no billing tab → no account sub-nav on the open core. */
+export function AccountNavSlot(_props: AccountNavSlotProps): null {
   return null;
 }
