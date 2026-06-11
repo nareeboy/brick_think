@@ -1,6 +1,7 @@
 import type {
   AccountNavSlotProps,
   BrandingSettingsSlotProps,
+  PricingLinkSlotProps,
   ReportActionsSlotProps,
 } from './types';
 
@@ -19,5 +20,10 @@ export function BrandingSettingsSlot(_props: BrandingSettingsSlotProps): null {
 
 /** Stub: no billing tab → no account sub-nav on the open core. */
 export function AccountNavSlot(_props: AccountNavSlotProps): null {
+  return null;
+}
+
+/** Stub: no hosted /pricing route on the open core → render no marketing link. */
+export function PricingLinkSlot(_props: PricingLinkSlotProps): null {
   return null;
 }

@@ -4,3 +4,5 @@ export { BrandingSettingsSlot } from '@brickthink/premium/client';
 export type { BrandingSettingsSlotProps } from '@brickthink/premium';
 export { AccountNavSlot } from '@brickthink/premium/client';
 export type { AccountNavSlotProps } from '@brickthink/premium';
+export { PricingLinkSlot } from '@brickthink/premium/client';
+export type { PricingLinkSlotProps } from '@brickthink/premium';
