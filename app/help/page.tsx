@@ -65,15 +65,15 @@ const GROUPS: FaqGroup[] = [
   {
     id: 'pricing',
     label: 'Pricing & licence',
-    title: 'Free and open. Three hosted tiers cover their costs.',
+    title: 'Free and open source. The hosted site adds optional paid services.',
     items: [
       {
         q: 'How much does BrickThink cost?',
-        a: 'The app is free and open source (Apache 2.0), and you can self-host all of it. On the hosted site at www.brickthink.io, three tiers carry a paid subscription — Session Report, Client-Ready and Full Findings, each a superset of the one below — because they cost us real money each time they run (PDF rendering and AI tokens). Everything else stays free. The pricing page has the full breakdown.',
+        a: 'The BrickThink app is free and open source (Apache 2.0) and you can self-host it. A few report and branding services — PDF session reports, transcript polishing, white-label and full-findings reports — are not part of the open-source core; they run only on the hosted site at www.brickthink.io, where a subscription covers the per-use cost (PDF rendering and AI tokens).',
       },
       {
-        q: 'Is this a Pro tier?',
-        a: 'No. There is no Pro plan and nothing useful locked behind a wall. We only charge for the hosted tiers that cost us money per use, purely to cover that cost — not to upsell you. Self-host with your own Anthropic key and even those are free.',
+        q: 'Is there a Pro plan?',
+        a: 'No. There is no Pro plan gating the core product — the open-source app is complete on its own. The hosted site offers the report and branding services as paid add-ons purely to cover what they cost us to run, not to upsell you.',
       },
       {
         q: 'How can I support the project?',

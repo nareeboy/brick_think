@@ -19,6 +19,8 @@ const BASELINE_CSP = buildCsp(FRAME_ANCESTORS);
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The premium overlay ships as TypeScript source; let Next compile it.
+  transpilePackages: ['@brickthink/premium'],
   experimental: {
     // Server Actions cap request bodies at 1 MB by default, but the article
     // cover upload (uploadCoverImageAction) accepts images up to 2 MB

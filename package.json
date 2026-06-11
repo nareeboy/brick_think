@@ -14,6 +14,7 @@
     "dev": "next dev",
     "orbstack:up": "open -ga OrbStack && echo 'Waiting for Docker engine…' && for i in $(seq 1 60); do docker info >/dev/null 2>&1 && break || sleep 1; done",
     "dev:e2e": "pnpm orbstack:up && concurrently -k -n web,yjs,stripe -c blue,green,magenta \"dotenv -e .env.test -- next dev\" \"pnpm worker:dev\" \"sh scripts/dev-stripe-listen.sh\"",
+    "prebuild": "pnpm premium:overlay",
     "build": "next build",
     "build:e2e": "dotenv -e .env.test -- next build",
     "start": "next start",
@@ -22,6 +23,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "premium:overlay": "tsx scripts/apply-premium-overlay.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -41,8 +43,7 @@
     "db:push": "SUPABASE_ACCESS_TOKEN=$(grep -E '^SUPABASE_ACCESS_TOKEN=' .env.local | cut -d= -f2-) supabase db push --linked"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.97.1",
-    "@react-pdf/renderer": "^4.5.1",
+    "@brickthink/premium": "workspace:*",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.3",
     "@tiptap/pm": "^3.25.0",
@@ -63,7 +64,6 @@
     "react-konva": "^19.0.0",
     "sanitize-html": "^2.17.4",
     "sharp": "^0.34.5",
-    "stripe": "^22.2.0",
     "ws": "^8.20.0",
     "y-protocols": "^1.0.7",
     "y-websocket": "^1.5.4",

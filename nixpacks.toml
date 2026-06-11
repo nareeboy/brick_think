@@ -1,0 +1,19 @@
+# Nixpacks build config for Railway.
+#
+# Overrides the install phase to run the premium overlay bootstrap BEFORE
+# `pnpm install`. On self-host / OSS CI (no PREMIUM_OVERLAY_TOKEN) the bootstrap
+# is a no-op and this behaves like a normal pnpm install. On the platform
+# (prod/staging, env set) it restores the paid features + their deps first, so
+# the subsequent install + `pnpm build` (which runs `prebuild` → premium:overlay)
+# compile the full hosted product.
+#
+# --no-frozen-lockfile is required because the bootstrap adds the premium runtime
+# deps (@anthropic-ai/sdk, @react-pdf/renderer, stripe) to package.json at build
+# time, so the committed lockfile won't match on the platform build.
+
+[phases.install]
+dependsOn = ["setup"]
+cmds = [
+  "node scripts/bootstrap-premium.mjs",
+  "pnpm install --no-frozen-lockfile",
+]

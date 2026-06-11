@@ -13,7 +13,6 @@ import {
   NavBar,
 } from '@/components/marketing/MarketingChrome';
 import { HeroVideo } from '@/components/marketing/HeroVideo';
-import { PricingTiers } from '@/components/marketing/PricingTiers';
 
 export const metadata: Metadata = { title: 'BrickThink' };
 
@@ -96,7 +95,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <PersonasSection />
         <FidelitySection />
         <OpenSourceSection />
-        <PricingTiers />
         <CtaBand />
       </main>
       <Footer />
