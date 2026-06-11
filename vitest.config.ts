@@ -19,7 +19,7 @@ export default defineConfig({
     environment: 'node',
     environmentMatchGlobs: [['**/*.test.tsx', 'happy-dom']],
     globals: false,
-    include: ['**/*.test.ts', '**/*.test.tsx'],
+    include: ['**/*.test.ts', '**/*.test.tsx', '**/*.test.mjs'],
     exclude: [
       'node_modules/**',
       '.next/**',
