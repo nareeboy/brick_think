@@ -43,7 +43,11 @@ const { overlayFiles } = await import(pathToFileURL(join(premium, 'manifest.mjs'
 
 // Files that also exist as committed open-core files (stub wrappers / generated
 // types) — restored via git on clean, never deleted.
-const DUAL = new Set(['lib/premium/client.tsx', 'lib/premium/server.ts', 'lib/db/types.generated.ts']);
+const DUAL = new Set([
+  'lib/premium/client.tsx',
+  'lib/premium/server.ts',
+  'lib/db/types.generated.ts',
+]);
 
 if (mode === 'apply') {
   for (const { from, to } of overlayFiles) {
@@ -57,7 +61,9 @@ if (mode === 'apply') {
   const deps = premPkg.dependencies ?? {};
   core.dependencies = { ...core.dependencies, ...deps };
   writeFileSync(corePath, `${JSON.stringify(core, null, 2)}\n`);
-  console.log(`[premium-local] applied ${overlayFiles.length} overlay files + deps: ${Object.keys(deps).join(', ')}`);
+  console.log(
+    `[premium-local] applied ${overlayFiles.length} overlay files + deps: ${Object.keys(deps).join(', ')}`,
+  );
 } else {
   // clean: remove premium-only files, then restore the dual tracked files +
   // package manifests from git (this is why the tooling must be committed —
@@ -85,7 +91,15 @@ if (mode === 'apply') {
   }
   execFileSync(
     'git',
-    ['checkout', '--', 'lib/premium/server.ts', 'lib/premium/client.tsx', 'lib/db/types.generated.ts', 'package.json', 'pnpm-lock.yaml'],
+    [
+      'checkout',
+      '--',
+      'lib/premium/server.ts',
+      'lib/premium/client.tsx',
+      'lib/db/types.generated.ts',
+      'package.json',
+      'pnpm-lock.yaml',
+    ],
     { cwd: repoRoot, stdio: 'inherit' },
   );
   console.log('[premium-local] removed overlay + restored open-core stubs.');
