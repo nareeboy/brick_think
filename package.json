@@ -14,7 +14,7 @@
     "dev": "next dev",
     "orbstack:up": "open -ga OrbStack && echo 'Waiting for Docker engine…' && for i in $(seq 1 60); do docker info >/dev/null 2>&1 && break || sleep 1; done",
     "dev:e2e": "pnpm orbstack:up && concurrently -k -n web,yjs,stripe -c blue,green,magenta \"dotenv -e .env.test -- next dev\" \"pnpm worker:dev\" \"sh scripts/dev-stripe-listen.sh\"",
-    "prebuild": "pnpm premium:overlay",
+    "prebuild": "node scripts/bootstrap-premium.mjs",
     "build": "next build",
     "build:e2e": "dotenv -e .env.test -- next build",
     "start": "next start",
