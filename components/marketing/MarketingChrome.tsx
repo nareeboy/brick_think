@@ -15,6 +15,7 @@ import { SourceForgeDownloadButton } from '@/components/marketing/SourceForgeDow
 import { TinyLaunchBadge } from '@/components/marketing/TinyLaunchBadge';
 import { UneedBadge } from '@/components/marketing/UneedBadge';
 import { getLatestPublishedVersionTag } from '@/lib/changelog/queries';
+import { PricingLinkSlot } from '@/lib/premium/client';
 
 export const GITHUB_URL = 'https://github.com/nareeboy/brick_think';
 export const LINKEDIN_URL = 'https://www.linkedin.com/company/brickthink';
@@ -31,7 +32,6 @@ export const PLAY_SERIOUS_ARTICLE_URL =
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
   { href: '/articles', label: 'Articles' },
-  { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' },
   { href: '/help', label: 'Help' },
   { href: '/contact', label: 'Contact' },
@@ -66,6 +66,7 @@ export function NavBar() {
                 {l.label}
               </Link>
             ))}
+            <PricingLinkSlot variant="nav" />
           </nav>
           <Link
             href="/sign-in"
@@ -252,11 +253,7 @@ export async function Footer() {
                 Open source
               </Link>
             </li>
-            <li>
-              <Link href="/pricing" className="hover:text-zinc-950">
-                Pricing
-              </Link>
-            </li>
+            <PricingLinkSlot variant="footer" />
             <li>
               <a
                 href={LEGO_SERIOUS_PLAY_URL}

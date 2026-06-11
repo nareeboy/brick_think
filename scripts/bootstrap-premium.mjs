@@ -66,7 +66,9 @@ try {
   console.log(`[premium] merged deps: ${Object.keys(added).join(', ') || '(none)'}`);
   console.log('[premium] overlay bootstrap complete.');
 } catch (err) {
-  console.error('[premium] overlay bootstrap FAILED — aborting build to avoid shipping a free build.');
+  console.error(
+    '[premium] overlay bootstrap FAILED — aborting build to avoid shipping a free build.',
+  );
   console.error(err instanceof Error ? err.message : String(err));
   process.exit(1);
 } finally {
