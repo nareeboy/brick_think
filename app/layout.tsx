@@ -26,6 +26,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.brickthink.io'),
   title: {
     default: 'BrickThink',
     template: '%s · BrickThink',
