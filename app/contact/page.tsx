@@ -6,12 +6,14 @@ import {
   GitHubGlyph,
   MarketingShell,
 } from '@/components/marketing/MarketingChrome';
+import { pageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Contact',
   description:
     'How to reach BrickThink — support, partnerships, security disclosures, press, and the public issue tracker.',
-};
+  path: '/contact',
+});
 
 type Channel = {
   label: string;

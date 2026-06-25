@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: 'Terms & Conditions · BrickThink',
+import { pageMetadata } from '@/lib/seo/metadata';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'Terms & Conditions',
   description:
     'The terms and conditions governing access to and use of the BrickThink website and platform.',
-};
+  path: '/terms',
+});
 
 const LAST_UPDATED = '15 May 2026';
 

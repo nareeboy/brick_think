@@ -13,8 +13,13 @@ import {
   NavBar,
 } from '@/components/marketing/MarketingChrome';
 import { HeroVideo } from '@/components/marketing/HeroVideo';
+import { pageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = { title: 'BrickThink' };
+export const metadata: Metadata = pageMetadata({
+  title: 'BrickThink',
+  description: 'A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®.',
+  path: '/',
+});
 
 const LSP_DACH_EVENT_URL =
   'https://www.linkedin.com/events/2-treffenderlego-seriousplay-co7467623386521821185/';

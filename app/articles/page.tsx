@@ -5,14 +5,16 @@ import { ArrowRight, MarketingShell } from '@/components/marketing/MarketingChro
 import { formatPublishedDate, isoDate } from '@/lib/articles/format';
 import { listPublishedArticles } from '@/lib/articles/queries';
 import type { PublishedArticleSummary } from '@/lib/articles/types';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Articles',
   description:
     'Field notes on LEGO® SERIOUS PLAY®, remote facilitation, and how BrickThink is built — in the open, with care.',
-};
+  path: '/articles',
+});
 
 export default async function ArticlesIndexPage() {
   const articles = await listPublishedArticles();

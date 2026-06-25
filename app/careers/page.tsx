@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { ArrowRight, MarketingShell } from '@/components/marketing/MarketingChrome';
 import { listOpenRoles } from '@/lib/careers/queries';
 import type { RoleListItem } from '@/lib/careers/types';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Careers',
   description: 'Open roles at BrickThink — help us build LEGO® SERIOUS PLAY® for remote teams.',
-};
+  path: '/careers',
+});
 
 export default async function CareersPage() {
   const roles = await listOpenRoles();

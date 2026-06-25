@@ -7,13 +7,15 @@ import { sanitizeChangelogHtml } from '@/lib/changelog/sanitizeHtml';
 import { formatChangelogDate, groupByMonth, isoDate } from '@/lib/changelog/format';
 import { listPublishedEntries } from '@/lib/changelog/queries';
 import type { PublicChangelogEntry } from '@/lib/changelog/types';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Changelog',
   description: 'What’s new in BrickThink — features, improvements, and fixes.',
-};
+  path: '/changelog',
+});
 
 export default async function ChangelogPage() {
   const entries = await listPublishedEntries();

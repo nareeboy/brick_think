@@ -2,12 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/MarketingChrome';
+import { pageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'What is LEGO® SERIOUS PLAY®',
   description:
     'An explainer of the LEGO® SERIOUS PLAY® methodology — five stages, hand-knowledge, narrated models, and the principles practitioners live by.',
-};
+  path: '/what-is-lsp',
+});
 
 const STAGES = [
   {

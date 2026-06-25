@@ -9,12 +9,14 @@ import {
   MarketingShell,
   PlusGlyph,
 } from '@/components/marketing/MarketingChrome';
+import { pageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Help & FAQ',
   description:
     'How BrickThink works in practice — getting started, running sessions, accessibility, privacy, and self-hosting.',
-};
+  path: '/help',
+});
 
 type Faq = { q: string; a: string };
 type FaqGroup = { id: string; label: string; title: string; items: Faq[] };

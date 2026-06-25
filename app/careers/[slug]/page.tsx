@@ -5,8 +5,10 @@ import { notFound } from 'next/navigation';
 
 import { ApplicationForm } from '@/components/careers/ApplicationForm';
 import { MarketingShell } from '@/components/marketing/MarketingChrome';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { getOpenRoleBySlug } from '@/lib/careers/queries';
 import { sanitizeRoleHtml } from '@/lib/careers/sanitizeHtml';
+import { jobPostingSchema } from '@/lib/seo/jsonLd';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +20,15 @@ export async function generateMetadata({
   const { slug } = await params;
   const role = await getOpenRoleBySlug(slug);
   if (!role) return { title: 'Role not found' };
-  return { title: `${role.title} — Careers`, description: role.summary || undefined };
+  const title = `${role.title} — Careers`;
+  const description = role.summary || undefined;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/careers/${role.slug}` },
+    openGraph: { title: `${title} · BrickThink`, description, type: 'website' },
+    twitter: { card: 'summary_large_image', title: `${title} · BrickThink`, description },
+  };
 }
 
 export default async function RolePage({ params }: { params: Promise<{ slug: string }> }) {
@@ -28,6 +38,17 @@ export default async function RolePage({ params }: { params: Promise<{ slug: str
 
   return (
     <MarketingShell>
+      <JsonLd
+        data={jobPostingSchema({
+          slug: role.slug,
+          title: role.title,
+          summary: role.summary,
+          descriptionHtml: role.descriptionHtml,
+          location: role.location,
+          employmentType: role.employmentType,
+          createdAt: role.createdAt,
+        })}
+      />
       <section className="mx-auto max-w-3xl px-6 pb-20 pt-16">
         <Link href="/careers" className="text-sm text-[#a8482a] hover:underline">
           ← All roles

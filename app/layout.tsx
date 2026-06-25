@@ -3,6 +3,9 @@ import { Fraunces, Geist, Geist_Mono } from 'next/font/google';
 import type { ReactNode } from 'react';
 import { SiteBanner } from '@/components/banner/SiteBanner';
 import { CookieConsent } from '@/components/consent/CookieConsent';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { siteGraph } from '@/lib/seo/jsonLd';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo/site';
 import './globals.css';
 
 const geistSans = Geist({
@@ -26,13 +29,26 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://www.brickthink.io'),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'BrickThink',
-    template: '%s · BrickThink',
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
   },
-  description: 'A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®.',
-  applicationName: 'BrickThink',
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: 'website',
+    siteName: SITE_NAME,
+    locale: 'en_GB',
+    url: SITE_URL,
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
@@ -52,6 +68,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <body>
+        <JsonLd data={siteGraph()} />
         <a href="#main" className="skip-link">
           Skip to main content
         </a>

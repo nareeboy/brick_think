@@ -2,12 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
+import { pageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy · BrickThink',
+export const metadata: Metadata = pageMetadata({
+  title: 'Privacy Policy',
   description:
     'How BrickThink collects, uses, and discloses personal information for users of brickthink.io and the BrickThink platform.',
-};
+  path: '/privacy',
+});
 
 const LAST_UPDATED = '22 May 2026';
 

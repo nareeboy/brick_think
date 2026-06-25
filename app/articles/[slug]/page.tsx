@@ -6,9 +6,11 @@ import { ArticleAuthorByline } from '@/components/articles/ArticleAuthorByline';
 import { ArticleProse } from '@/components/articles/ArticleProse';
 import { CoverCreditLine } from '@/components/articles/CoverCreditLine';
 import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/MarketingChrome';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { formatPublishedDate, isoDate, readingMinutes } from '@/lib/articles/format';
 import { getPublishedArticleBySlug } from '@/lib/articles/queries';
 import type { CoverCredit } from '@/lib/articles/types';
+import { articleSchema } from '@/lib/seo/jsonLd';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: article.title,
     description: article.excerpt ?? undefined,
+    alternates: { canonical: `/articles/${article.slug}` },
     openGraph: {
       title: article.title,
       description: article.excerpt ?? undefined,
@@ -49,6 +52,16 @@ export default async function ArticleDetailPage({ params }: PageProps) {
 
   return (
     <MarketingShell>
+      <JsonLd
+        data={articleSchema({
+          slug: article.slug,
+          title: article.title,
+          excerpt: article.excerpt,
+          publishedAt: article.publishedAt,
+          coverImageUrl: article.coverImageUrl,
+          authorName: article.authorName,
+        })}
+      />
       <article>
         <Header article={article} minutes={minutes} />
         {article.coverImageUrl ? (

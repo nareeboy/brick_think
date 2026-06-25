@@ -2,12 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/MarketingChrome';
+import { pageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Roadmap',
   description:
     'Where BrickThink is going — phase by phase. What is shipped, what we are doing now, and what comes next. Honest dates, not vapour.',
-};
+  path: '/roadmap',
+});
 
 type PhaseStatus = 'Done' | 'Now' | 'Next' | 'Later';
 

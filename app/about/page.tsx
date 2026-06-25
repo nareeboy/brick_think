@@ -8,12 +8,14 @@ import {
   GitHubGlyph,
   MarketingShell,
 } from '@/components/marketing/MarketingChrome';
+import { pageMetadata } from '@/lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'About',
   description:
     'Why BrickThink exists, what we stand for, and how the product is built — under Apache 2.0, in the open.',
-};
+  path: '/about',
+});
 
 const PRINCIPLES = [
   {
