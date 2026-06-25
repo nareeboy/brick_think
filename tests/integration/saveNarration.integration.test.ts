@@ -1,10 +1,12 @@
 // Integration test for `saveNarration`. Runs against the local Supabase stack.
-// Only the Anthropic SDK boundary and the auth client are mocked so the test
-// stays deterministic — every other dependency is the real thing.
+// On the open core the premium hook (`cleanupNarration`) is a no-op stub, so
+// every save yields cleaned=false / cleanup_status='skipped' regardless of
+// the facilitator's subscription tier. Only the auth client is mocked so the
+// test stays deterministic — every other dependency is the real thing.
 
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type Anthropic from '@anthropic-ai/sdk';
+import { vi } from 'vitest';
 
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import {
@@ -32,20 +34,9 @@ vi.mock('@/lib/db/server', () => ({
   }),
 }));
 
-import type * as AnthropicModule from '@/lib/integrations/anthropic';
-
-vi.mock('@/lib/integrations/anthropic', async (orig) => {
-  const actual = (await orig()) as typeof AnthropicModule;
-  return {
-    ...actual,
-    getServerAnthropicClient: vi.fn(),
-  };
-});
-
 // Import AFTER mocks are registered (Vitest hoists `vi.mock` but ergonomic
 // to keep the convention consistent with the other integration suites).
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
-import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
 
 // --- Fixture ------------------------------------------------------------
 
@@ -91,31 +82,15 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  vi.mocked(getServerAnthropicClient).mockReset();
   currentClient = await signInAs(fx.owner);
 });
-
-// --- Helpers ------------------------------------------------------------
-
-function stubAnthropicClient(cleanedText: string): Anthropic {
-  return {
-    messages: {
-      create: async () => ({
-        content: [{ type: 'text' as const, text: cleanedText }],
-      }),
-    },
-  } as unknown as Anthropic;
-}
 
 // --- Tests --------------------------------------------------------------
 
 describe('saveNarration (integration)', () => {
-  it('owner save, no Anthropic key → raw stored, cleanupStatus skipped', async () => {
-    vi.mocked(getServerAnthropicClient).mockReturnValue({
-      ok: false,
-      code: 'no_claude_key',
-    });
-
+  it('owner save → raw stored, cleanupStatus skipped (open-core stub pass-through)', async () => {
+    // On the open core cleanupNarration is a no-op stub, so even when the
+    // facilitator has an active subscription the hook returns skip.
     const res = await saveNarration(fx.modelId, '  spoken words here  ', 3000);
 
     expect(res.ok).toBe(true);
@@ -131,32 +106,9 @@ describe('saveNarration (integration)', () => {
       .single();
     expect(row.error).toBeNull();
     expect(row.data?.transcript_raw).toBe('spoken words here');
+    expect(row.data?.transcript).toBe('spoken words here');
     expect(row.data?.cleaned).toBe(false);
-  });
-
-  it('owner save, key present + cleanup succeeds → cleaned text stored, succeeded', async () => {
-    vi.mocked(getServerAnthropicClient).mockReturnValue({
-      ok: true,
-      client: stubAnthropicClient('Spoken words here.'),
-    });
-
-    const res = await saveNarration(fx.modelId, 'spoken words here', 2500);
-
-    expect(res.ok).toBe(true);
-    if (!res.ok) throw new Error('expected ok');
-    expect(res.cleaned).toBe(true);
-    expect(res.cleanupStatus).toBe('succeeded');
-    expect(res.transcript).toBe('Spoken words here.');
-
-    const row = await getAdminClient()
-      .from('model_narrations')
-      .select()
-      .eq('model_id', fx.modelId)
-      .single();
-    expect(row.error).toBeNull();
-    expect(row.data?.transcript).toBe('Spoken words here.');
-    expect(row.data?.cleaned).toBe(true);
-    expect(row.data?.cleanup_status).toBe('succeeded');
+    expect(row.data?.cleanup_status).toBe('skipped');
   });
 
   it('empty transcript → empty_transcript error', async () => {
@@ -166,16 +118,16 @@ describe('saveNarration (integration)', () => {
 
   it('non-owner → not_owner error', async () => {
     // Override currentClient to authenticate as a different user. The action
-    // returns not_owner before ever reaching the Anthropic lookup, so no
-    // cleanup mock is needed here.
+    // returns not_owner before ever reaching the cleanup hook.
     currentClient = await signInAs(fx.nonOwner);
 
     const res = await saveNarration(fx.modelId, 'some transcript', null);
     expect(res).toEqual({ ok: false, code: 'not_owner' });
   });
 
-  it('a participant recording in a facilitated session gets cleanup (server key)', async () => {
+  it('a participant recording in a facilitated session → stub pass-through', async () => {
     // A participant (non-facilitator) owns their own canvas in fx.session.
+    // Even with the facilitator's session context, the stub hook returns skip.
     const admin = getAdminClient();
     const m = await admin
       .from('models')
@@ -191,19 +143,14 @@ describe('saveNarration (integration)', () => {
     if (m.error || !m.data) throw new Error(`participant model insert failed: ${m.error?.message}`);
     const participantModelId = m.data.id as string;
 
-    // With a single server key there is no per-profile lookup.
-    vi.mocked(getServerAnthropicClient).mockReturnValue({
-      ok: true,
-      client: stubAnthropicClient('Polished via server key.'),
-    });
-
     currentClient = await signInAs(fx.nonOwner);
     const res = await saveNarration(participantModelId, 'attendee telling their story', 1500);
 
     expect(res.ok).toBe(true);
     if (!res.ok) throw new Error('expected ok');
-    expect(res.cleaned).toBe(true);
-    expect(res.cleanupStatus).toBe('succeeded');
-    expect(res.transcript).toBe('Polished via server key.');
+    // Open-core stub: no cleanup ever runs.
+    expect(res.cleaned).toBe(false);
+    expect(res.cleanupStatus).toBe('skipped');
+    expect(res.transcript).toBe('attendee telling their story');
   });
 });

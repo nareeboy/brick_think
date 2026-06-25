@@ -70,7 +70,7 @@ export function CreateOrgForm() {
           onChange={(e) => onNameChange(e.target.value)}
           maxLength={80}
           autoComplete="off"
-          className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#c0613d]"
+          className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#a8482a]"
         />
       </label>
       <label className="flex flex-col gap-1.5">
@@ -85,7 +85,7 @@ export function CreateOrgForm() {
           maxLength={40}
           pattern="[a-z0-9](?:[a-z0-9-]*[a-z0-9])?"
           autoComplete="off"
-          className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 font-mono text-[13px] text-zinc-900 outline-none focus:border-[#c0613d]"
+          className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 font-mono text-[13px] text-zinc-900 outline-none focus:border-[#a8482a]"
         />
         <span className="text-[12px] text-zinc-500">
           Lowercase letters, digits, hyphens. Used in URLs (not yet exposed publicly).
@@ -102,7 +102,7 @@ export function CreateOrgForm() {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
+        className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
       >
         {pending ? 'Creating…' : 'Create workshop'}
       </button>

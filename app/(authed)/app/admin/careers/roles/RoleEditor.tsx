@@ -19,7 +19,7 @@ interface RoleEditorProps {
 }
 
 const inputClass =
-  'mt-1.5 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#c0613d] focus:outline-none focus:ring-1 focus:ring-[#c0613d]';
+  'mt-1.5 block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-[#a8482a] focus:outline-none focus:ring-1 focus:ring-[#a8482a]';
 
 export function RoleEditor({ mode, initial }: RoleEditorProps) {
   const [error, setError] = useState<string | null>(null);
@@ -114,7 +114,7 @@ export function RoleEditor({ mode, initial }: RoleEditorProps) {
       <button
         type="submit"
         disabled={saving}
-        className="inline-flex cursor-pointer items-center rounded-md bg-[#c0613d] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#a8512f] disabled:opacity-60"
+        className="inline-flex cursor-pointer items-center rounded-md bg-[#a8482a] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#a8512f] disabled:opacity-60"
       >
         {saving ? 'Saving…' : mode === 'create' ? 'Create role' : 'Save changes'}
       </button>

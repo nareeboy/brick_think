@@ -44,7 +44,9 @@ export function PreSessionChecklist({
   scenariosByStageType,
 }: Props) {
   const [draftBrief, setDraftBrief] = useState(briefText);
-  const [a11yReviewed, setA11yReviewed] = useState<boolean>(preSessionCheck.a11y_reviewed === true);
+  const [colourblindOn, setColourblindOn] = useState<boolean>(
+    preSessionCheck.colourblind_mode === true,
+  );
   const [recordingConsent, setRecordingConsent] = useState<boolean>(
     preSessionCheck.recording_consent === true,
   );
@@ -63,11 +65,14 @@ export function PreSessionChecklist({
   const briefDone: ItemStatus = briefTrimmed.length >= BRIEF_THRESHOLD ? 'done' : 'open';
   const allPicked = stages.length > 0 && stages.every((s) => s.scenarioId !== null);
   const scenariosDone: ItemStatus = allPicked ? 'done' : 'open';
-  const a11yDone: ItemStatus = a11yReviewed ? 'done' : 'open';
+  // Accessibility overlays are an optional aid — the row carries a status dot so
+  // an "on" session reads at a glance, but it deliberately does NOT gate
+  // "Ready to start" (not every workshop needs pattern overlays).
+  const colourblindDone: ItemStatus = colourblindOn ? 'done' : 'open';
   const recordingDone: ItemStatus = recordingConsent ? 'done' : 'open';
 
-  const tickedCount = [briefDone, scenariosDone, a11yDone].filter((s) => s === 'done').length;
-  const readyToStart = tickedCount === 3;
+  const tickedCount = [briefDone, scenariosDone].filter((s) => s === 'done').length;
+  const readyToStart = tickedCount === 2;
 
   function saveBrief() {
     setError(null);
@@ -77,14 +82,14 @@ export function PreSessionChecklist({
     });
   }
 
-  function toggleA11y(next: boolean) {
-    setA11yReviewed(next);
+  function toggleColourblind(next: boolean) {
+    setColourblindOn(next);
     setError(null);
     startTransition(async () => {
-      const result = await updatePreSessionCheckAction(sessionId, 'a11y_reviewed', next);
+      const result = await updatePreSessionCheckAction(sessionId, 'colourblind_mode', next);
       if (!result.ok) {
-        setA11yReviewed(!next);
-        setError('Could not save the accessibility check.');
+        setColourblindOn(!next);
+        setError('Could not save the accessibility setting.');
       }
     });
   }
@@ -108,10 +113,15 @@ export function PreSessionChecklist({
       data-testid="presession-fullbody"
       className="mb-6 rounded-2xl border border-zinc-200 bg-white p-5"
     >
-      <header className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-[20px] leading-tight text-zinc-900">Before you start</h2>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="font-serif text-[20px] leading-tight text-zinc-900">Before you start</h2>
+          <p className="mt-1 text-xs text-zinc-500">
+            Quick prep before you run the session with your group.
+          </p>
+        </div>
         {readyToStart && (
-          <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-medium text-emerald-800 ring-1 ring-emerald-200">
+          <span className="inline-flex shrink-0 items-center rounded-full bg-emerald-50 px-3 py-1 text-[12px] font-medium text-emerald-800 ring-1 ring-emerald-200">
             Ready to start
           </span>
         )}
@@ -160,7 +170,7 @@ export function PreSessionChecklist({
                   className={`inline-flex h-8 items-center rounded-lg px-3 text-[12px] font-medium transition-colors ${
                     s.scenarioId
                       ? 'text-zinc-600 ring-1 ring-zinc-200 hover:bg-zinc-900/5'
-                      : 'bg-[#c0613d] text-white hover:bg-[#a85432]'
+                      : 'bg-[#a8482a] text-white hover:bg-[#a85432]'
                   }`}
                 >
                   {s.scenarioId ? 'Change' : 'Pick a scenario'}
@@ -185,7 +195,7 @@ export function PreSessionChecklist({
                 onChange={(e) => toggleRecording(e.target.checked)}
                 disabled={pending}
                 aria-label="Confirm recording consent"
-                className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-[#c0613d] focus:ring-[#c0613d]"
+                className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-[#a8482a] focus:ring-[#a8482a]"
               />
               Consent confirmed
             </label>
@@ -200,34 +210,47 @@ export function PreSessionChecklist({
 
         <ChecklistRow
           testid="checklist-item-a11y"
-          title="Review accessibility"
-          status={a11yDone}
+          title="Accessibility for the pieces"
+          status={colourblindDone}
           expanded={expanded === 'a11y'}
           onToggle={() => setExpanded(expanded === 'a11y' ? null : 'a11y')}
           control={
-            <label className="ml-3 inline-flex cursor-pointer items-center gap-2 text-[12px] text-zinc-700">
-              <input
-                type="checkbox"
-                checked={a11yReviewed}
-                onChange={(e) => toggleA11y(e.target.checked)}
+            <div className="ml-3 inline-flex items-center gap-2">
+              <span className="text-[12px] text-zinc-600">{colourblindOn ? 'On' : 'Off'}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={colourblindOn}
+                aria-label="Accessibility for the pieces"
                 disabled={pending}
-                aria-label="Review accessibility"
-                className="h-4 w-4 cursor-pointer rounded border-zinc-300 text-[#c0613d] focus:ring-[#c0613d]"
-              />
-              I have reviewed
-            </label>
+                onClick={() => toggleColourblind(!colourblindOn)}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                  colourblindOn ? 'bg-[#a8482a]' : 'bg-zinc-300'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                    colourblindOn ? 'translate-x-[1.375rem]' : 'translate-x-0.5'
+                  }`}
+                />
+              </button>
+            </div>
           }
         >
           <p className="text-[12px] leading-relaxed text-zinc-600">
-            Check your{' '}
+            Turn this on to show distinct patterns on top of each brick (diagonal stripes, dots,
+            cross-hatch, and so on), so pieces are distinguishable by pattern as well as colour for{' '}
+            <strong className="font-medium text-zinc-700">everyone in this session</strong>.
+            Participants can still switch the overlays off on their own canvas, and anyone can set a
+            personal default in their{' '}
             <Link
               href="/app/account#a11y"
-              className="text-[#c0613d] underline-offset-2 hover:underline"
+              className="text-[#a8482a] underline-offset-2 hover:underline"
             >
               accessibility preferences
-            </Link>{' '}
-            before the workshop. Colourblind mode is available now; captions and timer pacing arrive
-            with Phase 2.
+            </Link>
+            .
           </p>
         </ChecklistRow>
       </ul>

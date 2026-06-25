@@ -1,9 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 
 // Facilitator-only roster surface (Spec A, Task 7). Companion to the
 // participant-side join surface (join-actions.ts). All four actions gate
@@ -371,16 +373,6 @@ async function resolveProfileName(
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const INVITE_CAP = 25;
 
-function getSiteUrl(): string {
-  // Mirrors orgs/actions.ts' redirect resolution but we don't have access
-  // to next/headers in this surface (the caller is a server action, but
-  // the spec asks for a single env-driven URL so the email link survives
-  // regardless of which host the facilitator was on). Fall through to the
-  // production hostname so a misconfigured local dev environment doesn't
-  // ship a literal `localhost` link.
-  return process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.brickthink.io';
-}
-
 /** Per-email outcome surfaced back to the caller for inline status display. */
 export type InviteStatus =
   | 'sent_invite'
@@ -458,7 +450,8 @@ export async function inviteParticipantsByEmailAction(
   // opens the email in a different browser than the facilitator that sent
   // it (always the case for cross-user invites). next= lands them on the
   // join page after verifyOtp succeeds.
-  const confirmRedirect = `${getSiteUrl()}/auth/confirm?next=${encodeURIComponent(
+  const origin = publicOriginFromHeaders(await headers());
+  const confirmRedirect = `${origin}/auth/confirm?next=${encodeURIComponent(
     `/app/join/${session.join_code}`,
   )}`;
 

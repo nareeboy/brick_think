@@ -70,14 +70,16 @@ export function StartModelSpotlight() {
   }, [pathname, router, searchParams]);
 
   const advance = useCallback(() => {
-    setStepIndex((i) => {
-      if (i + 1 >= STEPS.length) {
-        finish();
-        return i;
-      }
-      return i + 1;
-    });
-  }, [finish]);
+    // Keep the state updater pure: decide finish-vs-advance from the current
+    // stepIndex and call finish() directly. Calling finish() inside the
+    // setStepIndex updater ran router.replace() during render (React's
+    // "setState while rendering a different component" warning).
+    if (stepIndex + 1 >= STEPS.length) {
+      finish();
+    } else {
+      setStepIndex((i) => i + 1);
+    }
+  }, [stepIndex, finish]);
 
   useEffect(() => {
     if (!active) return;
@@ -175,7 +177,7 @@ export function StartModelSpotlight() {
             type="button"
             onClick={advance}
             data-testid="start-model-spotlight-next"
-            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+            className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
           >
             {isLast ? 'Got it' : 'Next'}
           </button>

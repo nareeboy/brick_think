@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { ArrowRight, MarketingShell } from '@/components/marketing/MarketingChrome';
 import { listOpenRoles } from '@/lib/careers/queries';
 import type { RoleListItem } from '@/lib/careers/types';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Careers',
   description: 'Open roles at BrickThink — help us build LEGO® SERIOUS PLAY® for remote teams.',
-};
+  path: '/careers',
+});
 
 export default async function CareersPage() {
   const roles = await listOpenRoles();
@@ -20,13 +22,13 @@ export default async function CareersPage() {
       <section className="border-b border-zinc-900/5">
         <div className="mx-auto max-w-7xl px-6 pb-16 pt-20 md:pb-20 md:pt-28">
           <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 backdrop-blur">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
             Careers
           </div>
           <h1 className="mt-6 font-display text-[44px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 sm:text-[58px] md:text-[72px]">
             Build the workshop,
             <br />
-            <span className="text-[#c0613d]">brick by brick</span>.
+            <span className="text-[#a8482a]">brick by brick</span>.
           </h1>
           <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-zinc-700">
             We&apos;re a small team making LEGO® SERIOUS PLAY® work for distributed groups. Open
@@ -68,7 +70,7 @@ function RoleRow({ role }: { role: RoleListItem }) {
               {role.employmentType}
             </span>
           ) : null}
-          <ArrowRight className="text-[#c0613d] transition-transform group-hover:translate-x-0.5" />
+          <ArrowRight className="text-[#a8482a] transition-transform group-hover:translate-x-0.5" />
         </div>
       </Link>
     </li>

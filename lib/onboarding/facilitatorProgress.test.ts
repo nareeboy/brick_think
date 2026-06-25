@@ -30,7 +30,7 @@ function fakeClient(resultsByTable: Record<string, unknown>) {
 describe('computeFacilitatorChecklistProgress', () => {
   it('uses provided orgIds and skips the membership query', async () => {
     const { client, tablesQueried } = fakeClient({
-      sessions: { data: [{ id: 's1' }], error: null },
+      sessions: { data: [{ id: 's1' }], count: 3, error: null },
       models: { data: null, count: 2, error: null },
     });
 
@@ -45,6 +45,9 @@ describe('computeFacilitatorChecklistProgress', () => {
       hasOwnedSessionDesign: true,
       firstOrgId: 'o1',
       firstSessionId: 's1',
+      orgCount: 1,
+      sessionCount: 3,
+      ownedSessionDesignCount: 2,
     });
     expect(tablesQueried).not.toContain('org_memberships');
   });
@@ -65,6 +68,9 @@ describe('computeFacilitatorChecklistProgress', () => {
       hasOwnedSessionDesign: false,
       firstOrgId: null,
       firstSessionId: null,
+      orgCount: 0,
+      sessionCount: 0,
+      ownedSessionDesignCount: 0,
     });
     expect(tablesQueried).not.toContain('sessions');
   });

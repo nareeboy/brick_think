@@ -11,7 +11,7 @@ export function UneedBadge({ className = '' }: { className?: string }) {
       href={UNEED_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${className}`}
+      className={`inline-flex rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${className}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

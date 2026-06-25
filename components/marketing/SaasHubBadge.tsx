@@ -2,7 +2,8 @@
 // /public) as a link — a plain <img>, matching the other marketing badges.
 // Used in both the hero "As seen on" bar and the footer wall.
 
-const SAASHUB_URL = 'https://www.saashub.com/brickthink';
+const SAASHUB_URL =
+  'https://www.saashub.com/brickthink-io?utm_source=badge&utm_campaign=badge&utm_content=brickthink-io&badge_variant=color&badge_kind=approved';
 
 export function SaasHubBadge({ className = '' }: { className?: string }) {
   return (
@@ -10,14 +11,14 @@ export function SaasHubBadge({ className = '' }: { className?: string }) {
       href={SAASHUB_URL}
       target="_blank"
       rel="noopener noreferrer"
-      className={`inline-flex rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c0613d] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${className}`}
+      className={`inline-flex rounded-md transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${className}`}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/saashub.png"
-        alt="BrickThink on SaaSHub"
-        width={602}
-        height={178}
+        src="/saashub-approved.png"
+        alt="BrickThink.io badge"
+        width={300}
+        height={100}
         loading="lazy"
         decoding="async"
         className="h-12 w-auto"

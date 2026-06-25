@@ -4,10 +4,8 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import { getServerAnthropicClient } from '@/lib/integrations/anthropic';
-import { cleanupTranscript } from '@/lib/sessions/narrationCleanup';
 import type { NarrationCleanupStatus } from '@/lib/sessions/modelNarration';
-import { subscriptionTier, hasTierRank } from '@/lib/billing/entitlements';
+import { cleanupNarration } from '@/lib/premium/server';
 
 // ~4000 words (~20 min of speech). Haiku's max_tokens (2048) comfortably
 // covers cleaning a transcript of this size; longer input is truncated.
@@ -89,22 +87,13 @@ export async function saveNarration(
     facilitatorId = sessRes.data?.facilitator_id ?? null;
   }
 
-  // Live cleanup runs before any finished session/report exists, so it requires a
-  // SUBSCRIPTION (per-session unlocks don't apply here). No sub → skip, keep raw text.
-  const subTier = facilitatorId ? await subscriptionTier(facilitatorId) : null;
-  if (facilitatorId && hasTierRank(subTier, 'session_report')) {
-    const anthropic = getServerAnthropicClient();
-    if (anthropic.ok) {
-      const result = await cleanupTranscript(anthropic.client, trimmed);
-      if (result.ok) {
-        transcript = result.text;
-        cleaned = true;
-        cleanupStatus = 'succeeded';
-      } else {
-        cleanupStatus = 'failed';
-      }
-    }
-  }
+  // Cleanup is a premium overlay concern. The hook decides internally whether the
+  // facilitator is entitled (subscription tier) and whether a key is configured;
+  // on the open core it is a no-op pass-through, so this degrades to raw text.
+  const outcome = await cleanupNarration(trimmed, { facilitatorId });
+  transcript = outcome.text;
+  cleaned = outcome.cleaned;
+  cleanupStatus = outcome.status;
 
   const upsert = await svc.from('model_narrations').upsert(
     {

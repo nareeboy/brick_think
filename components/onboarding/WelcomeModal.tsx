@@ -74,7 +74,7 @@ export function WelcomeModal() {
               <li key={step.n} className="flex gap-4">
                 <span
                   aria-hidden="true"
-                  className="select-none font-display text-[26px] font-medium leading-none tracking-[-0.02em] text-[#c0613d]/35"
+                  className="select-none font-display text-[26px] font-medium leading-none tracking-[-0.02em] text-[#a8482a]/35"
                 >
                   {step.n}
                 </span>
@@ -100,7 +100,7 @@ export function WelcomeModal() {
               onClick={dismissAndScroll}
               ref={ctaRef}
               data-testid="onboarding-welcome-cta"
-              className="group inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#c0613d] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+              className="group inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
             >
               Show me how
               <span
@@ -128,7 +128,7 @@ export function WelcomeModal() {
  * narrow viewports where the split layout collapses to a single column.
  */
 function NestingVisual() {
-  const brickColours = ['#c0613d', '#d8d3cd', '#5f7d72', '#d8d3cd', '#c0613d', '#cbb9ad'];
+  const brickColours = ['#a8482a', '#d8d3cd', '#5f7d72', '#d8d3cd', '#a8482a', '#cbb9ad'];
 
   return (
     <div
@@ -173,12 +173,12 @@ function Frame({
     <div
       className={`rounded-xl border p-3 backdrop-blur-[1px] ${
         innermost
-          ? 'border-[#c0613d]/30 shadow-[0_8px_20px_-12px_rgba(150,70,40,0.45)]'
-          : 'border-[#c0613d]/15'
+          ? 'border-[#a8482a]/30 shadow-[0_8px_20px_-12px_rgba(150,70,40,0.45)]'
+          : 'border-[#a8482a]/15'
       } ${tint}`}
     >
       <div className="mb-2.5 flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
         <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#9a4a2c]">
           {label}
         </span>

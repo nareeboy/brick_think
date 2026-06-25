@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 import { dispatchOrgAddedNotification, resolveActorDisplay } from '@/lib/notifications/dispatch';
 import { isValidSlug } from '@/lib/orgs/slug';
 
@@ -166,12 +167,8 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
   // /auth/confirm so the invite email's token_hash works even when the
   // invitee opens it in a different browser than the one the inviter is on
   // (which is always the case for cross-user invites). See app/auth/confirm.
-  const h = await headers();
-  const proto = h.get('x-forwarded-proto') ?? 'http';
-  const host = h.get('host') ?? 'localhost:3000';
-  const redirectTo = `${proto}://${host}/auth/confirm?next=${encodeURIComponent(
-    `/app/workshops/${orgId}`,
-  )}`;
+  const origin = publicOriginFromHeaders(await headers());
+  const redirectTo = `${origin}/auth/confirm?next=${encodeURIComponent(`/app/workshops/${orgId}`)}`;
 
   const inviteRes = await service.auth.admin.inviteUserByEmail(trimmed, { redirectTo });
   if (inviteRes.error) {

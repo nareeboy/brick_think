@@ -209,7 +209,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleInputKeyDown}
             placeholder={emails.length === 0 ? 'Enter email addresses...' : ''}
-            className="flex-1 bg-white px-2 py-1 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-400 focus:outline-none"
+            className="flex-1 bg-white px-2 py-1 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-500 focus:outline-none"
             autoComplete="off"
           />
         </div>
@@ -219,7 +219,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
           type="button"
           onClick={handleSendInvites}
           disabled={emails.length === 0 || pending}
-          className="h-9 w-full cursor-pointer rounded-lg bg-[#c0613d] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-9 w-full cursor-pointer rounded-lg bg-[#a8482a] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? 'Sending…' : 'Send invites'}
         </button>

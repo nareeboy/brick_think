@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
-export const metadata: Metadata = {
-  title: 'Terms & Conditions · BrickThink',
+import { pageMetadata } from '@/lib/seo/metadata';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'Terms & Conditions',
   description:
     'The terms and conditions governing access to and use of the BrickThink website and platform.',
-};
+  path: '/terms',
+});
 
 const LAST_UPDATED = '15 May 2026';
 
@@ -717,7 +720,10 @@ function TableOfContents({ ariaLabel }: { ariaLabel: string }) {
             <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-500">
               {String(i + 1).padStart(2, '0')}
             </span>
-            <a href={`#${slug(s)}`} className="transition-colors hover:text-zinc-950">
+            <a
+              href={`#${slug(s)}`}
+              className="inline-flex min-h-[24px] items-center transition-colors hover:text-zinc-950"
+            >
               {s}
             </a>
           </li>
@@ -747,7 +753,10 @@ function MobileTOC() {
             <span className="w-5 shrink-0 font-mono text-[10px] tabular-nums text-zinc-500">
               {String(i + 1).padStart(2, '0')}
             </span>
-            <a href={`#${slug(s)}`} className="hover:text-zinc-950">
+            <a
+              href={`#${slug(s)}`}
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-950"
+            >
               {s}
             </a>
           </li>
@@ -818,7 +827,7 @@ function LegalFooterNav() {
 
 function BrickGlyph() {
   return (
-    <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#c0613d] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18),0_2px_0_rgba(255,255,255,0.4)_inset]">
+    <span className="relative inline-flex h-7 w-7 items-center justify-center rounded-md bg-[#a8482a] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.18),0_2px_0_rgba(255,255,255,0.4)_inset]">
       <span className="absolute left-1/2 top-1.5 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-black/20" />
       <span className="absolute right-1/4 top-1.5 h-1.5 w-1.5 translate-x-1/2 rounded-full bg-black/20" />
     </span>

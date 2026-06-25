@@ -24,6 +24,7 @@
 //   app/careers/[slug]/page.tsx
 
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import { expect, test } from '@playwright/test';
 
@@ -32,6 +33,9 @@ const ROLE_SLUG = `e2e-engineer-${Date.now()}`;
 const ROLE_TITLE = 'E2E Test Engineer';
 const SEED_URL = '/api/test/seed-careers-role';
 
+// `__dirname` is undefined in ESM (repo is "type": "module"); derive it from the
+// module URL — same pattern as account-avatar.spec.ts.
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CV_FIXTURE = path.join(__dirname, 'fixtures', 'sample-cv.pdf');
 
 test.describe('careers public application flow', () => {

@@ -47,7 +47,7 @@ export function RichTextEditor({
   });
 
   return (
-    <div className="rounded-md border border-zinc-300 bg-white focus-within:border-[#c0613d] focus-within:ring-1 focus-within:ring-[#c0613d]">
+    <div className="rounded-md border border-zinc-300 bg-white focus-within:border-[#a8482a] focus-within:ring-1 focus-within:ring-[#a8482a]">
       <Toolbar editor={editor} />
       <EditorContent editor={editor} />
       <input type="hidden" name={name} value={html} />
@@ -155,7 +155,7 @@ function Btn({
       aria-pressed={active}
       onClick={onClick}
       className={`cursor-pointer rounded px-2 py-1 text-xs transition-colors ${
-        active ? 'bg-[#c0613d]/10 text-[#c0613d]' : 'text-zinc-700 hover:bg-zinc-900/5'
+        active ? 'bg-[#a8482a]/10 text-[#a8482a]' : 'text-zinc-700 hover:bg-zinc-900/5'
       } ${bold ? 'font-bold' : ''} ${italic ? 'italic' : ''}`}
     >
       {label}

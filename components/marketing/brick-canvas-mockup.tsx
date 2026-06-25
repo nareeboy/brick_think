@@ -14,15 +14,15 @@ const BRICK_FILL_VAR = '--brick-fill';
 const TILES: Tile[] = [
   { id: 'a', brick: 'plate-2x6', fill: '#d8a85d', col: 1, row: 8, w: 6, h: 1 },
   { id: 'b', brick: 'plate-2x4', fill: '#8a9a78', col: 7, row: 8, w: 4, h: 1 },
-  { id: 'c', brick: 'brick-2x4', fill: '#c0613d', col: 2, row: 5, w: 4, h: 2 },
+  { id: 'c', brick: 'brick-2x4', fill: '#a8482a', col: 2, row: 5, w: 4, h: 2 },
   { id: 'd', brick: 'brick-1x2', fill: '#3b6f8a', col: 6, row: 5, w: 2, h: 2 },
   { id: 'e', brick: 'brick-2x2', fill: '#5b3a8a', col: 8, row: 5, w: 2, h: 2 },
   { id: 'f', brick: 'brick-1x4', fill: '#1f1f1f', col: 3, row: 3, w: 4, h: 1 },
   { id: 'g', brick: 'plate-1x2', fill: '#d8a85d', col: 7, row: 3, w: 2, h: 1 },
-  { id: 'h', brick: 'antenna-1x1', fill: '#c0613d', col: 4, row: 2, w: 1, h: 1 },
+  { id: 'h', brick: 'antenna-1x1', fill: '#a8482a', col: 4, row: 2, w: 1, h: 1 },
 ];
 
-const PALETTE = ['#c0613d', '#d8a85d', '#3b6f8a', '#8a9a78', '#1f1f1f', '#e8d9b8'];
+const PALETTE = ['#a8482a', '#d8a85d', '#3b6f8a', '#8a9a78', '#1f1f1f', '#e8d9b8'];
 
 export function BrickCanvasMockup() {
   return (
@@ -41,7 +41,7 @@ export function BrickCanvasMockup() {
           </span>
         </div>
         <div className="flex items-center gap-2 font-mono text-[10px] tabular-nums text-zinc-500">
-          <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-[#c0613d]" />
+          <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-[#a8482a]" />
           <span>17:42 remaining</span>
         </div>
       </div>
@@ -128,10 +128,10 @@ export function BrickCanvasMockup() {
               </span>
             </div>
             <div className="pointer-events-none absolute left-[20%] top-[72%] flex items-center gap-1.5">
-              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="#c0613d">
+              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="#a8482a">
                 <path d="M2 2 L14 8 L8 9 L7 14 Z" />
               </svg>
-              <span className="rounded-md bg-[#c0613d] px-1.5 py-0.5 font-mono text-[9px] font-medium text-white shadow">
+              <span className="rounded-md bg-[#a8482a] px-1.5 py-0.5 font-mono text-[9px] font-medium text-white shadow">
                 Idris
               </span>
             </div>
@@ -162,7 +162,7 @@ export function BrickCanvasMockup() {
             <div
               key={label}
               className={`flex items-center justify-center border-r border-zinc-200/70 px-2 py-2 last:border-r-0 ${
-                active ? 'bg-[#c0613d] text-white' : ''
+                active ? 'bg-[#a8482a] text-white' : ''
               }`}
             >
               <span className="tabular-nums">0{i + 1}</span>

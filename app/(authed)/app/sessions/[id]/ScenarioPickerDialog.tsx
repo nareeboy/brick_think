@@ -71,7 +71,7 @@ export function ScenarioPickerDialog({
                   key={s.id}
                   className={`rounded-2xl border p-4 ${
                     s.id === currentScenarioId
-                      ? 'border-[#c0613d] bg-[#c0613d]/5'
+                      ? 'border-[#a8482a] bg-[#a8482a]/5'
                       : 'border-zinc-200 bg-white'
                   }`}
                 >
@@ -98,7 +98,7 @@ export function ScenarioPickerDialog({
                       onClick={() => pick(s.id)}
                       disabled={pending}
                       data-testid="scenario-picker-confirm"
-                      className="inline-flex h-9 shrink-0 items-center rounded-xl bg-[#c0613d] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#a85432] disabled:opacity-50"
+                      className="inline-flex h-9 shrink-0 items-center rounded-xl bg-[#a8482a] px-3 text-[12px] font-medium text-white transition-colors hover:bg-[#a85432] disabled:opacity-50"
                     >
                       {s.id === currentScenarioId ? 'Selected' : 'Pick'}
                     </button>

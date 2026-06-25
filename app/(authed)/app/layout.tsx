@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 
@@ -10,6 +11,12 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
 export const dynamic = 'force-dynamic';
+
+// The authed product is private; keep it out of search indexes entirely
+// (belt-and-suspenders with the /app/ disallow in robots.ts).
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AuthedAppLayout({ children }: { children: ReactNode }) {
   if (!isSupabaseConfigured()) {

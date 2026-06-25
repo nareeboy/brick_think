@@ -29,7 +29,7 @@ export function ContributionCard() {
             href={GITHUB_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#c0613d] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+            className="inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-xl bg-[#a8482a] px-3 text-[12px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
           >
             <GitHubGlyph className="h-3.5 w-3.5" />
             Star on GitHub

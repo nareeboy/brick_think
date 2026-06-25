@@ -200,7 +200,7 @@ body {
   color: #27272a;
 }
 .article-prose a {
-  color: #c0613d;
+  color: #a8482a;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
@@ -230,7 +230,7 @@ body {
   line-height: 1.4;
   color: #18181b;
   padding-left: 1.25rem;
-  border-left: 2px solid #c0613d;
+  border-left: 2px solid #a8482a;
 }
 .article-prose code {
   font-family: var(--font-mono);

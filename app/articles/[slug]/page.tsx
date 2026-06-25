@@ -6,9 +6,11 @@ import { ArticleAuthorByline } from '@/components/articles/ArticleAuthorByline';
 import { ArticleProse } from '@/components/articles/ArticleProse';
 import { CoverCreditLine } from '@/components/articles/CoverCreditLine';
 import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/MarketingChrome';
+import { JsonLd } from '@/components/seo/JsonLd';
 import { formatPublishedDate, isoDate, readingMinutes } from '@/lib/articles/format';
 import { getPublishedArticleBySlug } from '@/lib/articles/queries';
 import type { CoverCredit } from '@/lib/articles/types';
+import { articleSchema } from '@/lib/seo/jsonLd';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: article.title,
     description: article.excerpt ?? undefined,
+    alternates: { canonical: `/articles/${article.slug}` },
     openGraph: {
       title: article.title,
       description: article.excerpt ?? undefined,
@@ -49,6 +52,16 @@ export default async function ArticleDetailPage({ params }: PageProps) {
 
   return (
     <MarketingShell>
+      <JsonLd
+        data={articleSchema({
+          slug: article.slug,
+          title: article.title,
+          excerpt: article.excerpt,
+          publishedAt: article.publishedAt,
+          coverImageUrl: article.coverImageUrl,
+          authorName: article.authorName,
+        })}
+      />
       <article>
         <Header article={article} minutes={minutes} />
         {article.coverImageUrl ? (
@@ -81,7 +94,7 @@ function Header({ article, minutes }: { article: HeaderArticle; minutes: number 
       <div className="mx-auto max-w-7xl px-6 pb-12 pt-16 md:pb-16 md:pt-24">
         <Link
           href="/articles"
-          className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-600 transition-colors hover:text-[#c0613d]"
+          className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-600 transition-colors hover:text-[#a8482a]"
         >
           <ArrowRight className="h-3 w-3 rotate-180" />
           All articles
@@ -89,7 +102,7 @@ function Header({ article, minutes }: { article: HeaderArticle; minutes: number 
         <div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-12 md:items-end md:gap-12">
           <div className="md:col-span-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-zinc-900/10 bg-white/70 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-700 backdrop-blur">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
               Article
             </div>
             <h1 className="mt-6 font-display text-[40px] font-medium leading-[1.05] tracking-[-0.02em] text-zinc-950 sm:text-[52px] md:text-[68px]">
@@ -182,7 +195,7 @@ function Outro() {
           </div>
           <div className="relative max-w-xl">
             <div className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#c0613d]" />
+              <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
               Keep going
             </div>
             <h2 className="mt-4 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[48px]">

@@ -11,6 +11,15 @@ name: DB migrate
 # re-runs `supabase db push` against the same DB (idempotent — already-applied
 # migrations are skipped).
 #
+# PREMIUM OVERLAY: the paid-feature migrations (session_reports, brand_profiles,
+# billing) live in the private @brickthink/premium overlay, not in this repo.
+# Before pushing, we run scripts/bootstrap-premium.mjs, which clones the overlay
+# and copies its supabase/migrations/* into the checkout so the full schema is
+# pushed and remote migration history stays consistent. The step is INERT when
+# PREMIUM_OVERLAY_TOKEN/REPO are unset (self-host forks just push the core
+# migrations). Those 7 migrations are already applied on prod + non-prod, so the
+# push skips them today; the step matters for any FUTURE premium migration.
+#
 # Connection: we push via the project's Session Pooler URL (--db-url), NOT
 # `supabase link` + direct connection. Supabase direct connections
 # (db.<ref>.supabase.co:5432) are IPv6-only, and GitHub-hosted runners have
@@ -22,6 +31,11 @@ name: DB migrate
 # each is a full Session Pooler connection string (port 5432, password embedded):
 #   SUPABASE_DB_URL_NONPROD   pooler URL for fzlyvqcwjadpmrgprfov
 #   SUPABASE_DB_URL_PROD      pooler URL for wreypwrvfpzjyijpyhkb
+# Premium overlay secrets (same fine-grained PAT used on Railway — Contents:read
+# on brick_think-premium):
+#   PREMIUM_OVERLAY_REPO      https://github.com/nareeboy/brick_think-premium.git
+#   PREMIUM_OVERLAY_TOKEN     the read-only PAT
+#   (PREMIUM_OVERLAY_REF defaults to `main` in the script if unset.)
 #
 # The `production` Environment (Settings -> Environments) must have
 # "Required reviewers" enabled — that is the approval gate. Without it the
@@ -43,6 +57,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Apply premium overlay migrations (inert without secrets)
+        run: node scripts/bootstrap-premium.mjs
+        env:
+          PREMIUM_OVERLAY_REPO: ${{ secrets.PREMIUM_OVERLAY_REPO }}
+          PREMIUM_OVERLAY_TOKEN: ${{ secrets.PREMIUM_OVERLAY_TOKEN }}
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -60,6 +82,14 @@ jobs:
     environment: production # approval gate — required reviewers must approve
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Apply premium overlay migrations (inert without secrets)
+        run: node scripts/bootstrap-premium.mjs
+        env:
+          PREMIUM_OVERLAY_REPO: ${{ secrets.PREMIUM_OVERLAY_REPO }}
+          PREMIUM_OVERLAY_TOKEN: ${{ secrets.PREMIUM_OVERLAY_TOKEN }}
       - uses: supabase/setup-cli@v1
         with:
           version: latest

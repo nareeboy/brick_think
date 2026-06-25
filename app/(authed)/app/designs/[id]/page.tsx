@@ -72,12 +72,16 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
 
   let sessionContext: SessionContext | null = null;
   let isSessionFacilitator = false;
+  // The facilitator's session-wide "Accessibility for the pieces" switch
+  // (pre_session_check.colourblind_mode). When on, every viewer of a canvas in
+  // this session gets pattern overlays on by default + an in-canvas opt-out.
+  let sessionColourblindMode = false;
   let scenario: BuilderScenario | null = null;
   if (data.session_id && data.stage_id) {
     const [sessionRes, stageRes] = await Promise.all([
       supabase
         .from('sessions')
-        .select('id, title, facilitator_id')
+        .select('id, title, facilitator_id, pre_session_check')
         .eq('id', data.session_id)
         .maybeSingle(),
       supabase
@@ -93,6 +97,8 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         stageType: stageRes.data.stage_type as StageType,
       };
       isSessionFacilitator = sessionRes.data.facilitator_id === user.id;
+      const preCheck = sessionRes.data.pre_session_check as Record<string, unknown> | null;
+      sessionColourblindMode = preCheck?.colourblind_mode === true;
 
       if (stageRes.data.scenario_id) {
         const scenarioRes = await supabase
@@ -224,6 +230,7 @@ export default async function DesignBuilderPage({ params }: { params: Promise<{ 
         liveMode={liveMode}
         self={self}
         colourblindMode={colourblindMode}
+        sessionColourblindMode={sessionColourblindMode}
         sourceStageLabel={sourceStageLabel}
         alreadyImported={alreadyImported}
         isSessionFacilitator={isSessionFacilitator}
