@@ -3,7 +3,7 @@ import type { NotificationKind } from '@/lib/notifications/types';
 
 /**
  * Maps a notification kind to a redesigned-toast variant. Single source of
- * truth shared by the live <NotificationToast> and the /app/toast-test catalog
+ * truth shared by the live <NotificationToast> and the /app/admin/toast-test catalog
  * so the two never drift. The switch is exhaustive over NotificationKind —
  * adding a kind without a case is a compile error.
  */
