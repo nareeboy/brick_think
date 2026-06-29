@@ -12,12 +12,9 @@ const BASE_LINKS = [
   { href: '/app/scenarios', label: 'Scenarios' },
 ] as const;
 
-// Admin-only links (rendered when showAdmin is true). Toast test is a dev/QA
-// harness, not a user-facing feature, so it lives here rather than in BASE_LINKS.
-const ADMIN_LINKS = [
-  { href: '/app/toast-test', label: 'Toast test' },
-  { href: '/app/admin', label: 'Admin' },
-] as const;
+// Admin-only links (rendered when showAdmin is true). The Toast test harness
+// now lives inside the admin panel under the "UI Elements" nav section.
+const ADMIN_LINKS = [{ href: '/app/admin', label: 'Admin' }] as const;
 
 interface Props {
   showAdmin?: boolean;

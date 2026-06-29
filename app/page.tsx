@@ -5,7 +5,6 @@ import { redirect } from 'next/navigation';
 
 import {
   ArrowRight,
-  ArrowUpRight,
   CtaBricks,
   Footer,
   GITHUB_URL,
@@ -20,9 +19,6 @@ export const metadata: Metadata = pageMetadata({
   description: 'A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®.',
   path: '/',
 });
-
-const LSP_DACH_EVENT_URL =
-  'https://www.linkedin.com/events/2-treffenderlego-seriousplay-co7467623386521821185/';
 
 const STAGES = [
   {
@@ -92,7 +88,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <div className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <NavBar />
-      <EventBanner />
       <main id="main">
         <Hero />
         <MethodologySection />
@@ -104,46 +99,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </main>
       <Footer />
     </div>
-  );
-}
-
-function EventBanner() {
-  return (
-    <aside
-      aria-label="Upcoming live demo"
-      className="relative z-20 border-b border-white/10 bg-[#140d07]"
-    >
-      <a
-        href={LSP_DACH_EVENT_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group block transition-colors hover:bg-white/[0.03]"
-      >
-        <div className="mx-auto flex max-w-7xl flex-col gap-x-5 gap-y-2 px-6 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3 sm:items-center">
-            <span className="mt-px inline-flex shrink-0 items-center gap-2 rounded-full border border-[#a8482a]/40 bg-[#a8482a]/15 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[#e7a282] sm:mt-0">
-              <span className="relative inline-flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#a8482a] opacity-75 motion-reduce:hidden" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
-              </span>
-              Live demo
-            </span>
-            <p className="text-[13.5px] leading-snug text-zinc-300">
-              <span className="font-medium text-white">We&rsquo;re demoing BrickThink</span> at the
-              2nd LEGO&reg; SERIOUS PLAY&reg; Community DACH meetup
-              <span className="text-zinc-400">
-                {' '}
-                &middot; Wed 24 Jun 2026, 19:00&ndash;20:30 CEST &middot; Online
-              </span>
-            </p>
-          </div>
-          <span className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-full bg-white px-4 py-1.5 text-[13px] font-medium text-zinc-950 transition-colors group-hover:bg-zinc-100 sm:self-auto">
-            Reserve your spot
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </span>
-        </div>
-      </a>
-    </aside>
   );
 }
 
