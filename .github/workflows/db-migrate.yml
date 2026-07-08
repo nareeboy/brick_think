@@ -65,7 +65,7 @@ jobs:
         env:
           PREMIUM_OVERLAY_REPO: ${{ secrets.PREMIUM_OVERLAY_REPO }}
           PREMIUM_OVERLAY_TOKEN: ${{ secrets.PREMIUM_OVERLAY_TOKEN }}
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: latest
       - name: Push migrations (via IPv4 session pooler)
@@ -90,7 +90,7 @@ jobs:
         env:
           PREMIUM_OVERLAY_REPO: ${{ secrets.PREMIUM_OVERLAY_REPO }}
           PREMIUM_OVERLAY_TOKEN: ${{ secrets.PREMIUM_OVERLAY_TOKEN }}
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: latest
       - name: Push migrations (via IPv4 session pooler)
