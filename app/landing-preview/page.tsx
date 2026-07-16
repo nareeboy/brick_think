@@ -1,9 +1,13 @@
-// Brand-guideline redesign of the marketing landing page. Review-only test
-// route: noindex, absent from the sitemap allowlist. Once approved, this
-// replaces app/page.tsx and the route is deleted.
+// Brand-guideline redesign of the marketing landing page, iteration 2.
+// Review-only test route: noindex, absent from the sitemap allowlist. Fonts
+// (Instrument Serif display, Manrope body) and the parchment/espresso palette
+// are scoped to this page so the rest of the site is untouched; if approved
+// they move into the global tokens with the promotion to app/page.tsx.
 import type { Metadata } from 'next';
+import { Instrument_Serif, Manrope } from 'next/font/google';
 import Link from 'next/link';
 
+import { HeroVideo } from '@/components/marketing/HeroVideo';
 import {
   ArrowRight,
   Footer,
@@ -12,6 +16,9 @@ import {
   NavBar,
 } from '@/components/marketing/MarketingChrome';
 import { pageMetadata } from '@/lib/seo/metadata';
+
+const instrument = Instrument_Serif({ subsets: ['latin'], weight: '400', display: 'swap' });
+const manrope = Manrope({ subsets: ['latin'], display: 'swap' });
 
 export const metadata: Metadata = {
   ...pageMetadata({
@@ -22,67 +29,78 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Palette, scoped to this preview. Warm throughout per the warm-ground
+// correction: parchment ground, espresso ink, terracotta as the sole accent.
+const INK = '#26150A';
+const PARCHMENT = '#F1E7D6';
+const PAPER = '#FBF5EA';
+const BODY = '#4A3A2E';
+const LABEL = '#6B5645';
+const TERRACOTTA = '#A8482A';
+const ESPRESSO = '#1C1006';
+const HAIRLINE = 'border-[#26150A]/15';
+
 // Named in full per the brand guidelines; labels and default durations match
 // lib/sessions/stage-labels.ts (the product source of truth).
 const STAGES = [
   {
-    n: '01',
+    n: '1',
     name: 'Skill building',
     duration: '15 min',
-    blurb:
-      'Warm-up builds. Participants get fluent with the bricks before the real question arrives.',
+    blurb: 'Loosens hands and heads. Small builds teach the group to say things with bricks.',
   },
   {
-    n: '02',
+    n: '2',
     name: 'Individual model',
     duration: '10 min',
-    blurb: 'Each person answers the challenge with their own build, then narrates what it means.',
+    blurb: 'Everyone builds their own answer to the question. No consensus yet, and no hiding.',
   },
   {
-    n: '03',
+    n: '3',
     name: 'Shared model',
     duration: '30 min',
-    blurb: 'The group merges the individual models into one model everyone can stand behind.',
+    blurb: 'The group combines what matters from each build into one model it can agree on.',
   },
   {
-    n: '04',
+    n: '4',
     name: 'System model',
     duration: '25 min',
-    blurb: 'The shared model is placed in its landscape: agents, connections and outside forces.',
+    blurb:
+      'The agreed model is set in its landscape: the people, forces and connections around it.',
   },
   {
-    n: '05',
+    n: '5',
     name: 'Guiding principles',
     duration: '20 min',
-    blurb: 'The group draws out simple rules, each one anchored to the bricks that prove it.',
+    blurb: 'Simple rules are drawn from the system, each traceable to the bricks behind it.',
   },
 ];
 
 const PLATFORM_ROWS = [
   {
     label: 'Story capture',
-    title: 'The narration is the record.',
-    body: 'Capture text, voice and video against the model itself. Spoken narration is transcribed, so any quote can be found later by person or by stage.',
+    title: 'Narration, kept.',
+    body: 'Text, voice and video are captured against the model itself. Spoken words are transcribed, searchable by person and by stage.',
   },
   {
     label: 'Facilitator tools',
-    title: 'The session runs from one place.',
-    body: 'Pick your stages, invite the group, run the timer, spotlight a build and keep private notes.',
+    title: 'One desk for the facilitator.',
+    body: 'Stages, invitations, timers, spotlights and private notes sit in one place.',
   },
   {
     label: 'Outputs',
-    title: 'Leave with a record, not a screenshot.',
-    body: 'Export a PDF report or save each stage as an image. The whole session comes with you.',
+    title: 'The session leaves with you.',
+    body: 'Export the report as a PDF and save any stage as an image. No lock-in.',
   },
   {
     label: 'Accessibility',
-    title: 'Built to WCAG 2.2 AA.',
-    body: 'Keyboard operation throughout, screen readers name every brick, motion stops when a participant asks, and brick colours carry patterns for colour-blind participants.',
+    title: 'Accessible by design.',
+    body: 'Built to WCAG 2.2 AA: keyboard operation throughout, screen readers that name every brick, motion that stops on request, and patterns behind every brick colour.',
   },
   {
     label: 'AI assist',
-    title: 'Prompts and themes, on your approval.',
-    body: 'Build prompts from a topic, themes across narrations, draft principles from the system model. Nothing reaches the room until you say yes.',
+    title: 'Suggestions wait for a yes.',
+    body: 'Build prompts, narration themes and draft principles are prepared for the facilitator. Nothing reaches participants until approved.',
     status: 'On the roadmap',
   },
 ];
@@ -95,7 +113,10 @@ const REPORT_PRICES = [
 
 export default function LandingPreviewPage() {
   return (
-    <div className="min-h-[100dvh] bg-[#FAF7F1] text-stone-900">
+    <div
+      className={`${manrope.className} min-h-[100dvh]`}
+      style={{ backgroundColor: PARCHMENT, color: INK }}
+    >
       <NavBar />
       <main id="main">
         <Hero />
@@ -111,176 +132,142 @@ export default function LandingPreviewPage() {
 
 function Hero() {
   return (
-    <section className="relative isolate overflow-hidden">
-      {/* warm terracotta tint over the cream ground, top-left */}
+    <section className="relative isolate overflow-hidden" style={{ backgroundColor: ESPRESSO }}>
+      {/* playback is JS-gated on prefers-reduced-motion and carries a visible,
+          keyboard-focusable pause control, per the quiet-motion correction */}
+      <HeroVideo
+        src="/lego-video.mp4"
+        className="absolute inset-0 -z-20 h-full w-full object-cover"
+      />
+      {/* warm espresso overlay: solid at the top, dissolving toward the base */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_12%_0%,rgba(192,97,61,0.12),transparent_55%)]"
+        className="absolute inset-0 -z-10 bg-gradient-to-b from-[#1C1006]/85 via-[#1C1006]/55 via-50% to-[#1C1006]/20"
       />
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-12 px-6 pb-20 pt-16 md:grid-cols-12 md:items-center md:gap-10 md:pb-28 md:pt-24">
-        <div className="md:col-span-7">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-stone-500">
-            Remote LEGO&reg; SERIOUS PLAY&reg; workshops
+      {/* left-side deepening for headline legibility */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(28,16,6,0.65),rgba(28,16,6,0.3)_50%,transparent_80%)]"
+      />
+      {/* terracotta wash, upper left, tying the video to the palette */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_15%_10%,rgba(168,72,42,0.35),transparent_60%)]"
+      />
+      {/* long fade into the parchment ground below */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-56 bg-gradient-to-b from-transparent via-[#F1E7D6]/60 to-[#F1E7D6]"
+      />
+      <div className="relative mx-auto grid min-h-[92dvh] max-w-7xl grid-cols-1 items-center px-6 pb-40 pt-20 md:grid-cols-12 md:gap-10 md:pb-48 md:pt-24">
+        <div className="md:col-span-9 lg:col-span-8">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#E8B39B]">
+            Online LEGO&reg; SERIOUS PLAY&reg; workshops
           </p>
 
-          <h1 className="mt-6 font-display text-[42px] font-medium leading-[1.02] tracking-[-0.02em] text-stone-950 sm:text-[54px] md:text-[68px]">
-            Run the full five-stage method with a team that is not in one room.
+          <h1
+            className={`${instrument.className} mt-6 text-[52px] leading-[1.0] tracking-[-0.01em] text-[#F7EFE2] sm:text-[68px] md:text-[88px]`}
+          >
+            The team builds its answer, one brick at a time.
           </h1>
 
-          <p className="mt-7 max-w-[58ch] text-[17px] leading-relaxed text-stone-700">
-            BrickThink gives every participant a set of 57 digital bricks on one shared canvas.
-            People build, narrate what their build means, and move through the five stages in order:
-            skill building, individual model, shared model, system model, guiding principles. It
-            complements in-person delivery. It does not replace it.
+          <p className="mt-7 max-w-[56ch] text-[17px] leading-relaxed text-[#EADFCE]">
+            BrickThink runs the five-stage method on a live shared canvas: skill building,
+            individual model, shared model, system model, guiding principles, in order. Every
+            participant gets the same 57 bricks. Every model gets narrated. Remote sessions
+            complement in-person delivery; they do not replace it.
           </p>
 
-          <div className="mt-9">
+          <div className="mt-10">
             <Link
               href="/sign-in"
-              className="group inline-flex items-center gap-2 rounded-full bg-stone-950 px-6 py-3.5 text-sm font-medium text-[#FAF7F1] transition-colors hover:bg-stone-800 active:translate-y-[1px]"
+              className="inline-flex items-center gap-2.5 rounded-full bg-[#A8482A] px-7 py-4 text-[15px] font-semibold text-[#FBF5EA] transition-colors hover:bg-[#8F3B21] active:translate-y-[1px]"
             >
               Run a workshop
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <dl className="mt-14 grid max-w-xl grid-cols-3 gap-x-6 border-t border-stone-900/10 pt-6">
+          <dl className="mt-14 grid max-w-xl grid-cols-3 gap-x-6 border-t border-white/20 pt-6">
             {[
-              ['57 bricks', 'in the digital set'],
+              ['57 bricks', 'one set for everyone'],
               ['20 templates', 'scenario library'],
               ['Apache 2.0', 'free to self-host'],
             ].map(([val, label]) => (
               <div key={label}>
-                <dt className="font-mono text-[10px] uppercase tracking-[0.16em] text-stone-500">
+                <dt className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D9C9B4]">
                   {label}
                 </dt>
-                <dd className="mt-1 text-[15px] font-medium text-stone-900">{val}</dd>
+                <dd className="mt-1 text-[15px] font-semibold text-[#F7EFE2]">{val}</dd>
               </div>
             ))}
           </dl>
-        </div>
-
-        <div className="md:col-span-5">
-          <HeroCanvas />
         </div>
       </div>
     </section>
   );
 }
 
-// Product-surface imagery: the canvas with bricks, not people. Organic brick
-// placement over a rigid grid substrate, per the structured/freeform rule.
-const HERO_BRICKS = [
-  {
-    src: '/bricks/flat-1-black-large-left.png',
-    left: '12%',
-    top: '58%',
-    width: '46%',
-    ratio: 300 / 190,
-  },
-  {
-    src: '/bricks/block-red-medium-left.png',
-    left: '18%',
-    top: '42%',
-    width: '25%',
-    ratio: 180 / 156,
-  },
-  {
-    src: '/bricks/block-yellow-medium.png',
-    left: '40%',
-    top: '34%',
-    width: '25%',
-    ratio: 180 / 156,
-  },
-  {
-    src: '/bricks/block-navy-medium-left.png',
-    left: '58%',
-    top: '50%',
-    width: '25%',
-    ratio: 180 / 156,
-  },
-  { src: '/bricks/piece-head.png', left: '66%', top: '14%', width: '16%', ratio: 150 / 161 },
-  { src: '/bricks/piece-body.png', left: '66%', top: '29%', width: '16%', ratio: 150 / 158 },
-  { src: '/bricks/flower-pink-small.png', left: '18%', top: '18%', width: '13%', ratio: 100 / 94 },
-];
-
-function HeroCanvas() {
-  return (
-    <div
-      className="relative aspect-[4/5] w-full overflow-hidden rounded-[28px] border border-stone-900/10 bg-[#FDFAF4] shadow-[0_30px_60px_-40px_rgba(60,30,15,0.35)] sm:aspect-[5/4] md:aspect-[4/5]"
-      style={{
-        backgroundImage:
-          'linear-gradient(to right, rgba(60,30,15,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(60,30,15,0.05) 1px, transparent 1px)',
-        backgroundSize: '28px 28px',
-      }}
-      aria-hidden="true"
-    >
-      {HERO_BRICKS.map((b) => (
-        <span
-          key={b.src}
-          className="absolute drop-shadow-[0_6px_10px_rgba(60,30,15,0.18)]"
-          style={{
-            left: b.left,
-            top: b.top,
-            width: b.width,
-            aspectRatio: b.ratio,
-            backgroundImage: `url(${b.src})`,
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-          }}
-        />
-      ))}
-      <div className="absolute left-4 top-4 rounded-full border border-stone-900/10 bg-white/80 px-3 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-stone-600">
-        Shared model · stage 03
-      </div>
-    </div>
-  );
-}
-
 function MethodSection() {
   return (
-    <section aria-labelledby="method-heading" className="border-t border-stone-900/10">
+    <section aria-labelledby="method-heading">
       <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
-          <div className="md:col-span-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-stone-500">
-              The five stages
-            </p>
-            <h2
-              id="method-heading"
-              className="mt-3 font-display text-[32px] font-medium leading-[1.05] tracking-[-0.015em] text-stone-950 md:text-[42px]"
-            >
-              Five stages, in the order the method sets.
-            </h2>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-600">
-              Run all five, or one stage as a focused exercise. The order, the rules and the default
-              timings follow the method as it is taught. The method itself is open under CC BY-SA
-              3.0.
-            </p>
-          </div>
-          <ol className="md:col-span-8">
-            {STAGES.map((s, i) => (
-              <li
-                key={s.n}
-                className={`grid grid-cols-12 items-baseline gap-6 border-t py-6 ${
-                  i === STAGES.length - 1 ? 'border-b' : ''
-                } border-stone-900/10`}
-              >
-                <span className="col-span-2 font-mono text-[12px] tabular-nums text-stone-500 md:col-span-1">
-                  {s.n}
-                </span>
-                <div className="col-span-10 md:col-span-7">
-                  <p className="text-[20px] font-medium tracking-tight text-stone-950">{s.name}</p>
-                  <p className="mt-1.5 text-[14px] leading-relaxed text-stone-600">{s.blurb}</p>
-                </div>
-                <span className="col-span-12 font-mono text-[11px] uppercase tracking-[0.16em] text-stone-500 md:col-span-4 md:text-right">
-                  default · {s.duration}
-                </span>
-              </li>
-            ))}
-          </ol>
+        <div className="max-w-2xl">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+            style={{ color: LABEL }}
+          >
+            The method
+          </p>
+          <h2
+            id="method-heading"
+            className={`${instrument.className} mt-4 text-[40px] leading-[1.02] tracking-[-0.01em] md:text-[56px]`}
+            style={{ color: INK }}
+          >
+            Five stages. The order is the point.
+          </h2>
+          <p className="mt-6 max-w-[58ch] text-[16px] leading-relaxed" style={{ color: BODY }}>
+            A session can run all five stages or focus on one. The order, the rules and the default
+            timings follow the method as it is taught. The method itself is published under CC BY-SA
+            3.0.
+          </p>
         </div>
+
+        <ol className="mt-14">
+          {STAGES.map((s, i) => (
+            <li
+              key={s.n}
+              className={`grid grid-cols-12 items-center gap-4 border-t py-7 md:gap-8 ${
+                i === STAGES.length - 1 ? 'border-b' : ''
+              } ${HAIRLINE}`}
+            >
+              <span
+                className={`${instrument.className} col-span-2 text-[56px] leading-none md:col-span-1 md:text-[72px]`}
+                style={{ color: TERRACOTTA }}
+                aria-hidden="true"
+              >
+                {s.n}
+              </span>
+              <div className="col-span-10 md:col-span-7">
+                <h3 className="text-[22px] font-semibold tracking-tight" style={{ color: INK }}>
+                  {s.name}
+                </h3>
+                <p
+                  className="mt-1.5 max-w-[62ch] text-[15px] leading-relaxed"
+                  style={{ color: BODY }}
+                >
+                  {s.blurb}
+                </p>
+              </div>
+              <span
+                className="col-span-12 text-[11px] font-semibold uppercase tracking-[0.18em] md:col-span-4 md:text-right"
+                style={{ color: LABEL }}
+              >
+                default · {s.duration}
+              </span>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );
@@ -288,24 +275,28 @@ function MethodSection() {
 
 function PlatformSection() {
   return (
-    <section aria-labelledby="platform-heading" className="border-t border-stone-900/10">
+    <section aria-labelledby="platform-heading" className={`border-t ${HAIRLINE}`}>
       <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-12">
           <div className="md:col-span-5">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-stone-500">
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+              style={{ color: LABEL }}
+            >
               The platform
             </p>
             <h2
               id="platform-heading"
-              className="mt-3 font-display text-[32px] font-medium leading-[1.05] tracking-[-0.015em] text-stone-950 md:text-[42px]"
+              className={`${instrument.className} mt-4 text-[38px] leading-[1.05] tracking-[-0.01em] md:text-[48px]`}
+              style={{ color: INK }}
             >
-              A canvas built for the work, not a whiteboard with bricks on it.
+              The canvas carries the session. Your video call carries the faces.
             </h2>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-600">
-              Everyone drags, turns and recolours bricks on the same canvas, in real time. Bring
-              your own video call: BrickThink handles the bricks, the narration and the record.
+            <p className="mt-6 max-w-md text-[16px] leading-relaxed" style={{ color: BODY }}>
+              Bricks drag, turn and recolour in real time for everyone at once. BrickThink keeps the
+              builds and the narration; the meeting tool stays yours.
             </p>
-            <div className="mt-8 hidden md:block">
+            <div className="mt-10 hidden md:block">
               <MiniCanvas />
             </div>
           </div>
@@ -313,25 +304,34 @@ function PlatformSection() {
             {PLATFORM_ROWS.map((row, i) => (
               <li
                 key={row.label}
-                className={`grid grid-cols-12 gap-4 border-t py-6 ${
+                className={`grid grid-cols-12 gap-4 border-t py-7 ${
                   i === PLATFORM_ROWS.length - 1 ? 'border-b' : ''
-                } border-stone-900/10`}
+                } ${HAIRLINE}`}
               >
-                <p className="col-span-12 font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500 md:col-span-3">
+                <p
+                  className="col-span-12 text-[10px] font-semibold uppercase tracking-[0.2em] md:col-span-3"
+                  style={{ color: LABEL }}
+                >
                   {row.label}
                 </p>
                 <div className="col-span-12 md:col-span-9">
                   <div className="flex flex-wrap items-center gap-3">
-                    <h3 className="text-[19px] font-medium tracking-tight text-stone-950">
+                    <h3 className="text-[20px] font-semibold tracking-tight" style={{ color: INK }}>
                       {row.title}
                     </h3>
                     {row.status ? (
-                      <span className="rounded-full border border-stone-900/10 bg-white px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-stone-600">
+                      <span
+                        className="rounded-full border border-[#A8482A]/40 bg-[#A8482A]/10 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.18em]"
+                        style={{ color: TERRACOTTA }}
+                      >
                         {row.status}
                       </span>
                     ) : null}
                   </div>
-                  <p className="mt-2 max-w-[58ch] text-[14px] leading-relaxed text-stone-600">
+                  <p
+                    className="mt-2 max-w-[58ch] text-[15px] leading-relaxed"
+                    style={{ color: BODY }}
+                  >
                     {row.body}
                   </p>
                 </div>
@@ -344,52 +344,55 @@ function PlatformSection() {
   );
 }
 
+// Product-surface imagery: the canvas with bricks, not people. Organic brick
+// placement over a rigid grid substrate, per the structured/freeform rule.
 const MINI_BRICKS = [
   {
+    src: '/bricks/flat-1-black-large-left.png',
+    left: '16%',
+    top: '54%',
+    width: '44%',
+    ratio: 300 / 190,
+  },
+  {
     src: '/bricks/block-green-medium-left.png',
-    left: '10%',
-    top: '38%',
-    width: '26%',
+    left: '22%',
+    top: '36%',
+    width: '25%',
     ratio: 180 / 156,
   },
   {
     src: '/bricks/block-pink-medium-right.png',
-    left: '38%',
+    left: '44%',
     top: '30%',
-    width: '26%',
+    width: '25%',
     ratio: 180 / 156,
   },
   {
     src: '/bricks/corner-orange-small.png',
     left: '66%',
-    top: '46%',
-    width: '14%',
+    top: '52%',
+    width: '15%',
     ratio: 100 / 98,
-  },
-  {
-    src: '/bricks/flat-1-black-large-left.png',
-    left: '18%',
-    top: '62%',
-    width: '42%',
-    ratio: 300 / 190,
   },
 ];
 
 function MiniCanvas() {
   return (
     <div
-      className="relative aspect-[16/9] w-full max-w-md overflow-hidden rounded-[24px] border border-stone-900/10 bg-[#FDFAF4]"
+      className="relative aspect-[16/10] w-full max-w-md overflow-hidden rounded-[24px] border border-[#26150A]/15"
       style={{
+        backgroundColor: PAPER,
         backgroundImage:
-          'linear-gradient(to right, rgba(60,30,15,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(60,30,15,0.05) 1px, transparent 1px)',
-        backgroundSize: '24px 24px',
+          'linear-gradient(to right, rgba(38,21,10,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(38,21,10,0.06) 1px, transparent 1px)',
+        backgroundSize: '26px 26px',
       }}
       aria-hidden="true"
     >
       {MINI_BRICKS.map((b) => (
         <span
           key={b.src}
-          className="absolute drop-shadow-[0_5px_8px_rgba(60,30,15,0.16)]"
+          className="absolute drop-shadow-[0_5px_8px_rgba(38,21,10,0.18)]"
           style={{
             left: b.left,
             top: b.top,
@@ -402,34 +405,49 @@ function MiniCanvas() {
           }}
         />
       ))}
+      <div
+        className="absolute left-4 top-4 rounded-full border border-[#26150A]/15 bg-[#FBF5EA]/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em]"
+        style={{ color: LABEL }}
+      >
+        Shared model · stage 3
+      </div>
     </div>
   );
 }
 
 function CostSection() {
   return (
-    <section aria-labelledby="cost-heading" className="border-t border-stone-900/10 bg-[#F4E9DB]">
+    <section
+      aria-labelledby="cost-heading"
+      className={`border-t ${HAIRLINE}`}
+      style={{ backgroundColor: '#EADCC4' }}
+    >
       <div className="mx-auto max-w-7xl px-6 py-20 md:py-28">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-12">
           <div className="md:col-span-5">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-stone-500">
-              What it costs
+            <p
+              className="text-[11px] font-semibold uppercase tracking-[0.22em]"
+              style={{ color: LABEL }}
+            >
+              Money
             </p>
             <h2
               id="cost-heading"
-              className="mt-3 font-display text-[32px] font-medium leading-[1.05] tracking-[-0.015em] text-stone-950 md:text-[42px]"
+              className={`${instrument.className} mt-4 text-[38px] leading-[1.05] tracking-[-0.01em] md:text-[48px]`}
+              style={{ color: INK }}
             >
-              Free to run. Paid for optional reports.
+              The software is free. Three reports are not.
             </h2>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-stone-700">
-              The software is free and open source under Apache 2.0, and self-hosting costs nothing.
-              Running workshops on brickthink.io is also free. The hosted instance charges for three
-              optional AI-produced deliverables. The source is on{' '}
+            <p className="mt-6 max-w-md text-[16px] leading-relaxed" style={{ color: BODY }}>
+              BrickThink is open source under Apache 2.0. Self-hosting costs nothing, and running
+              workshops on brickthink.io costs nothing. The hosted instance charges for three
+              optional AI-produced reports. The source is on{' '}
               <a
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 font-medium text-stone-900 underline decoration-stone-900/30 underline-offset-4 transition-colors hover:decoration-stone-900"
+                className="inline-flex items-center gap-1 font-semibold underline decoration-[#A8482A]/50 underline-offset-4 transition-colors hover:decoration-[#A8482A]"
+                style={{ color: INK }}
               >
                 <GitHubGlyph className="h-3.5 w-3.5" />
                 GitHub
@@ -440,20 +458,32 @@ function CostSection() {
 
           <div className="md:col-span-7">
             {/* Disclosure sits above the prices, per the candour placement rule. */}
-            <div className="rounded-[24px] border border-stone-900/10 bg-[#FAF7F1] p-7">
-              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-stone-500">
-                A correction we owe you
+            <div
+              className="rounded-[24px] border border-[#A8482A]/35 p-7"
+              style={{ backgroundColor: PAPER }}
+            >
+              <p
+                className="text-[10px] font-semibold uppercase tracking-[0.2em]"
+                style={{ color: TERRACOTTA }}
+              >
+                A reversal, on the record
               </p>
-              <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-stone-800">
+              <p className="mt-3 max-w-[62ch] text-[16px] leading-relaxed" style={{ color: INK }}>
                 We launched saying free forever, no paid tier. We were wrong about what running the
                 hosted service costs. The software is still free and open source; the hosted AI
                 services are now paid.
               </p>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-[24px] border border-stone-900/10 bg-white">
-              <div className="grid grid-cols-12 gap-2 px-6 pb-2 pt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-stone-500">
-                <span className="col-span-6">Deliverable</span>
+            <div
+              className="mt-6 overflow-hidden rounded-[24px] border border-[#26150A]/15"
+              style={{ backgroundColor: PAPER }}
+            >
+              <div
+                className="grid grid-cols-12 gap-2 px-6 pb-2 pt-5 text-[10px] font-semibold uppercase tracking-[0.16em]"
+                style={{ color: LABEL }}
+              >
+                <span className="col-span-6">Report</span>
                 <span className="col-span-2 text-right">Per session</span>
                 <span className="col-span-2 text-right">Monthly</span>
                 <span className="col-span-2 text-right">Yearly</span>
@@ -461,24 +491,36 @@ function CostSection() {
               {REPORT_PRICES.map((r) => (
                 <div
                   key={r.name}
-                  className="grid grid-cols-12 items-baseline gap-2 border-t border-stone-900/10 px-6 py-4"
+                  className={`grid grid-cols-12 items-baseline gap-2 border-t px-6 py-4 ${HAIRLINE}`}
                 >
-                  <span className="col-span-6 text-[15px] font-medium text-stone-900">
+                  <span className="col-span-6 text-[15px] font-semibold" style={{ color: INK }}>
                     {r.name}
                   </span>
-                  <span className="col-span-2 text-right font-mono text-[14px] tabular-nums text-stone-800">
+                  <span
+                    className="col-span-2 text-right font-mono text-[14px] tabular-nums"
+                    style={{ color: BODY }}
+                  >
                     {r.per}
                   </span>
-                  <span className="col-span-2 text-right font-mono text-[14px] tabular-nums text-stone-800">
+                  <span
+                    className="col-span-2 text-right font-mono text-[14px] tabular-nums"
+                    style={{ color: BODY }}
+                  >
                     {r.month}
                   </span>
-                  <span className="col-span-2 text-right font-mono text-[14px] tabular-nums text-stone-800">
+                  <span
+                    className="col-span-2 text-right font-mono text-[14px] tabular-nums"
+                    style={{ color: BODY }}
+                  >
                     {r.year}
                   </span>
                 </div>
               ))}
             </div>
-            <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.16em] text-stone-500">
+            <p
+              className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: LABEL }}
+            >
               Prices as published on the pricing page
             </p>
           </div>
@@ -490,18 +532,20 @@ function CostSection() {
 
 function MethodPositionBand() {
   return (
-    <section className="bg-[#140d07] text-stone-100">
+    <section style={{ backgroundColor: ESPRESSO }} className="text-[#EADFCE]">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-20 md:grid-cols-12 md:py-24">
         <div className="md:col-span-4">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-stone-400">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#B79A80]">
             What this is, and is not
           </p>
         </div>
         <div className="md:col-span-8">
-          <p className="font-display text-[24px] font-normal leading-[1.3] tracking-[-0.01em] md:text-[30px]">
-            BrickThink removes the same-room constraint. It does not change the method, and it does
-            not replace certified facilitation or the value of building in the same room. The LEGO
-            name and brick designs belong to the LEGO Group, so our 57 bricks are our own designs.
+          <p
+            className={`${instrument.className} text-[28px] leading-[1.25] tracking-[-0.005em] text-[#F7EFE2] md:text-[36px]`}
+          >
+            BrickThink removes the same-room constraint and changes nothing else. The method stays
+            as taught. Certified facilitation stays essential. The LEGO name and brick designs
+            belong to the LEGO Group, so our 57 bricks are original designs.
           </p>
         </div>
       </div>
