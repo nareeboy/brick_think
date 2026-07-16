@@ -5,9 +5,10 @@ import { ArrowRight, CtaBricks, MarketingShell } from '@/components/marketing/Ma
 import { pageMetadata } from '@/lib/seo/metadata';
 
 export const metadata: Metadata = pageMetadata({
-  title: 'What is LEGO® SERIOUS PLAY®',
+  title: 'What Is LEGO® SERIOUS PLAY®? | BrickThink',
+  absoluteTitle: true,
   description:
-    'An explainer of the LEGO® SERIOUS PLAY® methodology — five stages, hand-knowledge, narrated models, and the principles practitioners live by.',
+    'LEGO® SERIOUS PLAY® is a facilitation method where teams build metaphorical models to reach consensus. Run the full five-stage method online with BrickThink.',
   path: '/what-is-lsp',
 });
 

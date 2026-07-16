@@ -22,6 +22,10 @@ const SECTIONS: Array<{ heading: string; items: Array<{ href: string; label: str
     heading: 'Site',
     items: [{ href: '/app/admin/banner', label: 'Banner' }],
   },
+  {
+    heading: 'UI Elements',
+    items: [{ href: '/app/admin/toast-test', label: 'Toast test' }],
+  },
 ];
 
 export function AdminSideNav() {

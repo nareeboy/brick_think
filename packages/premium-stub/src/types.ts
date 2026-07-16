@@ -42,5 +42,8 @@ export type BrandingSettingsSlotProps = Record<string, never>;
 /** Account sub-navigation (Settings / Billing tabs). Premium owns the billing tab. */
 export type AccountNavSlotProps = Record<string, never>;
 
+/** Admin sidebar billing section. No props — premium resolves admin/billing itself. */
+export type AdminNavSlotProps = Record<string, never>;
+
 /** Marketing "Pricing" link. Premium renders the real link; stub renders nothing. */
 export type PricingLinkSlotProps = { variant: 'nav' | 'footer' };

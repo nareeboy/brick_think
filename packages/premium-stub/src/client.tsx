@@ -1,5 +1,6 @@
 import type {
   AccountNavSlotProps,
+  AdminNavSlotProps,
   BrandingSettingsSlotProps,
   PricingLinkSlotProps,
   ReportActionsSlotProps,
@@ -20,6 +21,11 @@ export function BrandingSettingsSlot(_props: BrandingSettingsSlotProps): null {
 
 /** Stub: no billing tab → no account sub-nav on the open core. */
 export function AccountNavSlot(_props: AccountNavSlotProps): null {
+  return null;
+}
+
+/** Stub: no billing-admin section on the open core. */
+export function AdminNavSlot(_props: AdminNavSlotProps): null {
   return null;
 }
 

@@ -5,6 +5,12 @@ import { SITE_NAME } from './site';
 interface PageMetadataInput {
   /** Document <title>; the root template appends " · BrickThink". */
   title: string;
+  /**
+   * Render the title exactly as given, bypassing the root " · BrickThink"
+   * template. Use for SEO-tuned titles that already carry the brand (or
+   * deliberately omit it) and must stay within the ~60-character SERP limit.
+   */
+  absoluteTitle?: boolean;
   description: string;
   /** Site-relative canonical path, e.g. "/about" or "/" for the home page. */
   path: string;
@@ -17,11 +23,16 @@ interface PageMetadataInput {
  * fields here. OG/Twitter titles carry the " · BrickThink" suffix (the root
  * title template only applies to the document <title>, not OG tags).
  */
-export function pageMetadata({ title, description, path }: PageMetadataInput): Metadata {
+export function pageMetadata({
+  title,
+  absoluteTitle,
+  description,
+  path,
+}: PageMetadataInput): Metadata {
   const canonical = path === '/' ? '/' : path.replace(/\/+$/, '');
-  const socialTitle = title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
+  const socialTitle = absoluteTitle || title === SITE_NAME ? title : `${title} · ${SITE_NAME}`;
   return {
-    title,
+    title: absoluteTitle ? { absolute: title } : title,
     description,
     alternates: { canonical },
     openGraph: {
