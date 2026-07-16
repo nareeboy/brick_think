@@ -116,7 +116,7 @@ function Hero() {
               ['Phase 1', 'Where we are'],
               ['Feedback', 'What it is about'],
               ['Apache 2.0', 'Code licence'],
-              ['Always free', 'What it costs'],
+              ['Free platform', 'What it costs'],
             ].map(([val, label]) => (
               <div key={label}>
                 <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">

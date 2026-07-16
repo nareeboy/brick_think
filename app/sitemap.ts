@@ -16,7 +16,10 @@ const STATIC_ROUTES: Array<{
   priority: number;
 }> = [
   { path: '/', changeFrequency: 'weekly', priority: 1 },
+  { path: '/facilitators', changeFrequency: 'monthly', priority: 0.9 },
   { path: '/what-is-lsp', changeFrequency: 'monthly', priority: 0.8 },
+  { path: '/self-host', changeFrequency: 'monthly', priority: 0.7 },
+  { path: '/compare/miro', changeFrequency: 'monthly', priority: 0.6 },
   { path: '/about', changeFrequency: 'monthly', priority: 0.7 },
   { path: '/articles', changeFrequency: 'weekly', priority: 0.7 },
   { path: '/careers', changeFrequency: 'weekly', priority: 0.6 },
