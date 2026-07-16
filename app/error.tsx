@@ -1,6 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect } from 'react';
+
+import {
+  ErrorPageShell,
+  PRIMARY_ACTION_CLASS,
+  SECONDARY_ACTION_CLASS,
+  TumbledBrickScene,
+} from '@/components/marketing/ErrorPageShell';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -13,21 +21,19 @@ export default function Error({ error, reset }: ErrorProps) {
   }, [error]);
 
   return (
-    <main
-      id="main"
-      className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-4 px-6 text-center"
+    <ErrorPageShell
+      kicker="Unexpected error"
+      title="Something came apart."
+      description="An unexpected error stopped this page from loading. It's on us — try again, and if it keeps happening, head back to home and give it a moment."
+      scene={<TumbledBrickScene />}
+      footnote={error.digest ? <>Reference: {error.digest}</> : undefined}
     >
-      <h1 className="text-3xl font-semibold tracking-tight">Something went wrong</h1>
-      <p className="text-muted-foreground">
-        An unexpected error occurred. You can try again, or head back to the home page.
-      </p>
-      <button
-        type="button"
-        onClick={reset}
-        className="self-center rounded-md bg-brand px-5 py-2.5 font-medium text-brand-foreground transition-colors hover:opacity-90"
-      >
+      <button type="button" onClick={reset} className={PRIMARY_ACTION_CLASS}>
         Try again
       </button>
-    </main>
+      <Link href="/" className={SECONDARY_ACTION_CLASS}>
+        Back to home
+      </Link>
+    </ErrorPageShell>
   );
 }
