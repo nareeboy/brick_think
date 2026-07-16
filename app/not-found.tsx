@@ -1,20 +1,50 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+import {
+  ErrorPageShell,
+  MissingBrickScene,
+  PRIMARY_ACTION_CLASS,
+  SECONDARY_ACTION_CLASS,
+} from '@/components/marketing/ErrorPageShell';
+
+export const metadata: Metadata = {
+  title: 'Page not found',
+};
 
 export default function NotFound() {
   return (
-    <main
-      id="main"
-      className="mx-auto flex min-h-dvh max-w-lg flex-col items-center justify-center gap-4 px-6 text-center"
+    <ErrorPageShell
+      kicker="Error 404"
+      title="This page hasn't been built."
+      description="There's no page at this address — it may have been moved, renamed, or never existed. Head back to a solid base and start from there."
+      scene={<MissingBrickScene />}
     >
-      <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">404</p>
-      <h1 className="text-3xl font-semibold tracking-tight">Page not found</h1>
-      <p className="text-muted-foreground">Check the address or head back to the home page.</p>
-      <Link
-        href="/"
-        className="inline-flex items-center justify-center rounded-md bg-brand px-5 py-2.5 font-medium text-brand-foreground transition-colors hover:opacity-90"
-      >
+      <Link href="/" className={PRIMARY_ACTION_CLASS}>
         Back to home
+        <ArrowRight className="h-3.5 w-3.5" />
       </Link>
-    </main>
+      <Link href="/help" className={SECONDARY_ACTION_CLASS}>
+        Help &amp; FAQ
+      </Link>
+    </ErrorPageShell>
+  );
+}
+
+function ArrowRight({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M5 12h14" />
+      <path d="m13 6 6 6-6 6" />
+    </svg>
   );
 }
