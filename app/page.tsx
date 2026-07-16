@@ -13,10 +13,12 @@ import {
 } from '@/components/marketing/MarketingChrome';
 import { HeroVideo } from '@/components/marketing/HeroVideo';
 import { pageMetadata } from '@/lib/seo/metadata';
+import { SITE_DESCRIPTION, SITE_TITLE } from '@/lib/seo/site';
 
 export const metadata: Metadata = pageMetadata({
-  title: 'BrickThink',
-  description: 'A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®.',
+  title: SITE_TITLE,
+  absoluteTitle: true,
+  description: SITE_DESCRIPTION,
   path: '/',
 });
 

@@ -5,7 +5,7 @@ import { SiteBanner } from '@/components/banner/SiteBanner';
 import { CookieConsent } from '@/components/consent/CookieConsent';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { siteGraph } from '@/lib/seo/jsonLd';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo/site';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TITLE, SITE_URL } from '@/lib/seo/site';
 import './globals.css';
 
 const geistSans = Geist({
@@ -31,7 +31,7 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: SITE_NAME,
+    default: SITE_TITLE,
     template: `%s · ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
@@ -41,12 +41,12 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: 'en_GB',
     url: SITE_URL,
-    title: SITE_NAME,
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },
   twitter: {
     card: 'summary_large_image',
-    title: SITE_NAME,
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },
 };
