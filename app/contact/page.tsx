@@ -80,7 +80,7 @@ const CHANNELS: Channel[] = [
 
 const COMPANY = [
   ['Legal name', 'BrickThink Ltd.'],
-  ['Status', 'Open source · always free'],
+  ['Status', 'Open source · free platform'],
   ['Where data lives', 'European Union'],
   ['Hosted at', 'www.brickthink.io'],
 ];

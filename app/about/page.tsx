@@ -276,14 +276,15 @@ function CtaBand() {
           </div>
           <div className="relative max-w-xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              Open source · always free
+              Open source · free platform
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[48px]">
               Use it. Break it. Tell us.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              All stages. All features. No caps. We will never charge for this. The hosted site is
-              here because it is easier than running your own.
+              All stages. All features. No caps. The platform is free — we only charge for the
+              deliverables we produce. The hosted site is here because it is easier than running
+              your own.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link

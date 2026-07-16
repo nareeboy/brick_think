@@ -79,7 +79,7 @@ function Hero({ count }: { count: number }) {
                 Cost
               </dt>
               <dd className="mt-1 font-display text-[20px] font-medium tracking-tight text-zinc-950">
-                Free, forever
+                Free platform
               </dd>
             </div>
           </dl>
