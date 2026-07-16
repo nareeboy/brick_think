@@ -13,10 +13,12 @@ import {
 } from '@/components/marketing/MarketingChrome';
 import { HeroVideo } from '@/components/marketing/HeroVideo';
 import { pageMetadata } from '@/lib/seo/metadata';
+import { SITE_DESCRIPTION, SITE_TITLE } from '@/lib/seo/site';
 
 export const metadata: Metadata = pageMetadata({
-  title: 'BrickThink',
-  description: 'A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®.',
+  title: SITE_TITLE,
+  absoluteTitle: true,
+  description: SITE_DESCRIPTION,
   path: '/',
 });
 
@@ -171,7 +173,7 @@ function Hero() {
           <dl className="mt-12 grid max-w-xl grid-cols-3 gap-x-6 border-t border-white/15 pt-6">
             {[
               ['57', 'brick pieces, free to use'],
-              ['Always free', 'no card, no caps'],
+              ['Free platform', 'no card, no caps'],
               ['Open source', 'run your own copy'],
             ].map(([val, label]) => (
               <div key={label}>
@@ -775,14 +777,14 @@ function CtaBand() {
           </div>
           <div className="relative max-w-xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              Open source · always free
+              Open source · free platform
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[52px]">
               Run your first session free.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              All stages. All features. No card. No caps. BrickThink is open source. We will never
-              charge for it.
+              All stages. All features. No card. No caps. The platform is free and open source — you
+              only pay for the deliverables we produce for you.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link

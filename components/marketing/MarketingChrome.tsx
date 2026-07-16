@@ -31,6 +31,7 @@ export const PLAY_SERIOUS_ARTICLE_URL =
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
+  { href: '/facilitators', label: 'For facilitators' },
   { href: '/articles', label: 'Articles' },
   { href: '/about', label: 'About' },
   { href: '/help', label: 'Help' },
@@ -241,6 +242,21 @@ export async function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/facilitators" className="hover:text-zinc-950">
+                For facilitators
+              </Link>
+            </li>
+            <li>
+              <Link href="/self-host" className="hover:text-zinc-950">
+                Self-host
+              </Link>
+            </li>
+            <li>
+              <Link href="/compare/miro" className="hover:text-zinc-950">
+                BrickThink vs Miro
+              </Link>
+            </li>
+            <li>
               <Link href="/#methodology" className="hover:text-zinc-950">
                 Methodology
               </Link>
@@ -313,7 +329,7 @@ export async function Footer() {
             Phase 1 — Feedback
           </Link>
           <p className="mt-2 text-[13px] text-zinc-600">
-            WCAG 2.2 AA. GDPR-aligned. EU data residency. Always free.
+            WCAG 2.2 AA. GDPR-aligned. EU data residency. Free to self-host.
           </p>
           <SourceForgeDownloadButton className="mt-4" />
         </div>

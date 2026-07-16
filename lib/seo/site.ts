@@ -2,8 +2,11 @@
 // root layout and every absolute URL emitted in JSON-LD derive from SITE_URL.
 export const SITE_URL = 'https://www.brickthink.io';
 export const SITE_NAME = 'BrickThink';
+// Rendered <title> for the home page and the site-wide fallback. Kept in
+// site.ts so the root layout, home page, and JSON-LD stay in sync.
+export const SITE_TITLE = 'BrickThink | Run LEGO® SERIOUS PLAY® Remotely';
 export const SITE_DESCRIPTION =
-  'A virtual way to allow your teams to remotely conduct LEGO® SERIOUS PLAY®.';
+  'Open-source platform for running LEGO® SERIOUS PLAY® workshops online. The full five-stage method on a real-time shared brick canvas. Self-host free.';
 
 // Public profiles, used as Organization.sameAs in structured data. Kept in
 // sync with the footer links in components/marketing/MarketingChrome.tsx.
