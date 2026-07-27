@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { fetchRecentNotifications } from '@/app/(authed)/app/notifications/actions';
 import { GlobalHeader } from '@/components/app/GlobalHeader';
 import { HideOnAdminRoutes } from '@/components/app/HideOnAdminRoutes';
+import { PresenceHeartbeat } from '@/components/app/PresenceHeartbeat';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
@@ -69,6 +70,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
         </HideOnAdminRoutes>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
         <NotificationToast />
+        <PresenceHeartbeat />
       </div>
     </NotificationsProvider>
   );
