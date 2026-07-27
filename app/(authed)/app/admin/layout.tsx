@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 
-import { AdminMobileNav, AdminSideNav } from './AdminSideNav';
+import { AdminMobileNav, AdminSideNav, AdminSideNavFooter } from './AdminSideNav';
 import { AdminNavSlot } from '@/lib/premium/client';
 import { isCallerSiteAdmin } from '@/lib/articles/admin';
 
@@ -20,10 +20,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </div>
       <div className="flex w-full flex-1">
         <aside
-          className="sticky top-0 hidden max-h-[100dvh] w-60 shrink-0 self-start overflow-y-auto border-r border-zinc-900/5 bg-white/60 px-3 py-6 md:block"
+          className="sticky top-0 hidden h-[100dvh] w-60 shrink-0 flex-col self-start border-r border-zinc-900/5 bg-white/60 md:flex"
           aria-label="Admin navigation"
         >
-          <div className="flex items-center gap-2 px-3 pb-6">
+          <div className="flex items-center gap-2 px-6 pb-4 pt-6">
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#a8482a] text-white">
               <svg
                 viewBox="0 0 24 24"
@@ -45,8 +45,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               </div>
             </div>
           </div>
-          <AdminSideNav />
-          <AdminNavSlot />
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4">
+            <AdminSideNav />
+            <AdminNavSlot />
+          </div>
+          <div className="border-t border-zinc-900/5 px-3 py-3">
+            <AdminSideNavFooter />
+          </div>
         </aside>
         <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8">
           <div className="mx-auto w-full max-w-6xl">{children}</div>

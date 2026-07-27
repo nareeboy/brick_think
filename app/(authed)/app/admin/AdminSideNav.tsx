@@ -86,6 +86,19 @@ const ICONS = {
       <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
     </NavIcon>
   ),
+  backToApp: (
+    <NavIcon>
+      <path d="m12 19-7-7 7-7" />
+      <path d="M19 12H5" />
+    </NavIcon>
+  ),
+  signOut: (
+    <NavIcon>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" x2="9" y1="12" y2="12" />
+    </NavIcon>
+  ),
 } satisfies Record<string, ReactNode>;
 
 type NavItem = { href: string; label: string; icon: ReactNode; exact?: boolean };
@@ -181,6 +194,31 @@ export function AdminSideNav() {
   );
 }
 
+/** Back-to-app + sign-out block pinned to the bottom of the admin sidebar. */
+export function AdminSideNavFooter() {
+  return (
+    <div className="space-y-0.5 text-[13px]">
+      <Link
+        href="/app/my-designs"
+        className="group flex items-center gap-2.5 rounded-md px-3 py-2 font-medium text-zinc-600 transition-colors duration-200 hover:bg-zinc-900/5 hover:text-zinc-900"
+      >
+        <span className="text-zinc-400 group-hover:text-zinc-600">{ICONS.backToApp}</span>
+        Back to app
+      </Link>
+      <form action="/auth/sign-out" method="post">
+        <button
+          type="submit"
+          data-testid="sign-out-button"
+          className="group flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left font-medium text-zinc-600 transition-colors duration-200 hover:bg-zinc-900/5 hover:text-zinc-900"
+        >
+          <span className="text-zinc-400 group-hover:text-zinc-600">{ICONS.signOut}</span>
+          Sign out
+        </button>
+      </form>
+    </div>
+  );
+}
+
 /** Horizontal pill nav for viewports where the sidebar is hidden. */
 export function AdminMobileNav() {
   const pathname = usePathname() ?? '';
@@ -188,6 +226,15 @@ export function AdminMobileNav() {
   return (
     <nav aria-label="Admin sections" className="md:hidden">
       <ul className="flex gap-1.5 overflow-x-auto px-4 py-3 text-[13px] sm:px-6">
+        <li className="shrink-0">
+          <Link
+            href="/app/my-designs"
+            className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-zinc-900/10 bg-white px-3 py-1.5 font-medium text-zinc-600 transition-colors duration-200 hover:text-zinc-900"
+          >
+            {ICONS.backToApp}
+            App
+          </Link>
+        </li>
         {items.map((item) => {
           const active = isActive(pathname, item);
           return (
@@ -206,6 +253,17 @@ export function AdminMobileNav() {
             </li>
           );
         })}
+        <li className="shrink-0">
+          <form action="/auth/sign-out" method="post">
+            <button
+              type="submit"
+              className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border border-zinc-900/10 bg-white px-3 py-1.5 font-medium text-zinc-600 transition-colors duration-200 hover:text-zinc-900"
+            >
+              {ICONS.signOut}
+              Sign out
+            </button>
+          </form>
+        </li>
       </ul>
     </nav>
   );
