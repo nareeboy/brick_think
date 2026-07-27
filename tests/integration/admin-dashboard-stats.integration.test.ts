@@ -34,6 +34,7 @@ vi.mock('@/lib/db/server', () => ({
 
 // Import AFTER the mock so isCallerSiteAdmin resolves through it.
 import { getAdminDashboardStats } from '@/lib/admin/dashboard';
+import { fetchDashboardStatsAction } from '@/app/(authed)/app/admin/actions';
 
 const admin = getAdminClient();
 const NOW = new Date();
@@ -178,5 +179,23 @@ describe('pagination past PostgREST max_rows', () => {
     // sample would never make it into onlineSeries and this would be < 42.
     const maxValue = Math.max(...stats.onlineSeries.map((p) => p.value));
     expect(maxValue).toBe(HIGHLIGHT_COUNT);
+  });
+});
+
+describe('fetchDashboardStatsAction', () => {
+  test('rejects unknown ranges', async () => {
+    currentClient = await signInAs(adminUser);
+    const res = await fetchDashboardStatsAction('all-time');
+    expect(res).toEqual({ ok: false, code: 'invalid_range' });
+  });
+
+  test('forbidden for non-admins, stats for admins', async () => {
+    currentClient = await signInAs(plainUser);
+    expect(await fetchDashboardStatsAction('7d')).toEqual({ ok: false, code: 'forbidden' });
+
+    currentClient = await signInAs(adminUser);
+    const res = await fetchDashboardStatsAction('7d');
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.stats.range).toBe('7d');
   });
 });
