@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import type { SeriesPoint } from './dashboardData';
+import type { SeriesPoint } from '@/lib/admin/dashboardTypes';
 
 const SERIES_COLOR = '#a8482a';
 const CHART_HEIGHT = 280;

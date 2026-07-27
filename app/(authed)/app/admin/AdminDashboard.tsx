@@ -1,18 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import type { ReactNode } from 'react';
 
+import { fetchDashboardStatsAction } from './actions';
 import { OnlineUsersChart } from './OnlineUsersChart';
 import {
-  ONLINE_NOW,
-  RANGE_METRICS,
   RANGE_OPTIONS,
-  RECENT_SIGNUPS,
-  TOTAL_USERS,
-  TOTAL_USERS_DELTA,
   type DashboardRange,
-} from './dashboardData';
+  type DashboardStats,
+} from '@/lib/admin/dashboardTypes';
+
+const POLL_INTERVAL_MS = 60 * 1000;
 
 function formatCount(value: number): string {
   return value.toLocaleString('en-GB');
@@ -104,9 +103,34 @@ function StatTile({
   );
 }
 
-export function AdminDashboard() {
-  const [range, setRange] = useState<DashboardRange>('7d');
-  const metrics = RANGE_METRICS[range];
+export function AdminDashboard({ initialStats }: { initialStats: DashboardStats }) {
+  const [stats, setStats] = useState<DashboardStats>(initialStats);
+  const [range, setRange] = useState<DashboardRange>(initialStats.range);
+  const rangeRef = useRef(range);
+  rangeRef.current = range;
+  const [, startTransition] = useTransition();
+
+  const refresh = (r: DashboardRange) => {
+    startTransition(async () => {
+      const res = await fetchDashboardStatsAction(r);
+      // Ignore forbidden/invalid results and out-of-date responses — the
+      // previous stats stay rendered.
+      if (res.ok && res.stats.range === rangeRef.current) setStats(res.stats);
+    });
+  };
+
+  const changeRange = (r: DashboardRange) => {
+    setRange(r);
+    refresh(r);
+  };
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      refresh(rangeRef.current);
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -119,7 +143,7 @@ export function AdminDashboard() {
               type="button"
               role="radio"
               aria-checked={selected}
-              onClick={() => setRange(option.value)}
+              onClick={() => changeRange(option.value)}
               className={`cursor-pointer rounded-full border px-3 py-1.5 text-[13px] font-medium transition-colors duration-200 ${
                 selected
                   ? 'border-[#a8482a]/30 bg-[#a8482a]/10 text-[#a8482a]'
@@ -134,19 +158,19 @@ export function AdminDashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <StatTile
-          label={`New sign-ups (${metrics.periodLabel})`}
-          value={formatCount(metrics.newSignups)}
-          footer={<Delta value={metrics.newSignupsDelta} label={metrics.deltaLabel} />}
-          aside={<Sparkline values={metrics.signupSparkline} />}
+          label={`New sign-ups (${stats.periodLabel})`}
+          value={formatCount(stats.newSignups)}
+          footer={<Delta value={stats.newSignupsDelta} label={stats.deltaLabel} />}
+          aside={<Sparkline values={stats.signupSparkline} />}
         />
         <StatTile
           label="Total users"
-          value={formatCount(TOTAL_USERS)}
-          footer={<Delta value={TOTAL_USERS_DELTA} label="vs previous 30 days" />}
+          value={formatCount(stats.totalUsers)}
+          footer={<Delta value={stats.totalUsersDelta} label="vs previous 30 days" />}
         />
         <StatTile
           label="Online now"
-          value={formatCount(ONLINE_NOW)}
+          value={formatCount(stats.onlineNow)}
           footer={
             <p className="flex items-center gap-1.5 text-[12px] text-zinc-500">
               <span className="relative flex h-2 w-2" aria-hidden="true">
@@ -163,11 +187,23 @@ export function AdminDashboard() {
         <section className="rounded-2xl border border-zinc-900/5 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] xl:col-span-2">
           <header className="mb-4">
             <h2 className="text-[15px] font-semibold text-zinc-900">Online users</h2>
-            <p className="text-[13px] text-zinc-500">Concurrent users, {metrics.periodLabel}</p>
+            <p className="text-[13px] text-zinc-500">
+              Concurrent users, {stats.periodLabel}
+              {stats.collectingSince
+                ? ` · collecting data since ${new Date(stats.collectingSince).toLocaleDateString(
+                    'en-GB',
+                    {
+                      day: 'numeric',
+                      month: 'short',
+                      timeZone: 'UTC',
+                    },
+                  )}`
+                : ''}
+            </p>
           </header>
           <OnlineUsersChart
-            points={metrics.onlineSeries}
-            ariaLabel={`Concurrent online users, ${metrics.periodLabel}`}
+            points={stats.onlineSeries}
+            ariaLabel={`Concurrent online users, ${stats.periodLabel}`}
           />
         </section>
 
@@ -177,7 +213,7 @@ export function AdminDashboard() {
             <p className="text-[13px] text-zinc-500">Latest accounts created</p>
           </header>
           <ul className="divide-y divide-zinc-900/5">
-            {RECENT_SIGNUPS.map((person) => {
+            {stats.recentSignups.map((person) => {
               const initials = person.name
                 .split(' ')
                 .map((part) => part.charAt(0))
