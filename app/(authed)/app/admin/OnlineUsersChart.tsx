@@ -93,6 +93,8 @@ export function OnlineUsersChart({
   const tooltipOnRight = activeIndex !== null && xFor(activeIndex) < width / 2;
   const lastIndex = points.length - 1;
 
+  if (points.length === 0) return null;
+
   return (
     <div>
       <div

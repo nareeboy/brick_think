@@ -50,8 +50,12 @@ create policy "Site admins can read online samples"
   on public.online_user_samples for select
   using (public.is_site_admin());
 
--- Snapshot the concurrent-online count every 5 minutes. Runs as the cron
--- superuser context, so RLS does not apply to the insert.
+-- Snapshot the concurrent-online count every 5 minutes. pg_cron jobs run as
+-- the `postgres` role, which on hosted Supabase is NOT a superuser — the
+-- insert below succeeds because `postgres` OWNS this table, and table owners
+-- bypass RLS by default (row_security only applies to non-owners). Do NOT add
+-- `force row level security` to this table: that flag makes RLS apply to
+-- owners too, and would silently break this cron insert.
 select cron.schedule(
   'sample-online-users',
   '*/5 * * * *',
