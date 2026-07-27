@@ -678,6 +678,21 @@ export type Database = {
           },
         ]
       }
+      online_user_samples: {
+        Row: {
+          online_count: number
+          sampled_at: string
+        }
+        Insert: {
+          online_count: number
+          sampled_at?: string
+        }
+        Update: {
+          online_count?: number
+          sampled_at?: string
+        }
+        Relationships: []
+      }
       org_invitations: {
         Row: {
           claimed_at: string | null
@@ -799,6 +814,29 @@ export type Database = {
             foreignKeyName: "organisations_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_presence: {
+        Row: {
+          last_seen_at: string
+          profile_id: string
+        }
+        Insert: {
+          last_seen_at?: string
+          profile_id: string
+        }
+        Update: {
+          last_seen_at?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_presence_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1408,6 +1446,7 @@ export type Database = {
       }
       purge_dead_share_links: { Args: never; Returns: undefined }
       purge_expired_trashed_models: { Args: never; Returns: undefined }
+      touch_presence: { Args: never; Returns: undefined }
       trigger_careers_purge: { Args: never; Returns: undefined }
     }
     Enums: {
