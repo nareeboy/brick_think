@@ -1,10 +1,9 @@
-// "Launching soon on TinyLaunch" badge. Static SVG from TinyLaunch, rendered as
+// "Featured on TinyLaunch" badge. Static SVG from TinyLaunch, rendered as
 // a plain <a><img> like the other marketing badges. Used in the hero "As seen
-// on" bar and the footer wall. NOTE: the href is TinyLaunch's homepage (per the
-// supplied embed) — swap for the BrickThink listing URL once one exists.
+// on" bar and the footer wall. Links to the BrickThink listing on TinyLaunch.
 
-const TINYLAUNCH_URL = 'https://tinylaunch.com';
-const TINYLAUNCH_IMG = 'https://tinylaunch.com/tinylaunch_badge_launching_soon.svg';
+const TINYLAUNCH_URL = 'https://www.tinylaunch.com/launch/15841';
+const TINYLAUNCH_IMG = 'https://tinylaunch.com/tinylaunch_badge_featured_on.svg';
 
 export function TinyLaunchBadge({ className = '' }: { className?: string }) {
   return (
@@ -17,7 +16,7 @@ export function TinyLaunchBadge({ className = '' }: { className?: string }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={TINYLAUNCH_IMG}
-        alt="Launching soon on TinyLaunch"
+        alt="Featured on TinyLaunch"
         width={619}
         height={188}
         loading="lazy"
