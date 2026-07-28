@@ -1,21 +1,30 @@
-import { ComingSoon } from '../ComingSoon';
+import { redirect } from 'next/navigation';
+
+import { listRecentWebhookDeliveries, listWebhookConfigs } from '@/lib/webhooks/queries';
+import { WebhooksManager } from './WebhooksManager';
 
 export const metadata = {
   title: 'Webhooks · Admin · BrickThink',
 };
 
-export default function AdminWebhooksPage() {
+export default async function AdminWebhooksPage() {
+  const [configs, deliveries] = await Promise.all([
+    listWebhookConfigs(),
+    listRecentWebhookDeliveries(),
+  ]);
+  // Layout already gates on site admin; this is defence-in-depth.
+  if (!configs) redirect('/app/my-designs');
+
   return (
-    <ComingSoon
-      title="Webhooks"
-      description="Send events to external services when things happen in BrickThink."
-      icon={
-        <>
-          <path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2" />
-          <path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06" />
-          <path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8" />
-        </>
-      }
-    />
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="font-display text-2xl text-zinc-950">Webhooks</h1>
+        <p className="text-[14px] text-zinc-600">
+          Send signups to external services (Make, Zapier) — immediately or a few days later. Signup
+          hooks fire for new users only; existing accounts are never re-fired.
+        </p>
+      </header>
+      <WebhooksManager configs={configs} deliveries={deliveries ?? []} />
+    </div>
   );
 }
