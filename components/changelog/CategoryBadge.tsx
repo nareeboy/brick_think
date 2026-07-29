@@ -1,4 +1,4 @@
-// app/(authed)/app/admin/changelog/CategoryBadge.tsx
+// components/changelog/CategoryBadge.tsx — shared by the public /changelog page and the premium admin editor.
 import {
   CATEGORY_LABELS,
   CATEGORY_STYLES,

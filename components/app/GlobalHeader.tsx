@@ -6,6 +6,7 @@ import { BrickGlyph } from '@/components/app/BrickGlyph';
 import { HeaderInner } from '@/components/app/HeaderInner';
 import { HeaderNav } from '@/components/app/HeaderNav';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { adminPanelEnabled } from '@/lib/premium/server';
 
 interface Props {
   userName: string;
@@ -36,7 +37,7 @@ export function GlobalHeader({
               BrickThink
             </span>
           </Link>
-          <HeaderNav showAdmin={isSiteAdmin} sessions={sessions} />
+          <HeaderNav showAdmin={isSiteAdmin && adminPanelEnabled} sessions={sessions} />
         </div>
 
         <div className="flex items-center gap-1">

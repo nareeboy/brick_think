@@ -102,7 +102,7 @@ pnpm dev                          # http://localhost:3000
 
 ## Granting site admin
 
-The `/app/admin` surface (CMS, careers, site banner, changelog) is gated on a per-user `profiles.is_site_admin` flag. There is **no hardcoded admin** and migrations seed none — a fresh deploy has zero admins until you grant one. Granting needs **no superuser** and works on Supabase cloud, a self-managed Postgres, and the local stack alike:
+The admin panel (`/app/admin` — dashboard, CMS, careers, site banner, changelog) ships with the hosted premium overlay and is **not part of the open-source core**; a pure open-core build has no admin routes. The underlying schema (the `profiles.is_site_admin` flag and `site_admin_emails` allowlist) lives in the core, so granting works the same everywhere. There is **no hardcoded admin** and migrations seed none — a fresh deploy has zero admins until you grant one. Granting needs **no superuser** and works on Supabase cloud, a self-managed Postgres, and the local stack alike:
 
 1. Deploy, then **sign in once** with the account you want as admin so its `profiles` row exists.
 2. In the Supabase SQL editor (or local Studio → SQL editor), run:
