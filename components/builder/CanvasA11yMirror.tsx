@@ -15,7 +15,7 @@ type Props = {
   rows: number;
   cols: number;
   focusedId: string | null;
-  selectedId: string | null;
+  selectedIds: string[];
   onFocusBrick: (id: string) => void;
   onSelectBrick: (id: string) => void;
   onMoveFocus: (id: string, direction: 'up' | 'down' | 'left' | 'right') => void;
@@ -29,7 +29,7 @@ export function CanvasA11yMirror({
   rows,
   cols,
   focusedId,
-  selectedId,
+  selectedIds,
   onFocusBrick,
   onSelectBrick,
   onMoveFocus,
@@ -69,7 +69,7 @@ export function CanvasA11yMirror({
             aria-rowindex={b.row}
             aria-colindex={b.col}
             aria-label={accessibleName}
-            aria-selected={selectedId === b.id ? 'true' : 'false'}
+            aria-selected={selectedIds.includes(b.id) ? 'true' : 'false'}
             data-testid="placed-brick"
             data-brick-id={b.id}
             onFocus={() => onFocusBrick(b.id)}
