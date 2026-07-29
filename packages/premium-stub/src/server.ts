@@ -11,3 +11,9 @@ export async function cleanupNarration(
 ): Promise<NarrationCleanupOutcome> {
   return { text: raw, cleaned: false, status: 'skipped' };
 }
+
+/**
+ * Stub: the admin panel is premium-only — no /app/admin routes exist on the
+ * open core, so server components render no Admin entry points.
+ */
+export const adminPanelEnabled: boolean = false;
