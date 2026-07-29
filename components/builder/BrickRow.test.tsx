@@ -65,3 +65,29 @@ describe('BrickRow rename', () => {
     expect(screen.getByText(/C1 · 2525/)).toBeTruthy();
   });
 });
+
+describe('BrickRow selection', () => {
+  test('plain click selects without the shift flag', () => {
+    const onSelect = vi.fn();
+    renderRow({ onSelect });
+    fireEvent.click(screen.getByRole('button', { name: /C1 · 2525/ }));
+    expect(onSelect).toHaveBeenCalledWith('aaaa-2525', false);
+  });
+
+  test('shift-click passes the shift flag for multi-select toggling', () => {
+    const onSelect = vi.fn();
+    renderRow({ onSelect });
+    fireEvent.click(screen.getByRole('button', { name: /C1 · 2525/ }), { shiftKey: true });
+    expect(onSelect).toHaveBeenCalledWith('aaaa-2525', true);
+  });
+
+  test('Shift+Enter on a focused row passes the shift flag', () => {
+    const onSelect = vi.fn();
+    renderRow({ onSelect });
+    fireEvent.keyDown(screen.getByRole('button', { name: /C1 · 2525/ }), {
+      key: 'Enter',
+      shiftKey: true,
+    });
+    expect(onSelect).toHaveBeenCalledWith('aaaa-2525', true);
+  });
+});

@@ -5,11 +5,13 @@ import {
   addBrickToDoc,
   addGroupToDoc,
   deleteBrickFromDoc,
+  deleteBricksFromDoc,
   moveBrickInDoc,
   projectDocToCanvas,
   seedDocFromCanvas,
   setTitleInDoc,
   updateBrickInDoc,
+  updateBricksInDoc,
 } from './canvas-codec';
 
 function makeBrick(id: string, groupId: string, overrides: Partial<{ x: number; y: number }> = {}) {
@@ -177,5 +179,52 @@ describe('canvas-codec', () => {
     const snapB = projectDocToCanvas(b);
     expect(snapA.bricks.map((br) => br.id).sort()).toEqual(['b1', 'b2']);
     expect(snapB.bricks.map((br) => br.id).sort()).toEqual(['b1', 'b2']);
+  });
+});
+
+describe('batched multi-brick operations', () => {
+  function seededDoc() {
+    const doc = new Y.Doc();
+    seedDocFromCanvas(
+      doc,
+      {
+        groups: [{ id: 'g1', name: 'Untitled', collapsed: false, visible: true }],
+        bricks: [],
+      },
+      'T',
+    );
+    addBrickToDoc(doc, makeBrick('b1', 'g1'));
+    addBrickToDoc(doc, makeBrick('b2', 'g1', { x: 200, y: 200 }));
+    addBrickToDoc(doc, makeBrick('b3', 'g1', { x: 300, y: 300 }));
+    return doc;
+  }
+
+  test('updateBricksInDoc applies all changes in a single transaction', () => {
+    const doc = seededDoc();
+    let transactions = 0;
+    doc.on('afterTransaction', () => {
+      transactions += 1;
+    });
+    updateBricksInDoc(doc, [
+      { id: 'b1', changes: { x: 11, y: 12 } },
+      { id: 'b2', changes: { x: 21, y: 22 } },
+      { id: 'missing', changes: { x: 1 } },
+    ]);
+    const snap = projectDocToCanvas(doc);
+    expect(snap.bricks.find((b) => b.id === 'b1')).toMatchObject({ x: 11, y: 12 });
+    expect(snap.bricks.find((b) => b.id === 'b2')).toMatchObject({ x: 21, y: 22 });
+    expect(transactions).toBe(1);
+  });
+
+  test('deleteBricksFromDoc removes all ids in a single transaction', () => {
+    const doc = seededDoc();
+    let transactions = 0;
+    doc.on('afterTransaction', () => {
+      transactions += 1;
+    });
+    deleteBricksFromDoc(doc, ['b1', 'b3', 'missing']);
+    const snap = projectDocToCanvas(doc);
+    expect(snap.bricks.map((b) => b.id)).toEqual(['b2']);
+    expect(transactions).toBe(1);
   });
 });

@@ -301,6 +301,132 @@ describe('renameBrick', () => {
   });
 });
 
+describe('multi-select', () => {
+  function makeBrick(id: string, x = 0, y = 0) {
+    return {
+      id,
+      groupId: 'g1',
+      code: 'A',
+      image: '',
+      width: 50,
+      height: 50,
+      x,
+      y,
+      rotation: 0,
+      visible: true,
+    };
+  }
+
+  function withBricks(...ids: string[]) {
+    return {
+      modelId: 'm1',
+      title: 'T',
+      canvasState: {
+        groups: [{ id: 'g1', name: 'G', collapsed: false, visible: true }],
+        bricks: ids.map((id, i) => makeBrick(id, i * 100, i * 100)),
+      },
+    };
+  }
+
+  test('selectBrick replaces the selection; selectedId mirrors the first id', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2')),
+    });
+    act(() => result.current.selectBrick('b1'));
+    expect(result.current.selectedIds).toEqual(['b1']);
+    expect(result.current.selectedId).toBe('b1');
+    act(() => result.current.selectBrick('b2'));
+    expect(result.current.selectedIds).toEqual(['b2']);
+    act(() => result.current.selectBrick(null));
+    expect(result.current.selectedIds).toEqual([]);
+    expect(result.current.selectedId).toBeNull();
+  });
+
+  test('toggleBrickSelected adds and removes ids', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2', 'b3')),
+    });
+    act(() => result.current.selectBrick('b1'));
+    act(() => result.current.toggleBrickSelected('b2'));
+    expect(result.current.selectedIds).toEqual(['b1', 'b2']);
+    act(() => result.current.toggleBrickSelected('b1'));
+    expect(result.current.selectedIds).toEqual(['b2']);
+  });
+
+  test('selectBricks sets the selection wholesale (marquee)', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2', 'b3')),
+    });
+    act(() => result.current.selectBricks(['b2', 'b3']));
+    expect(result.current.selectedIds).toEqual(['b2', 'b3']);
+    expect(result.current.selectedId).toBe('b2');
+  });
+
+  test('updateBricks applies all position changes in one call', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2')),
+    });
+    act(() =>
+      result.current.updateBricks([
+        { id: 'b1', changes: { x: 11, y: 12 } },
+        { id: 'b2', changes: { x: 21, y: 22 } },
+      ]),
+    );
+    expect(result.current.bricks.find((b) => b.id === 'b1')).toMatchObject({ x: 11, y: 12 });
+    expect(result.current.bricks.find((b) => b.id === 'b2')).toMatchObject({ x: 21, y: 22 });
+  });
+
+  test('deleteBricks removes all given bricks and prunes them from the selection', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2', 'b3')),
+    });
+    act(() => result.current.selectBricks(['b1', 'b2', 'b3']));
+    act(() => result.current.deleteBricks(['b1', 'b3']));
+    expect(result.current.bricks.map((b) => b.id)).toEqual(['b2']);
+    expect(result.current.selectedIds).toEqual(['b2']);
+  });
+
+  test('deleteBrick prunes the deleted id from a multi-selection', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2')),
+    });
+    act(() => result.current.selectBricks(['b1', 'b2']));
+    act(() => result.current.deleteBrick('b1'));
+    expect(result.current.selectedIds).toEqual(['b2']);
+  });
+
+  test('readOnly blocks updateBricks and deleteBricks', () => {
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <BuilderProvider initial={withBricks('b1', 'b2')} readOnly>
+        {children}
+      </BuilderProvider>
+    );
+    const { result } = renderHook(() => useBuilderState(), { wrapper: Wrapper });
+    act(() => result.current.updateBricks([{ id: 'b1', changes: { x: 999 } }]));
+    act(() => result.current.deleteBricks(['b2']));
+    expect(result.current.bricks.find((b) => b.id === 'b1')?.x).toBe(0);
+    expect(result.current.bricks).toHaveLength(2);
+  });
+
+  test('awareness publishes the first selected id for a multi-selection', () => {
+    const self = { userId: 'u1', displayName: 'U', avatarUrl: null };
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <BuilderProvider initial={withBricks('b1', 'b2')} liveMode self={self}>
+          {children}
+        </BuilderProvider>
+      ),
+    });
+    act(() => result.current.selectBricks(['b2', 'b1']));
+    const states = (
+      result.current.awareness as unknown as {
+        getStates: () => Map<number, { user: { selectedBrickId: string | null } }>;
+      }
+    ).getStates();
+    expect(states.get(42)!.user.selectedBrickId).toBe('b2');
+  });
+});
+
 describe('BuilderProvider readOnly', () => {
   it('readOnly provider blocks mutations and reports readOnly via context', () => {
     const initial = {

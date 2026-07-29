@@ -15,6 +15,7 @@ import {
   addBrickToDoc,
   addGroupToDoc,
   deleteBrickFromDoc,
+  deleteBricksFromDoc,
   deleteGroupFromDoc,
   moveBrickInDoc,
   moveGroupInDoc,
@@ -24,6 +25,7 @@ import {
   setGroupVisibleInDoc,
   setTitleInDoc,
   updateBrickInDoc,
+  updateBricksInDoc,
   YJS_LOCAL_ORIGIN,
 } from '@/lib/yjs/canvas-codec';
 
@@ -102,7 +104,10 @@ interface BuilderData {
   groups: LayerGroup[];
   bricks: BrickInstance[];
   activeGroupId: string;
-  selectedId: string | null;
+  // Multi-selection, in selection order. The public `selectedId` is derived
+  // from the first entry for the single-selection consumers (LayersPanel
+  // active row, a11y mirror, awareness, undo meta).
+  selectedIds: string[];
 }
 
 interface ToastState {
@@ -124,6 +129,7 @@ export interface BuilderState {
   bricks: BrickInstance[];
   activeGroupId: string;
   selectedId: string | null;
+  selectedIds: string[];
 
   view: View;
   setPan: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>;
@@ -131,6 +137,8 @@ export interface BuilderState {
   zoomBy: (factor: number, anchor: { x: number; y: number }) => void;
 
   selectBrick: (id: string | null) => void;
+  toggleBrickSelected: (id: string) => void;
+  selectBricks: (ids: string[]) => void;
   setActiveGroup: (id: string) => void;
 
   addGroup: () => string;
@@ -143,8 +151,12 @@ export interface BuilderState {
   addBrick: (brick: BrickInstance) => void;
   appendImportedBricks: (canvas: { groups: LayerGroup[]; bricks: BrickInstance[] }) => void;
   updateBrick: (id: string, partial: Partial<Omit<BrickInstance, 'id' | 'groupId'>>) => void;
+  updateBricks: (
+    updates: Array<{ id: string; changes: Partial<Omit<BrickInstance, 'id' | 'groupId'>> }>,
+  ) => void;
   renameBrick: (id: string, name: string) => void;
   deleteBrick: (id: string) => void;
+  deleteBricks: (ids: string[]) => void;
   toggleBrickVisible: (id: string) => void;
   moveBrick: (brickId: string, toGroupId: string, beforeBrickId: string | null) => void;
 
@@ -175,7 +187,7 @@ const Ctx = createContext<BuilderState | null>(null);
 
 function makeInitialData(): BuilderData {
   const g = createInitialGroup();
-  return { groups: [g], bricks: [], activeGroupId: g.id, selectedId: null };
+  return { groups: [g], bricks: [], activeGroupId: g.id, selectedIds: [] };
 }
 
 function findGroupInsertionEnd(
@@ -252,7 +264,7 @@ export function BuilderProvider({
         groups: liveSeedRef.current!.groups,
         bricks: liveSeedRef.current!.bricks,
         activeGroupId: firstGroupId,
-        selectedId: null,
+        selectedIds: [],
       };
     }
     if (initial && initial.canvasState.groups.length > 0) {
@@ -261,7 +273,7 @@ export function BuilderProvider({
         groups: initial.canvasState.groups,
         bricks: initial.canvasState.bricks,
         activeGroupId: firstGroupId,
-        selectedId: null,
+        selectedIds: [],
       };
     }
     return makeInitialData();
@@ -313,10 +325,14 @@ export function BuilderProvider({
     publishAwareness();
   }, [publishAwareness]);
 
+  // The awareness protocol stays singular: peers see the first selected
+  // brick. Widening it to the whole selection is a protocol change for
+  // usePeerPresence consumers — deliberate follow-up, not done here.
+  const firstSelectedId = data.selectedIds[0] ?? null;
   useEffect(() => {
-    awarenessStateRef.current.selectedBrickId = data.selectedId;
+    awarenessStateRef.current.selectedBrickId = firstSelectedId;
     publishAwareness();
-  }, [data.selectedId, publishAwareness]);
+  }, [firstSelectedId, publishAwareness]);
 
   const liveSnapshot = liveMode ? yjs.snapshot : null;
   const liveDoc = liveMode ? yjs.doc : null;
@@ -338,7 +354,7 @@ export function BuilderProvider({
         groups: nextGroups,
         bricks: nextBricks,
         activeGroupId: stillExists ? d.activeGroupId : fallback,
-        selectedId: null,
+        selectedIds: [],
       };
     });
   }, []);
@@ -350,11 +366,15 @@ export function BuilderProvider({
   // changes.
   const selectedIdRef = useRef<string | null>(null);
   useEffect(() => {
-    selectedIdRef.current = data.selectedId;
-  }, [data.selectedId]);
+    selectedIdRef.current = firstSelectedId;
+  }, [firstSelectedId]);
 
   const restoreSelection = useCallback((id: string | null) => {
-    setData((d) => (d.selectedId === id ? d : { ...d, selectedId: id }));
+    setData((d) => {
+      const next = id === null ? [] : [id];
+      if (d.selectedIds.length === next.length && d.selectedIds[0] === next[0]) return d;
+      return { ...d, selectedIds: next };
+    });
   }, []);
 
   const announceUndo = useCallback(
@@ -562,7 +582,29 @@ export function BuilderProvider({
   }, [toast]);
 
   const selectBrick = useCallback((id: string | null) => {
-    setData((d) => (d.selectedId === id ? d : { ...d, selectedId: id }));
+    setData((d) => {
+      const next = id === null ? [] : [id];
+      if (d.selectedIds.length === next.length && d.selectedIds[0] === next[0]) return d;
+      return { ...d, selectedIds: next };
+    });
+  }, []);
+
+  const toggleBrickSelected = useCallback((id: string) => {
+    setData((d) => ({
+      ...d,
+      selectedIds: d.selectedIds.includes(id)
+        ? d.selectedIds.filter((s) => s !== id)
+        : [...d.selectedIds, id],
+    }));
+  }, []);
+
+  const selectBricks = useCallback((ids: string[]) => {
+    setData((d) => {
+      if (d.selectedIds.length === ids.length && d.selectedIds.every((s, i) => s === ids[i])) {
+        return d;
+      }
+      return { ...d, selectedIds: [...ids] };
+    });
   }, []);
 
   const setActiveGroup = useCallback(
@@ -628,12 +670,12 @@ export function BuilderProvider({
         deleteGroupFromDoc(liveDoc, id);
         // Update selection/active locally; codec already removed associated bricks.
         setData((d) => {
-          const stillSelected =
-            d.selectedId !== null &&
-            effectiveBricks.some((b) => b.id === d.selectedId && b.groupId !== id);
+          const surviving = d.selectedIds.filter((s) =>
+            effectiveBricks.some((b) => b.id === s && b.groupId !== id),
+          );
           return {
             ...d,
-            selectedId: stillSelected ? d.selectedId : null,
+            selectedIds: surviving,
             activeGroupId:
               d.activeGroupId === id
                 ? (effectiveGroups.find((g) => g.id !== id)?.id ?? d.activeGroupId)
@@ -646,14 +688,12 @@ export function BuilderProvider({
         let newGroups = d.groups.filter((g) => g.id !== id);
         if (newGroups.length === 0) newGroups = [createInitialGroup()];
         const newBricks = d.bricks.filter((b) => b.groupId !== id);
-        const selectedStillExists =
-          d.selectedId !== null && newBricks.some((b) => b.id === d.selectedId);
         const fallbackActive = newGroups[0]?.id ?? d.activeGroupId;
         return {
           groups: newGroups,
           bricks: newBricks,
           activeGroupId: d.activeGroupId === id ? fallbackActive : d.activeGroupId,
-          selectedId: selectedStillExists ? d.selectedId : null,
+          selectedIds: d.selectedIds.filter((s) => newBricks.some((b) => b.id === s)),
         };
       });
     },
@@ -779,6 +819,30 @@ export function BuilderProvider({
     [liveMode, liveDoc],
   );
 
+  // Batched variant for group moves: one setData locally / one Yjs
+  // transaction in live mode, so a multi-selection drag is a single
+  // autosave payload change and a single undo step.
+  const updateBricks = useCallback(
+    (updates: Array<{ id: string; changes: Partial<Omit<BrickInstance, 'id' | 'groupId'>> }>) => {
+      if (updates.length === 0) return;
+      if (liveMode && liveDoc) {
+        updateBricksInDoc(liveDoc, updates);
+        return;
+      }
+      setData((d) => {
+        const byId = new Map(updates.map((u) => [u.id, u.changes]));
+        return {
+          ...d,
+          bricks: d.bricks.map((b) => {
+            const changes = byId.get(b.id);
+            return changes ? { ...b, ...changes } : b;
+          }),
+        };
+      });
+    },
+    [liveMode, liveDoc],
+  );
+
   const renameBrick = useCallback(
     (id: string, name: string) => {
       updateBrick(id, { name: name.trim() });
@@ -790,13 +854,39 @@ export function BuilderProvider({
     (id: string) => {
       if (liveMode && liveDoc) {
         deleteBrickFromDoc(liveDoc, id);
-        setData((d) => (d.selectedId === id ? { ...d, selectedId: null } : d));
+        setData((d) =>
+          d.selectedIds.includes(id)
+            ? { ...d, selectedIds: d.selectedIds.filter((s) => s !== id) }
+            : d,
+        );
         return;
       }
       setData((d) => ({
         ...d,
         bricks: d.bricks.filter((b) => b.id !== id),
-        selectedId: d.selectedId === id ? null : d.selectedId,
+        selectedIds: d.selectedIds.filter((s) => s !== id),
+      }));
+    },
+    [liveMode, liveDoc],
+  );
+
+  const deleteBricks = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 0) return;
+      const remove = new Set(ids);
+      if (liveMode && liveDoc) {
+        deleteBricksFromDoc(liveDoc, ids);
+        setData((d) =>
+          d.selectedIds.some((s) => remove.has(s))
+            ? { ...d, selectedIds: d.selectedIds.filter((s) => !remove.has(s)) }
+            : d,
+        );
+        return;
+      }
+      setData((d) => ({
+        ...d,
+        bricks: d.bricks.filter((b) => !remove.has(b.id)),
+        selectedIds: d.selectedIds.filter((s) => !remove.has(s)),
       }));
     },
     [liveMode, liveDoc],
@@ -860,12 +950,15 @@ export function BuilderProvider({
       groups: effectiveGroups,
       bricks: effectiveBricks,
       activeGroupId: data.activeGroupId,
-      selectedId: data.selectedId,
+      selectedId: firstSelectedId,
+      selectedIds: data.selectedIds,
       view,
       setPan,
       setZoom,
       zoomBy,
       selectBrick,
+      toggleBrickSelected,
+      selectBricks,
       setActiveGroup,
       addGroup: guard(addGroup, ''),
       renameGroup: guard(renameGroup, undefined),
@@ -876,8 +969,10 @@ export function BuilderProvider({
       addBrick: guard(addBrick, undefined),
       appendImportedBricks: guard(appendImportedBricks, undefined),
       updateBrick: guard(updateBrick, undefined),
+      updateBricks: guard(updateBricks, undefined),
       renameBrick: guard(renameBrick, undefined),
       deleteBrick: guard(deleteBrick, undefined),
+      deleteBricks: guard(deleteBricks, undefined),
       toggleBrickVisible: guard(toggleBrickVisible, undefined),
       moveBrick: guard(moveBrick, undefined),
       toast,
@@ -905,7 +1000,8 @@ export function BuilderProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       data.activeGroupId,
-      data.selectedId,
+      data.selectedIds,
+      firstSelectedId,
       effectiveGroups,
       effectiveBricks,
       effectiveTitle,
@@ -915,6 +1011,8 @@ export function BuilderProvider({
       setTitle,
       zoomBy,
       selectBrick,
+      toggleBrickSelected,
+      selectBricks,
       setActiveGroup,
       addGroup,
       renameGroup,
@@ -925,8 +1023,10 @@ export function BuilderProvider({
       addBrick,
       appendImportedBricks,
       updateBrick,
+      updateBricks,
       renameBrick,
       deleteBrick,
+      deleteBricks,
       toggleBrickVisible,
       moveBrick,
       toast,
