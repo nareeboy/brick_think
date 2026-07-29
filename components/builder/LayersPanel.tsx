@@ -37,7 +37,7 @@ export function LayersPanel() {
     groups,
     bricks,
     activeGroupId,
-    selectedId,
+    selectedIds,
     selectBrick,
     setActiveGroup,
     addGroup,
@@ -211,7 +211,7 @@ export function LayersPanel() {
               group={g}
               bricks={bricksByGroup.get(g.id) ?? []}
               active={g.id === activeGroupId}
-              selectedId={selectedId}
+              selectedIds={selectedIds}
               hint={hint}
               onSetActive={setActiveGroup}
               onToggleCollapsed={toggleGroupCollapsed}
@@ -240,7 +240,7 @@ interface GroupBlockProps {
   group: LayerGroup;
   bricks: BrickInstance[];
   active: boolean;
-  selectedId: string | null;
+  selectedIds: string[];
   hint: DropHint | null;
   onSetActive: (id: string) => void;
   onToggleCollapsed: (id: string) => void;
@@ -263,7 +263,7 @@ function GroupBlock({
   group,
   bricks,
   active,
-  selectedId,
+  selectedIds,
   hint,
   onSetActive,
   onToggleCollapsed,
@@ -415,7 +415,7 @@ function GroupBlock({
               <BrickRow
                 key={b.id}
                 brick={b}
-                selected={selectedId === b.id}
+                selected={selectedIds.includes(b.id)}
                 groupHidden={!group.visible}
                 hint={hint}
                 onSelect={onSelectBrick}

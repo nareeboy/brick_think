@@ -153,6 +153,36 @@ export function updateBrickInDoc(
   }, YJS_LOCAL_ORIGIN);
 }
 
+// One transaction for a whole multi-selection move: one autosave payload
+// change, one undo stack item, one broadcast to peers.
+export function updateBricksInDoc(
+  doc: Y.Doc,
+  updates: Array<{ id: string; changes: Partial<Omit<BrickInstance, 'id' | 'groupId'>> }>,
+): void {
+  doc.transact(() => {
+    const { bricks } = ensureRoots(doc);
+    for (const { id, changes } of updates) {
+      const idx = findBrickIndex(bricks, id);
+      if (idx < 0) continue;
+      const m = bricks.get(idx);
+      for (const [k, v] of Object.entries(changes)) {
+        if (v === undefined) continue;
+        m.set(k, v);
+      }
+    }
+  }, YJS_LOCAL_ORIGIN);
+}
+
+export function deleteBricksFromDoc(doc: Y.Doc, ids: string[]): void {
+  doc.transact(() => {
+    const { bricks } = ensureRoots(doc);
+    const remove = new Set(ids);
+    for (let i = bricks.length - 1; i >= 0; i--) {
+      if (remove.has(bricks.get(i).get('id') as string)) bricks.delete(i, 1);
+    }
+  }, YJS_LOCAL_ORIGIN);
+}
+
 export function deleteBrickFromDoc(doc: Y.Doc, id: string): void {
   doc.transact(() => {
     const { bricks } = ensureRoots(doc);
