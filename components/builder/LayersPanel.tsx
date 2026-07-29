@@ -39,6 +39,7 @@ export function LayersPanel() {
     activeGroupId,
     selectedIds,
     selectBrick,
+    toggleBrickSelected,
     setActiveGroup,
     addGroup,
     renameGroup,
@@ -218,7 +219,9 @@ export function LayersPanel() {
               onToggleVisible={toggleGroupVisible}
               onRename={renameGroup}
               onDelete={handleConfirmDeleteGroup}
-              onSelectBrick={selectBrick}
+              onSelectBrick={(id, shiftKey) =>
+                shiftKey ? toggleBrickSelected(id) : selectBrick(id)
+              }
               onToggleBrickVisible={toggleBrickVisible}
               onDeleteBrick={deleteBrick}
               onRenameBrick={renameBrick}
@@ -247,7 +250,7 @@ interface GroupBlockProps {
   onToggleVisible: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onDelete: (g: LayerGroup) => void;
-  onSelectBrick: (id: string | null) => void;
+  onSelectBrick: (id: string, shiftKey: boolean) => void;
   onToggleBrickVisible: (id: string) => void;
   onDeleteBrick: (id: string) => void;
   onRenameBrick: (id: string, name: string) => void;
@@ -455,7 +458,7 @@ export function BrickRow({
   selected: boolean;
   groupHidden: boolean;
   hint: DropHint | null;
-  onSelect: (id: string | null) => void;
+  onSelect: (id: string, shiftKey: boolean) => void;
   onToggleVisible: (id: string) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
@@ -490,12 +493,18 @@ export function BrickRow({
         onDragStart={(e) => onDragStart(brick.id, e)}
         onDragOver={(e) => onDragOver(e, brick)}
         onDrop={(e) => onDrop(e, brick)}
-        onClick={() => onSelect(brick.id)}
+        // Shift-click toggles the brick in/out of the multi-selection (same
+        // gesture as on the canvas); preventDefault on mousedown stops the
+        // browser from starting a text selection while shift is held.
+        onMouseDown={(e) => {
+          if (e.shiftKey) e.preventDefault();
+        }}
+        onClick={(e) => onSelect(brick.id, e.shiftKey)}
         onKeyDown={(e) => {
           if (e.target !== e.currentTarget) return;
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            onSelect(brick.id);
+            onSelect(brick.id, e.shiftKey);
           } else if (e.key === 'F2') {
             e.preventDefault();
             setDraft(brick.name ?? '');
