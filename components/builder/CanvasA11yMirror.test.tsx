@@ -32,7 +32,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
       />,
     );
@@ -48,7 +48,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
       />,
     );
@@ -67,7 +67,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId="b1"
+        selectedIds={['b1']}
         {...NOOP}
       />,
     );
@@ -82,7 +82,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
       />,
     );
@@ -99,7 +99,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
       />,
     );
@@ -114,7 +114,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
         onFocusBrick={onFocusBrick}
       />,
@@ -131,7 +131,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
       />,
     );
@@ -147,7 +147,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
         onSelectBrick={onSelectBrick}
       />,
@@ -168,7 +168,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
         onMoveFocus={onMoveFocus}
       />,
@@ -195,7 +195,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
         onDelete={onDelete}
       />,
@@ -216,7 +216,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
         onRotate={onRotate}
       />,
@@ -237,7 +237,7 @@ describe('CanvasA11yMirror', () => {
         rows={20}
         cols={20}
         focusedId={null}
-        selectedId={null}
+        selectedIds={[]}
         {...NOOP}
         onCycleColor={onCycleColor}
       />,

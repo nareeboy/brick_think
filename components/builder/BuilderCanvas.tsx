@@ -29,21 +29,52 @@ import {
 
 const PAN_DRAG_THRESHOLD_PX = 3;
 
-function selectionOverlay(
-  brick: BrickInstance,
-  pan: { x: number; y: number },
-  zoom: number,
-): { left: number; top: number } {
+// World-space axis-aligned bounding box of a (possibly rotated) brick.
+function brickAabb(brick: BrickInstance): { x1: number; y1: number; x2: number; y2: number } {
   const rad = (brick.rotation * Math.PI) / 180;
   const cos = Math.abs(Math.cos(rad));
   const sin = Math.abs(Math.sin(rad));
-  const bh = brick.width * sin + brick.height * cos;
-  const topStage = brick.y - bh / 2;
+  const halfW = (brick.width * cos + brick.height * sin) / 2;
+  const halfH = (brick.width * sin + brick.height * cos) / 2;
+  return { x1: brick.x - halfW, y1: brick.y - halfH, x2: brick.x + halfW, y2: brick.y + halfH };
+}
+
+// Screen position for the trash button: top-centre of the union AABB of the
+// whole selection.
+function selectionOverlay(
+  bricks: BrickInstance[],
+  pan: { x: number; y: number },
+  zoom: number,
+): { left: number; top: number } | null {
+  if (bricks.length === 0) return null;
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  for (const b of bricks) {
+    const box = brickAabb(b);
+    minX = Math.min(minX, box.x1);
+    maxX = Math.max(maxX, box.x2);
+    minY = Math.min(minY, box.y1);
+  }
   return {
-    left: brick.x * zoom + pan.x,
-    top: topStage * zoom + pan.y,
+    left: ((minX + maxX) / 2) * zoom + pan.x,
+    top: minY * zoom + pan.y,
   };
 }
+
+// A drag gesture that starts on the empty canvas background. `candidate`
+// becomes `pan` (Space held or touch) or `marquee` (mouse/pen) once the
+// pointer travels past the drag threshold; a candidate that never moves is
+// a click on empty canvas, which clears the selection.
+type CanvasGesture =
+  | { mode: 'pan'; last: { x: number; y: number } }
+  | { mode: 'candidate'; startClient: { x: number; y: number }; shiftKey: boolean }
+  | {
+      mode: 'marquee';
+      startWorld: { x: number; y: number };
+      currentWorld: { x: number; y: number };
+      shiftKey: boolean;
+    };
 
 interface BrickNodeProps {
   brick: BrickInstance;
@@ -55,8 +86,11 @@ interface BrickNodeProps {
    * grabbing the brick.
    */
   interactive: boolean;
-  onSelect: (id: string) => void;
-  onMove: (id: string, x: number, y: number) => void;
+  onPointerSelect: (id: string, shiftKey: boolean) => void;
+  onClickSelect: (id: string, shiftKey: boolean) => void;
+  onDragStart: (id: string) => void;
+  onDragMove: (id: string, x: number, y: number) => void;
+  onDragEnd: (id: string, x: number, y: number) => void;
   onRotate: (id: string) => void;
   onResize: (id: string, width: number, height: number) => void;
   registerNode: (id: string, node: Konva.Image | null) => void;
@@ -68,8 +102,11 @@ function BrickNode({
   brick,
   selected,
   interactive,
-  onSelect,
-  onMove,
+  onPointerSelect,
+  onClickSelect,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
   onRotate,
   onResize,
   registerNode,
@@ -105,14 +142,25 @@ function BrickNode({
       shadowColor={selected ? '#a8482a' : 'transparent'}
       shadowBlur={selected ? 18 : 0}
       shadowOpacity={selected ? 0.35 : 0}
-      onMouseDown={() => onSelect(brick.id)}
-      onTap={() => onSelect(brick.id)}
+      onMouseDown={(e: Konva.KonvaEventObject<MouseEvent>) =>
+        onPointerSelect(brick.id, e.evt.shiftKey)
+      }
+      onTap={() => onPointerSelect(brick.id, false)}
+      // Konva suppresses click after a drag, so this only fires for a
+      // press-and-release in place — the collapse-to-single gesture.
+      onClick={(e: Konva.KonvaEventObject<MouseEvent>) => onClickSelect(brick.id, e.evt.shiftKey)}
       onDblClick={() => onRotate(brick.id)}
       onDblTap={() => onRotate(brick.id)}
-      onDragStart={onInteractStart}
+      onDragStart={() => {
+        onInteractStart();
+        onDragStart(brick.id);
+      }}
       onTransformStart={onInteractStart}
+      onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
+        onDragMove(brick.id, e.target.x(), e.target.y());
+      }}
       onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => {
-        onMove(brick.id, e.target.x(), e.target.y());
+        onDragEnd(brick.id, e.target.x(), e.target.y());
         onInteractEnd();
       }}
       onTransformEnd={() => {
@@ -142,10 +190,13 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
   const {
     groups,
     bricks,
-    selectedId,
+    selectedIds,
     selectBrick,
+    toggleBrickSelected,
+    selectBricks,
     updateBrick,
-    deleteBrick,
+    updateBricks,
+    deleteBricks,
     readOnly,
     view,
     setPan,
@@ -180,7 +231,21 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
   const [interacting, setInteracting] = useState(false);
   const transformerRef = useRef<Konva.Transformer | null>(null);
   const nodeRegistry = useRef(new Map<string, Konva.Image>());
-  const panStartRef = useRef<{ x: number; y: number } | null>(null);
+  const gestureRef = useRef<CanvasGesture | null>(null);
+  // Marquee rect mirrored into state purely for rendering; gestureRef is the
+  // source of truth for the gesture logic.
+  const [marquee, setMarquee] = useState<{
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  } | null>(null);
+  // Group-move bookkeeping: start positions of every selected brick while one
+  // of them is being dragged, so the delta can be applied to the rest.
+  const groupDragRef = useRef<{
+    leadId: string;
+    start: Map<string, { x: number; y: number }>;
+  } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   // Spacebar-held pan mode (Figma convention). When true, brick
   // interactions are suppressed and any drag pans the canvas.
@@ -239,43 +304,53 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
   useEffect(() => {
     const transformer = transformerRef.current;
     if (!transformer) return;
-    if (selectedId === null) {
-      transformer.nodes([]);
-      transformer.getLayer()?.batchDraw();
-      return;
-    }
-    const node = nodeRegistry.current.get(selectedId);
-    if (node) {
-      transformer.nodes([node]);
-      transformer.getLayer()?.batchDraw();
-    }
-  }, [selectedId, bricks]);
+    const nodes = selectedIds
+      .map((id) => nodeRegistry.current.get(id))
+      .filter((n): n is Konva.Image => Boolean(n));
+    transformer.nodes(nodes);
+    transformer.getLayer()?.batchDraw();
+  }, [selectedIds, bricks]);
 
   function registerNode(id: string, node: Konva.Image | null) {
     if (node) nodeRegistry.current.set(id, node);
     else nodeRegistry.current.delete(id);
   }
 
+  function clientToWorld(clientX: number, clientY: number): { x: number; y: number } {
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return { x: 0, y: 0 };
+    return { x: (clientX - rect.left - pan.x) / zoom, y: (clientY - rect.top - pan.y) / zoom };
+  }
+
   function handleStageMouseDown(e: Konva.KonvaEventObject<MouseEvent>) {
-    if (panLocked || e.target === e.target.getStage()) {
+    if (panLocked) {
       // panLocked: every drag pans, even over a brick (brick listening is
       // already off via the `interactive` prop, so this branch handles the
       // empty-area case where the event reaches the Stage).
-      // Otherwise: click started on the empty stage background — arm a pan
-      // candidate and defer the deselect to pointerup-without-drag.
-      panStartRef.current = { x: e.evt.clientX, y: e.evt.clientY };
+      gestureRef.current = { mode: 'pan', last: { x: e.evt.clientX, y: e.evt.clientY } };
       return;
     }
-    panStartRef.current = null;
+    if (e.target === e.target.getStage()) {
+      // Press on the empty stage background — arm a gesture candidate. It
+      // becomes a marquee (mouse/pen) or a pan (touch) once dragged, and a
+      // deselect if released without dragging.
+      gestureRef.current = {
+        mode: 'candidate',
+        startClient: { x: e.evt.clientX, y: e.evt.clientY },
+        shiftKey: e.evt.shiftKey,
+      };
+      return;
+    }
+    gestureRef.current = null;
   }
 
   function handleContainerPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     // Konva's onMouseDown fires first (its native listener on .konvajs-content
     // runs during bubble before React's delegated dispatcher). By this point
-    // panStartRef is either set (started on stage background) or null (started
-    // on a brick). All we add here is DOM pointer capture so pan tracking
-    // survives the pointer leaving the canvas mid-drag.
-    if (panStartRef.current && typeof e.currentTarget.setPointerCapture === 'function') {
+    // gestureRef is either set (started on stage background) or null (started
+    // on a brick). All we add here is DOM pointer capture so pan/marquee
+    // tracking survives the pointer leaving the canvas mid-drag.
+    if (gestureRef.current && typeof e.currentTarget.setPointerCapture === 'function') {
       e.currentTarget.setPointerCapture(e.pointerId);
     }
   }
@@ -292,29 +367,84 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
         publishCursor(worldX, worldY);
       }
     }
-    const start = panStartRef.current;
-    if (!start) return;
-    const dx = e.clientX - start.x;
-    const dy = e.clientY - start.y;
-    if (!isPanning) {
+    const gesture = gestureRef.current;
+    if (!gesture) return;
+    if (gesture.mode === 'candidate') {
+      const dx = e.clientX - gesture.startClient.x;
+      const dy = e.clientY - gesture.startClient.y;
       if (Math.hypot(dx, dy) < PAN_DRAG_THRESHOLD_PX) return;
-      setIsPanning(true);
+      if (e.pointerType === 'touch') {
+        // Touch has no shift key and drag-to-pan is the established gesture.
+        gestureRef.current = {
+          mode: 'pan',
+          last: { x: gesture.startClient.x, y: gesture.startClient.y },
+        };
+        setIsPanning(true);
+      } else {
+        const startWorld = clientToWorld(gesture.startClient.x, gesture.startClient.y);
+        gestureRef.current = {
+          mode: 'marquee',
+          startWorld,
+          currentWorld: startWorld,
+          shiftKey: gesture.shiftKey,
+        };
+      }
+      // Fall through so this move already pans/draws.
     }
-    start.x = e.clientX;
-    start.y = e.clientY;
-    setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+    const active = gestureRef.current;
+    if (!active) return;
+    if (active.mode === 'pan') {
+      const dx = e.clientX - active.last.x;
+      const dy = e.clientY - active.last.y;
+      if (!isPanning) setIsPanning(true);
+      active.last = { x: e.clientX, y: e.clientY };
+      setPan((p) => ({ x: p.x + dx, y: p.y + dy }));
+      return;
+    }
+    if (active.mode === 'marquee') {
+      active.currentWorld = clientToWorld(e.clientX, e.clientY);
+      setMarquee({
+        x1: active.startWorld.x,
+        y1: active.startWorld.y,
+        x2: active.currentWorld.x,
+        y2: active.currentWorld.y,
+      });
+    }
   }
 
   function handleContainerPointerLeave() {
     if (liveMode) clearCursor();
   }
 
-  function endPan(e: ReactPointerEvent<HTMLDivElement>) {
-    if (!panStartRef.current) return;
-    const wasPanning = isPanning;
-    panStartRef.current = null;
-    if (wasPanning) setIsPanning(false);
-    else selectBrick(null);
+  function endGesture(e: ReactPointerEvent<HTMLDivElement>) {
+    const gesture = gestureRef.current;
+    if (!gesture) return;
+    gestureRef.current = null;
+    if (gesture.mode === 'pan') {
+      setIsPanning(false);
+    } else if (gesture.mode === 'marquee') {
+      setMarquee(null);
+      const x1 = Math.min(gesture.startWorld.x, gesture.currentWorld.x);
+      const x2 = Math.max(gesture.startWorld.x, gesture.currentWorld.x);
+      const y1 = Math.min(gesture.startWorld.y, gesture.currentWorld.y);
+      const y2 = Math.max(gesture.startWorld.y, gesture.currentWorld.y);
+      const hits = visibleBricks
+        .filter((b) => {
+          const box = brickAabb(b);
+          return box.x1 <= x2 && box.x2 >= x1 && box.y1 <= y2 && box.y2 >= y1;
+        })
+        .map((b) => b.id);
+      if (gesture.shiftKey) {
+        const next = [...selectedIds];
+        for (const id of hits) if (!next.includes(id)) next.push(id);
+        selectBricks(next);
+      } else {
+        selectBricks(hits);
+      }
+    } else {
+      // Candidate that never moved: a click on empty canvas — deselect.
+      selectBrick(null);
+    }
     if (
       typeof e.currentTarget.hasPointerCapture === 'function' &&
       e.currentTarget.hasPointerCapture(e.pointerId)
@@ -323,7 +453,68 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     }
   }
 
-  function handleMove(id: string, x: number, y: number) {
+  function handleBrickPointerSelect(id: string, shiftKey: boolean) {
+    if (shiftKey) {
+      toggleBrickSelected(id);
+      return;
+    }
+    // Pressing a brick that is already part of the selection keeps the
+    // selection intact so a drag moves the whole group; collapse-to-single
+    // happens on click (release without drag) in handleBrickClickSelect.
+    if (!selectedIds.includes(id)) selectBrick(id);
+  }
+
+  function handleBrickClickSelect(id: string, shiftKey: boolean) {
+    if (!shiftKey && selectedIds.length > 1 && selectedIds.includes(id)) {
+      selectBrick(id);
+    }
+  }
+
+  function handleBrickDragStart(id: string) {
+    if (selectedIds.length > 1 && selectedIds.includes(id)) {
+      const start = new Map<string, { x: number; y: number }>();
+      for (const sid of selectedIds) {
+        const b = bricks.find((x) => x.id === sid);
+        if (b) start.set(sid, { x: b.x, y: b.y });
+      }
+      groupDragRef.current = { leadId: id, start };
+    } else {
+      groupDragRef.current = null;
+    }
+  }
+
+  function handleBrickDragMove(id: string, x: number, y: number) {
+    const g = groupDragRef.current;
+    if (!g || g.leadId !== id) return;
+    const lead = g.start.get(id);
+    if (!lead) return;
+    const dx = x - lead.x;
+    const dy = y - lead.y;
+    // Konva already moved the lead node; mirror the delta onto the rest of
+    // the selection imperatively — state commits once, on drag end.
+    for (const [sid, pos] of g.start) {
+      if (sid === id) continue;
+      nodeRegistry.current.get(sid)?.position({ x: pos.x + dx, y: pos.y + dy });
+    }
+  }
+
+  function handleBrickDragEnd(id: string, x: number, y: number) {
+    const g = groupDragRef.current;
+    if (g && g.leadId === id) {
+      groupDragRef.current = null;
+      const lead = g.start.get(id);
+      if (lead) {
+        const dx = x - lead.x;
+        const dy = y - lead.y;
+        updateBricks(
+          Array.from(g.start, ([sid, pos]) => ({
+            id: sid,
+            changes: sid === id ? { x, y } : { x: pos.x + dx, y: pos.y + dy },
+          })),
+        );
+        return;
+      }
+    }
     updateBrick(id, { x, y });
   }
 
@@ -337,9 +528,9 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     updateBrick(id, { width, height });
   }
 
-  function handleDelete(id: string) {
-    deleteBrick(id);
-    nodeRegistry.current.delete(id);
+  function handleDelete(ids: string[]) {
+    deleteBricks(ids);
+    for (const id of ids) nodeRegistry.current.delete(id);
   }
 
   function moveFocus(currentId: string, dir: 'left' | 'right' | 'up' | 'down') {
@@ -386,7 +577,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
         break;
       }
     }
-    handleDelete(id);
+    handleDelete([id]);
     setFocusedBrickId(nextId);
   }
 
@@ -407,21 +598,22 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
   }
 
   useEffect(() => {
-    if (selectedId === null) return;
+    if (selectedIds.length === 0) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      if (e.key !== 'Delete' && e.key !== 'Backspace' && e.key !== 'Escape') return;
       // Defer to the grid cell's own handler when a gridcell has focus.
       if (isCanvasGridFocused()) return;
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
       e.preventDefault();
-      handleDelete(selectedId!);
+      if (e.key === 'Escape') selectBrick(null);
+      else handleDelete(selectedIds);
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId]);
+  }, [selectedIds]);
 
   // Spacebar held → pan-lock. Released → back to brick interaction. Skipped
   // while an input is focused so typing a space in a label doesn't toggle
@@ -488,8 +680,12 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     return () => registerThumbnailCapture(null);
   }, [registerThumbnailCapture]);
 
-  const selectedBrick = selectedId ? (bricks.find((b) => b.id === selectedId) ?? null) : null;
-  const overlay = selectedBrick && !interacting ? selectionOverlay(selectedBrick, pan, zoom) : null;
+  const selectedBricks = useMemo(
+    () => bricks.filter((b) => selectedIds.includes(b.id)),
+    [bricks, selectedIds],
+  );
+  const overlay =
+    !interacting && marquee === null ? selectionOverlay(selectedBricks, pan, zoom) : null;
 
   const focusedBrick = focusedBrickId
     ? (visibleBricks.find((b) => b.id === focusedBrickId) ?? null)
@@ -504,8 +700,8 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
       }`}
       onPointerDown={handleContainerPointerDown}
       onPointerMove={handleContainerPointerMove}
-      onPointerUp={endPan}
-      onPointerCancel={endPan}
+      onPointerUp={endGesture}
+      onPointerCancel={endGesture}
       onPointerLeave={handleContainerPointerLeave}
     >
       <CanvasA11yMirror
@@ -513,7 +709,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
         rows={Math.max(20, ...mirrorBricks.map((b) => b.row), 0)}
         cols={Math.max(20, ...mirrorBricks.map((b) => b.col), 0)}
         focusedId={focusedBrickId}
-        selectedId={selectedId}
+        selectedIds={selectedIds}
         onFocusBrick={setFocusedBrickId}
         onSelectBrick={(id) => selectBrick(id)}
         onMoveFocus={moveFocus}
@@ -552,10 +748,13 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
                 <BrickNode
                   key={b.id}
                   brick={b}
-                  selected={selectedId === b.id}
+                  selected={selectedIds.includes(b.id)}
                   interactive={interactive}
-                  onSelect={selectBrick}
-                  onMove={handleMove}
+                  onPointerSelect={handleBrickPointerSelect}
+                  onClickSelect={handleBrickClickSelect}
+                  onDragStart={handleBrickDragStart}
+                  onDragMove={handleBrickDragMove}
+                  onDragEnd={handleBrickDragEnd}
                   onRotate={handleRotate}
                   onResize={handleResize}
                   registerNode={registerNode}
@@ -616,10 +815,27 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
                   );
                 });
               })}
+              {marquee && (
+                <Rect
+                  x={Math.min(marquee.x1, marquee.x2)}
+                  y={Math.min(marquee.y1, marquee.y2)}
+                  width={Math.abs(marquee.x2 - marquee.x1)}
+                  height={Math.abs(marquee.y2 - marquee.y1)}
+                  stroke="#a8482a"
+                  strokeWidth={1.5 / zoom}
+                  dash={[6 / zoom, 4 / zoom]}
+                  fill="rgba(168, 72, 42, 0.08)"
+                  listening={false}
+                />
+              )}
               <Transformer
                 ref={transformerRef}
                 rotateEnabled={false}
                 keepRatio
+                // Resize handles only for a single selection; with several
+                // bricks selected the transformer is a pure bounding box
+                // (multi-brick resize is deliberately out of scope).
+                resizeEnabled={selectedIds.length === 1}
                 enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']}
                 anchorSize={10}
                 borderStroke="#a8482a"
@@ -640,11 +856,13 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
             </Layer>
           </Stage>
           <div className="pointer-events-none absolute inset-0 z-30">
-            {overlay && selectedId && !readOnly ? (
+            {overlay && selectedIds.length > 0 && !readOnly ? (
               <button
                 type="button"
-                aria-label="Delete piece"
-                onClick={() => handleDelete(selectedId)}
+                aria-label={
+                  selectedIds.length === 1 ? 'Delete piece' : `Delete ${selectedIds.length} pieces`
+                }
+                onClick={() => handleDelete(selectedIds)}
                 style={{
                   position: 'absolute',
                   left: overlay.left,
