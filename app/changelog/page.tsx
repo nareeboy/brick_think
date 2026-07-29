@@ -1,7 +1,7 @@
 // app/changelog/page.tsx
 import type { Metadata } from 'next';
 
-import { CategoryBadge } from '@/app/(authed)/app/admin/changelog/CategoryBadge';
+import { CategoryBadge } from '@/components/changelog/CategoryBadge';
 import { MarketingShell } from '@/components/marketing/MarketingChrome';
 import { sanitizeChangelogHtml } from '@/lib/changelog/sanitizeHtml';
 import { formatChangelogDate, groupByMonth, isoDate } from '@/lib/changelog/format';

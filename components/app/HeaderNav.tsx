@@ -12,8 +12,8 @@ const BASE_LINKS = [
   { href: '/app/scenarios', label: 'Scenarios' },
 ] as const;
 
-// Admin-only links (rendered when showAdmin is true). The Toast test harness
-// now lives inside the admin panel under the "UI Elements" nav section.
+// Admin-only links. The admin panel is premium-only: GlobalHeader only sets
+// showAdmin when the premium overlay's adminPanelEnabled flag is true.
 const ADMIN_LINKS = [{ href: '/app/admin', label: 'Admin' }] as const;
 
 interface Props {
