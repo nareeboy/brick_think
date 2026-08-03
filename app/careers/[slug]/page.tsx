@@ -9,6 +9,7 @@ import { JsonLd } from '@/components/seo/JsonLd';
 import { getOpenRoleBySlug } from '@/lib/careers/queries';
 import { sanitizeRoleHtml } from '@/lib/careers/sanitizeHtml';
 import { jobPostingSchema } from '@/lib/seo/jsonLd';
+import { pageMetadata } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,15 +21,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const role = await getOpenRoleBySlug(slug);
   if (!role) return { title: 'Role not found' };
-  const title = `${role.title} — Careers`;
-  const description = role.summary || undefined;
-  return {
-    title,
-    description,
-    alternates: { canonical: `/careers/${role.slug}` },
-    openGraph: { title: `${title} · BrickThink`, description, type: 'website' },
-    twitter: { card: 'summary_large_image', title: `${title} · BrickThink`, description },
-  };
+  return pageMetadata({
+    title: `${role.title} — Careers`,
+    description:
+      role.summary ||
+      'Open role at BrickThink — help us build LEGO® SERIOUS PLAY® for remote teams.',
+    path: `/careers/${role.slug}`,
+  });
 }
 
 export default async function RolePage({ params }: { params: Promise<{ slug: string }> }) {
