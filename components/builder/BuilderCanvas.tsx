@@ -6,6 +6,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react';
 import { Image as KImage, Layer, Rect, Stage, Transformer } from 'react-konva';
 
 import { useBrickImage } from '@/components/canvas/BrickImage';
+import { reorderBricksWithinGroups, type ReorderDirection } from '@/lib/canvas/reorder';
 import { fitToBox, padBbox, unionRects } from '@/lib/canvas/thumbnailBox';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
 
@@ -16,6 +17,7 @@ import { brickToCell } from '@/lib/bricks/grid';
 
 import { BrickPatternOverlay } from './BrickPatternOverlay';
 import { CanvasA11yMirror, type MirrorBrick } from './CanvasA11yMirror';
+import { CanvasContextMenu } from './CanvasContextMenu';
 import { patternForColor } from '@/lib/bricks/patterns';
 import {
   MAX_PIECE_SIZE,
@@ -93,6 +95,7 @@ interface BrickNodeProps {
   onDragEnd: (id: string, x: number, y: number) => void;
   onRotate: (id: string) => void;
   onResize: (id: string, width: number, height: number) => void;
+  onContextMenu: (id: string, evt: MouseEvent) => void;
   registerNode: (id: string, node: Konva.Image | null) => void;
   onInteractStart: () => void;
   onInteractEnd: () => void;
@@ -109,6 +112,7 @@ function BrickNode({
   onDragEnd,
   onRotate,
   onResize,
+  onContextMenu,
   registerNode,
   onInteractStart,
   onInteractEnd,
@@ -132,6 +136,9 @@ function BrickNode({
       offsetX={brick.width / 2}
       offsetY={brick.height / 2}
       rotation={brick.rotation}
+      // Horizontal mirror around the brick centre (offset = centre, so a
+      // negative x-scale flips in place).
+      scaleX={brick.flippedX ? -1 : 1}
       // Suppress brick interactions (select/drag/transform) while Space-pan is
       // held or the canvas is read-only, so the pointer-down on a brick falls
       // through to the canvas-level pan handler instead of moving the piece.
@@ -151,6 +158,7 @@ function BrickNode({
       onClick={(e: Konva.KonvaEventObject<MouseEvent>) => onClickSelect(brick.id, e.evt.shiftKey)}
       onDblClick={() => onRotate(brick.id)}
       onDblTap={() => onRotate(brick.id)}
+      onContextMenu={(e: Konva.KonvaEventObject<PointerEvent>) => onContextMenu(brick.id, e.evt)}
       onDragStart={() => {
         onInteractStart();
         onDragStart(brick.id);
@@ -169,11 +177,13 @@ function BrickNode({
           onInteractEnd();
           return;
         }
-        const sx = node.scaleX();
-        const sy = node.scaleY();
+        // abs() because a flipped brick's base x-scale is -1, so the
+        // transformer reports a negative composite scale.
+        const sx = Math.abs(node.scaleX());
+        const sy = Math.abs(node.scaleY());
         const nextW = Math.max(MIN_PIECE_SIZE, Math.min(MAX_PIECE_SIZE, brick.width * sx));
         const nextH = Math.max(MIN_PIECE_SIZE, Math.min(MAX_PIECE_SIZE, brick.height * sy));
-        node.scaleX(1);
+        node.scaleX(brick.flippedX ? -1 : 1);
         node.scaleY(1);
         onResize(brick.id, nextW, nextH);
         onInteractEnd();
@@ -196,6 +206,8 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     selectBricks,
     updateBrick,
     updateBricks,
+    flipBricksHorizontal,
+    reorderBricks,
     deleteBricks,
     readOnly,
     view,
@@ -247,6 +259,14 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     start: Map<string, { x: number; y: number }>;
   } | null>(null);
   const [isPanning, setIsPanning] = useState(false);
+  // Right-click menu on a piece. targetIds is frozen at open time: the
+  // whole selection when the clicked brick is part of it, else just the
+  // clicked brick.
+  const [contextMenu, setContextMenu] = useState<{
+    left: number;
+    top: number;
+    targetIds: string[];
+  } | null>(null);
   // Spacebar-held pan mode (Figma convention). When true, brick
   // interactions are suppressed and any drag pans the canvas.
   const [panLocked, setPanLocked] = useState(false);
@@ -344,7 +364,32 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     gestureRef.current = null;
   }
 
+  function handleBrickContextMenu(id: string, evt: MouseEvent) {
+    evt.preventDefault();
+    if (readOnly || panLocked) return;
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const inSelection = selectedIds.includes(id);
+    if (!inSelection) selectBrick(id);
+    setContextMenu({
+      left: evt.clientX - rect.left,
+      top: evt.clientY - rect.top,
+      targetIds: inSelection ? [...selectedIds] : [id],
+    });
+  }
+
+  function handleStageContextMenu(e: Konva.KonvaEventObject<PointerEvent>) {
+    // Right-click on empty canvas: no menu, and no browser menu either.
+    if (e.target === e.target.getStage()) {
+      e.evt.preventDefault();
+      setContextMenu(null);
+    }
+  }
+
   function handleContainerPointerDown(e: ReactPointerEvent<HTMLDivElement>) {
+    // Any press on the surface dismisses the piece menu (the menu itself
+    // stops pointerdown propagation, so its own clicks survive).
+    if (contextMenu) setContextMenu(null);
     // Konva's onMouseDown fires first (its native listener on .konvajs-content
     // runs during bubble before React's delegated dispatcher). By this point
     // gestureRef is either set (started on stage background) or null (started
@@ -684,6 +729,19 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
     () => bricks.filter((b) => selectedIds.includes(b.id)),
     [bricks, selectedIds],
   );
+
+  // A reorder direction that would be a no-op renders as a disabled item.
+  const disabledDirections = useMemo(() => {
+    const disabled = new Set<ReorderDirection>();
+    if (!contextMenu) return disabled;
+    const directions: ReorderDirection[] = ['front', 'forward', 'backward', 'back'];
+    for (const direction of directions) {
+      if (reorderBricksWithinGroups(bricks, contextMenu.targetIds, direction) === null) {
+        disabled.add(direction);
+      }
+    }
+    return disabled;
+  }, [contextMenu, bricks]);
   const overlay =
     !interacting && marquee === null ? selectionOverlay(selectedBricks, pan, zoom) : null;
 
@@ -703,6 +761,9 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
       onPointerUp={endGesture}
       onPointerCancel={endGesture}
       onPointerLeave={handleContainerPointerLeave}
+      // The canvas surface owns its own right-click menu; never show the
+      // browser one anywhere on it.
+      onContextMenu={(e) => e.preventDefault()}
     >
       <CanvasA11yMirror
         bricks={mirrorBricks}
@@ -716,6 +777,9 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
         onDelete={handleKeyboardDelete}
         onRotate={handleKeyboardRotate}
         onCycleColor={handleCycleColor}
+        onFlip={(id) => flipBricksHorizontal([id])}
+        onBringForward={(id) => reorderBricks([id], 'forward')}
+        onSendBackward={(id) => reorderBricks([id], 'backward')}
       />
       {/* Peer-outline markers — flat hidden DOM for e2e selector contracts. */}
       <div aria-hidden="true" className="sr-only">
@@ -742,6 +806,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
             scaleX={zoom}
             scaleY={zoom}
             onMouseDown={handleStageMouseDown}
+            onContextMenu={handleStageContextMenu}
           >
             <Layer ref={layerRef}>
               {visibleBricks.map((b) => (
@@ -757,6 +822,7 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
                   onDragEnd={handleBrickDragEnd}
                   onRotate={handleRotate}
                   onResize={handleResize}
+                  onContextMenu={handleBrickContextMenu}
                   registerNode={registerNode}
                   onInteractStart={() => setInteracting(true)}
                   onInteractEnd={() => setInteracting(false)}
@@ -856,6 +922,17 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
             </Layer>
           </Stage>
           <div className="pointer-events-none absolute inset-0 z-30">
+            {contextMenu && !readOnly ? (
+              <CanvasContextMenu
+                left={contextMenu.left}
+                top={contextMenu.top}
+                targetCount={contextMenu.targetIds.length}
+                disabledDirections={disabledDirections}
+                onFlipHorizontal={() => flipBricksHorizontal(contextMenu.targetIds)}
+                onReorder={(direction) => reorderBricks(contextMenu.targetIds, direction)}
+                onClose={() => setContextMenu(null)}
+              />
+            ) : null}
             {overlay && selectedIds.length > 0 && !readOnly ? (
               <button
                 type="button"

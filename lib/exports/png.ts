@@ -133,6 +133,7 @@ async function renderOffscreen(
           offsetX: b.width / 2,
           offsetY: b.height / 2,
           rotation: b.rotation,
+          scaleX: b.flippedX ? -1 : 1,
         });
         layer.add(node);
       }),

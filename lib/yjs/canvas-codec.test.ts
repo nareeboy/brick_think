@@ -8,6 +8,7 @@ import {
   deleteBricksFromDoc,
   moveBrickInDoc,
   projectDocToCanvas,
+  reorderBricksInDoc,
   seedDocFromCanvas,
   setTitleInDoc,
   updateBrickInDoc,
@@ -226,5 +227,47 @@ describe('batched multi-brick operations', () => {
     const snap = projectDocToCanvas(doc);
     expect(snap.bricks.map((b) => b.id)).toEqual(['b2']);
     expect(transactions).toBe(1);
+  });
+
+  test('flippedX round-trips through the doc and defaults to undefined', () => {
+    const doc = seededDoc();
+    updateBrickInDoc(doc, 'b1', { flippedX: true });
+    const snap = projectDocToCanvas(doc);
+    expect(snap.bricks.find((b) => b.id === 'b1')?.flippedX).toBe(true);
+    expect(snap.bricks.find((b) => b.id === 'b2')?.flippedX).toBeUndefined();
+  });
+
+  test('reorderBricksInDoc rewrites a group run in a single transaction', () => {
+    const doc = seededDoc();
+    updateBrickInDoc(doc, 'b2', { flippedX: true });
+    let transactions = 0;
+    doc.on('afterTransaction', () => {
+      transactions += 1;
+    });
+    reorderBricksInDoc(doc, [{ groupId: 'g1', orderedIds: ['b3', 'b1', 'b2'] }]);
+    const snap = projectDocToCanvas(doc);
+    expect(snap.bricks.map((b) => b.id)).toEqual(['b3', 'b1', 'b2']);
+    // Fields survive the clone, including the optional flip flag.
+    expect(snap.bricks.find((b) => b.id === 'b2')?.flippedX).toBe(true);
+    expect(snap.bricks.find((b) => b.id === 'b2')?.x).toBe(200);
+    expect(transactions).toBe(1);
+  });
+
+  test('reorderBricksInDoc skips a run whose ids diverged from the doc', () => {
+    const doc = seededDoc();
+    reorderBricksInDoc(doc, [{ groupId: 'g1', orderedIds: ['b3', 'b1'] }]);
+    reorderBricksInDoc(doc, [{ groupId: 'g1', orderedIds: ['b3', 'b1', 'ghost'] }]);
+    const snap = projectDocToCanvas(doc);
+    expect(snap.bricks.map((b) => b.id)).toEqual(['b1', 'b2', 'b3']);
+  });
+
+  test('reorderBricksInDoc leaves other groups untouched', () => {
+    const doc = seededDoc();
+    addGroupToDoc(doc, { id: 'g2', name: 'Other', collapsed: false, visible: true });
+    addBrickToDoc(doc, makeBrick('c1', 'g2'));
+    addBrickToDoc(doc, makeBrick('c2', 'g2'));
+    reorderBricksInDoc(doc, [{ groupId: 'g2', orderedIds: ['c2', 'c1'] }]);
+    const snap = projectDocToCanvas(doc);
+    expect(snap.bricks.map((b) => b.id)).toEqual(['b1', 'b2', 'b3', 'c2', 'c1']);
   });
 });
