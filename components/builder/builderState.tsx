@@ -20,6 +20,7 @@ import {
   moveBrickInDoc,
   moveGroupInDoc,
   renameGroupInDoc,
+  reorderBricksInDoc,
   setBrickVisibleInDoc,
   setGroupCollapsedInDoc,
   setGroupVisibleInDoc,
@@ -28,6 +29,8 @@ import {
   updateBricksInDoc,
   YJS_LOCAL_ORIGIN,
 } from '@/lib/yjs/canvas-codec';
+
+import { reorderBricksWithinGroups, type ReorderDirection } from '@/lib/canvas/reorder';
 
 import { useAutosave, type SaveStatus } from './useAutosave';
 import { useModelRealtime, type ModelRealtimePayload } from './useModelRealtime';
@@ -50,6 +53,8 @@ export interface BrickInstance {
   y: number;
   rotation: number;
   visible: boolean;
+  /** Mirrored around the vertical axis. Absent on pre-flip canvases = false. */
+  flippedX?: boolean;
 }
 
 export interface LayerGroup {
@@ -154,6 +159,8 @@ export interface BuilderState {
   updateBricks: (
     updates: Array<{ id: string; changes: Partial<Omit<BrickInstance, 'id' | 'groupId'>> }>,
   ) => void;
+  flipBricksHorizontal: (ids: string[]) => void;
+  reorderBricks: (ids: string[], direction: ReorderDirection) => void;
   renameBrick: (id: string, name: string) => void;
   deleteBrick: (id: string) => void;
   deleteBricks: (ids: string[]) => void;
@@ -843,6 +850,45 @@ export function BuilderProvider({
     [liveMode, liveDoc],
   );
 
+  // Toggle the horizontal mirror per brick; batched so a multi-selection
+  // flip is one autosave payload change / one undo step.
+  const flipBricksHorizontal = useCallback(
+    (ids: string[]) => {
+      const updates = ids.flatMap((id) => {
+        const b = effectiveBricks.find((x) => x.id === id);
+        return b ? [{ id, changes: { flippedX: !b.flippedX } }] : [];
+      });
+      updateBricks(updates);
+    },
+    [effectiveBricks, updateBricks],
+  );
+
+  const reorderBricks = useCallback(
+    (ids: string[], direction: ReorderDirection) => {
+      if (liveMode && liveDoc) {
+        const next = reorderBricksWithinGroups(effectiveBricks, ids, direction);
+        if (!next) return;
+        const selected = new Set(ids);
+        const groupIds = new Set(
+          effectiveBricks.filter((b) => selected.has(b.id)).map((b) => b.groupId),
+        );
+        reorderBricksInDoc(
+          liveDoc,
+          Array.from(groupIds, (groupId) => ({
+            groupId,
+            orderedIds: next.filter((b) => b.groupId === groupId).map((b) => b.id),
+          })),
+        );
+        return;
+      }
+      setData((d) => {
+        const next = reorderBricksWithinGroups(d.bricks, ids, direction);
+        return next ? { ...d, bricks: next } : d;
+      });
+    },
+    [liveMode, liveDoc, effectiveBricks],
+  );
+
   const renameBrick = useCallback(
     (id: string, name: string) => {
       updateBrick(id, { name: name.trim() });
@@ -970,6 +1016,8 @@ export function BuilderProvider({
       appendImportedBricks: guard(appendImportedBricks, undefined),
       updateBrick: guard(updateBrick, undefined),
       updateBricks: guard(updateBricks, undefined),
+      flipBricksHorizontal: guard(flipBricksHorizontal, undefined),
+      reorderBricks: guard(reorderBricks, undefined),
       renameBrick: guard(renameBrick, undefined),
       deleteBrick: guard(deleteBrick, undefined),
       deleteBricks: guard(deleteBricks, undefined),
@@ -1024,6 +1072,8 @@ export function BuilderProvider({
       appendImportedBricks,
       updateBrick,
       updateBricks,
+      flipBricksHorizontal,
+      reorderBricks,
       renameBrick,
       deleteBrick,
       deleteBricks,

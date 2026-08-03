@@ -38,6 +38,7 @@ export function BrickImage({ brick }: { brick: BrickInstance }) {
       offsetX={brick.width / 2}
       offsetY={brick.height / 2}
       rotation={brick.rotation}
+      scaleX={brick.flippedX ? -1 : 1}
     />
   );
 }

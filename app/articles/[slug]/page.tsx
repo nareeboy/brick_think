@@ -11,6 +11,7 @@ import { formatPublishedDate, isoDate, readingMinutes } from '@/lib/articles/for
 import { getPublishedArticleBySlug } from '@/lib/articles/queries';
 import type { CoverCredit } from '@/lib/articles/types';
 import { articleSchema } from '@/lib/seo/jsonLd';
+import { SITE_OG_IMAGE } from '@/lib/seo/metadata';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,13 +33,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       publishedTime: article.publishedAt,
       authors: article.authorName ? [article.authorName] : undefined,
-      images: article.coverImageUrl ? [{ url: article.coverImageUrl }] : undefined,
+      images: article.coverImageUrl ? [{ url: article.coverImageUrl }] : [SITE_OG_IMAGE],
     },
     twitter: {
-      card: article.coverImageUrl ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: article.title,
       description: article.excerpt ?? undefined,
-      images: article.coverImageUrl ? [article.coverImageUrl] : undefined,
+      images: article.coverImageUrl ? [article.coverImageUrl] : [SITE_OG_IMAGE],
     },
   };
 }

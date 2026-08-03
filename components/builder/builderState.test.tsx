@@ -395,6 +395,46 @@ describe('multi-select', () => {
     expect(result.current.selectedIds).toEqual(['b2']);
   });
 
+  test('flipBricksHorizontal toggles flippedX per brick in one call', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2', 'b3')),
+    });
+    act(() => result.current.flipBricksHorizontal(['b1', 'b2']));
+    expect(result.current.bricks.find((b) => b.id === 'b1')?.flippedX).toBe(true);
+    expect(result.current.bricks.find((b) => b.id === 'b2')?.flippedX).toBe(true);
+    expect(result.current.bricks.find((b) => b.id === 'b3')?.flippedX).toBeUndefined();
+    // Flipping again restores the original orientation.
+    act(() => result.current.flipBricksHorizontal(['b1']));
+    expect(result.current.bricks.find((b) => b.id === 'b1')?.flippedX).toBe(false);
+    expect(result.current.bricks.find((b) => b.id === 'b2')?.flippedX).toBe(true);
+  });
+
+  test('reorderBricks moves bricks within the z-order', () => {
+    const { result } = renderHook(() => useBuilderState(), {
+      wrapper: wrap(withBricks('b1', 'b2', 'b3')),
+    });
+    act(() => result.current.reorderBricks(['b3'], 'front'));
+    expect(result.current.bricks.map((b) => b.id)).toEqual(['b3', 'b1', 'b2']);
+    act(() => result.current.reorderBricks(['b3'], 'backward'));
+    expect(result.current.bricks.map((b) => b.id)).toEqual(['b1', 'b3', 'b2']);
+    // No-op direction leaves the array untouched (same reference-equal state).
+    act(() => result.current.reorderBricks(['b1'], 'forward'));
+    expect(result.current.bricks.map((b) => b.id)).toEqual(['b1', 'b3', 'b2']);
+  });
+
+  test('readOnly blocks flipBricksHorizontal and reorderBricks', () => {
+    const Wrapper = ({ children }: { children: ReactNode }) => (
+      <BuilderProvider initial={withBricks('b1', 'b2')} readOnly>
+        {children}
+      </BuilderProvider>
+    );
+    const { result } = renderHook(() => useBuilderState(), { wrapper: Wrapper });
+    act(() => result.current.flipBricksHorizontal(['b1']));
+    act(() => result.current.reorderBricks(['b2'], 'front'));
+    expect(result.current.bricks.find((b) => b.id === 'b1')?.flippedX).toBeUndefined();
+    expect(result.current.bricks.map((b) => b.id)).toEqual(['b1', 'b2']);
+  });
+
   test('readOnly blocks updateBricks and deleteBricks', () => {
     const Wrapper = ({ children }: { children: ReactNode }) => (
       <BuilderProvider initial={withBricks('b1', 'b2')} readOnly>

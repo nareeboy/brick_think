@@ -22,6 +22,9 @@ type Props = {
   onDelete: (id: string) => void;
   onRotate: (id: string) => void;
   onCycleColor: (id: string) => void;
+  onFlip: (id: string) => void;
+  onBringForward: (id: string) => void;
+  onSendBackward: (id: string) => void;
 };
 
 export function CanvasA11yMirror({
@@ -36,6 +39,9 @@ export function CanvasA11yMirror({
   onDelete,
   onRotate,
   onCycleColor,
+  onFlip,
+  onBringForward,
+  onSendBackward,
 }: Props) {
   const cellRefs = useRef(new Map<string, HTMLDivElement>());
 
@@ -98,6 +104,15 @@ export function CanvasA11yMirror({
               } else if (e.key === 'c' || e.key === 'C') {
                 e.preventDefault();
                 onCycleColor(b.id);
+              } else if (e.key === 'f' || e.key === 'F') {
+                e.preventDefault();
+                onFlip(b.id);
+              } else if (e.key === ']' || e.key === '}') {
+                e.preventDefault();
+                onBringForward(b.id);
+              } else if (e.key === '[' || e.key === '{') {
+                e.preventDefault();
+                onSendBackward(b.id);
               }
             }}
             className="pointer-events-auto absolute left-0 top-0 h-px w-px overflow-hidden outline-none"
