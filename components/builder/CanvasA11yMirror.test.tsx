@@ -14,6 +14,9 @@ const NOOP = {
   onDelete: () => {},
   onRotate: () => {},
   onCycleColor: () => {},
+  onFlip: () => {},
+  onBringForward: () => {},
+  onSendBackward: () => {},
 };
 
 const BRICK_RED: MirrorBrick = {
@@ -248,5 +251,49 @@ describe('CanvasA11yMirror', () => {
     cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'C', bubbles: true }));
     expect(onCycleColor).toHaveBeenCalledWith('b1');
     expect(onCycleColor).toHaveBeenCalledTimes(2);
+  });
+
+  it('emits onFlip on f and F', () => {
+    const onFlip = vi.fn();
+    render(
+      <CanvasA11yMirror
+        bricks={[BRICK_RED]}
+        rows={20}
+        cols={20}
+        focusedId={null}
+        selectedIds={[]}
+        {...NOOP}
+        onFlip={onFlip}
+      />,
+    );
+    const cell = screen.getByRole('gridcell');
+    cell.focus();
+    cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }));
+    cell.dispatchEvent(new KeyboardEvent('keydown', { key: 'F', bubbles: true }));
+    expect(onFlip).toHaveBeenCalledWith('b1');
+    expect(onFlip).toHaveBeenCalledTimes(2);
+  });
+
+  it('emits onBringForward on ] and onSendBackward on [', () => {
+    const onBringForward = vi.fn();
+    const onSendBackward = vi.fn();
+    render(
+      <CanvasA11yMirror
+        bricks={[BRICK_RED]}
+        rows={20}
+        cols={20}
+        focusedId={null}
+        selectedIds={[]}
+        {...NOOP}
+        onBringForward={onBringForward}
+        onSendBackward={onSendBackward}
+      />,
+    );
+    const cell = screen.getByRole('gridcell');
+    cell.focus();
+    cell.dispatchEvent(new KeyboardEvent('keydown', { key: ']', bubbles: true }));
+    expect(onBringForward).toHaveBeenCalledWith('b1');
+    cell.dispatchEvent(new KeyboardEvent('keydown', { key: '[', bubbles: true }));
+    expect(onSendBackward).toHaveBeenCalledWith('b1');
   });
 });
