@@ -133,6 +133,25 @@ describe('renderCanvasToSvgBlob', () => {
     expect(text).toMatch(/transform="rotate\(45 200 200\)"/);
   });
 
+  it('mirrors a flipped brick about its centre, composed after rotation', async () => {
+    const blob = await renderCanvasToSvgBlob({
+      canvasState: {
+        groups: stateWithRepeats.groups,
+        bricks: [
+          { ...stateWithRepeats.bricks[0]!, x: 200, y: 200, rotation: 0, flippedX: true },
+          { ...stateWithRepeats.bricks[1]!, x: 300, y: 100, rotation: 90, flippedX: true },
+        ],
+      },
+      title: 'x',
+      resolveBrickImage: makeResolver(),
+    });
+    const text = await blob.text();
+    // Unrotated flip: mirror about the vertical line x = 200.
+    expect(text).toMatch(/transform="translate\(400 0\) scale\(-1 1\)"/);
+    // Rotated flip: rotation op first, then the mirror (Konva order).
+    expect(text).toMatch(/transform="rotate\(90 300 100\) translate\(600 0\) scale\(-1 1\)"/);
+  });
+
   it('emits an empty-ish svg with default viewBox when nothing is visible', async () => {
     const blob = await renderCanvasToSvgBlob({
       canvasState: { groups: [], bricks: [] },

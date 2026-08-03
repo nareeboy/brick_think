@@ -29,6 +29,7 @@ const BRICK_FIELDS = [
   'y',
   'rotation',
   'visible',
+  'flippedX',
 ] as const;
 
 const GROUP_FIELDS = ['id', 'name', 'collapsed', 'visible'] as const;
@@ -81,6 +82,7 @@ function readBrick(m: Y.Map<unknown>): BrickInstance {
     y: m.get('y') as number,
     rotation: m.get('rotation') as number,
     visible: m.get('visible') as boolean,
+    flippedX: m.get('flippedX') as boolean | undefined,
   };
 }
 
@@ -225,6 +227,42 @@ export function moveBrickInDoc(
       insertAt = bricks.length;
     }
     bricks.insert(insertAt, [cloned]);
+  }, YJS_LOCAL_ORIGIN);
+}
+
+// Rewrite the z-order of one or more group runs in a single transaction (one
+// undo step, one broadcast). Each run's orderedIds must be a permutation of
+// the ids currently in that group — a mismatch (concurrent add/delete from a
+// peer) skips that run rather than dropping or duplicating bricks.
+export function reorderBricksInDoc(
+  doc: Y.Doc,
+  runs: Array<{ groupId: string; orderedIds: string[] }>,
+): void {
+  doc.transact(() => {
+    const { bricks } = ensureRoots(doc);
+    for (const { groupId, orderedIds } of runs) {
+      const indices: number[] = [];
+      const byId = new Map<string, Y.Map<unknown>>();
+      for (let i = 0; i < bricks.length; i++) {
+        const m = bricks.get(i);
+        if ((m.get('groupId') as string) === groupId) {
+          indices.push(i);
+          byId.set(m.get('id') as string, m);
+        }
+      }
+      if (indices.length !== orderedIds.length) continue;
+      if (!orderedIds.every((id) => byId.has(id))) continue;
+      if (orderedIds.every((id, j) => bricks.get(indices[j]!).get('id') === id)) continue;
+
+      const clones = orderedIds.map((id) => {
+        const current = byId.get(id)!;
+        const cloned = new Y.Map<unknown>();
+        for (const k of BRICK_FIELDS) cloned.set(k, current.get(k));
+        return cloned;
+      });
+      for (let i = indices.length - 1; i >= 0; i--) bricks.delete(indices[i]!, 1);
+      bricks.insert(indices[0]!, clones);
+    }
   }, YJS_LOCAL_ORIGIN);
 }
 

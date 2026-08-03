@@ -87,7 +87,12 @@ export async function renderCanvasToSvgBlob(opts: SvgExportOptions): Promise<Blo
     const href = dataUriByPath.get(b.image)!;
     const left = b.x - b.width / 2;
     const top = b.y - b.height / 2;
-    const transform = b.rotation === 0 ? '' : ` transform="rotate(${b.rotation} ${b.x} ${b.y})"`;
+    const ops: string[] = [];
+    if (b.rotation !== 0) ops.push(`rotate(${b.rotation} ${b.x} ${b.y})`);
+    // Mirror about the vertical line through the brick centre. Applied after
+    // the rotation op to match Konva's translate→rotate→scale order.
+    if (b.flippedX) ops.push(`translate(${2 * b.x} 0) scale(-1 1)`);
+    const transform = ops.length === 0 ? '' : ` transform="${ops.join(' ')}"`;
     return `<image id="${escapeXml(b.id)}" href="${href}" x="${left}" y="${top}" width="${b.width}" height="${b.height}"${transform} />`;
   });
 
