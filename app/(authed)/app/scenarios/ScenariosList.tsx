@@ -1,17 +1,30 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo, useState, useTransition } from 'react';
 
+import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
-import { DURATION_BUCKETS, filterScenarios } from '@/lib/scenarios/filter';
+import { DURATION_BUCKETS, SCENARIO_SCOPES, filterScenarios } from '@/lib/scenarios/filter';
 import { STAGE_CHIP_LABEL } from '@/lib/scenarios/stageChip';
-import type { DurationBucket, Scenario, ScenarioFilter } from '@/lib/scenarios/types';
+import type {
+  DurationBucket,
+  Scenario,
+  ScenarioFilter,
+  ScenarioScope,
+} from '@/lib/scenarios/types';
 
+import { deleteScenarioAction } from './actions';
 import { ScenarioCard } from './ScenarioCard';
 import { ScenarioDetailModal } from './ScenarioDetailModal';
+import { ScenarioEditorDialog, type OrgOption } from './ScenarioEditorDialog';
 
 interface Props {
   scenarios: Scenario[];
+  myProfileId: string;
+  /** org_id → workshop name for the caller's memberships (custom-chip labels). */
+  orgNames: Record<string, string>;
+  /** Workshops the caller can author into — threaded to the edit dialog. */
+  orgs: OrgOption[];
 }
 
 const DURATION_LABELS: Record<DurationBucket, string> = {
@@ -21,15 +34,45 @@ const DURATION_LABELS: Record<DurationBucket, string> = {
   long: '30+ min',
 };
 
+const SCOPE_LABELS: Record<ScenarioScope, string> = {
+  all: 'All',
+  library: 'Library',
+  custom: 'Custom',
+};
+
 const DEFAULT_FILTER: ScenarioFilter = { stage: 'all', duration: 'any', search: '', scope: 'all' };
 
-export function ScenariosList({ scenarios }: Props) {
+export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props) {
   const [filter, setFilter] = useState<ScenarioFilter>(DEFAULT_FILTER);
   const [open, setOpen] = useState<Scenario | null>(null);
+  const [editing, setEditing] = useState<Scenario | null>(null);
+  const [deleting, setDeleting] = useState<Scenario | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
   const stageGroupId = useId();
   const durationGroupId = useId();
+  const scopeGroupId = useId();
 
   const filtered = useMemo(() => filterScenarios(scenarios, filter), [scenarios, filter]);
+
+  function confirmDelete() {
+    if (!deleting) return;
+    const target = deleting;
+    setDeleteError(null);
+    startTransition(async () => {
+      const result = await deleteScenarioAction(target.id);
+      if (result.ok) {
+        setDeleting(null);
+      } else {
+        setDeleting(null);
+        setDeleteError(
+          result.code === 'not_found_or_not_creator'
+            ? 'Only the creator can delete this scenario.'
+            : 'Something went wrong deleting the scenario. Please try again.',
+        );
+      }
+    });
+  }
 
   return (
     <div>
@@ -51,6 +94,13 @@ export function ScenariosList({ scenarios }: Props) {
           onChange={(v) => setFilter((f) => ({ ...f, duration: v }))}
           options={DURATION_BUCKETS.map((d) => ({ value: d, label: DURATION_LABELS[d] }))}
         />
+        <ChipGroup<ScenarioScope>
+          ariaLabel="Filter by source"
+          groupId={scopeGroupId}
+          value={filter.scope}
+          onChange={(v) => setFilter((f) => ({ ...f, scope: v }))}
+          options={SCENARIO_SCOPES.map((s) => ({ value: s, label: SCOPE_LABELS[s] }))}
+        />
         <label className="ml-auto flex items-center gap-2 text-[13px] text-zinc-600">
           <span className="sr-only">Search scenarios</span>
           <input
@@ -62,6 +112,12 @@ export function ScenariosList({ scenarios }: Props) {
           />
         </label>
       </div>
+
+      {deleteError && (
+        <p role="alert" className="mb-4 text-[12px] text-red-700">
+          {deleteError}
+        </p>
+      )}
 
       {filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-10 text-center text-[14px] text-zinc-600">
@@ -77,12 +133,54 @@ export function ScenariosList({ scenarios }: Props) {
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((s) => (
-            <ScenarioCard key={s.id} scenario={s} onOpen={setOpen} />
+            <ScenarioCard
+              key={s.id}
+              scenario={s}
+              orgName={s.org_id !== null ? (orgNames[s.org_id] ?? 'Workshop') : null}
+              canManage={s.created_by !== null && s.created_by === myProfileId}
+              onOpen={setOpen}
+              onEdit={setEditing}
+              onDelete={(sc) => {
+                setDeleteError(null);
+                setDeleting(sc);
+              }}
+            />
           ))}
         </div>
       )}
 
-      {open && <ScenarioDetailModal scenario={open} onClose={() => setOpen(null)} />}
+      {open && (
+        <ScenarioDetailModal
+          scenario={open}
+          orgName={open.org_id !== null ? (orgNames[open.org_id] ?? 'Workshop') : null}
+          onClose={() => setOpen(null)}
+        />
+      )}
+
+      {editing && (
+        <ScenarioEditorDialog
+          mode="edit"
+          scenario={editing}
+          orgs={orgs}
+          onClose={() => setEditing(null)}
+        />
+      )}
+
+      {deleting && (
+        <DeleteConfirmDialog
+          title="Delete scenario?"
+          description={
+            <>
+              <span className="font-medium text-zinc-900">{deleting.title}</span> will be removed
+              for everyone in the workshop. Sessions that picked it keep running — the stage just
+              loses its scenario link.
+            </>
+          }
+          pending={pending}
+          onCancel={() => setDeleting(null)}
+          onConfirm={confirmDelete}
+        />
+      )}
     </div>
   );
 }

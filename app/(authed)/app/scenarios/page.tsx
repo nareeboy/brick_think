@@ -6,6 +6,8 @@ import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { Scenario } from '@/lib/scenarios/types';
 
+import { NewScenarioButton } from './NewScenarioButton';
+import type { OrgOption } from './ScenarioEditorDialog';
 import { ScenariosList } from './ScenariosList';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +29,9 @@ export default async function ScenariosPage() {
   // RLS filters: templates + caller's-org rows.
   const res = await supabase
     .from('scenarios')
-    .select('id, org_id, stage_type, title, body, tags, duration_minutes, is_template, created_at')
+    .select(
+      'id, org_id, stage_type, title, body, tags, duration_minutes, is_template, created_by, created_at',
+    )
     .order('stage_type', { ascending: true })
     .order('title', { ascending: true });
 
@@ -36,6 +40,21 @@ export default async function ScenariosPage() {
   }
   const scenarios = (res.data ?? []) as unknown as Scenario[];
 
+  // Workshops the caller belongs to — the editor's destination options and
+  // the org-name labels on custom-scenario chips.
+  const membershipRes = await supabase
+    .from('org_memberships')
+    .select('organisations:org_id ( id, name )')
+    .eq('profile_id', user.id);
+  if (membershipRes.error) {
+    throw new Error(`Failed to load workshops: ${membershipRes.error.message}`);
+  }
+  const orgs: OrgOption[] = (membershipRes.data ?? [])
+    .map((row) => (row as { organisations: OrgOption | null }).organisations)
+    .filter((o): o is OrgOption => o !== null)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const orgNames: Record<string, string> = Object.fromEntries(orgs.map((o) => [o.id, o.name]));
+
   return (
     <>
       <PageBanner
@@ -43,17 +62,15 @@ export default async function ScenariosPage() {
         title="Scenarios"
         subtitle="Canonical LEGO® SERIOUS PLAY® exercises for each stage of a session."
         maxWidthClassName="max-w-6xl"
-        actions={
-          <span
-            className="inline-flex h-9 items-center rounded-full bg-white/70 px-3 text-[12px] font-medium text-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
-            aria-label="Custom scenario authoring is on the Phase 2 roadmap"
-          >
-            Want to author your own? On the roadmap.
-          </span>
-        }
+        actions={<NewScenarioButton orgs={orgs} />}
       />
       <div className="mx-auto w-full max-w-6xl px-6 py-10">
-        <ScenariosList scenarios={scenarios} />
+        <ScenariosList
+          scenarios={scenarios}
+          myProfileId={user.id}
+          orgNames={orgNames}
+          orgs={orgs}
+        />
       </div>
     </>
   );
