@@ -15,8 +15,11 @@ export interface Scenario {
 
 export type DurationBucket = 'any' | 'short' | 'medium' | 'long';
 
+export type ScenarioScope = 'all' | 'library' | 'custom';
+
 export interface ScenarioFilter {
   stage: StageType | 'all';
   duration: DurationBucket;
   search: string;
+  scope: ScenarioScope;
 }

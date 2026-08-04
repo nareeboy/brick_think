@@ -21,7 +21,7 @@ const DURATION_LABELS: Record<DurationBucket, string> = {
   long: '30+ min',
 };
 
-const DEFAULT_FILTER: ScenarioFilter = { stage: 'all', duration: 'any', search: '' };
+const DEFAULT_FILTER: ScenarioFilter = { stage: 'all', duration: 'any', search: '', scope: 'all' };
 
 export function ScenariosList({ scenarios }: Props) {
   const [filter, setFilter] = useState<ScenarioFilter>(DEFAULT_FILTER);
