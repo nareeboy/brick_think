@@ -65,9 +65,9 @@ describe('validateScenarioDraft', () => {
   });
 
   test('rejects overlong body', () => {
-    expect(validateScenarioDraft({ ...validInput, body: 'x'.repeat(SCENARIO_BODY_MAX + 1) }).ok).toBe(
-      false,
-    );
+    expect(
+      validateScenarioDraft({ ...validInput, body: 'x'.repeat(SCENARIO_BODY_MAX + 1) }).ok,
+    ).toBe(false);
   });
 
   test('rejects non-integer duration', () => {

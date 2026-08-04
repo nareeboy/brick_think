@@ -34,8 +34,8 @@ export function NewScenarioButton({ orgs }: Props) {
                 You need a workshop first
               </h2>
               <p className="mt-3 text-[13px] leading-relaxed text-zinc-600">
-                Custom scenarios live inside a workshop so your whole team can use them in
-                sessions. Create or join a workshop, then come back here.
+                Custom scenarios live inside a workshop so your whole team can use them in sessions.
+                Create or join a workshop, then come back here.
               </p>
               <div className="mt-5 flex justify-end gap-2">
                 <button
