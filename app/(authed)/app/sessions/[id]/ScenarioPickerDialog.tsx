@@ -11,6 +11,11 @@ import type { StageType } from '@/lib/sessions/types';
 const NEUTRAL_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-zinc-900/5 text-zinc-600';
 
+// Matches the custom-scenario chip on /app/scenarios (My-Designs org-chip
+// tone) so authored rows are recognisable inside the picker too.
+const CUSTOM_CHIP =
+  'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-orange-100 text-orange-900';
+
 interface Props {
   stageId: string;
   stageType: StageType;
@@ -81,6 +86,7 @@ export function ScenarioPickerDialog({
                         {s.title}
                       </h3>
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                        {s.org_id !== null && <span className={CUSTOM_CHIP}>Custom</span>}
                         <span className={stageChipClasses(s.stage_type)}>
                           {STAGE_CHIP_LABEL[s.stage_type]}
                         </span>
