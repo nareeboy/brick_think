@@ -64,6 +64,18 @@ describe('ScenarioCard', () => {
     expect(screen.queryByText('BrickThink library')).toBeNull();
   });
 
+  test('personal custom cards carry the Personal chip', () => {
+    const personal = {
+      ...baseScenario,
+      org_id: null,
+      is_template: false,
+      created_by: 'user-1',
+    };
+    renderCard({ scenario: personal, orgName: null });
+    screen.getByText('Personal');
+    expect(screen.queryByText('BrickThink library')).toBeNull();
+  });
+
   test('edit/delete actions render only when canManage', async () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();

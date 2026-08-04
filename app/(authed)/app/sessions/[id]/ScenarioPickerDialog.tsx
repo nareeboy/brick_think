@@ -86,7 +86,7 @@ export function ScenarioPickerDialog({
                         {s.title}
                       </h3>
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        {s.org_id !== null && <span className={CUSTOM_CHIP}>Custom</span>}
+                        {!s.is_template && <span className={CUSTOM_CHIP}>Custom</span>}
                         <span className={stageChipClasses(s.stage_type)}>
                           {STAGE_CHIP_LABEL[s.stage_type]}
                         </span>

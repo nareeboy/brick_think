@@ -20,7 +20,8 @@ export interface ScenarioDraftInput {
   body: string;
   durationMinutes: number;
   tags: string;
-  orgId: string;
+  /** Destination workshop, or null for a personal (creator-only) scenario. */
+  orgId: string | null;
 }
 
 export interface ScenarioDraft {
@@ -29,7 +30,7 @@ export interface ScenarioDraft {
   body: string;
   durationMinutes: number;
   tags: string[];
-  orgId: string;
+  orgId: string | null;
 }
 
 export function parseTags(raw: string): string[] {
@@ -64,7 +65,7 @@ export function validateScenarioDraft(
   }
   const tags = parseTags(input.tags);
   if (tags.some((t) => t.length > SCENARIO_TAG_LEN_MAX)) return { ok: false };
-  if (!UUID_RE.test(input.orgId)) return { ok: false };
+  if (input.orgId !== null && !UUID_RE.test(input.orgId)) return { ok: false };
   return {
     ok: true,
     draft: {

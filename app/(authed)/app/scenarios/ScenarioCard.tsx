@@ -6,14 +6,34 @@ import type { Scenario } from '@/lib/scenarios/types';
 const NEUTRAL_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-zinc-900/5 text-zinc-600';
 
-// My-Designs org-chip convention: warm brand tone marks a shared/team-scoped
-// row; templates get the neutral library chip instead.
+// My-Designs chip convention: warm brand tone for workshop-scoped rows, cool
+// sky for personal rows; templates get the neutral library chip instead.
 export const CUSTOM_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-orange-100 text-orange-900';
 
+export const PERSONAL_CHIP =
+  'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-sky-50 text-sky-700';
+
+/** Source chip: library template / workshop-scoped custom / personal custom. */
+export function ScenarioScopeChip({
+  scenario,
+  orgName,
+}: {
+  scenario: Scenario;
+  orgName: string | null;
+}) {
+  if (scenario.is_template) {
+    return <span className={NEUTRAL_CHIP}>BrickThink library</span>;
+  }
+  if (scenario.org_id !== null) {
+    return <span className={CUSTOM_CHIP}>{orgName ?? 'Workshop'}</span>;
+  }
+  return <span className={PERSONAL_CHIP}>Personal</span>;
+}
+
 interface Props {
   scenario: Scenario;
-  /** Workshop name for custom rows; null for library templates. */
+  /** Workshop name for org-scoped rows; null for templates and personal rows. */
   orgName: string | null;
   /** True when the signed-in user authored this scenario. */
   canManage: boolean;
@@ -45,11 +65,7 @@ export function ScenarioCard({ scenario, orgName, canManage, onOpen, onEdit, onD
         </h3>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          {orgName !== null ? (
-            <span className={CUSTOM_CHIP}>{orgName}</span>
-          ) : (
-            <span className={NEUTRAL_CHIP}>BrickThink library</span>
-          )}
+          <ScenarioScopeChip scenario={scenario} orgName={orgName} />
           <span className={stageChipClasses(scenario.stage_type)}>
             {STAGE_CHIP_LABEL[scenario.stage_type]}
           </span>

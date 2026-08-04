@@ -172,8 +172,8 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
           description={
             <>
               <span className="font-medium text-zinc-900">{deleting.title}</span> will be removed
-              for everyone in the workshop. Sessions that picked it keep running — the stage just
-              loses its scenario link.
+              {deleting.org_id !== null ? ' for everyone in the workshop' : ' from your library'}.
+              Sessions that picked it keep running — the stage just loses its scenario link.
             </>
           }
           pending={pending}

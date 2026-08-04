@@ -57,7 +57,8 @@ export function ScenarioEditorDialog(props: Props) {
   const [body, setBody] = useState(editing?.body ?? '');
   const [duration, setDuration] = useState(String(editing?.duration_minutes ?? 15));
   const [tags, setTags] = useState(editing?.tags.join(', ') ?? '');
-  const [orgId, setOrgId] = useState(editing?.org_id ?? orgs[0]?.id ?? '');
+  // '' encodes "Personal" in the select; mapped to null on submit.
+  const [orgId, setOrgId] = useState(editing?.org_id ?? '');
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -71,7 +72,7 @@ export function ScenarioEditorDialog(props: Props) {
       body,
       durationMinutes: Number(duration),
       tags,
-      orgId,
+      orgId: orgId === '' ? null : orgId,
     };
     startTransition(async () => {
       const result = editing
@@ -180,10 +181,10 @@ export function ScenarioEditorDialog(props: Props) {
           </div>
         </div>
 
-        {orgs.length > 1 && (
+        {orgs.length > 0 && (
           <div>
             <label className={LABEL_CLASSES} htmlFor={`${titleId}-org`}>
-              Workshop
+              Save to
             </label>
             <select
               id={`${titleId}-org`}
@@ -191,6 +192,7 @@ export function ScenarioEditorDialog(props: Props) {
               onChange={(e) => setOrgId(e.target.value)}
               className={FIELD_CLASSES}
             >
+              <option value="">Personal (only you)</option>
               {orgs.map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.name}

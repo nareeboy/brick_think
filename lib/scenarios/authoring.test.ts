@@ -90,4 +90,10 @@ describe('validateScenarioDraft', () => {
   test('rejects a non-UUID orgId', () => {
     expect(validateScenarioDraft({ ...validInput, orgId: 'not-a-uuid' }).ok).toBe(false);
   });
+
+  test('accepts a null orgId (personal scenario)', () => {
+    const res = validateScenarioDraft({ ...validInput, orgId: null });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.draft.orgId).toBeNull();
+  });
 });

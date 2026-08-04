@@ -10,6 +10,9 @@
 //     not_found_or_not_creator and the row is untouched).
 //   * Templates are immutable to everyone (0-row update).
 //   * Fellow org members can read the custom row; outsiders cannot.
+//   * Personal scenarios (org_id NULL): creatable without any workshop,
+//     private to the creator, but readable by others once picked into a
+//     stage of a session they can see.
 
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
 
@@ -17,6 +20,7 @@ import {
   addOrgMember,
   cleanupTestUser,
   createTestOrg,
+  createTestSession,
   createTestUser,
   getAdminClient,
   signInAs,
@@ -243,5 +247,106 @@ describe('read isolation', () => {
       .eq('id', created.id)
       .maybeSingle();
     expect(outsiderRead.data).toBeNull();
+  });
+});
+
+describe('personal scenarios (org_id NULL)', () => {
+  test('creating with orgId null lands a personal row', async () => {
+    currentClient = await signInAs(fx.creator);
+    const res = await createScenarioAction({ ...draft, orgId: null });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const admin = getAdminClient();
+    const row = await admin
+      .from('scenarios')
+      .select('org_id, created_by, is_template')
+      .eq('id', res.id)
+      .single();
+    expect(row.data?.org_id).toBeNull();
+    expect(row.data?.created_by).toBe(fx.creator.id);
+    expect(row.data?.is_template).toBe(false);
+  });
+
+  test('personal rows are private — even fellow org members cannot read them', async () => {
+    currentClient = await signInAs(fx.creator);
+    const created = await createScenarioAction({ ...draft, orgId: null });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const memberClient = await signInAs(fx.member);
+    const read = await memberClient
+      .from('scenarios')
+      .select('id')
+      .eq('id', created.id)
+      .maybeSingle();
+    expect(read.data).toBeNull();
+  });
+
+  test('a personal row becomes readable to session viewers once picked into a stage', async () => {
+    currentClient = await signInAs(fx.creator);
+    const created = await createScenarioAction({ ...draft, orgId: null });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const session = await createTestSession({ orgId: fx.org.id, facilitatorId: fx.creator.id });
+    const admin = getAdminClient();
+    const upd = await admin
+      .from('stages')
+      .update({ scenario_id: created.id })
+      .eq('id', session.stageIds.individual_model);
+    expect(upd.error).toBeNull();
+
+    // fx.member is in fx.org, so they can see the session's stages — and now
+    // the picked personal scenario too.
+    const memberClient = await signInAs(fx.member);
+    const read = await memberClient
+      .from('scenarios')
+      .select('id, title')
+      .eq('id', created.id)
+      .maybeSingle();
+    expect(read.data).not.toBeNull();
+
+    // The outsider still sees nothing — they can't see the session either.
+    const outsiderClient = await signInAs(fx.outsider);
+    const outsiderRead = await outsiderClient
+      .from('scenarios')
+      .select('id')
+      .eq('id', created.id)
+      .maybeSingle();
+    expect(outsiderRead.data).toBeNull();
+  });
+
+  test('creator can update a personal row and move it into an org', async () => {
+    currentClient = await signInAs(fx.creator);
+    const created = await createScenarioAction({ ...draft, orgId: null });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const moved = await updateScenarioAction(created.id, {
+      ...draft,
+      orgId: fx.org.id,
+      title: 'Promoted to the workshop',
+    });
+    expect(moved.ok).toBe(true);
+
+    const admin = getAdminClient();
+    const row = await admin.from('scenarios').select('org_id, title').eq('id', created.id).single();
+    expect(row.data?.org_id).toBe(fx.org.id);
+    expect(row.data?.title).toBe('Promoted to the workshop');
+  });
+
+  test('cannot move a personal row into a foreign org', async () => {
+    currentClient = await signInAs(fx.creator);
+    const created = await createScenarioAction({ ...draft, orgId: null });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+
+    const res = await updateScenarioAction(created.id, { ...draft, orgId: fx.outsiderOrg.id });
+    expect(res.ok).toBe(false);
+
+    const admin = getAdminClient();
+    const row = await admin.from('scenarios').select('org_id').eq('id', created.id).single();
+    expect(row.data?.org_id).toBeNull();
   });
 });

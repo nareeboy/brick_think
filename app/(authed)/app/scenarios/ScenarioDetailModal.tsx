@@ -6,14 +6,14 @@ import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import { STAGE_CHIP_LABEL, stageChipClasses } from '@/lib/scenarios/stageChip';
 import type { Scenario } from '@/lib/scenarios/types';
 
-import { CUSTOM_CHIP } from './ScenarioCard';
+import { ScenarioScopeChip } from './ScenarioCard';
 
 const NEUTRAL_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-zinc-900/5 text-zinc-600';
 
 interface Props {
   scenario: Scenario;
-  /** Workshop name for custom rows; null for library templates. */
+  /** Workshop name for org-scoped rows; null for templates and personal rows. */
   orgName: string | null;
   onClose: () => void;
 }
@@ -40,11 +40,7 @@ export function ScenarioDetailModal({ scenario, orgName, onClose }: Props) {
           {scenario.title}
         </h2>
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {orgName !== null ? (
-            <span className={CUSTOM_CHIP}>{orgName}</span>
-          ) : (
-            <span className={NEUTRAL_CHIP}>BrickThink library</span>
-          )}
+          <ScenarioScopeChip scenario={scenario} orgName={orgName} />
           <span className={stageChipClasses(scenario.stage_type)}>
             {STAGE_CHIP_LABEL[scenario.stage_type]}
           </span>

@@ -26,7 +26,8 @@ export default async function ScenariosPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in?next=%2Fapp%2Fscenarios');
 
-  // RLS filters: templates + caller's-org rows.
+  // RLS filters: templates + own rows + caller's-org rows + rows picked into
+  // sessions the caller can see.
   const res = await supabase
     .from('scenarios')
     .select(
@@ -38,7 +39,7 @@ export default async function ScenariosPage() {
   if (res.error) {
     throw new Error(`Failed to load scenarios: ${res.error.message}`);
   }
-  const scenarios = (res.data ?? []) as unknown as Scenario[];
+  const allVisible = (res.data ?? []) as unknown as Scenario[];
 
   // Workshops the caller belongs to — the editor's destination options and
   // the org-name labels on custom-scenario chips.
@@ -54,6 +55,14 @@ export default async function ScenariosPage() {
     .filter((o): o is OrgOption => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
   const orgNames: Record<string, string> = Object.fromEntries(orgs.map((o) => [o.id, o.name]));
+
+  // The library shows templates, the caller's own scenarios, and their orgs'
+  // scenarios. Rows visible only via the picked-into-a-session RLS branch
+  // (e.g. another member's personal scenario) belong on the session page,
+  // not in this library.
+  const scenarios = allVisible.filter(
+    (s) => s.is_template || s.created_by === user.id || (s.org_id !== null && s.org_id in orgNames),
+  );
 
   return (
     <>
