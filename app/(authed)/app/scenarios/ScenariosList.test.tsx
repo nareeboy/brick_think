@@ -17,6 +17,7 @@ const fixtures: Scenario[] = [
     tags: ['warmup'],
     duration_minutes: 5,
     is_template: true,
+    created_by: null,
     created_at: '',
   },
   {
@@ -28,6 +29,7 @@ const fixtures: Scenario[] = [
     tags: ['identity'],
     duration_minutes: 20,
     is_template: true,
+    created_by: null,
     created_at: '',
   },
   {
@@ -39,6 +41,7 @@ const fixtures: Scenario[] = [
     tags: ['merge'],
     duration_minutes: 45,
     is_template: true,
+    created_by: null,
     created_at: '',
   },
 ];

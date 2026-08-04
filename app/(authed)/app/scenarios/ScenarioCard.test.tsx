@@ -16,6 +16,7 @@ const baseScenario: Scenario = {
   tags: ['identity', 'role'],
   duration_minutes: 15,
   is_template: true,
+  created_by: null,
   created_at: '',
 };
 

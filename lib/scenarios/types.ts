@@ -9,6 +9,7 @@ export interface Scenario {
   tags: string[];
   duration_minutes: number;
   is_template: boolean;
+  created_by: string | null;
   created_at: string;
 }
 

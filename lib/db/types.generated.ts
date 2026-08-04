@@ -879,6 +879,7 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          created_by: string | null
           duration_minutes: number
           id: string
           is_template: boolean
@@ -890,6 +891,7 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
+          created_by?: string | null
           duration_minutes: number
           id?: string
           is_template?: boolean
@@ -901,6 +903,7 @@ export type Database = {
         Update: {
           body?: string
           created_at?: string
+          created_by?: string | null
           duration_minutes?: number
           id?: string
           is_template?: boolean
@@ -910,6 +913,13 @@ export type Database = {
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "scenarios_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scenarios_org_id_fkey"
             columns: ["org_id"]
