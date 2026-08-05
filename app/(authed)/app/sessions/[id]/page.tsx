@@ -387,7 +387,9 @@ export default async function SessionDetailPage({
   // and the per-stage row can lookup its picked scenario by id.
   const scenarioRes = await supabase
     .from('scenarios')
-    .select('id, org_id, stage_type, title, body, tags, duration_minutes, is_template, created_at')
+    .select(
+      'id, org_id, stage_type, title, body, tags, duration_minutes, is_template, created_by, created_at',
+    )
     .order('stage_type', { ascending: true })
     .order('title', { ascending: true });
   if (scenarioRes.error) {
