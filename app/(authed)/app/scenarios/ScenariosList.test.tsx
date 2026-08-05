@@ -118,7 +118,23 @@ describe('ScenariosList', () => {
   test('custom card shows the workshop chip; templates show the library chip', () => {
     renderList();
     screen.getByText('Acme Team');
-    expect(screen.getAllByText('BrickThink library')).toHaveLength(3);
+    // 3 template-card chips + the library section heading.
+    expect(screen.getAllByText('BrickThink library')).toHaveLength(4);
+  });
+
+  test('custom scenarios render in a top section above the library', () => {
+    const { container } = renderList();
+    screen.getByRole('heading', { name: 'Your scenarios' });
+    screen.getByRole('heading', { name: 'BrickThink library' });
+    const text = container.textContent ?? '';
+    expect(text.indexOf('Our quarterly ritual')).toBeGreaterThan(-1);
+    expect(text.indexOf('Our quarterly ritual')).toBeLessThan(text.indexOf('Tower of any height'));
+  });
+
+  test('with no custom scenarios the top section shows the create hint', () => {
+    renderList({ scenarios: fixtures.filter((s) => s.is_template) });
+    screen.getByRole('heading', { name: 'Your scenarios' });
+    expect(screen.getByTestId('custom-empty-label').textContent).toMatch(/No custom scenarios yet/);
   });
 
   test('delete opens the confirm dialog', async () => {

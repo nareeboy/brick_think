@@ -54,6 +54,33 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
   const scopeGroupId = useId();
 
   const filtered = useMemo(() => filterScenarios(scenarios, filter), [scenarios, filter]);
+  // Custom scenarios lead; the ready-made library sits below a divider.
+  const customRows = useMemo(() => filtered.filter((s) => !s.is_template), [filtered]);
+  const libraryRows = useMemo(() => filtered.filter((s) => s.is_template), [filtered]);
+  const showCustom = filter.scope !== 'library';
+  const showLibrary = filter.scope !== 'custom';
+  const hasAnyCustom = useMemo(() => scenarios.some((s) => !s.is_template), [scenarios]);
+
+  function renderGrid(rows: Scenario[]) {
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {rows.map((s) => (
+          <ScenarioCard
+            key={s.id}
+            scenario={s}
+            orgName={s.org_id !== null ? (orgNames[s.org_id] ?? 'Workshop') : null}
+            canManage={s.created_by !== null && s.created_by === myProfileId}
+            onOpen={setOpen}
+            onEdit={setEditing}
+            onDelete={(sc) => {
+              setDeleteError(null);
+              setDeleting(sc);
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   function confirmDelete() {
     if (!deleting) return;
@@ -119,7 +146,18 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
         </p>
       )}
 
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && filter.scope === 'custom' && !hasAnyCustom ? (
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-10 text-center text-[14px] text-zinc-600">
+          <p>No custom scenarios yet — use “New scenario” to create your first.</p>
+          <button
+            type="button"
+            onClick={() => setFilter(DEFAULT_FILTER)}
+            className="mt-3 inline-flex h-10 items-center rounded-xl border border-zinc-200 px-3 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
+          >
+            Clear filters
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-white p-10 text-center text-[14px] text-zinc-600">
           <p>No scenarios match your filters.</p>
           <button
@@ -131,21 +169,45 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((s) => (
-            <ScenarioCard
-              key={s.id}
-              scenario={s}
-              orgName={s.org_id !== null ? (orgNames[s.org_id] ?? 'Workshop') : null}
-              canManage={s.created_by !== null && s.created_by === myProfileId}
-              onOpen={setOpen}
-              onEdit={setEditing}
-              onDelete={(sc) => {
-                setDeleteError(null);
-                setDeleting(sc);
-              }}
-            />
-          ))}
+        <div className="flex flex-col gap-8">
+          {showCustom && (
+            <section aria-label="Your scenarios">
+              <h2 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                Your scenarios
+              </h2>
+              {customRows.length === 0 ? (
+                <div
+                  data-testid="custom-empty-label"
+                  className="rounded-2xl border border-dashed border-zinc-200 bg-white p-6 text-center text-[13px] text-zinc-500"
+                >
+                  {hasAnyCustom
+                    ? 'No custom scenarios match your filters.'
+                    : 'No custom scenarios yet — use “New scenario” to create your first.'}
+                </div>
+              ) : (
+                renderGrid(customRows)
+              )}
+            </section>
+          )}
+
+          {showCustom && showLibrary && <div aria-hidden="true" className="h-px bg-zinc-200" />}
+
+          {showLibrary && (
+            <section aria-label="BrickThink library">
+              {showCustom && (
+                <h2 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  BrickThink library
+                </h2>
+              )}
+              {libraryRows.length === 0 ? (
+                <p className="text-[13px] text-zinc-500">
+                  No library scenarios match your filters.
+                </p>
+              ) : (
+                renderGrid(libraryRows)
+              )}
+            </section>
+          )}
         </div>
       )}
 
