@@ -16,12 +16,29 @@ const baseScenario: Scenario = {
   tags: ['identity', 'role'],
   duration_minutes: 15,
   is_template: true,
+  created_by: null,
   created_at: '',
 };
 
+const noop = () => undefined;
+
+function renderCard(overrides: Partial<Parameters<typeof ScenarioCard>[0]> = {}) {
+  return render(
+    <ScenarioCard
+      scenario={baseScenario}
+      orgName={null}
+      canManage={false}
+      onOpen={noop}
+      onEdit={noop}
+      onDelete={noop}
+      {...overrides}
+    />,
+  );
+}
+
 describe('ScenarioCard', () => {
   test('renders title, stage label, duration, and tag chips', () => {
-    render(<ScenarioCard scenario={baseScenario} onOpen={() => undefined} />);
+    renderCard();
     // getByText throws on absence — its return value IS the assertion.
     screen.getByText('Your role today');
     screen.getByText('Individual');
@@ -30,9 +47,60 @@ describe('ScenarioCard', () => {
     screen.getByText('role');
   });
 
+  test('template cards carry the BrickThink library chip', () => {
+    renderCard();
+    screen.getByText('BrickThink library');
+  });
+
+  test('custom cards carry the workshop-name chip instead of the library chip', () => {
+    const custom = {
+      ...baseScenario,
+      org_id: 'org-1',
+      is_template: false,
+      created_by: 'user-1',
+    };
+    renderCard({ scenario: custom, orgName: 'Acme Team' });
+    screen.getByText('Acme Team');
+    expect(screen.queryByText('BrickThink library')).toBeNull();
+  });
+
+  test('personal custom cards carry the Personal chip', () => {
+    const personal = {
+      ...baseScenario,
+      org_id: null,
+      is_template: false,
+      created_by: 'user-1',
+    };
+    renderCard({ scenario: personal, orgName: null });
+    screen.getByText('Personal');
+    expect(screen.queryByText('BrickThink library')).toBeNull();
+  });
+
+  test('edit/delete actions render only when canManage', async () => {
+    const onEdit = vi.fn();
+    const onDelete = vi.fn();
+    const custom = {
+      ...baseScenario,
+      org_id: 'org-1',
+      is_template: false,
+      created_by: 'user-1',
+    };
+    renderCard({ scenario: custom, orgName: 'Acme Team', canManage: true, onEdit, onDelete });
+    await userEvent.click(screen.getByRole('button', { name: 'Edit scenario' }));
+    expect(onEdit).toHaveBeenCalledWith(custom);
+    await userEvent.click(screen.getByRole('button', { name: 'Delete scenario' }));
+    expect(onDelete).toHaveBeenCalledWith(custom);
+  });
+
+  test('no edit/delete actions when canManage is false', () => {
+    renderCard();
+    expect(screen.queryByRole('button', { name: 'Edit scenario' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete scenario' })).toBeNull();
+  });
+
   test('shows "+N more" when there are more than 3 tags', () => {
     const s = { ...baseScenario, tags: ['a', 'b', 'c', 'd', 'e'] };
-    render(<ScenarioCard scenario={s} onOpen={() => undefined} />);
+    renderCard({ scenario: s });
     screen.getByText('a');
     screen.getByText('b');
     screen.getByText('c');
@@ -42,14 +110,14 @@ describe('ScenarioCard', () => {
 
   test('clicking the card calls onOpen with the scenario', async () => {
     const onOpen = vi.fn();
-    render(<ScenarioCard scenario={baseScenario} onOpen={onOpen} />);
+    renderCard({ onOpen });
     await userEvent.click(screen.getByRole('button', { name: /Your role today/ }));
     expect(onOpen).toHaveBeenCalledWith(baseScenario);
   });
 
   test('body preview truncates to ≤ 120 chars and appends ellipsis', () => {
     const long = 'a'.repeat(400);
-    render(<ScenarioCard scenario={{ ...baseScenario, body: long }} onOpen={() => undefined} />);
+    renderCard({ scenario: { ...baseScenario, body: long } });
     const preview = screen.getByTestId('scenario-card-body');
     expect(preview.textContent?.length).toBeLessThanOrEqual(121);
     expect(preview.textContent?.endsWith('…')).toBe(true);
