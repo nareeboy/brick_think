@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -47,12 +47,57 @@ async function renderOpenDrawer() {
   const toggle = screen.getByRole('button', { name: /open pieces/i });
   await user.click(toggle);
 
-  return { user };
+  return { user, toggle };
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+describe('drawer dismissal', () => {
+  it('closes when a pointerdown lands outside the drawer (canvas click)', async () => {
+    const { toggle } = await renderOpenDrawer();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+
+    fireEvent.pointerDown(document.body);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('stays open when a pointerdown lands inside the panel', async () => {
+    const { toggle } = await renderOpenDrawer();
+
+    fireEvent.pointerDown(screen.getByTestId('pieces-drawer-panel'));
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('toggle button closes the open drawer without immediately reopening it', async () => {
+    const { user, toggle } = await renderOpenDrawer();
+
+    // A real click fires pointerdown (outside-dismiss) then click (toggle);
+    // the two must not cancel out and leave the drawer open again.
+    await user.click(toggle);
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('closes on Escape', async () => {
+    const { toggle } = await renderOpenDrawer();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+  });
+});
+
+describe('drawer layering', () => {
+  it('panel stacks above the canvas chrome buttons (z-40 over their z-30)', async () => {
+    await renderOpenDrawer();
+
+    expect(screen.getByTestId('pieces-drawer-panel').className).toMatch(/\bz-40\b/);
+  });
+});
 
 describe('PieceTile keyboard activation', () => {
   it('calls addAtCenter with the brick when Enter is pressed on a tile', async () => {
