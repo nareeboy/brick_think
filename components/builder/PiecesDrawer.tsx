@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import type { BrickCategory, BrickDefinition } from '@/lib/bricks/types';
@@ -38,6 +38,30 @@ type FilterId = 'all' | BrickCategory;
 export function PiecesDrawer() {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<FilterId>('all');
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Light dismiss: a pointerdown anywhere outside the panel (i.e. on the
+  // canvas or its chrome) closes the drawer without swallowing the event.
+  // The toggle is excluded — its own click handler closes the drawer, and
+  // dismissing on its pointerdown first would make the click reopen it.
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (panelRef.current?.contains(target) || toggleRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
 
   const categories = useMemo<{ id: FilterId; label: string }[]>(() => {
     const present = new Set(CANONICAL_BRICKS.map((b) => b.category));
@@ -60,6 +84,7 @@ export function PiecesDrawer() {
     <>
       <button
         type="button"
+        ref={toggleRef}
         aria-label={open ? 'Close pieces' : 'Open pieces'}
         aria-expanded={open}
         data-tour-id="pieces-drawer-toggle"
@@ -73,9 +98,13 @@ export function PiecesDrawer() {
         <LegoIcon className="h-5 w-5" />
       </button>
 
+      {/* z-40: above the canvas chrome (Share/Export/Notes sit at z-30),
+          below modals (z-50). */}
       <div
+        ref={panelRef}
+        data-testid="pieces-drawer-panel"
         aria-hidden={!open}
-        className={`pointer-events-none absolute inset-y-3 right-3 z-20 w-[min(360px,calc(100%-1.5rem))] transition-[transform,opacity] duration-300 ease-out ${
+        className={`pointer-events-none absolute inset-y-3 right-3 z-40 w-[min(360px,calc(100%-1.5rem))] transition-[transform,opacity] duration-300 ease-out ${
           open
             ? 'translate-x-0 opacity-100'
             : 'pointer-events-none translate-x-[calc(100%+1rem)] opacity-0'
