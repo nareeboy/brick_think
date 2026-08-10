@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import {
   ArrowUpRight,
@@ -74,7 +75,7 @@ const CHANNELS: Channel[] = [
     title: 'The whole codebase.',
     description:
       'Apache 2.0. Clone it. Fork it. Run your own copy. Or read it to see how the method is built into the data.',
-    action: { kind: 'github', href: GITHUB_URL, label: 'github.com/brickthink' },
+    action: { kind: 'github', href: GITHUB_URL, label: 'github.com/nareeboy/brick_think' },
   },
 ];
 
@@ -233,12 +234,18 @@ function DetailsSection() {
         </div>
         <div className="md:col-span-7">
           <ul className="divide-y divide-zinc-900/10 border-y border-zinc-900/10">
-            {[
-              ['Public roadmap', 'github.com/brickthink/issues?label=roadmap'],
-              ['Changelog', 'github.com/brickthink/releases'],
-              ['Discussions', 'github.com/brickthink/discussions'],
-              ['Status page', 'status.brickthink.io'],
-            ].map(([label, value]) => (
+            {(
+              [
+                ['Public roadmap', 'brickthink.io/roadmap', '/roadmap'],
+                ['Changelog', 'brickthink.io/changelog', '/changelog'],
+                [
+                  'Issues & ideas',
+                  'github.com/nareeboy/brick_think/issues',
+                  `${GITHUB_URL}/issues`,
+                ],
+                ['Source code', 'github.com/nareeboy/brick_think', GITHUB_URL],
+              ] as const
+            ).map(([label, value, href]) => (
               <li
                 key={label}
                 className="flex flex-col gap-1 py-5 md:flex-row md:items-baseline md:gap-8"
@@ -246,7 +253,23 @@ function DetailsSection() {
                 <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-zinc-500 md:w-40">
                   {label}
                 </span>
-                <span className="font-mono text-[13px] text-zinc-800">{value}</span>
+                {href.startsWith('http') ? (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-[13px] text-zinc-800 hover:text-[#a8482a]"
+                  >
+                    {value}
+                  </a>
+                ) : (
+                  <Link
+                    href={href}
+                    className="font-mono text-[13px] text-zinc-800 hover:text-[#a8482a]"
+                  >
+                    {value}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
