@@ -1,15 +1,12 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import 'server-only';
 
-import { requireSupabaseServiceEnv } from './env';
-import type { Database } from './types.generated';
+import { getServiceSupabaseClient, type ServiceSupabaseClient } from './service';
 
-export type ServiceRoleSupabaseClient = SupabaseClient<Database>;
+// Compatibility alias over lib/db/service.ts — the single service-role client
+// factory. Kept so existing call sites (and the premium overlay) keep working;
+// prefer importing getServiceSupabaseClient from lib/db/service directly.
+export type ServiceRoleSupabaseClient = ServiceSupabaseClient;
 
-// The only place that uses SUPABASE_SERVICE_ROLE_KEY. Server-only.
-// Audit-friendly: grep for this filename to find every elevated call site.
 export function createServiceRoleSupabaseClient(): ServiceRoleSupabaseClient {
-  const env = requireSupabaseServiceEnv();
-  return createClient<Database>(env.url, env.serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return getServiceSupabaseClient();
 }
