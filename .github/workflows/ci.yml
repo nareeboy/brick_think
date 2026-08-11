@@ -37,3 +37,28 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  build:
+    # Catches what tsc can't: server/client boundary violations ('server-only'
+    # imported from a client component), RSC serialization errors, and other
+    # Next-build-only failures that would otherwise surface first on Railway.
+    # build:e2e reads the committed .env.test (local-stack demo values) — no
+    # secrets, no running Supabase needed: every data-fetching route is
+    # dynamic, so nothing connects at build time.
+    name: Next build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build:e2e
