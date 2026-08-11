@@ -86,7 +86,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .select('id, facilitator_id')
     .eq('id', sessionId)
     .maybeSingle();
-  if (sessionErr || !session) {
+  if (sessionErr || !session || !session.facilitator_id) {
     return NextResponse.json({ error: 'session_not_found' }, { status: 404 });
   }
 

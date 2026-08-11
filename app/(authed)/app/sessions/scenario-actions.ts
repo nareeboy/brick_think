@@ -173,10 +173,8 @@ export async function updatePreSessionCheckAction(
   if (!sessRes.data) return { ok: false, code: 'session_not_found' };
   if (sessRes.data.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
 
-  const previous =
-    sessRes.data.pre_session_check && typeof sessRes.data.pre_session_check === 'object'
-      ? (sessRes.data.pre_session_check as Record<string, unknown>)
-      : {};
+  const prior = sessRes.data.pre_session_check;
+  const previous = prior && typeof prior === 'object' && !Array.isArray(prior) ? prior : {};
   const merged = { ...previous, [key]: value };
 
   const svc = getServiceSupabaseClient();
