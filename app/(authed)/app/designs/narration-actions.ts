@@ -58,6 +58,8 @@ export async function saveNarration(
   }
   if (!authorized) return { ok: false, code: 'not_owner' };
 
+  // Personal canvases have no stage row; narration is session-stage-only.
+  if (!modelRes.data.stage_id) return { ok: false, code: 'model_not_found' };
   const stageRes = await svc
     .from('stages')
     .select('stage_type')
