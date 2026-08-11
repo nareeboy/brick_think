@@ -31,6 +31,12 @@ import {
 let currentClient: SupabaseClient | null = null;
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+// inviteParticipantsByEmailAction builds its emailRedirectTo origin from the
+// request headers (publicOriginFromHeaders) — outside a request scope the real
+// next/headers throws, so serve a local-dev-shaped Headers instead.
+vi.mock('next/headers', () => ({
+  headers: async () => new Headers({ host: 'localhost:3000' }),
+}));
 vi.mock('@/lib/db/server', () => ({
   createServerSupabaseClient: vi.fn(async () => {
     if (!currentClient) {
