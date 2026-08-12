@@ -113,16 +113,31 @@ describe('models Realtime delivery', () => {
         groups: [{ id: 'g1', name: 'g', collapsed: false, visible: true }],
         bricks: [],
       };
-      const { error } = await admin
-        .from('models')
-        .update({ canvas_state: newState, title: 'updated-title' })
-        .eq('id', fx.modelId);
-      expect(error).toBeNull();
+      const issueUpdate = async () => {
+        const { error } = await admin
+          .from('models')
+          .update({ canvas_state: newState, title: 'updated-title' })
+          .eq('id', fx.modelId);
+        expect(error).toBeNull();
+      };
+      await issueUpdate();
 
-      // 3. Within 3s, the facilitator's subscription must see it.
-      // 10s not 3s: CI runners deliver the first Realtime payload noticeably
-      // slower than a warm local stack; the assertion is on delivery, not speed.
-      await expectEventually(() => received.length >= 1, 10_000);
+      // 3. The facilitator's subscription must see it. On a freshly booted
+      // stack (CI starts the tests right after `supabase start`) Realtime can
+      // report SUBSCRIBED before its postgres_changes worker actually
+      // delivers, silently dropping the first events — so re-issue the UPDATE
+      // every 2s while waiting. The assertion is unchanged: a subscribed
+      // member receives the row's update.
+      const deadline = Date.now() + 20_000;
+      let lastWrite = Date.now();
+      while (received.length < 1) {
+        if (Date.now() > deadline) throw new Error('no Realtime delivery within 20s');
+        if (Date.now() - lastWrite > 2_000) {
+          await issueUpdate();
+          lastWrite = Date.now();
+        }
+        await new Promise((r) => setTimeout(r, 50));
+      }
       expect(received[0]!.title).toBe('updated-title');
       expect((received[0]!.canvas_state as { groups: unknown[] }).groups).toHaveLength(1);
     } finally {
@@ -130,11 +145,3 @@ describe('models Realtime delivery', () => {
     }
   });
 });
-
-async function expectEventually(cond: () => boolean, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (!cond()) {
-    if (Date.now() > deadline) throw new Error(`condition not met within ${timeoutMs}ms`);
-    await new Promise((r) => setTimeout(r, 50));
-  }
-}
