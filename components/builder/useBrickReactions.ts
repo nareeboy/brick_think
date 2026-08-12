@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import type { ReactionRow } from '@/lib/brickFeedback/loadInitial';
 
 export interface ReactionAggregate {
@@ -28,78 +28,59 @@ export function useBrickReactions(modelId: string, initial: ReactionRow[]): Reac
 
   useEffect(() => {
     if (!modelId) return undefined;
-    const supabase = getBrowserSupabaseClient();
-    let cancelled = false;
 
-    const start = async (): Promise<void> => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) supabase.realtime.setAuth(token);
-      if (cancelled) return;
-
-      const channel = supabase
-        .channel(`brick-reactions:${modelId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'brick_reactions',
-            filter: `model_id=eq.${modelId}`,
-          },
-          (payload) => {
-            const r = payload.new as ReactionRow;
-            setRows((s) => {
-              if (
-                s.some(
+    return subscribeAuthedChannel({
+      channelKey: `brick-reactions:${modelId}`,
+      attach: (channel) =>
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'brick_reactions',
+              filter: `model_id=eq.${modelId}`,
+            },
+            (payload) => {
+              const r = payload.new as ReactionRow;
+              setRows((s) => {
+                if (
+                  s.some(
+                    (x) =>
+                      x.brick_id === r.brick_id &&
+                      x.profile_id === r.profile_id &&
+                      x.emoji === r.emoji,
+                  )
+                ) {
+                  return s;
+                }
+                return [...s, r];
+              });
+            },
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'brick_reactions',
+              filter: `model_id=eq.${modelId}`,
+            },
+            (payload) => {
+              const r = payload.old as Partial<ReactionRow>;
+              setRows((s) =>
+                s.filter(
                   (x) =>
-                    x.brick_id === r.brick_id &&
-                    x.profile_id === r.profile_id &&
-                    x.emoji === r.emoji,
-                )
-              ) {
-                return s;
-              }
-              return [...s, r];
-            });
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'DELETE',
-            schema: 'public',
-            table: 'brick_reactions',
-            filter: `model_id=eq.${modelId}`,
-          },
-          (payload) => {
-            const r = payload.old as Partial<ReactionRow>;
-            setRows((s) =>
-              s.filter(
-                (x) =>
-                  !(
-                    x.brick_id === r.brick_id &&
-                    x.profile_id === r.profile_id &&
-                    x.emoji === r.emoji
-                  ),
-              ),
-            );
-          },
-        )
-        .subscribe();
-
-      cleanup = () => {
-        void supabase.removeChannel(channel);
-      };
-    };
-
-    let cleanup = (): void => {};
-    void start();
-
-    return () => {
-      cancelled = true;
-      cleanup();
-    };
+                    !(
+                      x.brick_id === r.brick_id &&
+                      x.profile_id === r.profile_id &&
+                      x.emoji === r.emoji
+                    ),
+                ),
+              );
+            },
+          ),
+    });
   }, [modelId]);
 
   return useMemo<ReactionMap>(() => {

@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 
-import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import type { NotificationRow } from '@/lib/notifications/types';
 
 interface NotificationsContextValue {
@@ -118,76 +118,67 @@ export function NotificationsProvider({ profileId, initial, children }: Props) {
   const toastedIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const supabase = getBrowserSupabaseClient();
     let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    const start = async () => {
-      // Mirror useSessionStages: eagerly hand the Realtime client a fresh
-      // JWT so the WS upgrade frame carries it. Without this, returning
-      // users (INITIAL_SESSION auth event) join anonymous and every
-      // postgres_changes payload gets dropped by RLS.
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) supabase.realtime.setAuth(token);
-      if (cancelled) return;
-
-      channel = supabase
-        .channel(`notifications:${profileId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'notifications',
-            filter: `recipient_profile_id=eq.${profileId}`,
-          },
-          (payload) => {
-            if (cancelled) return;
-            const next = (payload as unknown as { new?: NotificationRow }).new;
-            if (!next) return;
-            setNotifications((prev) => {
-              if (prev.some((n) => n.id === next.id)) return prev;
-              return [next, ...prev];
-            });
-            if (next.read_at === null && !toastedIdsRef.current.has(next.id)) {
-              toastedIdsRef.current.add(next.id);
-              setToast(next);
-              scheduleToastDismiss();
-            }
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'notifications',
-            filter: `recipient_profile_id=eq.${profileId}`,
-          },
-          (payload) => {
-            if (cancelled) return;
-            const next = (payload as unknown as { new?: NotificationRow }).new;
-            if (!next) return;
-            setNotifications((prev) => prev.map((n) => (n.id === next.id ? next : n)));
-          },
-        )
-        .subscribe((status, err) => {
-          if (status === 'SUBSCRIBED' && !cancelled) {
-            setReady(true);
-          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-            // Log but don't fail loudly — the bell + missed-while-offline
-            // fallback both keep the user informed even if realtime is down.
-            console.warn('[notifications] channel status', status, err);
-          }
-        });
-    };
-
-    void start();
+    // Auth priming (a fresh JWT on the WS join frame — without it returning
+    // users join anonymous and RLS drops every payload) is owned by
+    // subscribeAuthedChannel.
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: `notifications:${profileId}`,
+      attach: (channel) =>
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `recipient_profile_id=eq.${profileId}`,
+            },
+            (payload) => {
+              if (cancelled) return;
+              const next = (payload as unknown as { new?: NotificationRow }).new;
+              if (!next) return;
+              setNotifications((prev) => {
+                if (prev.some((n) => n.id === next.id)) return prev;
+                return [next, ...prev];
+              });
+              if (next.read_at === null && !toastedIdsRef.current.has(next.id)) {
+                toastedIdsRef.current.add(next.id);
+                setToast(next);
+                scheduleToastDismiss();
+              }
+            },
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'notifications',
+              filter: `recipient_profile_id=eq.${profileId}`,
+            },
+            (payload) => {
+              if (cancelled) return;
+              const next = (payload as unknown as { new?: NotificationRow }).new;
+              if (!next) return;
+              setNotifications((prev) => prev.map((n) => (n.id === next.id ? next : n)));
+            },
+          ),
+      onStatus: (status, err) => {
+        if (status === 'SUBSCRIBED' && !cancelled) {
+          setReady(true);
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          // Log but don't fail loudly — the bell + missed-while-offline
+          // fallback both keep the user informed even if realtime is down.
+          console.warn('[notifications] channel status', status, err);
+        }
+      },
+    });
 
     return () => {
       cancelled = true;
-      if (channel) void supabase.removeChannel(channel);
+      cleanupChannel();
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, [profileId, scheduleToastDismiss]);
