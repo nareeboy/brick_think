@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import {
   getSpotlightBannerAction,
   type SpotlightBannerState,
@@ -22,7 +22,6 @@ export function SpotlightBanner({ sessionId }: Props) {
   // Resolve the spotlight server-side (it decides whether this viewer should
   // see the banner at all) and re-resolve on any sessions UPDATE.
   useEffect(() => {
-    const supabase = getBrowserSupabaseClient();
     let active = true;
 
     const loadTarget = async () => {
@@ -30,33 +29,26 @@ export function SpotlightBanner({ sessionId }: Props) {
       if (active) setTarget(next);
     };
 
-    // Prime realtime auth so RLS-filtered payloads reach this client.
-    // See useSessionStages.ts for the canonical pattern + rationale.
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (active && token) await supabase.realtime.setAuth(token);
-    })();
-
     void loadTarget();
 
-    const channel = supabase
-      .channel(`spotlight:${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'sessions',
-          filter: `id=eq.${sessionId}`,
-        },
-        () => void loadTarget(),
-      )
-      .subscribe();
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: `spotlight:${sessionId}`,
+      attach: (channel) =>
+        channel.on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'sessions',
+            filter: `id=eq.${sessionId}`,
+          },
+          () => void loadTarget(),
+        ),
+    });
 
     return () => {
       active = false;
-      supabase.removeChannel(channel);
+      cleanupChannel();
     };
   }, [sessionId]);
 

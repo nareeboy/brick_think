@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { primeRealtimeAuth, subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import type { RecordingAck, TranscriptChunk } from '@/lib/sessions/narrationLiveTypes';
 
 // A lightweight per-session broadcast channel used purely to nudge the
@@ -24,9 +25,7 @@ const TRANSCRIPT_CHUNK_EVENT = 'transcript_chunk';
  */
 export async function broadcastNarrationSaved(sessionId: string): Promise<void> {
   const supabase = getBrowserSupabaseClient();
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (token) supabase.realtime.setAuth(token);
+  await primeRealtimeAuth(supabase);
 
   const channel = supabase.channel(channelName(sessionId));
   await new Promise<void>((resolve) => {
@@ -57,32 +56,22 @@ export function useNarrationSavedRefresh(sessionId: string): void {
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
-    const supabase = getBrowserSupabaseClient();
     let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    const start = async (): Promise<void> => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) supabase.realtime.setAuth(token);
-      if (cancelled) return;
-
-      channel = supabase
-        .channel(channelName(sessionId))
-        .on('broadcast', { event: NARRATION_SAVED_EVENT }, () => {
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: channelName(sessionId),
+      attach: (channel) =>
+        channel.on('broadcast', { event: NARRATION_SAVED_EVENT }, () => {
           if (cancelled) return;
           if (timer.current != null) window.clearTimeout(timer.current);
           timer.current = window.setTimeout(() => router.refresh(), 400);
-        })
-        .subscribe();
-    };
-
-    void start();
+        }),
+    });
 
     return () => {
       cancelled = true;
       if (timer.current != null) window.clearTimeout(timer.current);
-      if (channel) void supabase.removeChannel(channel);
+      cleanupChannel();
     };
   }, [sessionId, router]);
 }
@@ -119,44 +108,35 @@ export function useNarrationLiveChannel(
   handlersRef.current = handlers;
 
   useEffect(() => {
-    const supabase = getBrowserSupabaseClient();
-    let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    const start = async (): Promise<void> => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) supabase.realtime.setAuth(token);
-      if (cancelled) return;
-
-      channel = supabase
-        // self:false — a sender does NOT receive its own messages. The
-        // recording participant renders its own words locally (no round-trip),
-        // so echoing them back would double them; everyone else still receives
-        // each speaker's chunks normally.
-        .channel(channelName(sessionId), { config: { broadcast: { self: false } } })
-        .on('broadcast', { event: RECORDING_START_EVENT }, ({ payload }) =>
-          handlersRef.current.onRecordingStart?.((payload as { modelId: string }).modelId),
-        )
-        .on('broadcast', { event: RECORDING_STOP_EVENT }, ({ payload }) =>
-          handlersRef.current.onRecordingStop?.((payload as { modelId: string }).modelId),
-        )
-        .on('broadcast', { event: RECORDING_ACK_EVENT }, ({ payload }) =>
-          handlersRef.current.onAck?.(payload as RecordingAck),
-        )
-        .on('broadcast', { event: TRANSCRIPT_CHUNK_EVENT }, ({ payload }) =>
-          handlersRef.current.onChunk?.(payload as TranscriptChunk),
-        )
-        .subscribe();
-      channelRef.current = channel;
-    };
-
-    void start();
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: channelName(sessionId),
+      // self:false — a sender does NOT receive its own messages. The
+      // recording participant renders its own words locally (no round-trip),
+      // so echoing them back would double them; everyone else still receives
+      // each speaker's chunks normally.
+      channelOptions: { config: { broadcast: { self: false } } },
+      attach: (channel) =>
+        channel
+          .on('broadcast', { event: RECORDING_START_EVENT }, ({ payload }) =>
+            handlersRef.current.onRecordingStart?.((payload as { modelId: string }).modelId),
+          )
+          .on('broadcast', { event: RECORDING_STOP_EVENT }, ({ payload }) =>
+            handlersRef.current.onRecordingStop?.((payload as { modelId: string }).modelId),
+          )
+          .on('broadcast', { event: RECORDING_ACK_EVENT }, ({ payload }) =>
+            handlersRef.current.onAck?.(payload as RecordingAck),
+          )
+          .on('broadcast', { event: TRANSCRIPT_CHUNK_EVENT }, ({ payload }) =>
+            handlersRef.current.onChunk?.(payload as TranscriptChunk),
+          ),
+      onChannel: (channel) => {
+        channelRef.current = channel;
+      },
+    });
 
     return () => {
-      cancelled = true;
       channelRef.current = null;
-      if (channel) void supabase.removeChannel(channel);
+      cleanupChannel();
     };
   }, [sessionId]);
 

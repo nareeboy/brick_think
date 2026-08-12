@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 
-import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import type { CommentRow } from '@/lib/brickFeedback/loadInitial';
 
 export interface CommentMap {
@@ -25,85 +25,66 @@ export function useBrickComments(modelId: string, initial: CommentRow[]): Commen
 
   useEffect(() => {
     if (!modelId) return undefined;
-    const supabase = getBrowserSupabaseClient();
-    let cancelled = false;
 
-    const start = async (): Promise<void> => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) supabase.realtime.setAuth(token);
-      if (cancelled) return;
-
-      const channel = supabase
-        .channel(`brick-comments:${modelId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'brick_comments',
-            filter: `model_id=eq.${modelId}`,
-          },
-          (payload) => {
-            const r = payload.new as {
-              id: string;
-              brick_id: string;
-              profile_id: string | null;
-              body: string;
-              created_at: string;
-              deleted_at: string | null;
-            };
-            if (r.deleted_at) return;
-            setRows((s) => {
-              if (s.some((x) => x.id === r.id)) return s;
-              return [
-                {
-                  id: r.id,
-                  brick_id: r.brick_id,
-                  profile_id: r.profile_id,
-                  body: r.body,
-                  created_at: r.created_at,
-                  // Realtime payload doesn't carry the joined profile name;
-                  // surface as null and let consumers fall back ("Removed
-                  // user" / similar). A subsequent page refresh hydrates
-                  // the joined name from `loadInitialBrickFeedback`.
-                  full_name: null,
-                },
-                ...s,
-              ];
-            });
-          },
-        )
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'brick_comments',
-            filter: `model_id=eq.${modelId}`,
-          },
-          (payload) => {
-            const r = payload.new as { id: string; deleted_at: string | null };
-            setRows((s) => {
-              if (r.deleted_at) return s.filter((x) => x.id !== r.id);
-              return s;
-            });
-          },
-        )
-        .subscribe();
-
-      cleanup = () => {
-        void supabase.removeChannel(channel);
-      };
-    };
-
-    let cleanup = (): void => {};
-    void start();
-
-    return () => {
-      cancelled = true;
-      cleanup();
-    };
+    return subscribeAuthedChannel({
+      channelKey: `brick-comments:${modelId}`,
+      attach: (channel) =>
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'brick_comments',
+              filter: `model_id=eq.${modelId}`,
+            },
+            (payload) => {
+              const r = payload.new as {
+                id: string;
+                brick_id: string;
+                profile_id: string | null;
+                body: string;
+                created_at: string;
+                deleted_at: string | null;
+              };
+              if (r.deleted_at) return;
+              setRows((s) => {
+                if (s.some((x) => x.id === r.id)) return s;
+                return [
+                  {
+                    id: r.id,
+                    brick_id: r.brick_id,
+                    profile_id: r.profile_id,
+                    body: r.body,
+                    created_at: r.created_at,
+                    // Realtime payload doesn't carry the joined profile name;
+                    // surface as null and let consumers fall back ("Removed
+                    // user" / similar). A subsequent page refresh hydrates
+                    // the joined name from `loadInitialBrickFeedback`.
+                    full_name: null,
+                  },
+                  ...s,
+                ];
+              });
+            },
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'brick_comments',
+              filter: `model_id=eq.${modelId}`,
+            },
+            (payload) => {
+              const r = payload.new as { id: string; deleted_at: string | null };
+              setRows((s) => {
+                if (r.deleted_at) return s.filter((x) => x.id !== r.id);
+                return s;
+              });
+            },
+          ),
+    });
   }, [modelId]);
 
   return useMemo<CommentMap>(() => {

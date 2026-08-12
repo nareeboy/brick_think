@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import {
   cancelInvitationAction,
   resendInvitationAction,
@@ -59,34 +60,27 @@ export function RosterPendingInvitesList({ sessionId }: Props) {
       setRows(data || []);
     };
 
-    // Prime realtime auth so RLS-filtered payloads reach this client.
-    // See useSessionStages.ts for the canonical pattern + rationale.
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (active && token) await supabase.realtime.setAuth(token);
-    })();
-
     void reload();
 
     // Subscribe to session_invitations changes
-    const channel = supabase
-      .channel(`pending-invites:${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_invitations',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => void reload(),
-      )
-      .subscribe();
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: `pending-invites:${sessionId}`,
+      attach: (channel) =>
+        channel.on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'session_invitations',
+            filter: `session_id=eq.${sessionId}`,
+          },
+          () => void reload(),
+        ),
+    });
 
     return () => {
       active = false;
-      supabase.removeChannel(channel);
+      cleanupChannel();
     };
   }, [sessionId]);
 
