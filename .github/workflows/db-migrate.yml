@@ -11,6 +11,15 @@ name: DB migrate
 # re-runs `supabase db push` against the same DB (idempotent — already-applied
 # migrations are skipped).
 #
+# GATED ON CI: this workflow no longer fires on push — it fires when the CI
+# workflow completes for a push to main/staging/test, and each job requires
+# `conclusion == success`. CI's integration job runs the whole migration set
+# against a pristine local stack, so a broken migration (or broken code) can
+# no longer reach a shared database. A red or cancelled CI run means no
+# migration push; re-run CI (or push a fix) to retrigger.
+# NOTE: under workflow_run, github.ref is the DEFAULT branch — always read
+# github.event.workflow_run.head_branch / head_sha instead.
+#
 # PREMIUM OVERLAY: the paid-feature migrations (session_reports, brand_profiles,
 # billing) live in the private @brickthink/premium overlay, not in this repo.
 # Before pushing, we run scripts/bootstrap-premium.mjs, which clones the overlay
@@ -43,20 +52,32 @@ name: DB migrate
 # rule in CLAUDE.md.
 
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main, staging, test]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Keyed on the originating branch — github.ref here is always the default
+  # branch, which would serialise staging/test/main runs into one group.
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 
 jobs:
   migrate-nonprod:
     name: Push migrations (test/staging)
-    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/test'
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      (github.event.workflow_run.head_branch == 'staging' ||
+       github.event.workflow_run.head_branch == 'test')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Check out the commit CI validated — the default here would be the
+          # default branch, not the pushed one.
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: 20 # keep in sync with .nvmrc / ci.yml
@@ -79,11 +100,18 @@ jobs:
 
   migrate-prod:
     name: Push migrations (production)
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
     runs-on: ubuntu-latest
     environment: production # approval gate — required reviewers must approve
     steps:
       - uses: actions/checkout@v6
+        with:
+          # Check out the commit CI validated — the default here would be the
+          # default branch, not the pushed one.
+          ref: ${{ github.event.workflow_run.head_sha }}
       - uses: actions/setup-node@v6
         with:
           node-version: 20 # keep in sync with .nvmrc / ci.yml
