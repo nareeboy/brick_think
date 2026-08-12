@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # staging/test are included so DB migrate (a workflow_run consumer of this
+    # workflow) can gate migration pushes on a green CI for those branches too.
+    branches: [main, staging, test]
   pull_request:
 
 concurrency:
