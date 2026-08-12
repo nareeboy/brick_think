@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 
 import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 
 export interface ModelRealtimePayload {
   title: string;
@@ -15,9 +16,8 @@ export interface ModelRealtimePayload {
  * model row. On (re)subscribe, runs a one-shot SELECT to grab the latest
  * snapshot so a Realtime reconnect can't leave the viewer stale.
  *
- * Reuses the auth-priming pattern from useSessionStages: Supabase's
- * INITIAL_SESSION event doesn't trigger realtime.setAuth, so we call it
- * explicitly BEFORE creating the channel; otherwise RLS drops payloads.
+ * Auth priming (setAuth before the channel exists) is owned by
+ * subscribeAuthedChannel; otherwise RLS drops payloads.
  */
 export function useModelRealtime(
   modelId: string | null,
@@ -28,7 +28,6 @@ export function useModelRealtime(
     if (!enabled || !modelId) return;
     const supabase = getBrowserSupabaseClient();
     let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     const fetchSnapshot = async (): Promise<void> => {
       const { data, error } = await supabase
@@ -41,15 +40,10 @@ export function useModelRealtime(
       onUpdate({ title: data.title, canvas_state: data.canvas_state });
     };
 
-    const start = async (): Promise<void> => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) supabase.realtime.setAuth(token);
-      if (cancelled) return;
-
-      channel = supabase
-        .channel(`model:${modelId}`)
-        .on(
+    const cleanup = subscribeAuthedChannel({
+      channelKey: `model:${modelId}`,
+      attach: (channel) =>
+        channel.on(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'models', filter: `id=eq.${modelId}` },
           (payload) => {
@@ -58,17 +52,15 @@ export function useModelRealtime(
             if (!next) return;
             onUpdate({ title: next.title, canvas_state: next.canvas_state });
           },
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') void fetchSnapshot();
-        });
-    };
-
-    void start();
+        ),
+      onStatus: (status) => {
+        if (status === 'SUBSCRIBED') void fetchSnapshot();
+      },
+    });
 
     return () => {
       cancelled = true;
-      if (channel) void supabase.removeChannel(channel);
+      cleanup();
     };
   }, [modelId, enabled, onUpdate]);
 }

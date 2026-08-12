@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 
 import { setSpotlightAction } from '@/app/(authed)/app/sessions/roster-actions';
 import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 
 interface UseSpotlightTarget {
   /** The spotlit canvas id for this session, or null when nothing is spotlit. */
@@ -19,9 +20,9 @@ interface UseSpotlightTarget {
  * drives `setSpotlightAction`. Shared by the facilitator's Participants panel
  * and Rooms panel so both reflect the same spotlight without a refresh.
  *
- * Realtime auth is primed via `setAuth` before subscribing so RLS-filtered
- * `postgres_changes` payloads reach this client (see useSessionStages.ts for
- * the canonical pattern + rationale).
+ * Realtime auth is primed via subscribeAuthedChannel so RLS-filtered
+ * `postgres_changes` payloads reach this client (see lib/db/realtimeChannel.ts
+ * for the rationale).
  */
 export function useSpotlightTarget(sessionId: string): UseSpotlightTarget {
   const [targetModelId, setTargetModelId] = useState<string | null>(null);
@@ -46,27 +47,23 @@ export function useSpotlightTarget(sessionId: string): UseSpotlightTarget {
       if (active) setTargetModelId(data?.spotlight_target_model_id ?? null);
     };
 
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (active && token) await supabase.realtime.setAuth(token);
-    })();
     void load();
 
-    const channel = supabase
-      .channel(`spotlight-target:${sessionId}:${channelId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
-        (payload) => {
-          setTargetModelId((payload.new?.spotlight_target_model_id as string | null) ?? null);
-        },
-      )
-      .subscribe();
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: `spotlight-target:${sessionId}:${channelId}`,
+      attach: (channel) =>
+        channel.on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
+          (payload) => {
+            setTargetModelId((payload.new?.spotlight_target_model_id as string | null) ?? null);
+          },
+        ),
+    });
 
     return () => {
       active = false;
-      supabase.removeChannel(channel);
+      cleanupChannel();
     };
   }, [sessionId, channelId]);
 

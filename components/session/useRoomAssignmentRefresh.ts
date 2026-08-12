@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 
 /**
  * Keeps a participant's room assignment live on the session page.
@@ -27,43 +27,31 @@ import { getBrowserSupabaseClient } from '@/lib/db/client';
  *    downstream system_model / guiding_principles rooms, where membership is
  *    inherited transitively and no `stage_room_members` row is written.
  *
- * Realtime auth is primed via `setAuth` before the channel is created so the
- * join frame carries the JWT — otherwise RLS row-filters drop every payload.
- * See useSessionStages.ts for the canonical pattern + rationale.
+ * Realtime auth is primed via subscribeAuthedChannel so the join frame
+ * carries the JWT — otherwise RLS row-filters drop every payload (see
+ * lib/db/realtimeChannel.ts for the rationale).
  */
 export function useRoomAssignmentRefresh(sessionId: string, currentUserId: string): void {
   const router = useRouter();
 
   useEffect(() => {
-    const supabase = getBrowserSupabaseClient();
-    let active = true;
-
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (active && token) await supabase.realtime.setAuth(token);
-    })();
-
-    const channel = supabase
-      .channel(`room-assignment:${sessionId}:${currentUserId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'stage_room_members',
-          filter: `profile_id=eq.${currentUserId}`,
-        },
-        () => router.refresh(),
-      )
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'stage_rooms' }, () =>
-        router.refresh(),
-      )
-      .subscribe();
-
-    return () => {
-      active = false;
-      supabase.removeChannel(channel);
-    };
+    return subscribeAuthedChannel({
+      channelKey: `room-assignment:${sessionId}:${currentUserId}`,
+      attach: (channel) =>
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'stage_room_members',
+              filter: `profile_id=eq.${currentUserId}`,
+            },
+            () => router.refresh(),
+          )
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'stage_rooms' }, () =>
+            router.refresh(),
+          ),
+    });
   }, [sessionId, currentUserId, router]);
 }

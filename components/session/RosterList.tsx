@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import { removeParticipantAction } from '@/app/(authed)/app/sessions/roster-actions';
 import { Avatar } from '@/components/app/Avatar';
 
@@ -21,13 +22,9 @@ interface Props {
 export function RosterList({ sessionId, facilitatorId }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
 
-  // Initial load + realtime subscription.
-  //
-  // We eagerly prime `supabase.realtime.setAuth(token)` before creating
-  // any channels so the WS join frame carries the JWT — otherwise the
-  // RLS row-filter on `session_participants` drops every payload and
-  // the live count / roster never updates. See useSessionStages.ts for
-  // the canonical pattern + rationale.
+  // Initial load + realtime subscription. Auth priming (setAuth before the
+  // channel exists — otherwise the RLS row-filter on `session_participants`
+  // drops every payload) is owned by subscribeAuthedChannel.
   useEffect(() => {
     const supabase = getBrowserSupabaseClient();
     let active = true;
@@ -100,33 +97,27 @@ export function RosterList({ sessionId, facilitatorId }: Props) {
       setRows(flattened);
     };
 
-    // Prime realtime auth so RLS-filtered payloads reach this client.
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (active && token) await supabase.realtime.setAuth(token);
-    })();
-
     void reload();
 
     // Subscribe to session_participants changes
-    const partChannel = supabase
-      .channel(`roster:${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_participants',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => void reload(),
-      )
-      .subscribe();
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: `roster:${sessionId}`,
+      attach: (channel) =>
+        channel.on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'session_participants',
+            filter: `session_id=eq.${sessionId}`,
+          },
+          () => void reload(),
+        ),
+    });
 
     return () => {
       active = false;
-      supabase.removeChannel(partChannel);
+      cleanupChannel();
     };
   }, [sessionId]);
 
