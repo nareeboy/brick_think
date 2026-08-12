@@ -62,3 +62,38 @@ jobs:
 
       - name: Build
         run: pnpm build:e2e
+
+  integration:
+    # The RLS + server-action correctness suite (tests/integration/**) against
+    # a real local Supabase stack — the layer neither unit tests nor tsc can
+    # reach. `supabase start` applies every migration to a pristine DB, so
+    # this also validates the migration set on each run. Committed .env.test
+    # demo values; no secrets.
+    name: Integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v3
+        with:
+          # Keep in step with the `supabase` devDependency (same pin as
+          # db-migrate.yml).
+          version: 2.98.2
+
+      - name: Start local Supabase stack
+        # Studio is a UI-only container — skip it; everything the suite needs
+        # (db, auth, storage, realtime, inbucket for GoTrue emails) stays on.
+        run: supabase start -x studio
+
+      - name: Integration tests
+        run: pnpm test:integration
