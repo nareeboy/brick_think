@@ -2,16 +2,15 @@
 
 import { useEffect, useState } from 'react';
 
-import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 
 /**
  * Subscribes to UPDATE events on all models in a session and exposes a map of
  * { modelId → lastUpdatedAtMs } so consumers can render "live" indicators on
  * participant rows. One channel per session.
  *
- * Reuses the auth-priming pattern from useSessionStages (eager
- * supabase.realtime.setAuth before channel creation) — without it, RLS
- * drops the postgres_changes payloads.
+ * Auth priming (setAuth before the channel exists) is owned by
+ * subscribeAuthedChannel — without it, RLS drops the postgres_changes payloads.
  */
 export function useSessionModelsRealtime(sessionId: string): {
   lastUpdatedAt: Map<string, number>;
@@ -19,19 +18,12 @@ export function useSessionModelsRealtime(sessionId: string): {
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Map<string, number>>(() => new Map());
 
   useEffect(() => {
-    const supabase = getBrowserSupabaseClient();
     let cancelled = false;
-    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    const start = async (): Promise<void> => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (token) supabase.realtime.setAuth(token);
-      if (cancelled) return;
-
-      channel = supabase
-        .channel(`session-models:${sessionId}`)
-        .on(
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: `session-models:${sessionId}`,
+      attach: (channel) =>
+        channel.on(
           'postgres_changes',
           {
             event: 'UPDATE',
@@ -50,15 +42,12 @@ export function useSessionModelsRealtime(sessionId: string): {
               return copy;
             });
           },
-        )
-        .subscribe();
-    };
-
-    void start();
+        ),
+    });
 
     return () => {
       cancelled = true;
-      if (channel) void supabase.removeChannel(channel);
+      cleanupChannel();
     };
   }, [sessionId]);
 

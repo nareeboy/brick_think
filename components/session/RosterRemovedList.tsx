@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getBrowserSupabaseClient } from '@/lib/db/client';
+import { subscribeAuthedChannel } from '@/lib/db/realtimeChannel';
 import { restoreParticipantAction } from '@/app/(authed)/app/sessions/roster-actions';
 import { Avatar } from '@/components/app/Avatar';
 
@@ -84,34 +85,27 @@ export function RosterRemovedList({ sessionId }: Props) {
       setRows(flattened);
     };
 
-    // Prime realtime auth so RLS-filtered payloads reach this client.
-    // See useSessionStages.ts for the canonical pattern + rationale.
-    (async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (active && token) await supabase.realtime.setAuth(token);
-    })();
-
     void reload();
 
     // Subscribe to session_participants changes
-    const channel = supabase
-      .channel(`removed-participants:${sessionId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'session_participants',
-          filter: `session_id=eq.${sessionId}`,
-        },
-        () => void reload(),
-      )
-      .subscribe();
+    const cleanupChannel = subscribeAuthedChannel({
+      channelKey: `removed-participants:${sessionId}`,
+      attach: (channel) =>
+        channel.on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'session_participants',
+            filter: `session_id=eq.${sessionId}`,
+          },
+          () => void reload(),
+        ),
+    });
 
     return () => {
       active = false;
-      supabase.removeChannel(channel);
+      cleanupChannel();
     };
   }, [sessionId]);
 
