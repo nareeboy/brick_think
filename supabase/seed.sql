@@ -28,3 +28,10 @@ alter default privileges in schema public grant all on functions to anon, authen
 grant all on all tables in schema public to anon, authenticated, service_role;
 grant all on all sequences in schema public to anon, authenticated, service_role;
 grant all on all functions in schema public to anon, authenticated, service_role;
+
+-- Re-apply the deliberate privilege carve-outs that migrations narrow — the
+-- blanket function grant above just re-widened them (seed runs AFTER
+-- migrations on a fresh stack; remote never runs seed, so remote keeps the
+-- migration's revoke). Without this, local/CI diverge from remote and the
+-- admin-presence integration test fails on every pristine stack.
+revoke execute on function public.touch_presence() from public, anon;
