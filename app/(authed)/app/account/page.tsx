@@ -6,7 +6,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 
 import { normaliseA11yPreferences } from '@/lib/a11y/preferences';
 
-import { AccountNavSlot, BrandingSettingsSlot } from '@/lib/premium/client';
+import { AccountNavSlot, BrandingSettingsSlot } from '@/lib/premium/server-slots';
 
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 import { AccountForm } from './AccountForm';

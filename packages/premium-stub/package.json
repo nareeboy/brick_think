@@ -7,6 +7,7 @@
   "exports": {
     ".": "./src/types.ts",
     "./server": "./src/server.ts",
+    "./server-slots": "./src/server-slots.tsx",
     "./client": "./src/client.tsx",
     "./overlay": "./src/overlay.ts"
   },
