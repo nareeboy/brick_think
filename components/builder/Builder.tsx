@@ -42,6 +42,7 @@ import type { SessionContext } from '@/lib/sessions/types';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
 import { StageTimerContainer } from '@/components/session/StageTimerContainer';
 import { CanvasBuilderTutorial } from '@/components/onboarding/CanvasBuilderTutorial';
+import { CloseIcon } from '@/components/icons';
 
 interface BuilderProps {
   initialModel?: ModelDetail;
@@ -770,24 +771,6 @@ function CheckIcon({ className = '' }: { className?: string }) {
       aria-hidden="true"
     >
       <path d="m5 12 4.5 4.5L20 6.5" />
-    </svg>
-  );
-}
-
-function CloseIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M6 6 18 18" />
-      <path d="M18 6 6 18" />
     </svg>
   );
 }
