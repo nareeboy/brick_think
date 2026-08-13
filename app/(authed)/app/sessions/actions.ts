@@ -66,44 +66,25 @@ export async function createSession(formData: FormData): Promise<void> {
     throw new Error('You are not a member of that workshop');
   }
 
-  // Mint a join_code up front so the participant-join flow works the
-  // moment the session exists. Without this every freshly-created session
-  // has join_code = NULL and `/app/join/<code>` can never resolve it.
-  // generate_join_code is a SECURITY DEFINER plpgsql function (see
-  // 20260520200000_session_join_and_roster.sql) that retries up to 16
-  // times for collision; mirrors the pattern used in
-  // /api/test/seed-session/route.ts.
-  const joinCodeRes = await supabase.rpc('generate_join_code');
-  if (joinCodeRes.error || !joinCodeRes.data) {
-    throw new Error(`Failed to generate join code: ${joinCodeRes.error?.message ?? 'unknown'}`);
-  }
-  const joinCode = joinCodeRes.data as string;
-
-  const sessionRes = await supabase
-    .from('sessions')
-    .insert({
-      org_id: orgId,
-      facilitator_id: user.id,
-      title,
-      join_code: joinCode,
-    })
-    .select('id')
-    .single();
-  if (sessionRes.error || !sessionRes.data) {
-    throw new Error(`Failed to create session: ${sessionRes.error?.message}`);
-  }
-  const sessionId = sessionRes.data.id;
-
+  // Atomic create: create_session_with_stages (SECURITY INVOKER plpgsql,
+  // 20260813171336) mints the join code, inserts the session and its stages
+  // in one transaction, so a mid-flight failure can never orphan a 0-stage
+  // session. RLS on sessions/stages still applies (invoker), and the stage
+  // catalog stays TS-owned — passed in as the jsonb payload.
   const stageRows = CANONICAL_STAGE_TYPES.map((stage_type, position) => ({
-    session_id: sessionId,
     stage_type,
     position,
     duration_seconds: STAGE_DEFAULT_DURATIONS_SECONDS[stage_type],
   }));
-  const stagesRes = await supabase.from('stages').insert(stageRows);
-  if (stagesRes.error) {
-    throw new Error(`Failed to create stages: ${stagesRes.error.message}`);
+  const createRes = await supabase.rpc('create_session_with_stages', {
+    p_org_id: orgId,
+    p_title: title,
+    p_stages: stageRows,
+  });
+  if (createRes.error || !createRes.data) {
+    throw new Error(`Failed to create session: ${createRes.error?.message ?? 'unknown'}`);
   }
+  const sessionId = createRes.data;
 
   revalidatePath(`/app/workshops/${orgId}`);
   redirect(`/app/sessions/${sessionId}`);

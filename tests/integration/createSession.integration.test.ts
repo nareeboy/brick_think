@@ -81,4 +81,52 @@ describe('createSession', () => {
     // (alphabet: 23456789ABCDEFGHJKMNPQRSTVWXYZ — uppercase, no 0/1/I/L/O/U).
     expect(row.data?.join_code).toMatch(/^[2-9ABCDEFGHJKMNPQRSTVWXYZ]{6}$/);
   });
+
+  test('creates the five canonical stages alongside the session', async () => {
+    setActionClient(await signInAs(fx.facilitator));
+
+    const form = new FormData();
+    form.set('title', 'Stages created atomically');
+    form.set('orgId', fx.org.id);
+
+    await createSession(form).catch(() => {
+      /* redirect sentinel */
+    });
+    const last = capturedRedirects[capturedRedirects.length - 1] ?? '';
+    const sessionId = /^\/app\/sessions\/([0-9a-f-]+)$/.exec(last)?.[1];
+    if (!sessionId) throw new Error(`unexpected redirect path: ${last}`);
+
+    const admin = getAdminClient();
+    const stages = await admin
+      .from('stages')
+      .select('stage_type, position, duration_seconds')
+      .eq('session_id', sessionId)
+      .order('position');
+    expect(stages.error).toBeNull();
+    expect(stages.data?.length).toBe(5);
+    expect(stages.data?.map((s) => s.position)).toEqual([0, 1, 2, 3, 4]);
+    for (const s of stages.data ?? []) {
+      expect(s.duration_seconds).toBeGreaterThan(0);
+    }
+  });
+
+  test('rolls back the session row when the stages payload is rejected', async () => {
+    // Atomicity contract of create_session_with_stages: a failure on the
+    // stages INSERT (here: a stage_type that isn't in the enum) must also
+    // roll back the already-inserted session row — no 0-stage orphans.
+    const client = await signInAs(fx.facilitator);
+    const title = `atomicity-probe-${Date.now()}`;
+
+    const rpc = await client.rpc('create_session_with_stages', {
+      p_org_id: fx.org.id,
+      p_title: title,
+      p_stages: [{ stage_type: 'not_a_real_stage_type', position: 0, duration_seconds: 60 }],
+    });
+    expect(rpc.error).not.toBeNull();
+
+    const admin = getAdminClient();
+    const orphan = await admin.from('sessions').select('id').eq('title', title);
+    expect(orphan.error).toBeNull();
+    expect(orphan.data?.length).toBe(0);
+  });
 });

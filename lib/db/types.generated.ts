@@ -1429,6 +1429,10 @@ export type Database = {
         Args: { p_profile_id: string }
         Returns: boolean
       }
+      create_session_with_stages: {
+        Args: { p_org_id: string; p_stages: Json; p_title: string }
+        Returns: string
+      }
       generate_join_code: { Args: never; Returns: string }
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }
