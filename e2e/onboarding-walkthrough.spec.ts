@@ -4,40 +4,47 @@ import { test } from './fixtures';
 
 test.describe('onboarding walkthrough', () => {
   test.beforeEach(async ({ signedInPage }) => {
-    // The signedInPage fixture suppresses the walkthrough by default. This
-    // script runs after the fixture's suppression script (registration order)
-    // to restore a fresh-user state for onboarding tests.
+    // The signedInPage fixture suppresses the walkthrough on EVERY document
+    // load (its init script re-runs per navigation). Onboarding specs need
+    // the opposite: a fresh user whose flags evolve only through real user
+    // interactions during the test.
     //
-    // Strategy:
-    //   - On the FIRST navigation (sessionStorage key absent): clear all four
-    //     flags so the modal, checklist, and tour fire naturally.
-    //   - On every subsequent navigation (including reloads): clear only
-    //     bt_checklist_dismissed, because the fixture always injects it but
-    //     the user never deliberately sets it in these tests. The other flags
-    //     (bt_welcome_seen, bt_session_tour_seen) are set by real user
-    //     interactions and must survive reloads.
+    // Snapshot-restore: this script runs after the fixture's suppression
+    // script (registration order). On every pagehide it snapshots the
+    // walkthrough flags into sessionStorage; at the next document-start it
+    // restores that snapshot over whatever the fixture injected. The first
+    // navigation (no snapshot yet) clears everything — true fresh-user state.
+    //
+    // The previous heuristic ("clear all flags once, then only
+    // bt_checklist_dismissed") failed for any test whose tour-bearing page
+    // was NOT the first navigation: the fixture re-injected
+    // bt_session_tour_seen=1 on the second load and the spotlight tour (and
+    // its skip button) could never appear.
     await signedInPage.addInitScript(() => {
-      const firstVisit = !window.sessionStorage.getItem('__bt_e2e_ob_init');
-      if (firstVisit) {
-        // First navigation: clear all four flags for a true fresh-user state.
-        window.sessionStorage.setItem('__bt_e2e_ob_init', '1');
-        window.localStorage.removeItem('bt_welcome_seen');
-        window.localStorage.removeItem('bt_checklist_dismissed');
-        window.localStorage.removeItem('bt_checklist_complete');
-        window.localStorage.removeItem('bt_session_tour_seen');
+      const KEYS = [
+        'bt_welcome_seen',
+        'bt_checklist_dismissed',
+        'bt_checklist_complete',
+        'bt_session_tour_seen',
+      ];
+      const SNAP = '__bt_e2e_ob_snapshot';
+      const raw = window.sessionStorage.getItem(SNAP);
+      if (raw === null) {
+        // First navigation in this tab: fresh-user state.
+        for (const k of KEYS) window.localStorage.removeItem(k);
       } else {
-        // Subsequent navigations (including reloads): only remove
-        // bt_checklist_dismissed, which is injected by the fixture on every
-        // load and would suppress the checklist. The other flags are set by
-        // real user interactions and must survive reloads:
-        //   - bt_welcome_seen: set when user dismisses modal → must stay so
-        //     modal does not re-fire on reload.
-        //   - bt_checklist_complete: set when checklist reaches all-done →
-        //     must stay so the auto-dismiss fires on the next visit.
-        //   - bt_session_tour_seen: set when user skips tour → must stay so
-        //     tour does not re-fire on reload.
-        window.localStorage.removeItem('bt_checklist_dismissed');
+        const snap = JSON.parse(raw) as Record<string, string | null>;
+        for (const k of KEYS) {
+          const v = snap[k];
+          if (v === null || v === undefined) window.localStorage.removeItem(k);
+          else window.localStorage.setItem(k, v);
+        }
       }
+      window.addEventListener('pagehide', () => {
+        const snap: Record<string, string | null> = {};
+        for (const k of KEYS) snap[k] = window.localStorage.getItem(k);
+        window.sessionStorage.setItem(SNAP, JSON.stringify(snap));
+      });
     });
   });
 
