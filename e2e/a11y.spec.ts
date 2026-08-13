@@ -28,7 +28,7 @@ function logViolations(routeName: string, violations: AxeViolations) {
         id: v.id,
         impact: v.impact,
         description: v.description,
-        nodes: v.nodes.length,
+        nodes: v.nodes.map((n) => n.target.join(' ')),
       })),
       null,
       2,

@@ -105,6 +105,11 @@ export function PiecesDrawer() {
         ref={panelRef}
         data-testid="pieces-drawer-panel"
         aria-hidden={!open}
+        // inert makes the closed drawer's piece buttons untabbable (aria-hidden
+        // alone leaves them keyboard-reachable — an axe aria-hidden-focus
+        // violation that every scan missed while the cookie-consent banner's
+        // role="dialog" made axe-core treat a modal as open and skip the rule).
+        inert={!open}
         className={`pointer-events-none absolute inset-y-3 right-3 z-40 w-[min(360px,calc(100%-1.5rem))] transition-[transform,opacity] duration-300 ease-out ${
           open
             ? 'translate-x-0 opacity-100'
