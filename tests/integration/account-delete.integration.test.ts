@@ -49,7 +49,7 @@ vi.mock('@/lib/db/server', () => ({
 
 // Import AFTER mocks are registered. lib/account/delete.ts itself uses the
 // real service-role client against the local stack (env from .env.test).
-import { performAccountDelete, preDeleteAccount } from '@/lib/account/delete';
+import { forceDeleteAccount, performAccountDelete, preDeleteAccount } from '@/lib/account/delete';
 import { deleteAccountAction } from '@/app/(authed)/app/account/actions';
 
 const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -224,5 +224,33 @@ describe('deleteAccountAction', () => {
       '__redirect__:/sign-in?reason=account_deleted',
     );
     expect(await authUserExists(user.id)).toBe(false);
+  });
+
+  // Regression: the e2e teardown's /api/test/delete-user races in-flight
+  // org-creating test requests (Playwright aborts a timed-out fixture
+  // client-side, but the server-side seed-session keeps running). An org
+  // committed between preDeleteAccount's inventory and the GoTrue delete made
+  // auth.users deletion fail on organisations_owner_id_fkey ("Database error
+  // deleting user"). forceDeleteAccount re-inventories and retries.
+  test('forceDeleteAccount survives an org committed between inventory and auth delete', async () => {
+    const user = await newUser();
+    await createTestOrg({ ownerId: user.id });
+
+    let injected = false;
+    await forceDeleteAccount(user.id, {
+      onBeforeAuthDelete: async () => {
+        // Simulate the in-flight seed-session landing its org mid-delete —
+        // first attempt only, so the retry can converge.
+        if (injected) return;
+        injected = true;
+        await createTestOrg({ ownerId: user.id });
+      },
+    });
+
+    expect(injected).toBe(true);
+    expect(await authUserExists(user.id)).toBe(false);
+    const admin = getAdminClient();
+    const orgs = await admin.from('organisations').select('id').eq('owner_id', user.id);
+    expect(orgs.data).toEqual([]);
   });
 });

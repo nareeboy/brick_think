@@ -17,7 +17,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { performAccountDelete, preDeleteAccount } from '@/lib/account/delete';
+import { forceDeleteAccount } from '@/lib/account/delete';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 
 export const dynamic = 'force-dynamic';
@@ -72,17 +72,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // "Database error deleting user" for any test user who OWNS an org —
   // organisations.owner_id → profiles is deliberately NO ACTION — and the
   // seed-session fixture makes every facilitator an org owner. Unlike the
-  // real flow we also force-delete orgs that still have other members:
-  // everything under a @brick-think.test owner is disposable test data
-  // (gate 3 above), and remaining members are sibling test users whose
-  // memberships cascade away.
+  // real flow, forceDeleteAccount also hard-deletes orgs that still have
+  // other members (everything under a @brick-think.test owner is disposable
+  // test data — gate 3 above) AND retries with a fresh inventory: teardown
+  // can race an in-flight seed-session whose org commits mid-delete (a
+  // timed-out fixture aborts client-side; the server request keeps going).
   try {
-    const plan = await preDeleteAccount(userId);
-    await performAccountDelete(userId, {
-      ...plan,
-      blockingOrgs: [],
-      soloEmptyOrgIds: [...plan.soloEmptyOrgIds, ...plan.blockingOrgs.map((o) => o.id)],
-    });
+    await forceDeleteAccount(userId);
   } catch (err) {
     return NextResponse.json(
       { error: 'delete_failed', detail: err instanceof Error ? err.message : String(err) },
