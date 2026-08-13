@@ -61,13 +61,29 @@ export function StartModelSpotlight() {
     }
   }, [requested]);
 
-  const finish = useCallback(() => {
-    setDismissed(true);
+  const strippedUrl = useCallback(() => {
     const next = new URLSearchParams(searchParams);
     next.delete(ONBOARDING_PARAM);
     const qs = next.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [pathname, router, searchParams]);
+    return qs ? `${pathname}?${qs}` : pathname;
+  }, [pathname, searchParams]);
+
+  const finish = useCallback(() => {
+    setDismissed(true);
+    router.replace(strippedUrl(), { scroll: false });
+  }, [router, strippedUrl]);
+
+  // Finish triggered by clicking the highlighted button itself. The button's
+  // own action is about to navigate (Start your model → createModelInStage →
+  // redirect to the new design), so finish()'s router.replace would race that
+  // push — two navigations in flight, and on slow machines the replace
+  // resolves last and clobbers the redirect, dumping the user back on the
+  // session page. Strip the param with a synchronous history.replaceState
+  // (Next syncs useSearchParams with it) so no competing navigation exists.
+  const finishFromTargetClick = useCallback(() => {
+    setDismissed(true);
+    window.history.replaceState(null, '', strippedUrl());
+  }, [strippedUrl]);
 
   const advance = useCallback(() => {
     // Keep the state updater pure: decide finish-vs-advance from the current
@@ -80,6 +96,14 @@ export function StartModelSpotlight() {
       setStepIndex((i) => i + 1);
     }
   }, [stepIndex, finish]);
+
+  const advanceFromTargetClick = useCallback(() => {
+    if (stepIndex + 1 >= STEPS.length) {
+      finishFromTargetClick();
+    } else {
+      setStepIndex((i) => i + 1);
+    }
+  }, [stepIndex, finishFromTargetClick]);
 
   useEffect(() => {
     if (!active) return;
@@ -96,10 +120,10 @@ export function StartModelSpotlight() {
     if (!active || !rect || !step) return;
     const el = document.querySelector(step.selector);
     if (!el) return;
-    const onClick = () => advance();
+    const onClick = () => advanceFromTargetClick();
     el.addEventListener('click', onClick);
     return () => el.removeEventListener('click', onClick);
-  }, [active, rect, step, advance]);
+  }, [active, rect, step, advanceFromTargetClick]);
 
   if (!active || !rect || !step) return null;
 

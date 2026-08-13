@@ -1,10 +1,9 @@
-export { ReportActionsSlot } from '@brickthink/premium/client';
-export type { ReportActionsSlotProps } from '@brickthink/premium';
-export { BrandingSettingsSlot } from '@brickthink/premium/client';
-export type { BrandingSettingsSlotProps } from '@brickthink/premium';
-export { AccountNavSlot } from '@brickthink/premium/client';
-export type { AccountNavSlotProps } from '@brickthink/premium';
-export { AdminNavSlot } from '@brickthink/premium/client';
-export type { AdminNavSlotProps } from '@brickthink/premium';
+'use client';
+
+// Client-safe premium slots only. The 'use client' directive (mirrored by the
+// real overlay module) pins this seam to the client graph, so an overlay edit
+// that pulls in server-only code fails the hosted build immediately instead of
+// waiting for a consumer to gain 'use client'. Server-rendered slots live in
+// './server-slots'.
 export { PricingLinkSlot } from '@brickthink/premium/client';
 export type { PricingLinkSlotProps } from '@brickthink/premium';

@@ -11,7 +11,7 @@ import { getFacilitatorNotes } from '@/lib/sessions/facilitatorNotes';
 import { getCombinedNarrationsForModelIds } from '@/lib/sessions/modelNarration';
 import { IMPORT_RULES, isImportTarget } from '@/lib/sessions/stage-import';
 
-import { ReportActionsSlot } from '@/lib/premium/client';
+import { ReportActionsSlot } from '@/lib/premium/server-slots';
 
 import { DeleteSessionButton } from './DeleteSessionButton';
 import { FacilitatorNotesCard } from './FacilitatorNotesCard';
@@ -482,7 +482,10 @@ export default async function SessionDetailPage({
                 {session.join_code ? (
                   <RosterButton sessionId={session.id} joinCode={session.join_code} />
                 ) : null}
-                <ReportActionsSlot sessionId={session.id} />
+                {/* Report generation is facilitator-only (generateSessionReport
+                    rejects everyone else), so the slot gets the narrower flag —
+                    not canManageSession, which also admits org admins. */}
+                <ReportActionsSlot sessionId={session.id} canManage={isFacilitator} />
                 <DeleteSessionButton sessionId={session.id} sessionTitle={session.title} />
               </>
             ) : null}
