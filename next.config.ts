@@ -55,6 +55,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Build assets (fonts, chunks, source images) get discovered by
+        // crawlers via preload links and turn up in Search Console as
+        // "Crawled - currently not indexed" noise. noindex keeps them out of
+        // the index without blocking the fetch itself — Google still needs
+        // these files to render pages, so they must NOT be robots.txt-blocked.
+        source: '/_next/static/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex' }],
+      },
+      {
         source: '/share/:token',
         headers: [
           { key: 'Cache-Control', value: 'private, no-store, max-age=0' },
