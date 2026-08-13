@@ -144,8 +144,8 @@ test.describe('careers public application flow', () => {
     // The API returns code=cv_missing which maps to the error message below.
     // Next's route announcer is also role="alert", so filter to the form's
     // error paragraph instead of asserting on the bare role.
-    await expect(
-      page.getByRole('alert').filter({ hasText: 'Please attach your CV' }),
-    ).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('alert').filter({ hasText: 'Please attach your CV' })).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });

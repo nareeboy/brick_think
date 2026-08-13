@@ -54,11 +54,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 
@@ -101,11 +97,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 
@@ -137,11 +129,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 
@@ -170,11 +158,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 
@@ -260,11 +244,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 
@@ -340,11 +320,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 
@@ -367,11 +343,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 
@@ -404,11 +376,7 @@ test.describe('yjs shared_model collaboration', () => {
     signedInEmail,
     seededSession,
   }) => {
-    const { member, modelUrl } = await openSharedRoom(
-      page,
-      signedInEmail,
-      seededSession.sessionId,
-    );
+    const { member, modelUrl } = await openSharedRoom(page, signedInEmail, seededSession.sessionId);
     try {
       const pageB = await openSecondTab(member, modelUrl);
 

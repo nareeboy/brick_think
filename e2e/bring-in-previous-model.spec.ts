@@ -78,10 +78,7 @@ test.describe('room composition brings in previous models', () => {
 
       // 3. Member opens their room from the session page…
       await member.page.goto(`/app/sessions/${seededSession.sessionId}`);
-      await member.page
-        .getByTestId('stage-card-shared_model')
-        .getByTestId('open-my-room')
-        .click();
+      await member.page.getByTestId('stage-card-shared_model').getByTestId('open-my-room').click();
       await member.page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
       await expect(member.page.getByTestId('builder-canvas')).toBeVisible();
 
@@ -132,10 +129,7 @@ test.describe('room composition brings in previous models', () => {
       // 3. Member opens their system_model room and sees the brick composed
       //    through from the shared room; the manual affordance stays hidden.
       await member.page.goto(`/app/sessions/${seededSession.sessionId}`);
-      await member.page
-        .getByTestId('stage-card-system_model')
-        .getByTestId('open-my-room')
-        .click();
+      await member.page.getByTestId('stage-card-system_model').getByTestId('open-my-room').click();
       await member.page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
       await expect(member.page.getByTestId('builder-canvas')).toBeVisible();
       await expect(member.page.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
