@@ -99,3 +99,53 @@ jobs:
 
       - name: Integration tests
         run: pnpm test:integration
+
+  e2e:
+    # Full-suite Playwright run against a pristine local Supabase stack.
+    # playwright.config.ts auto-starts both app servers (`pnpm start:e2e` +
+    # the Yjs worker on :1234); CI=true disables reuseExistingServer so the
+    # run can never pick up a stray server. Committed .env.test demo values;
+    # no secrets. Mailpit (:54324) ships with the stack — the invite-email
+    # spec polls it directly. This is the longest CI job (stack start + Next
+    # build + ~77 specs serialized on one worker) — it runs in parallel with
+    # the other three.
+    name: E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v3
+        with:
+          # Keep in step with the `supabase` devDependency (same pin as
+          # db-migrate.yml).
+          version: 2.98.2
+
+      - name: Start local Supabase stack
+        run: supabase start -x studio
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Build
+        run: pnpm build:e2e
+
+      - name: E2E tests
+        run: pnpm test:e2e
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
