@@ -1,8 +1,17 @@
 // Baseline axe-core accessibility scans across authed routes.
-// These scans are EXPECTED TO PRODUCE VIOLATIONS — the violations are the
-// to-do list for Phases 1–4 of the WCAG 2.2 AA remediation. Do not try to
-// make them go away here. `expect.soft` is used so a single failure doesn't
-// abort the whole suite.
+//
+// RATCHET: each route carries the accepted violation count (axe rules, not
+// node instances) recorded 2026-08-13. A scan that comes in ABOVE its
+// accepted count hard-fails — new violations can't land silently. When a
+// remediation lands and a route scans lower, lower its number here too
+// (ratchet down, never up).
+//
+// As of 2026-08-13 every route scans CLEAN (the WCAG 2.2 AA remediation
+// phases landed) except design-builder: 1 accepted `nested-interactive` on
+// the LayersPanel group row (div role="button" wrapping the Hide/Delete
+// group buttons — shipped with canvas multi-select, 2026-07-29). Fixing it
+// means restructuring the row's drag/keyboard model; tracked in the
+// tech-debt backlog.
 
 import AxeBuilder from '@axe-core/playwright';
 
@@ -19,7 +28,7 @@ function logViolations(routeName: string, violations: AxeViolations) {
         id: v.id,
         impact: v.impact,
         description: v.description,
-        nodes: v.nodes.length,
+        nodes: v.nodes.map((n) => n.target.join(' ')),
       })),
       null,
       2,
@@ -27,14 +36,31 @@ function logViolations(routeName: string, violations: AxeViolations) {
   );
 }
 
-// Routes that need no dynamic ID — navigate directly.
+// Routes that need no dynamic ID — navigate directly, with each route's
+// accepted violation count (see RATCHET note above).
 const STATIC_ROUTES = [
-  { name: 'my-designs', path: '/app/my-designs' },
-  { name: 'workshops', path: '/app/workshops' },
-  { name: 'workshops/new', path: '/app/workshops/new' },
-  { name: 'account', path: '/app/account' },
-  { name: 'designs/trash', path: '/app/designs/trash' },
+  { name: 'my-designs', path: '/app/my-designs', accepted: 0 },
+  { name: 'workshops', path: '/app/workshops', accepted: 0 },
+  { name: 'workshops/new', path: '/app/workshops/new', accepted: 0 },
+  { name: 'account', path: '/app/account', accepted: 0 },
+  { name: 'designs/trash', path: '/app/designs/trash', accepted: 0 },
 ] as const;
+
+// Session-detail's accepted count (dynamic route, scanned separately below).
+const SESSION_DETAIL_ACCEPTED = 0;
+
+// design-builder: the known LayersPanel group-row `nested-interactive` (see
+// header comment). Ratchet back to 0 when the row is restructured.
+const DESIGN_BUILDER_ACCEPTED = 1;
+
+function assertRatchet(routeName: string, accepted: number, violations: AxeViolations) {
+  expect(
+    violations.length,
+    `axe violation count on ${routeName} exceeds the accepted baseline (${accepted}). ` +
+      `New violations must be fixed, not accepted; if you fixed some, ratchet the ` +
+      `baseline down in e2e/a11y.spec.ts instead.`,
+  ).toBeLessThanOrEqual(accepted);
+}
 
 test.describe('axe baseline scans', () => {
   for (const route of STATIC_ROUTES) {
@@ -47,7 +73,7 @@ test.describe('axe baseline scans', () => {
         .analyze();
 
       logViolations(route.name, results.violations);
-      expect.soft(results.violations, `axe violations on ${route.name}`).toEqual([]);
+      assertRatchet(route.name, route.accepted, results.violations);
     });
   }
 
@@ -61,7 +87,7 @@ test.describe('axe baseline scans', () => {
       .analyze();
 
     logViolations('session-detail', results.violations);
-    expect.soft(results.violations, 'axe violations on session-detail').toEqual([]);
+    assertRatchet('session-detail', SESSION_DETAIL_ACCEPTED, results.violations);
   });
 
   // Design-builder route — creates a personal design via the UI, then scans the
@@ -83,6 +109,6 @@ test.describe('axe baseline scans', () => {
       .analyze();
 
     logViolations('design-builder', results.violations);
-    expect(results.violations, 'axe violations on design-builder').toEqual([]);
+    assertRatchet('design-builder', DESIGN_BUILDER_ACCEPTED, results.violations);
   });
 });

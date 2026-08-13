@@ -1,4 +1,4 @@
--- 20260520230000_profiles_rls_session_participants.sql
+-- 20260520240000_profiles_rls_session_participants.sql
 --
 -- After Spec A, participants who join a session via code are NOT org
 -- members. The pre-existing "Profiles: read fellow org members" SELECT

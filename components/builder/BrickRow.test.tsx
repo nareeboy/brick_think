@@ -66,6 +66,31 @@ describe('BrickRow rename', () => {
   });
 });
 
+describe('BrickRow read-only', () => {
+  test('renders no edit affordances: Hide/Delete buttons absent, rename and Delete key inert', () => {
+    const onDelete = vi.fn();
+    const { onRename } = renderRow({ readOnly: true, onDelete });
+    expect(screen.queryByRole('button', { name: 'Delete piece' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Hide piece' })).toBeNull();
+    fireEvent.doubleClick(screen.getByText(/C1 · 2525/));
+    expect(screen.queryByRole('textbox')).toBeNull();
+    const row = screen.getByRole('button', { name: /C1 · 2525/ });
+    fireEvent.keyDown(row, { key: 'Delete' });
+    fireEvent.keyDown(row, { key: 'Backspace' });
+    fireEvent.keyDown(row, { key: 'F2' });
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onRename).not.toHaveBeenCalled();
+    expect(row.getAttribute('draggable')).toBe('false');
+  });
+
+  test('selection still works read-only (observers may inspect)', () => {
+    const onSelect = vi.fn();
+    renderRow({ readOnly: true, onSelect });
+    fireEvent.click(screen.getByRole('button', { name: /C1 · 2525/ }));
+    expect(onSelect).toHaveBeenCalledWith('aaaa-2525', false);
+  });
+});
+
 describe('BrickRow selection', () => {
   test('plain click selects without the shift flag', () => {
     const onSelect = vi.fn();

@@ -12,6 +12,7 @@ import {
 import { bringInPreviousModel } from '@/app/(authed)/app/sessions/stage-import-actions';
 
 import { useBuilderState } from './builderState';
+import { CloseIcon } from '@/components/icons';
 
 interface BringInContextValue {
   /** Server-rendered: a model_imports row already exists at page load. */
@@ -184,23 +185,5 @@ export function BringInPreviousModelReopenButton() {
     >
       Bring in my previous model
     </button>
-  );
-}
-
-function CloseIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M6 6 18 18" />
-      <path d="M18 6 6 18" />
-    </svg>
   );
 }

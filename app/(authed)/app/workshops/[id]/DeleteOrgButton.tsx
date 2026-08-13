@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { deleteOrgAction, type DeleteOrgResult } from '@/app/(authed)/app/workshops/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
+import { TrashIcon } from '@/components/icons';
 
 interface Props {
   orgId: string;
@@ -127,24 +128,5 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
         </ModalBackdrop>
       ) : null}
     </>
-  );
-}
-
-function TrashIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M19 6 17.5 20a2 2 0 0 1-2 1.7h-7a2 2 0 0 1-2-1.7L5 6" />
-    </svg>
   );
 }

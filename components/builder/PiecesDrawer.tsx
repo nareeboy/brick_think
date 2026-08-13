@@ -6,6 +6,7 @@ import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import type { BrickCategory, BrickDefinition } from '@/lib/bricks/types';
 
 import { useDragPiece } from './dragPiece';
+import { CloseIcon } from '@/components/icons';
 
 const CATEGORY_LABELS: Record<BrickCategory, string> = {
   brick: 'Bricks',
@@ -104,6 +105,11 @@ export function PiecesDrawer() {
         ref={panelRef}
         data-testid="pieces-drawer-panel"
         aria-hidden={!open}
+        // inert makes the closed drawer's piece buttons untabbable (aria-hidden
+        // alone leaves them keyboard-reachable — an axe aria-hidden-focus
+        // violation that every scan missed while the cookie-consent banner's
+        // role="dialog" made axe-core treat a modal as open and skip the rule).
+        inert={!open}
         className={`pointer-events-none absolute inset-y-3 right-3 z-40 w-[min(360px,calc(100%-1.5rem))] transition-[transform,opacity] duration-300 ease-out ${
           open
             ? 'translate-x-0 opacity-100'
@@ -232,24 +238,6 @@ function LegoIcon({ className = '' }: { className?: string }) {
       <rect x="5.25" y="5" width="3.5" height="4" rx="1.25" />
       <rect x="10.25" y="5" width="3.5" height="4" rx="1.25" />
       <rect x="15.25" y="5" width="3.5" height="4" rx="1.25" />
-    </svg>
-  );
-}
-
-function CloseIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M6 6l12 12" />
-      <path d="M18 6L6 18" />
     </svg>
   );
 }

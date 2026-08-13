@@ -1,6 +1,9 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
+
+import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
+import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
 import type { ModelVersionSummary } from '@/lib/models/types';
 
@@ -17,6 +20,11 @@ export function VersionHistoryPanel({ modelId, open, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<ModelVersionSummary | null>(null);
   const [pending, start] = useTransition();
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (open) closeRef.current?.focus();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -41,17 +49,18 @@ export function VersionHistoryPanel({ modelId, open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <aside
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="version-history-title"
-      className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l border-zinc-900/10 bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
+    <ModalBackdrop
+      onClose={onClose}
+      titleId="version-history-title"
+      containerClassName="fixed inset-0 z-40 flex justify-end"
+      panelClassName="flex h-full w-full max-w-sm flex-col border-l border-zinc-900/10 bg-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]"
     >
       <header className="flex items-center justify-between border-b border-zinc-900/5 px-5 py-4">
         <h2 id="version-history-title" className="text-[16px] font-semibold text-zinc-950">
           Version history
         </h2>
         <button
+          ref={closeRef}
           type="button"
           onClick={onClose}
           aria-label="Close history"
@@ -99,50 +108,27 @@ export function VersionHistoryPanel({ modelId, open, onClose }: Props) {
       </div>
 
       {confirming ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-[60] flex items-center justify-center px-4"
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={() => setConfirming(null)}
-            className="absolute inset-0 cursor-default bg-zinc-900/40 backdrop-blur-sm"
-          />
-          <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
-            <h3 className="text-[16px] font-semibold text-zinc-950">Restore this version?</h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+        <DeleteConfirmDialog
+          title="Restore this version?"
+          description={
+            <>
               Your current state will be saved as &ldquo;Before restore&rdquo;, then this snapshot
               will become the live canvas.
-            </p>
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirming(null)}
-                disabled={pending}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-4 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  start(async () => {
-                    await restoreVersionAction(modelId, confirming.id);
-                    setConfirming(null);
-                    window.location.reload();
-                  })
-                }
-                disabled={pending}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
-              >
-                {pending ? 'Restoring…' : 'Restore'}
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          confirmLabel="Restore"
+          confirmPendingLabel="Restoring…"
+          pending={pending}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() =>
+            start(async () => {
+              await restoreVersionAction(modelId, confirming.id);
+              setConfirming(null);
+              window.location.reload();
+            })
+          }
+        />
       ) : null}
-    </aside>
+    </ModalBackdrop>
   );
 }

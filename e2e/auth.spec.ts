@@ -18,8 +18,16 @@ test.describe('auth surface', () => {
   });
 
   test('the join flow stays publicly reachable', async ({ page }) => {
-    await page.goto('/join/SAMPLE-CODE');
-    await expect(page.getByRole('heading', { name: /join a session/i })).toBeVisible();
-    await expect(page.getByText('SAMPLE-CODE')).toBeVisible();
+    // The join page lives at /app/join/[code] (bare /join/<code> 404s) —
+    // same stale-URL rot participant-join.spec carried; see that spec's note.
+    // Public reachability contract: the code lookup runs BEFORE the auth
+    // gate, so an unauthenticated visit with a bogus code renders the
+    // branded code_not_found copy (naming the code) instead of bouncing to
+    // /sign-in or 404ing.
+    await page.goto('/app/join/SAMPLE-CODE');
+    await expect(
+      page.getByRole('heading', { name: /we couldn't find that session/i }),
+    ).toBeVisible();
+    await expect(page.getByText(/"SAMPLE-CODE"/)).toBeVisible();
   });
 });

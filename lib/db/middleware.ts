@@ -6,7 +6,23 @@ import { getSupabasePublicEnv } from './env';
 
 const PROTECTED_PREFIXES = ['/app'];
 
+// The join page (app/(public)/app/join/[code]) must stay reachable signed-out:
+// it resolves the code first and only sends the visitor to /sign-in (with
+// ?next=) itself when the code is valid, so anon visitors with a bad/expired
+// code get the friendly code_not_found / session_completed states. The
+// blanket /app guard below would bounce them to sign-in before the page runs
+// — which is exactly what happened from 2026-05-21 (page moved under /app)
+// until this exemption.
+const PUBLIC_EXEMPT_PREFIXES = ['/app/join'];
+
 function isProtected(pathname: string): boolean {
+  if (
+    PUBLIC_EXEMPT_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  ) {
+    return false;
+  }
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );

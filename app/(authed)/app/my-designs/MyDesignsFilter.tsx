@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState, useTransition } from 'react';
 import type { MyDesignsFilterValue } from '@/lib/my-designs/types';
 import { serializeFilter } from '@/lib/my-designs/types';
 import type { OrgSummary } from '@/lib/orgs/types';
+import { CheckIcon, ChevronDownIcon } from '@/components/icons';
 
 interface Props {
   orgs: OrgSummary[];
@@ -80,7 +81,7 @@ export function MyDesignsFilter({ orgs, value, buttonId }: Props) {
         className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-zinc-900/10 bg-white px-3 text-[13px] font-semibold text-zinc-900 transition-colors hover:bg-zinc-900/5 disabled:opacity-60"
       >
         <span>{activeLabel}</span>
-        <ChevronIcon />
+        <ChevronDownIcon className="h-3.5 w-3.5" />
       </button>
       {open ? (
         <div
@@ -137,37 +138,7 @@ function FilterItem({
       }`}
     >
       <span className="text-[13px] font-semibold text-zinc-900">{label}</span>
-      {active ? <CheckIcon /> : null}
+      {active ? <CheckIcon className="h-4 w-4 text-[#a8482a]" /> : null}
     </button>
-  );
-}
-
-function ChevronIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      className="h-3.5 w-3.5"
-      aria-hidden="true"
-    >
-      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-4 w-4 text-[#a8482a]"
-      aria-hidden="true"
-    >
-      <path d="m5 13 4 4 10-12" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

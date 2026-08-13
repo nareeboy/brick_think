@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { renameSession } from '../actions';
+import { PencilIcon } from '@/components/icons';
 
 const MAX_LENGTH = 200;
 
@@ -109,23 +110,5 @@ export function SessionTitle({
         </button>
       )}
     </h1>
-  );
-}
-
-function PencilIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-    </svg>
   );
 }

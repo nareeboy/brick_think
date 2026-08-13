@@ -12,7 +12,7 @@
 
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
+import { expect, suppressFirstRunOverlays, test } from './fixtures';
 
 async function dropFirstBrickAt(page: Page, offsetX: number, offsetY: number): Promise<void> {
   await page.getByRole('button', { name: /open pieces/i }).click();
@@ -54,12 +54,8 @@ async function setUpParticipant(
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Suppress walkthrough flags — mirrors the signedInPage fixture.
-  await page.addInitScript(() => {
-    window.localStorage.setItem('bt_welcome_seen', '1');
-    window.localStorage.setItem('bt_checklist_dismissed', '1');
-    window.localStorage.setItem('bt_session_tour_seen', '1');
-  });
+  // Suppress first-run overlays — same list as the signedInPage fixture.
+  await suppressFirstRunOverlays(page);
 
   const signInRes = await page.request.post('/api/test/sign-in', { data: { email } });
   if (!signInRes.ok()) {
