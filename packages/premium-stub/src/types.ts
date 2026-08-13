@@ -31,8 +31,14 @@ export type OverlayFile = {
 /** Props common to slot components so core can pass context blindly. */
 export type ReportActionsSlotProps = {
   sessionId: string;
-  /** Opaque entitlement tier resolved by premium; core never interprets it. */
-  tier?: string | null;
+  /**
+   * Single permission authority: the session page computes this ONCE and the
+   * slot trusts it. Must be facilitator-only (`session.facilitator_id ===
+   * user.id`) to match `generateSessionReport`'s `not_facilitator` gate —
+   * passing a broader manage flag re-creates the enabled-button-that-always-
+   * fails mismatch for org admins.
+   */
+  canManage: boolean;
   children?: ReactNode;
 };
 

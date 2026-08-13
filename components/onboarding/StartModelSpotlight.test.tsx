@@ -50,4 +50,33 @@ describe('StartModelSpotlight', () => {
     expect(replaceMock).toHaveBeenCalledTimes(1);
     expect(replaceMock).toHaveBeenCalledWith('/app/sessions/s1', { scroll: false });
   });
+
+  it('finishing via the highlighted button strips the param without router.replace', () => {
+    // Clicking "Start your model" fires the button's own server action, which
+    // redirects (a router push) to the new design. A router.replace here would
+    // race that push — on slow machines the replace resolves last and clobbers
+    // the navigation, landing the user back on the session page. The target-
+    // click finish must therefore strip the param synchronously via
+    // history.replaceState and never issue a competing router navigation.
+    const target = document.createElement('button');
+    target.setAttribute('data-tour-id', 'start-model-button');
+    document.body.appendChild(target);
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+
+    try {
+      render(<StartModelSpotlight />);
+      fireEvent.click(screen.getByTestId('start-model-spotlight-next'));
+      expect(screen.getByText('Step 2 of 2')).toBeTruthy();
+
+      fireEvent.click(target);
+
+      expect(replaceMock).not.toHaveBeenCalled();
+      expect(replaceStateSpy).toHaveBeenCalledTimes(1);
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, '', '/app/sessions/s1');
+      expect(screen.queryByTestId('start-model-spotlight')).toBeNull();
+    } finally {
+      replaceStateSpy.mockRestore();
+      target.remove();
+    }
+  });
 });
