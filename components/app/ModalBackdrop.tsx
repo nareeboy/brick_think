@@ -24,9 +24,17 @@ interface Props {
   titleId?: string;
   /** Alternative to titleId when there's no visible heading element to point at. */
   ariaLabel?: string;
+  /** id of the description element — wired through aria-describedby. */
+  descriptionId?: string;
   dataTestid?: string;
   /** Override the default panel-width wrapper. Defaults to `w-full max-w-md`. */
   panelClassName?: string;
+  /**
+   * Override the fixed overlay layout. Defaults to a centered modal; pass
+   * e.g. `fixed inset-0 z-40 flex justify-end` (with a full-height
+   * panelClassName) for a side-drawer dialog.
+   */
+  containerClassName?: string;
   children: ReactNode;
 }
 
@@ -34,8 +42,10 @@ export function ModalBackdrop({
   onClose,
   titleId,
   ariaLabel,
+  descriptionId,
   dataTestid,
   panelClassName = 'w-full max-w-md',
+  containerClassName = 'fixed inset-0 z-40 flex items-center justify-center px-4',
   children,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -65,7 +75,8 @@ export function ModalBackdrop({
       aria-modal="true"
       aria-labelledby={titleId}
       aria-label={titleId ? undefined : ariaLabel}
-      className="fixed inset-0 z-40 flex items-center justify-center px-4"
+      aria-describedby={descriptionId}
+      className={containerClassName}
     >
       <button
         type="button"
