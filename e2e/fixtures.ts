@@ -41,22 +41,42 @@ function makeTestEmail(): string {
   return `e2e-${suffix}@brick-think.test`;
 }
 
+// Suppress every first-run overlay so specs see a "returning user" UI: the
+// welcome modal / checklist / session tour, the canvas builder tutorial, and
+// the cookie-consent card (which otherwise overlays the sidebar-bottom
+// "Save version" button and intercepts clicks). This is THE canonical list —
+// specs that hand-roll extra browser contexts (facilitator-live-readonly,
+// participant-join, facilitator-narration, facilitator-notes,
+// brick-reactions-comments) must call this instead of copying a subset;
+// the canvas-tutorial drop regression came from exactly such a stale copy.
+// Overlay-specific specs (onboarding-walkthrough, canvas-tutorial) re-enable
+// their overlay by registering a second addInitScript that removes the
+// relevant key — Playwright runs init scripts in registration order.
+export async function suppressFirstRunOverlays(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('bt_welcome_seen', '1');
+    window.localStorage.setItem('bt_checklist_dismissed', '1');
+    window.localStorage.setItem('bt_session_tour_seen', '1');
+    window.localStorage.setItem('bt_canvas_tutorial_seen', '1');
+    // Shape must match lib/consent/state.ts isDecision().
+    window.localStorage.setItem(
+      'bt.consent.v1',
+      JSON.stringify({ v: 1, decidedAt: new Date().toISOString(), analytics: false }),
+    );
+  });
+}
+
 export const test = base.extend<Fixtures>({
   signedInEmail: async ({}, use) => {
     await use(makeTestEmail());
   },
   signedInPage: async ({ page, signedInEmail }, use) => {
-    // Suppress the first-login walkthrough by default — every other spec
-    // assumes a "returning user" UI without the welcome modal / spotlight
-    // tour overlaying it. Onboarding-specific specs clear these in their
-    // own beforeEach (which registers a second addInitScript that runs
-    // after this one and selectively removes the flags).
-    await page.addInitScript(() => {
-      window.localStorage.setItem('bt_welcome_seen', '1');
-      window.localStorage.setItem('bt_checklist_dismissed', '1');
-      window.localStorage.setItem('bt_session_tour_seen', '1');
-      window.localStorage.setItem('bt_canvas_tutorial_seen', '1');
-    });
+    // Suppress first-run overlays by default — every other spec assumes a
+    // "returning user" UI without the welcome modal / spotlight tour /
+    // consent card overlaying it. Overlay-specific specs clear the relevant
+    // key in their own beforeEach (a second addInitScript runs after this
+    // one and selectively removes it).
+    await suppressFirstRunOverlays(page);
     const res = await page.request.post('/api/test/sign-in', {
       data: { email: signedInEmail },
     });
