@@ -6,6 +6,7 @@ import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import type { BrickCategory, BrickDefinition } from '@/lib/bricks/types';
 
 import { useDragPiece } from './dragPiece';
+import { CloseIcon } from '@/components/icons';
 
 const CATEGORY_LABELS: Record<BrickCategory, string> = {
   brick: 'Bricks',
@@ -232,24 +233,6 @@ function LegoIcon({ className = '' }: { className?: string }) {
       <rect x="5.25" y="5" width="3.5" height="4" rx="1.25" />
       <rect x="10.25" y="5" width="3.5" height="4" rx="1.25" />
       <rect x="15.25" y="5" width="3.5" height="4" rx="1.25" />
-    </svg>
-  );
-}
-
-function CloseIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M6 6l12 12" />
-      <path d="M18 6L6 18" />
     </svg>
   );
 }

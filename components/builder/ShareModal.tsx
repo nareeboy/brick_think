@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
 import { createShareLink, revokeShareLink } from '@/app/(authed)/app/designs/[id]/share-actions';
 import type { ShareTtl } from '@/lib/share/ttl';
@@ -48,6 +50,11 @@ export function ShareModal({
   const [ttl, setTtl] = useState<ShareTtl>('7d');
   const [busy, setBusy] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const ttlRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    if (open) ttlRef.current?.focus();
+  }, [open]);
 
   const reload = useCallback(async () => {
     const res = await fetch(`/api/models/${modelId}/share-links`);
@@ -93,13 +100,8 @@ export function ShareModal({
   if (!open) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Share this design"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/30 px-4"
-    >
-      <div className="w-full max-w-md rounded-2xl border border-zinc-900/10 bg-white p-5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]">
+    <ModalBackdrop onClose={onClose} ariaLabel="Share this design">
+      <div className="rounded-2xl border border-zinc-900/10 bg-white p-5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)]">
         {/* WCAG 4.1.3 — "Copy link" → "Copied" is a re-render; screen readers
             don't re-announce button text changes. This live region emits the
             confirmation so AT users hear the copy-success feedback. */}
@@ -120,6 +122,7 @@ export function ShareModal({
 
         <section className="mb-5 flex items-center gap-2">
           <select
+            ref={ttlRef}
             aria-label="Link expires after"
             value={ttl}
             onChange={(e) => setTtl(e.target.value as ShareTtl)}
@@ -175,6 +178,6 @@ export function ShareModal({
           ))}
         </ul>
       </div>
-    </div>
+    </ModalBackdrop>
   );
 }

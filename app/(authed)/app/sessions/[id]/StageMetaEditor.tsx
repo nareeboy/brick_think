@@ -6,6 +6,7 @@ import { stageDescription, stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
 
 import { updateStageMeta } from '../actions';
+import { PencilIcon } from '@/components/icons';
 
 const TITLE_MAX = 200;
 const DESCRIPTION_MAX = 500;
@@ -191,23 +192,5 @@ export function StageMetaEditor({
       </span>
       <span className="text-[12px] leading-snug text-zinc-500">{visibleDescription}</span>
     </button>
-  );
-}
-
-function PencilIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-    </svg>
   );
 }

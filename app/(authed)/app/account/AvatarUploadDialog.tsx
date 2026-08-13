@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState, useTransition } from '
 import Cropper, { type Area } from 'react-easy-crop';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
+import { CloseIcon } from '@/components/icons';
 
 import { updateAvatarAction } from './actions';
 
@@ -145,7 +146,7 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
             onClick={onClose}
             className="-mr-1 -mt-1 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 disabled:opacity-40"
           >
-            <CloseIcon />
+            <CloseIcon className="h-4 w-4" />
           </button>
         </div>
 
@@ -308,22 +309,4 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error('Could not load image.'));
     img.src = src;
   });
-}
-
-function CloseIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-4 w-4"
-      aria-hidden="true"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
 }
