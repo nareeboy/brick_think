@@ -36,7 +36,7 @@
 
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
+import { expect, suppressFirstRunOverlays, test } from './fixtures';
 
 // Local Supabase service-role JWT — the well-known demo key from .env.test.
 // Safe to inline here: the JWT is meaningless outside http://127.0.0.1:54321.
@@ -62,14 +62,10 @@ async function newSignedInContext(facilitatorPage: Page, label: string): Promise
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Suppress the first-login walkthrough flags — mirrors the signedInPage
-  // fixture. Without this the welcome modal would intercept the first
-  // session-page interaction.
-  await page.addInitScript(() => {
-    window.localStorage.setItem('bt_welcome_seen', '1');
-    window.localStorage.setItem('bt_checklist_dismissed', '1');
-    window.localStorage.setItem('bt_session_tour_seen', '1');
-  });
+  // Suppress first-run overlays — same list as the signedInPage fixture.
+  // Without this the welcome modal (or consent card) would intercept the
+  // first session-page interaction.
+  await suppressFirstRunOverlays(page);
 
   const email = makeParticipantEmail(label);
   const signInRes = await page.request.post('/api/test/sign-in', { data: { email } });
@@ -150,7 +146,11 @@ test.describe('participant join + spotlight + kick + restore', () => {
     seededSession,
   }) => {
     const { sessionId, joinCode, stageIds } = seededSession;
-    const joinUrl = `/join/${joinCode}`;
+    // The join page lives at /app/join/[code] (app/(public)/app/join/ — the
+    // (public) route group keeps it outside the authed layout). A bare
+    // /join/<code> 404s; this spec silently rotted pointing at the pre-move
+    // URL from 2026-05-20.
+    const joinUrl = `/app/join/${joinCode}`;
     const participantA = await newSignedInContext(facPage, 'participant-a');
     const participantB = await newSignedInContext(facPage, 'participant-b');
 

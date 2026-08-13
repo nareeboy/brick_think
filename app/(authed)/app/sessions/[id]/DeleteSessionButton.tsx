@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from 'react';
 
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
+import { TrashIcon } from '@/components/icons';
 
 import { deleteSession } from '../actions';
 
@@ -56,24 +57,5 @@ export function DeleteSessionButton({
         />
       ) : null}
     </>
-  );
-}
-
-function TrashIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-      <path d="M19 6 17.5 20a2 2 0 0 1-2 1.7h-7a2 2 0 0 1-2-1.7L5 6" />
-    </svg>
   );
 }

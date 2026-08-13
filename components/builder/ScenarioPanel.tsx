@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { STAGE_CHIP_LABEL, stageChipClasses } from '@/lib/scenarios/stageChip';
 import type { StageType } from '@/lib/sessions/types';
+import { CloseIcon, InfoIcon } from '@/components/icons';
 
 export interface BuilderScenario {
   stageType: StageType;
@@ -76,42 +77,5 @@ export function ScenarioPanel({ scenario }: Props) {
         {scenario.body}
       </p>
     </aside>
-  );
-}
-
-function InfoIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 11v5" />
-      <path d="M12 8h.01" />
-    </svg>
-  );
-}
-
-function CloseIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M6 6 18 18" />
-      <path d="M18 6 6 18" />
-    </svg>
   );
 }

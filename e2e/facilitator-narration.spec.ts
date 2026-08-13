@@ -1,6 +1,6 @@
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { test, expect } from './fixtures';
+import { expect, suppressFirstRunOverlays, test } from './fixtures';
 
 // Deterministic fake SpeechRecognition — emits one FINAL result ~30ms after
 // start(), and fires onend on stop()/abort(). Mirrors model-narration.spec.ts.
@@ -36,12 +36,8 @@ async function newSignedInContext(
   if (!browser) throw new Error('browser missing');
   const context = await browser.newContext();
   const page = await context.newPage();
-  // Suppress first-login walkthroughs.
-  await page.addInitScript(() => {
-    window.localStorage.setItem('bt_welcome_seen', '1');
-    window.localStorage.setItem('bt_checklist_dismissed', '1');
-    window.localStorage.setItem('bt_session_tour_seen', '1');
-  });
+  // Suppress first-run overlays (walkthroughs, canvas tutorial, consent card).
+  await suppressFirstRunOverlays(page);
   // Pre-acknowledge the one-time narration notice so the recorder auto-starts
   // (the auto-start path requires `bt_narration_notice_seen`).
   if (opts.seedNotice) {

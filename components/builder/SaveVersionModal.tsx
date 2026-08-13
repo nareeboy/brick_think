@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+
+import { ModalBackdrop } from '@/components/app/ModalBackdrop';
+
 import { useBuilderState } from './builderState';
 
 interface Props {
@@ -19,12 +22,7 @@ export function SaveVersionModal({ modelId, canvasState, onClose, onSaved }: Pro
 
   useEffect(() => {
     inputRef.current?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
-    }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, []);
 
   async function submit() {
     setPending(true);
@@ -50,19 +48,8 @@ export function SaveVersionModal({ modelId, canvasState, onClose, onSaved }: Pro
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="save-version-title"
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-    >
-      <button
-        type="button"
-        aria-label="Close"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-zinc-900/40 backdrop-blur-sm"
-      />
-      <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
+    <ModalBackdrop onClose={onClose} titleId="save-version-title" panelClassName="w-full max-w-sm">
+      <div className="rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
         <h2 id="save-version-title" className="text-[16px] font-semibold text-zinc-950">
           Save version
         </h2>
@@ -106,6 +93,6 @@ export function SaveVersionModal({ modelId, canvasState, onClose, onSaved }: Pro
           </button>
         </div>
       </div>
-    </div>
+    </ModalBackdrop>
   );
 }

@@ -34,6 +34,7 @@ type DropHint =
 
 export function LayersPanel() {
   const {
+    readOnly,
     groups,
     bricks,
     activeGroupId,
@@ -170,18 +171,24 @@ export function LayersPanel() {
           <span className="text-[14px] font-semibold text-zinc-900">Layers</span>
         </button>
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            aria-label="New group"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              addGroup();
-            }}
-            className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
-          >
-            <PlusIcon className="h-3.5 w-3.5" />
-          </button>
+          {/* Read-only viewers (facilitator observing, non-members) get no
+              mutating affordances anywhere in this panel — the builderState
+              guard() already drops the writes, but rendering the controls
+              reads as editable and broke the read-only e2e contract. */}
+          {!readOnly ? (
+            <button
+              type="button"
+              aria-label="New group"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addGroup();
+              }}
+              className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+            >
+              <PlusIcon className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -213,6 +220,7 @@ export function LayersPanel() {
               bricks={bricksByGroup.get(g.id) ?? []}
               active={g.id === activeGroupId}
               selectedIds={selectedIds}
+              readOnly={readOnly}
               hint={hint}
               onSetActive={setActiveGroup}
               onToggleCollapsed={toggleGroupCollapsed}
@@ -244,6 +252,7 @@ interface GroupBlockProps {
   bricks: BrickInstance[];
   active: boolean;
   selectedIds: string[];
+  readOnly: boolean;
   hint: DropHint | null;
   onSetActive: (id: string) => void;
   onToggleCollapsed: (id: string) => void;
@@ -267,6 +276,7 @@ function GroupBlock({
   bricks,
   active,
   selectedIds,
+  readOnly,
   hint,
   onSetActive,
   onToggleCollapsed,
@@ -301,10 +311,10 @@ function GroupBlock({
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onSetActive(group.id);
-    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+    } else if (!readOnly && (e.key === 'Delete' || e.key === 'Backspace')) {
       e.preventDefault();
       onDelete(group);
-    } else if (e.key === 'F2') {
+    } else if (!readOnly && e.key === 'F2') {
       e.preventDefault();
       setDraft(group.name);
       setEditing(true);
@@ -322,7 +332,7 @@ function GroupBlock({
       <div
         role="button"
         tabIndex={0}
-        draggable={!editing}
+        draggable={!editing && !readOnly}
         onDragStart={(e) => onGroupDragStart(group.id, e)}
         onDragOver={(e) => onGroupHeaderDragOver(e, group)}
         onDrop={(e) => onGroupHeaderDrop(e, group)}
@@ -375,6 +385,7 @@ function GroupBlock({
           <span
             className="flex-1 truncate font-medium"
             onDoubleClick={(e) => {
+              if (readOnly) return;
               e.stopPropagation();
               setDraft(group.name);
               setEditing(true);
@@ -384,28 +395,32 @@ function GroupBlock({
           </span>
         )}
         <span className="font-mono text-[10px] text-zinc-500">{bricks.length}</span>
-        <IconButton
-          aria-label={group.visible ? 'Hide group' : 'Show group'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleVisible(group.id);
-          }}
-        >
-          {group.visible ? (
-            <EyeIcon className="h-3.5 w-3.5" />
-          ) : (
-            <EyeOffIcon className="h-3.5 w-3.5" />
-          )}
-        </IconButton>
-        <IconButton
-          aria-label="Delete group"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(group);
-          }}
-        >
-          <TrashIcon className="h-3.5 w-3.5" />
-        </IconButton>
+        {!readOnly ? (
+          <>
+            <IconButton
+              aria-label={group.visible ? 'Hide group' : 'Show group'}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleVisible(group.id);
+              }}
+            >
+              {group.visible ? (
+                <EyeIcon className="h-3.5 w-3.5" />
+              ) : (
+                <EyeOffIcon className="h-3.5 w-3.5" />
+              )}
+            </IconButton>
+            <IconButton
+              aria-label="Delete group"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(group);
+              }}
+            >
+              <TrashIcon className="h-3.5 w-3.5" />
+            </IconButton>
+          </>
+        ) : null}
       </div>
 
       {!group.collapsed ? (
@@ -420,6 +435,7 @@ function GroupBlock({
                 brick={b}
                 selected={selectedIds.includes(b.id)}
                 groupHidden={!group.visible}
+                readOnly={readOnly}
                 hint={hint}
                 onSelect={onSelectBrick}
                 onToggleVisible={onToggleBrickVisible}
@@ -445,6 +461,7 @@ export function BrickRow({
   brick,
   selected,
   groupHidden,
+  readOnly = false,
   hint,
   onSelect,
   onToggleVisible,
@@ -457,6 +474,7 @@ export function BrickRow({
   brick: BrickInstance;
   selected: boolean;
   groupHidden: boolean;
+  readOnly?: boolean;
   hint: DropHint | null;
   onSelect: (id: string, shiftKey: boolean) => void;
   onToggleVisible: (id: string) => void;
@@ -489,7 +507,7 @@ export function BrickRow({
       <div
         role="button"
         tabIndex={0}
-        draggable={!editing}
+        draggable={!editing && !readOnly}
         onDragStart={(e) => onDragStart(brick.id, e)}
         onDragOver={(e) => onDragOver(e, brick)}
         onDrop={(e) => onDrop(e, brick)}
@@ -505,11 +523,11 @@ export function BrickRow({
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             onSelect(brick.id, e.shiftKey);
-          } else if (e.key === 'F2') {
+          } else if (!readOnly && e.key === 'F2') {
             e.preventDefault();
             setDraft(brick.name ?? '');
             setEditing(true);
-          } else if (e.key === 'Delete' || e.key === 'Backspace') {
+          } else if (!readOnly && (e.key === 'Delete' || e.key === 'Backspace')) {
             e.preventDefault();
             onDelete(brick.id);
           } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -559,6 +577,7 @@ export function BrickRow({
           <span
             className="flex-1 truncate"
             onDoubleClick={(e) => {
+              if (readOnly) return;
               e.stopPropagation();
               setDraft(brick.name ?? '');
               setEditing(true);
@@ -567,28 +586,32 @@ export function BrickRow({
             {label}
           </span>
         )}
-        <IconButton
-          aria-label={brick.visible ? 'Hide piece' : 'Show piece'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleVisible(brick.id);
-          }}
-        >
-          {brick.visible ? (
-            <EyeIcon className="h-3.5 w-3.5" />
-          ) : (
-            <EyeOffIcon className="h-3.5 w-3.5" />
-          )}
-        </IconButton>
-        <IconButton
-          aria-label="Delete piece"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(brick.id);
-          }}
-        >
-          <TrashIcon className="h-3.5 w-3.5" />
-        </IconButton>
+        {!readOnly ? (
+          <>
+            <IconButton
+              aria-label={brick.visible ? 'Hide piece' : 'Show piece'}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleVisible(brick.id);
+              }}
+            >
+              {brick.visible ? (
+                <EyeIcon className="h-3.5 w-3.5" />
+              ) : (
+                <EyeOffIcon className="h-3.5 w-3.5" />
+              )}
+            </IconButton>
+            <IconButton
+              aria-label="Delete piece"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(brick.id);
+              }}
+            >
+              <TrashIcon className="h-3.5 w-3.5" />
+            </IconButton>
+          </>
+        ) : null}
       </div>
       {showAfter ? <div className="mx-2 h-[2px] rounded-full bg-[#a8482a]" /> : null}
     </div>

@@ -13,7 +13,7 @@
 
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
+import { expect, suppressFirstRunOverlays, test } from './fixtures';
 
 interface ParticipantSetup {
   context: BrowserContext;
@@ -40,13 +40,8 @@ async function setUpParticipant(
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  // Mirror signedInPage fixture — suppress the first-login walkthrough so the
-  // welcome modal / spotlight tour don't overlay our assertions.
-  await page.addInitScript(() => {
-    window.localStorage.setItem('bt_welcome_seen', '1');
-    window.localStorage.setItem('bt_checklist_dismissed', '1');
-    window.localStorage.setItem('bt_session_tour_seen', '1');
-  });
+  // Suppress first-run overlays — same list as the signedInPage fixture.
+  await suppressFirstRunOverlays(page);
 
   const signInRes = await page.request.post('/api/test/sign-in', { data: { email } });
   if (!signInRes.ok()) {

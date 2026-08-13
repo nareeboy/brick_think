@@ -1,4 +1,4 @@
--- 20260519140000_org_integrations.sql
+-- 20260520150000_org_integrations.sql
 -- Per-org BYO Anthropic API key storage for the session report feature.
 -- Ciphertext is AES-256-GCM encrypted with BRICKTHINK_ENCRYPTION_KEY in the
 -- web service; nonce is stored alongside. last4 surfaces in the admin UI so

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 
+import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import type { TrashedModelSummary } from '@/lib/models/types';
 
 import { emptyTrashAction, purgeModelAction, restoreModelAction } from '../actions';
@@ -56,48 +57,25 @@ export function TrashList({ items }: TrashListProps) {
       </ul>
 
       {confirmingEmpty ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={() => setConfirmingEmpty(false)}
-            className="absolute inset-0 cursor-default bg-zinc-900/40 backdrop-blur-sm"
-          />
-          <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
-            <h2 className="text-[16px] font-semibold text-zinc-950">Empty trash?</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+        <DeleteConfirmDialog
+          title="Empty trash?"
+          description={
+            <>
               Permanently delete all {items.length} design{items.length === 1 ? '' : 's'} in trash?
               This cannot be undone.
-            </p>
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmingEmpty(false)}
-                disabled={pendingEmpty}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-4 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  startEmpty(async () => {
-                    await emptyTrashAction();
-                    setConfirmingEmpty(false);
-                  })
-                }
-                disabled={pendingEmpty}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
-              >
-                {pendingEmpty ? 'Emptying…' : 'Empty trash'}
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          confirmLabel="Empty trash"
+          confirmPendingLabel="Emptying…"
+          pending={pendingEmpty}
+          onCancel={() => setConfirmingEmpty(false)}
+          onConfirm={() =>
+            startEmpty(async () => {
+              await emptyTrashAction();
+              setConfirmingEmpty(false);
+            })
+          }
+        />
       ) : null}
     </>
   );
@@ -138,48 +116,23 @@ function TrashCard({ item }: { item: TrashedModelSummary & { daysRemainingLabel:
       </div>
 
       {confirmingPurge ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
-        >
-          <button
-            type="button"
-            aria-label="Close"
-            onClick={() => setConfirmingPurge(false)}
-            className="absolute inset-0 cursor-default bg-zinc-900/40 backdrop-blur-sm"
-          />
-          <div className="relative w-full max-w-sm rounded-2xl border border-zinc-900/10 bg-white p-6 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.35)]">
-            <h2 className="text-[16px] font-semibold text-zinc-950">Delete this design?</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-zinc-600">
+        <DeleteConfirmDialog
+          title="Delete this design?"
+          description={
+            <>
               Permanently delete &ldquo;{item.title}&rdquo;? Versions and history will be lost. This
               cannot be undone.
-            </p>
-            <div className="mt-6 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmingPurge(false)}
-                disabled={pendingPurge}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl px-4 text-[13px] font-medium text-zinc-700 transition-colors hover:bg-zinc-900/5"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  startPurge(async () => {
-                    await purgeModelAction(item.id);
-                    setConfirmingPurge(false);
-                  })
-                }
-                disabled={pendingPurge}
-                className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
-              >
-                {pendingPurge ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+          pending={pendingPurge}
+          onCancel={() => setConfirmingPurge(false)}
+          onConfirm={() =>
+            startPurge(async () => {
+              await purgeModelAction(item.id);
+              setConfirmingPurge(false);
+            })
+          }
+        />
       ) : null}
     </li>
   );
