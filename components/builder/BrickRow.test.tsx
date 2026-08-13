@@ -80,7 +80,8 @@ describe('BrickRow read-only', () => {
     fireEvent.keyDown(row, { key: 'F2' });
     expect(onDelete).not.toHaveBeenCalled();
     expect(onRename).not.toHaveBeenCalled();
-    expect(row.getAttribute('draggable')).toBe('false');
+    // Dragging lives on the row container, not the label button.
+    expect(row.closest('[draggable]')?.getAttribute('draggable')).toBe('false');
   });
 
   test('selection still works read-only (observers may inspect)', () => {

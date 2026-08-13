@@ -306,8 +306,7 @@ function GroupBlock({
     }
   }, [editing]);
 
-  function handleHeaderKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    if (e.target !== e.currentTarget) return;
+  function handleHeaderKeyDown(e: KeyboardEvent<HTMLButtonElement>) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       onSetActive(group.id);
@@ -329,16 +328,17 @@ function GroupBlock({
       {hint?.kind === 'group-edge' && hint.groupId === group.id && hint.side === 'before' ? (
         <div className="mx-2 mb-1 h-[2px] rounded-full bg-[#a8482a]" />
       ) : null}
+      {/* The row container is drag/drop-only chrome — the actual interactive
+          control is the name <button> below, stretched over the row via its
+          ::after overlay so click-anywhere-on-the-row still activates. A
+          role="button" container here would wrap the sibling icon buttons and
+          fail axe nested-interactive (WCAG 4.1.2). */}
       <div
-        role="button"
-        tabIndex={0}
         draggable={!editing && !readOnly}
         onDragStart={(e) => onGroupDragStart(group.id, e)}
         onDragOver={(e) => onGroupHeaderDragOver(e, group)}
         onDrop={(e) => onGroupHeaderDrop(e, group)}
-        onClick={() => onSetActive(group.id)}
-        onKeyDown={handleHeaderKeyDown}
-        className={`flex w-full cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] transition-colors ${
+        className={`relative flex w-full cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] transition-colors ${
           active ? 'bg-[#a8482a]/10 text-zinc-900' : 'text-zinc-800 hover:bg-zinc-900/5'
         } ${dimmed ? 'opacity-60' : ''} ${
           hint?.kind === 'group-top' && hint.groupId === group.id ? 'ring-2 ring-[#a8482a]/50' : ''
@@ -348,11 +348,8 @@ function GroupBlock({
           type="button"
           draggable={false}
           aria-label={group.collapsed ? 'Expand group' : 'Collapse group'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleCollapsed(group.id);
-          }}
-          className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-900"
+          onClick={() => onToggleCollapsed(group.id)}
+          className="relative z-10 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-900"
         >
           <ChevronDown
             className={`h-3 w-3 transition-transform ${group.collapsed ? '-rotate-90' : ''}`}
@@ -378,21 +375,24 @@ function GroupBlock({
                 setEditing(false);
               }
             }}
-            onClick={(e) => e.stopPropagation()}
-            className="flex-1 rounded border border-[#a8482a]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
+            className="relative z-10 flex-1 rounded border border-[#a8482a]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
           />
         ) : (
-          <span
-            className="flex-1 truncate font-medium"
-            onDoubleClick={(e) => {
+          <button
+            type="button"
+            data-layer-row
+            aria-current={active || undefined}
+            onClick={() => onSetActive(group.id)}
+            onDoubleClick={() => {
               if (readOnly) return;
-              e.stopPropagation();
               setDraft(group.name);
               setEditing(true);
             }}
+            onKeyDown={handleHeaderKeyDown}
+            className="min-w-0 flex-1 cursor-pointer truncate text-left font-medium after:absolute after:inset-0 after:content-['']"
           >
             {group.name}
-          </span>
+          </button>
         )}
         <span className="font-mono text-[10px] text-zinc-500">{bricks.length}</span>
         {!readOnly ? (
@@ -504,38 +504,15 @@ export function BrickRow({
   return (
     <div>
       {showBefore ? <div className="mx-2 h-[2px] rounded-full bg-[#a8482a]" /> : null}
+      {/* Same shape as the group header: drag/drop-only container, with the
+          label <button> stretched over the row via ::after — never a
+          role="button" wrapper around the icon buttons (axe nested-interactive). */}
       <div
-        role="button"
-        tabIndex={0}
         draggable={!editing && !readOnly}
         onDragStart={(e) => onDragStart(brick.id, e)}
         onDragOver={(e) => onDragOver(e, brick)}
         onDrop={(e) => onDrop(e, brick)}
-        // Shift-click toggles the brick in/out of the multi-selection (same
-        // gesture as on the canvas); preventDefault on mousedown stops the
-        // browser from starting a text selection while shift is held.
-        onMouseDown={(e) => {
-          if (e.shiftKey) e.preventDefault();
-        }}
-        onClick={(e) => onSelect(brick.id, e.shiftKey)}
-        onKeyDown={(e) => {
-          if (e.target !== e.currentTarget) return;
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onSelect(brick.id, e.shiftKey);
-          } else if (!readOnly && e.key === 'F2') {
-            e.preventDefault();
-            setDraft(brick.name ?? '');
-            setEditing(true);
-          } else if (!readOnly && (e.key === 'Delete' || e.key === 'Backspace')) {
-            e.preventDefault();
-            onDelete(brick.id);
-          } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            moveRowFocus(e.currentTarget, e.key === 'ArrowDown' ? 'down' : 'up');
-          }
-        }}
-        className={`flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors ${
+        className={`relative flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] transition-colors ${
           selected ? 'bg-[#a8482a]/12 text-zinc-900' : 'text-zinc-700 hover:bg-zinc-900/5'
         } ${dimmed ? 'opacity-50' : ''}`}
       >
@@ -570,21 +547,45 @@ export function BrickRow({
                 setEditing(false);
               }
             }}
-            onClick={(e) => e.stopPropagation()}
-            className="flex-1 rounded border border-[#a8482a]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
+            className="relative z-10 flex-1 rounded border border-[#a8482a]/40 bg-white px-1 py-0.5 text-[12px] outline-none"
           />
         ) : (
-          <span
-            className="flex-1 truncate"
-            onDoubleClick={(e) => {
+          <button
+            type="button"
+            data-layer-row
+            aria-pressed={selected}
+            // Shift-click toggles the brick in/out of the multi-selection (same
+            // gesture as on the canvas); preventDefault on mousedown stops the
+            // browser from starting a text selection while shift is held.
+            onMouseDown={(e) => {
+              if (e.shiftKey) e.preventDefault();
+            }}
+            onClick={(e) => onSelect(brick.id, e.shiftKey)}
+            onDoubleClick={() => {
               if (readOnly) return;
-              e.stopPropagation();
               setDraft(brick.name ?? '');
               setEditing(true);
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(brick.id, e.shiftKey);
+              } else if (!readOnly && e.key === 'F2') {
+                e.preventDefault();
+                setDraft(brick.name ?? '');
+                setEditing(true);
+              } else if (!readOnly && (e.key === 'Delete' || e.key === 'Backspace')) {
+                e.preventDefault();
+                onDelete(brick.id);
+              } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                moveRowFocus(e.currentTarget, e.key === 'ArrowDown' ? 'down' : 'up');
+              }
+            }}
+            className="min-w-0 flex-1 cursor-pointer truncate text-left after:absolute after:inset-0 after:content-['']"
           >
             {label}
-          </span>
+          </button>
         )}
         {!readOnly ? (
           <>
@@ -626,7 +627,9 @@ function IconButton({
     <button
       type="button"
       draggable={false}
-      className="inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
+      // relative z-10 lifts these above the sibling row-button's ::after
+      // overlay so they stay clickable.
+      className="relative z-10 inline-flex h-6 w-6 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900"
       {...props}
     >
       {children}
