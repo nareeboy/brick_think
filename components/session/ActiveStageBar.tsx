@@ -3,11 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { EndSessionButton } from '@/app/(authed)/app/sessions/[id]/SessionStages';
-import {
-  useSessionStages,
-  type SessionRow,
-  type StageRow,
-} from '@/components/session/useSessionStages';
+import { useSessionStagesContext } from '@/components/session/SessionStagesProvider';
 import { computeRemainingMs } from '@/lib/sessions/computeRemainingMs';
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
@@ -15,8 +11,6 @@ import type { StageType } from '@/lib/sessions/types';
 interface Props {
   sessionId: string;
   sessionTitle: string;
-  initialStages: StageRow[];
-  initialSession: SessionRow;
   canManageSession: boolean;
 }
 
@@ -40,23 +34,11 @@ function formatRemaining(ms: number): string {
 }
 
 // The live "now playing" stage bar that sits at the top of the facilitator's
-// sticky sidebar, above Private notes. Carries its own Realtime subscription on
-// a distinct channel key (the stage list owns the default `session:${id}`
-// topic) so it stays live without colliding on the Phoenix socket.
-export function ActiveStageBar({
-  sessionId,
-  sessionTitle,
-  initialStages,
-  initialSession,
-  canManageSession,
-}: Props) {
-  const {
-    stages: liveStages,
-    session: liveSession,
-    ready,
-  } = useSessionStages(sessionId, 'active-bar');
-  const stages = ready ? liveStages : initialStages;
-  const session = ready && liveSession ? liveSession : initialSession;
+// sticky sidebar, above Private notes. Reads the page's single Realtime
+// subscription via SessionStagesProvider (it used to carry its own channel on
+// a distinct topic).
+export function ActiveStageBar({ sessionId, sessionTitle, canManageSession }: Props) {
+  const { stages, session } = useSessionStagesContext();
   const nowMs = useNowMs();
 
   const activeStage = stages.find((s) => s.status === 'active') ?? null;

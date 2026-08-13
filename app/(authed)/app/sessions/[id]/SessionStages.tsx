@@ -10,11 +10,8 @@ import type { StageType } from '@/lib/sessions/types';
 import type { CombinedNarration } from '@/lib/sessions/modelNarration';
 import { TranscriptViewModal } from '@/components/session/TranscriptViewModal';
 import { StageExpiryBanner } from '@/components/session/StageExpiryBanner';
-import {
-  useSessionStages,
-  type SessionRow,
-  type StageRow as LiveStageRow,
-} from '@/components/session/useSessionStages';
+import { useSessionStagesContext } from '@/components/session/SessionStagesProvider';
+import type { StageRow as LiveStageRow } from '@/components/session/useSessionStages';
 import { useSessionModelsRealtime } from '@/components/session/useSessionModelsRealtime';
 import { useNarrationSavedRefresh } from '@/components/session/narrationRealtime';
 import { useRoomAssignmentRefresh } from '@/components/session/useRoomAssignmentRefresh';
@@ -67,29 +64,41 @@ interface OwnedModelRow {
   stage_id: string;
 }
 
+/** Everything the page precomputes for one stage card, keyed by stage id.
+ *  Replaces the six parallel per-stage Records this component used to take. */
+export interface StageViewModel {
+  stageId: string;
+  participants: ParticipantModel[];
+  rooms: StageRoomSummary[];
+  /** The upstream stage's rooms (for the downstream-stage picker). */
+  upstreamRooms: UpstreamRoomSummary[];
+  /** Type of the upstream stage (so the panel can label it). */
+  upstreamStageType: StageType | null;
+  /** The room id the current user belongs to (transitive for downstream). */
+  myRoomId: string | null;
+  /** The scenario the facilitator picked (if any). The picker itself lives on
+   *  the PreSessionChecklist row above this component — here we only display
+   *  the picked scenario's title + body inside the stage card. */
+  pickedScenario: Scenario | null;
+}
+
+const EMPTY_VIEW_MODEL: Omit<StageViewModel, 'stageId'> = {
+  participants: [],
+  rooms: [],
+  upstreamRooms: [],
+  upstreamStageType: null,
+  myRoomId: null,
+  pickedScenario: null,
+};
+
 interface SessionStagesProps {
   sessionId: string;
   sessionTitle: string;
-  initialStages: LiveStageRow[];
-  initialSession: SessionRow;
   ownedModels: OwnedModelRow[];
-  participantsByStage: Record<string, ParticipantModel[]>;
   canManageSession: boolean;
-  roomsByStageId: Record<string, StageRoomSummary[]>;
   orgMembers: OrgMemberSummary[];
-  /** Per-downstream-stage list of the upstream stage's rooms (for the picker). */
-  upstreamRoomsByStageId: Record<string, UpstreamRoomSummary[]>;
-  /** Per-downstream-stage type of its upstream stage (so the panel can label it). */
-  upstreamStageTypeByStageId: Record<string, StageType>;
-  /** Per-stage: the room id the current user belongs to (transitive for downstream). */
-  myRoomIdByStageId: Record<string, string | null>;
   currentUserId: string;
-  /** Per-stage_id: the scenario the facilitator picked (if any). The picker
-   * itself lives on the PreSessionChecklist row above this component — here
-   * we only need to display the picked scenario's title + body inside the
-   * stage card.
-   */
-  pickedScenarioByStageId?: Record<string, Scenario | null>;
+  stageViewModels: StageViewModel[];
 }
 
 const STAGE_ACTIONS = {
@@ -149,22 +158,13 @@ function messageForCode(code: string): string {
 export function SessionStages({
   sessionId,
   sessionTitle,
-  initialStages,
-  initialSession,
   ownedModels,
-  participantsByStage,
   canManageSession,
-  roomsByStageId,
   orgMembers,
-  upstreamRoomsByStageId,
-  upstreamStageTypeByStageId,
-  myRoomIdByStageId,
   currentUserId,
-  pickedScenarioByStageId = {},
+  stageViewModels,
 }: SessionStagesProps) {
-  const { stages: liveStages, session: liveSession, ready } = useSessionStages(sessionId);
-  const stages = ready ? liveStages : initialStages;
-  const session = ready && liveSession ? liveSession : initialSession;
+  const { stages, session } = useSessionStagesContext();
   const nowMs = useNowMs();
   const { lastUpdatedAt } = useSessionModelsRealtime(sessionId);
   // Live-refresh a participant's room assignment so the "Open my room" button
@@ -176,6 +176,7 @@ export function SessionStages({
 
   const sorted = [...stages].sort((a, b) => a.position - b.position);
   const modelByStageId = new Map(ownedModels.map((m) => [m.stage_id, m]));
+  const viewModelByStageId = new Map(stageViewModels.map((vm) => [vm.stageId, vm]));
 
   return (
     <NarrationControlProvider sessionId={sessionId}>
@@ -189,19 +190,14 @@ export function SessionStages({
               isLastStage={index === sorted.length - 1}
               nowMs={nowMs}
               ownedModel={modelByStageId.get(stage.id) ?? null}
-              participants={participantsByStage[stage.id] ?? []}
               canManageSession={canManageSession}
               sessionId={sessionId}
               sessionTitle={sessionTitle}
               sessionStatus={session.status}
               lastUpdatedAt={lastUpdatedAt}
-              rooms={roomsByStageId[stage.id] ?? []}
               orgMembers={orgMembers}
-              upstreamRooms={upstreamRoomsByStageId[stage.id] ?? []}
-              upstreamStageType={upstreamStageTypeByStageId[stage.id] ?? null}
-              myRoomId={myRoomIdByStageId[stage.id] ?? null}
               currentUserId={currentUserId}
-              pickedScenario={pickedScenarioByStageId[stage.id] ?? null}
+              vm={viewModelByStageId.get(stage.id) ?? { stageId: stage.id, ...EMPTY_VIEW_MODEL }}
             />
           ))}
         </ol>
@@ -216,39 +212,30 @@ function StageRow({
   isLastStage,
   nowMs,
   ownedModel,
-  participants,
   canManageSession,
   sessionId,
   sessionTitle,
   sessionStatus,
   lastUpdatedAt,
-  rooms,
   orgMembers,
-  upstreamRooms,
-  upstreamStageType,
-  myRoomId,
   currentUserId,
-  pickedScenario,
+  vm,
 }: {
   stage: LiveStageRow;
   isFirst: boolean;
   isLastStage: boolean;
   nowMs: number;
   ownedModel: OwnedModelRow | null;
-  participants: ParticipantModel[];
   canManageSession: boolean;
   sessionId: string;
   sessionTitle: string;
   sessionStatus: string;
   lastUpdatedAt: Map<string, number>;
-  rooms: StageRoomSummary[];
   orgMembers: OrgMemberSummary[];
-  upstreamRooms: UpstreamRoomSummary[];
-  upstreamStageType: StageType | null;
-  myRoomId: string | null;
   currentUserId: string;
-  pickedScenario: Scenario | null;
+  vm: StageViewModel;
 }) {
+  const { participants, rooms, upstreamRooms, upstreamStageType, myRoomId, pickedScenario } = vm;
   const stageType = stage.stage_type as StageType;
   const remaining = computeRemainingMs(stage, nowMs);
   const status = stage.status;

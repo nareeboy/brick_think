@@ -29,13 +29,10 @@ export type SessionRow = {
   status: string;
 };
 
-export function useSessionStages(
-  sessionId: string,
-  // Optional suffix so a second consumer on the same page (e.g. the sidebar
-  // active-stage bar) subscribes on a distinct Realtime topic — Phoenix rejects
-  // two joins to the same topic on one socket, so the channel name must differ.
-  channelKey?: string,
-): {
+// One subscription per page: on the session detail page consumers share it
+// via SessionStagesProvider rather than each calling this hook — Phoenix
+// rejects two joins to the same topic on one socket anyway.
+export function useSessionStages(sessionId: string): {
   stages: StageRow[];
   session: SessionRow | null;
   ready: boolean;
@@ -78,7 +75,7 @@ export function useSessionStages(
 
     let hasSubscribedBefore = false;
     const cleanupChannel = subscribeAuthedChannel({
-      channelKey: `session:${sessionId}${channelKey ? `:${channelKey}` : ''}`,
+      channelKey: `session:${sessionId}`,
       attach: (ch) =>
         ch
           .on(
@@ -129,7 +126,7 @@ export function useSessionStages(
       cancelled = true;
       cleanupChannel();
     };
-  }, [sessionId, channelKey]);
+  }, [sessionId]);
 
   return { stages, session, ready };
 }
