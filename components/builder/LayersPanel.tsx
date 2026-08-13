@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
+import { PlusIcon } from '@/components/icons';
 import { moveRowFocus } from '@/lib/a11y/moveRowFocus';
 
 import { useBuilderState, type BrickInstance, type LayerGroup } from './builderState';
@@ -724,24 +725,6 @@ function TrashIcon({ className = '' }: { className?: string }) {
       <path d="M3 6h18" />
       <path d="m5 6 1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14" />
       <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-    </svg>
-  );
-}
-
-function PlusIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M12 5v14" />
-      <path d="M5 12h14" />
     </svg>
   );
 }
