@@ -1,20 +1,4 @@
-import type { Page } from '@playwright/test';
-
-import { test, expect } from './fixtures';
-
-async function placeOneBrick(page: Page): Promise<void> {
-  const piece = page.getByTestId('piece-card').first();
-  const canvas = page.getByTestId('builder-canvas');
-  await expect(piece).toBeVisible();
-  await expect(canvas).toBeVisible();
-  const pBox = await piece.boundingBox();
-  const cBox = await canvas.boundingBox();
-  if (!pBox || !cBox) throw new Error('No bounding boxes');
-  await page.mouse.move(pBox.x + pBox.width / 2, pBox.y + pBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(cBox.x + 120, cBox.y + 240, { steps: 12 });
-  await page.mouse.up();
-}
+import { test, expect, dropFirstBrickAt } from './fixtures';
 
 test.describe('public sharing links', () => {
   test('create → view in incognito → revoke → friendly page', async ({
@@ -25,8 +9,7 @@ test.describe('public sharing links', () => {
     await page.getByTestId('new-design-button').click();
     await page.getByTestId('destination-personal').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-    await page.getByRole('button', { name: /open pieces/i }).click();
-    await placeOneBrick(page);
+    await dropFirstBrickAt(page, 120, 240);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
     await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
       timeout: 15_000,
@@ -80,8 +63,7 @@ test.describe('public sharing links', () => {
     await page.getByTestId('new-design-button').click();
     await page.getByTestId('destination-personal').click();
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-    await page.getByRole('button', { name: /open pieces/i }).click();
-    await placeOneBrick(page);
+    await dropFirstBrickAt(page, 120, 240);
     await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
       timeout: 15_000,
     });

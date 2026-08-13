@@ -1,23 +1,4 @@
-import type { Page } from '@playwright/test';
-
-import { expect, test } from './fixtures';
-
-async function dropFirstBrickAt(page: Page, offsetX: number, offsetY: number): Promise<void> {
-  await page.getByRole('button', { name: /open pieces/i }).click();
-  const piece = page.getByTestId('piece-card').nth(0);
-  const canvas = page.getByTestId('builder-canvas');
-  await piece.waitFor();
-  await canvas.waitFor();
-  const pieceBox = await piece.boundingBox();
-  const canvasBox = await canvas.boundingBox();
-  if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-  await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(canvasBox.x + offsetX, canvasBox.y + offsetY, {
-    steps: 12,
-  });
-  await page.mouse.up();
-}
+import { dropFirstBrickAt, expect, test } from './fixtures';
 
 test.describe('yjs shared_model collaboration', () => {
   test('flag on: brick adds on shared_model propagate between two tabs', async ({
@@ -41,18 +22,7 @@ test.describe('yjs shared_model collaboration', () => {
     await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
 
     // Add a brick in Tab A.
-    await page.getByRole('button', { name: /open pieces/i }).click();
-    const pieceA = page.getByTestId('piece-card').nth(0);
-    const canvasA = page.getByTestId('builder-canvas');
-    await expect(pieceA).toBeVisible();
-    await expect(canvasA).toBeVisible();
-    const pieceBox = await pieceA.boundingBox();
-    const canvasBox = await canvasA.boundingBox();
-    if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-    await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(canvasBox.x + 200, canvasBox.y + 200, { steps: 12 });
-    await page.mouse.up();
+    await dropFirstBrickAt(page, 200, 200);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
 
     // The brick must show up in Tab B within 5 s — propagated via Yjs.

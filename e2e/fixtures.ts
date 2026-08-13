@@ -66,6 +66,38 @@ export async function suppressFirstRunOverlays(page: Page): Promise<void> {
   });
 }
 
+// Canonical "drop the first piece onto the canvas" helper. Opens the pieces
+// drawer, drags piece-card[0] to (offsetX, offsetY) inside the canvas, then
+// Escape-closes the drawer and waits for it to hide. The close step matters:
+// since 2026-08-05 the OPEN drawer stacks at z-40 ABOVE the canvas chrome
+// (Share/Export/Notes buttons at z-30), so any post-drop chrome click is
+// refused by Playwright's actionability check before the drawer's
+// light-dismiss pointerdown can fire. Specs must use this instead of local
+// copies — the drawer-occlusion rot class came from exactly such copies.
+export async function dropFirstBrickAt(
+  page: Page,
+  offsetX: number,
+  offsetY: number,
+): Promise<void> {
+  await page.getByRole('button', { name: /open pieces/i }).click();
+  const piece = page.getByTestId('piece-card').nth(0);
+  const canvas = page.getByTestId('builder-canvas');
+  await piece.waitFor();
+  await canvas.waitFor();
+  const pieceBox = await piece.boundingBox();
+  const canvasBox = await canvas.boundingBox();
+  if (!pieceBox || !canvasBox) throw new Error('measurement failed');
+  await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(canvasBox.x + offsetX, canvasBox.y + offsetY, { steps: 12 });
+  await page.mouse.up();
+  // Close the drawer so it stops covering the top-right chrome. Escape is
+  // handled by a document-level listener; the closed panel drops to
+  // pointer-events-none immediately (class swap), so no transition wait.
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('pieces-drawer-panel')).toHaveAttribute('aria-hidden', 'true');
+}
+
 export const test = base.extend<Fixtures>({
   signedInEmail: async ({}, use) => {
     await use(makeTestEmail());

@@ -12,22 +12,7 @@
 
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { expect, suppressFirstRunOverlays, test } from './fixtures';
-
-async function dropFirstBrickAt(page: Page, offsetX: number, offsetY: number): Promise<void> {
-  await page.getByRole('button', { name: /open pieces/i }).click();
-  const piece = page.getByTestId('piece-card').nth(0);
-  const canvas = page.getByTestId('builder-canvas');
-  await piece.waitFor();
-  await canvas.waitFor();
-  const pieceBox = await piece.boundingBox();
-  const canvasBox = await canvas.boundingBox();
-  if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-  await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(canvasBox.x + offsetX, canvasBox.y + offsetY, { steps: 12 });
-  await page.mouse.up();
-}
+import { dropFirstBrickAt, expect, suppressFirstRunOverlays, test } from './fixtures';
 
 interface ParticipantSetup {
   context: BrowserContext;
