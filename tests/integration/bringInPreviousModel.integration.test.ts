@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import type { CanvasState } from '@/lib/models/types';
@@ -15,16 +15,6 @@ import {
   type TestSession,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set in test');
-    return currentClient;
-  }),
-}));
 
 // Import AFTER mocks are registered.
 import { bringInPreviousModel } from '@/app/(authed)/app/sessions/stage-import-actions';
@@ -140,7 +130,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.system_model,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(targetId);
 
@@ -165,7 +155,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.shared_model,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(sharedId);
 
@@ -193,7 +183,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.individual_model,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(targetId);
 
@@ -215,7 +205,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.guiding_principles,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(targetId);
 
@@ -232,7 +222,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.skill_building,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(targetId);
     expect(res).toEqual({ ok: false, code: 'unsupported_target_stage' });
@@ -245,7 +235,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.system_model,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(targetId);
     expect(res).toEqual({ ok: false, code: 'source_not_found' });
@@ -263,7 +253,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.system_model,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(targetId);
     expect(res).toEqual({ ok: false, code: 'source_not_found' });
@@ -281,7 +271,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.system_model,
       canvas: POPULATED_CANVAS,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const res = await bringInPreviousModel(targetId);
     expect(res).toEqual({ ok: false, code: 'destination_not_empty' });
@@ -300,7 +290,7 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.shared_model,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
 
     const first = await bringInPreviousModel(sharedId);
     expect(first.ok).toBe(true);
@@ -321,14 +311,14 @@ describe('bringInPreviousModel (integration)', () => {
       stageId: fx.session.stageIds.system_model,
       canvas: EMPTY_CANVAS_STATE,
     });
-    currentClient = await signInAs(fx.outsider);
+    setActionClient(await signInAs(fx.outsider));
 
     const res = await bringInPreviousModel(targetId);
     expect(res).toEqual({ ok: false, code: 'model_not_found' });
   });
 
   test('returns invalid_uuid for non-uuid input', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     const res = await bringInPreviousModel('not-a-uuid');
     expect(res).toEqual({ ok: false, code: 'invalid_uuid' });
   });

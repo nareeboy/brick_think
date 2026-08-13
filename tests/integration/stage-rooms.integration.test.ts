@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import type { CanvasState } from '@/lib/models/types';
 import {
@@ -14,16 +14,6 @@ import {
   type TestSession,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set in test');
-    return currentClient;
-  }),
-}));
 
 // Import AFTER mocks are registered.
 import { setSharedModelRooms } from '@/app/(authed)/app/sessions/stage-room-actions';
@@ -100,7 +90,7 @@ async function wipeRooms(): Promise<void> {
 
 describe('setSharedModelRooms (integration)', () => {
   test('non-facilitator caller is refused', async () => {
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [{ profileIds: [fx.alice.id] }],
@@ -109,7 +99,7 @@ describe('setSharedModelRooms (integration)', () => {
   });
 
   test('duplicate profile across partitions is refused', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [{ profileIds: [fx.alice.id] }, { profileIds: [fx.alice.id, fx.bob.id] }],
@@ -118,7 +108,7 @@ describe('setSharedModelRooms (integration)', () => {
   });
 
   test('unknown member id (not an org member) is refused', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [{ profileIds: [fx.outsider.id] }],
@@ -130,7 +120,7 @@ describe('setSharedModelRooms (integration)', () => {
     // The facilitator is an org member (org owner), so this isn't caught by
     // the unknown_member gate — it must be rejected by the dedicated guard
     // because the facilitator observes rooms read-only and never builds.
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [{ profileIds: [fx.facilitator.id] }],
@@ -139,7 +129,7 @@ describe('setSharedModelRooms (integration)', () => {
   });
 
   test('empty rooms list is refused', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [],
@@ -151,7 +141,7 @@ describe('setSharedModelRooms (integration)', () => {
     await wipeRooms();
     await seedIndividualModel(fx.alice, ALICE_CANVAS);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [{ title: 'Team A', profileIds: [fx.alice.id] }, { profileIds: [fx.bob.id] }],
@@ -209,7 +199,7 @@ describe('setSharedModelRooms (integration)', () => {
 
   test('session facilitator can edit every room even when not a room member', async () => {
     await wipeRooms();
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [{ profileIds: [fx.alice.id] }, { profileIds: [fx.bob.id] }],
@@ -249,7 +239,7 @@ describe('setSharedModelRooms (integration)', () => {
 
   test('subsequent call replaces prior rooms entirely', async () => {
     await wipeRooms();
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
 
     const first = await setSharedModelRooms({
       stageId: fx.session.stageIds.shared_model,

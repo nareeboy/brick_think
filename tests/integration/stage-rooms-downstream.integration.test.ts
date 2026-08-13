@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import type { CanvasState } from '@/lib/models/types';
 import {
@@ -14,16 +14,6 @@ import {
   type TestSession,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set in test');
-    return currentClient;
-  }),
-}));
 
 // Import AFTER mocks are registered.
 import {
@@ -115,7 +105,7 @@ async function wipeAllRooms(): Promise<void> {
 
 async function setupSharedRooms(): Promise<{ roomIds: string[] }> {
   await wipeAllRooms();
-  currentClient = await signInAs(fx.facilitator);
+  setActionClient(await signInAs(fx.facilitator));
   const res = await setSharedModelRooms({
     stageId: fx.session.stageIds.shared_model,
     rooms: [
@@ -130,7 +120,7 @@ async function setupSharedRooms(): Promise<{ roomIds: string[] }> {
 describe('setDownstreamStageRooms (integration)', () => {
   test('non-facilitator caller is refused', async () => {
     await setupSharedRooms();
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const res = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.system_model,
       rooms: [{ sourceRoomIds: ['00000000-0000-0000-0000-000000000000'] }],
@@ -139,7 +129,7 @@ describe('setDownstreamStageRooms (integration)', () => {
   });
 
   test('empty rooms refused', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.system_model,
       rooms: [],
@@ -148,7 +138,7 @@ describe('setDownstreamStageRooms (integration)', () => {
   });
 
   test('a room with no sources refused', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.system_model,
       rooms: [{ sourceRoomIds: [] }],
@@ -157,7 +147,7 @@ describe('setDownstreamStageRooms (integration)', () => {
   });
 
   test('refuses unsupported stage type (shared_model)', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.shared_model,
       rooms: [{ sourceRoomIds: ['00000000-0000-0000-0000-000000000000'] }],
@@ -171,7 +161,7 @@ describe('setDownstreamStageRooms (integration)', () => {
     // unknown_source_room, pass a real UUID that doesn't belong to the
     // upstream stage — use one of system_model's own (after seeding) or just
     // a brand-new uuid. The action's source-stage filter will reject it.
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.system_model,
       rooms: [{ sourceRoomIds: ['11111111-1111-1111-1111-111111111111'] }],
@@ -185,7 +175,7 @@ describe('setDownstreamStageRooms (integration)', () => {
     const { roomIds: sharedRoomIds } = await setupSharedRooms();
     expect(sharedRoomIds).toHaveLength(2);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const res = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.system_model,
       rooms: [{ title: 'Combined', sourceRoomIds: sharedRoomIds }],
@@ -218,7 +208,7 @@ describe('setDownstreamStageRooms (integration)', () => {
 
   test('transitive can_edit_room: shared_model member can edit downstream room', async () => {
     const { roomIds: sharedRoomIds } = await setupSharedRooms();
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const sysRes = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.system_model,
       rooms: [{ sourceRoomIds: [sharedRoomIds[0]!] }], // Team A only (alice + bob)
@@ -244,7 +234,7 @@ describe('setDownstreamStageRooms (integration)', () => {
 
   test('two-hop transitive: guiding_principles ← system_model ← shared_model', async () => {
     const { roomIds: sharedRoomIds } = await setupSharedRooms();
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
 
     const sysRes = await setDownstreamStageRooms({
       stageId: fx.session.stageIds.system_model,

@@ -2,7 +2,8 @@
 // (remove / restore / spotlight / resolveSpotlightTarget).
 //
 // Pattern follows join-code-redeem.integration.test.ts:
-//   - vi.mock('next/cache') + vi.mock('@/lib/db/server') before the action import
+//   - server-action mocks come from setup.ts (_helpers/action-mocks.ts);
+//     per-test identity via setActionClient()
 //   - getServiceSupabaseClient() is NOT mocked — works against the real local stack
 //   - Per-suite fixture via createTestUser / createTestOrg / createTestSession
 //
@@ -11,8 +12,8 @@
 // We delete the facilitator last so participants' membership rows go down
 // with the cascade rather than tripping the NO-ACTION fkey on profiles.
 
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   addOrgMember,
@@ -21,31 +22,15 @@ import {
   createTestSession,
   createTestUser,
   getAdminClient,
-  makeAnonClient,
   signInAs,
   type TestOrg,
   type TestSession,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
 
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 // inviteParticipantsByEmailAction builds its emailRedirectTo origin from the
 // request headers (publicOriginFromHeaders) — outside a request scope the real
 // next/headers throws, so serve a local-dev-shaped Headers instead.
-vi.mock('next/headers', () => ({
-  headers: async () => new Headers({ host: 'localhost:3000' }),
-}));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) {
-      // Mimic the unauthenticated branch — fresh anon client, no session.
-      return makeAnonClient();
-    }
-    return currentClient;
-  }),
-}));
 
 // Import AFTER mocks are registered.
 import {
@@ -269,7 +254,7 @@ describe('removeParticipantAction', () => {
       0,
     );
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await removeParticipantAction(fx.session.id, fx.alice.id);
     expect(result).toEqual({ ok: true });
 
@@ -298,26 +283,26 @@ describe('removeParticipantAction', () => {
   });
 
   test('rejects removing the facilitator themselves', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await removeParticipantAction(fx.session.id, fx.facilitator.id);
     expect(result).toEqual({ ok: false, code: 'cannot_remove_facilitator' });
   });
 
   test('rejects non-facilitator caller', async () => {
     await ensureActiveParticipant(fx.bob);
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const result = await removeParticipantAction(fx.session.id, fx.bob.id);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
   });
 
   test('rejects with participant_not_found when the profile has no row', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await removeParticipantAction(fx.session.id, fx.outsider.id);
     expect(result).toEqual({ ok: false, code: 'participant_not_found' });
   });
 
   test('returns unauthenticated when no caller', async () => {
-    currentClient = null;
+    setActionClient('anon');
     const result = await removeParticipantAction(fx.session.id, fx.alice.id);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });
@@ -328,7 +313,7 @@ describe('restoreParticipantAction', () => {
     await ensureActiveParticipant(fx.alice);
     await softDeleteParticipant(fx.alice);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await restoreParticipantAction(fx.session.id, fx.alice.id);
     expect(result).toEqual({ ok: true });
 
@@ -346,19 +331,19 @@ describe('restoreParticipantAction', () => {
 
   test('rejects non-facilitator caller', async () => {
     await ensureActiveParticipant(fx.bob);
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const result = await restoreParticipantAction(fx.session.id, fx.bob.id);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
   });
 
   test('rejects with participant_not_found when there is no row', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await restoreParticipantAction(fx.session.id, fx.outsider.id);
     expect(result).toEqual({ ok: false, code: 'participant_not_found' });
   });
 
   test('returns unauthenticated when no caller', async () => {
-    currentClient = null;
+    setActionClient('anon');
     const result = await restoreParticipantAction(fx.session.id, fx.alice.id);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });
@@ -374,7 +359,7 @@ describe('setSpotlightAction', () => {
       .eq('owner_profile_id', fx.alice.id);
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.session.id, modelId);
     expect(result).toEqual({ ok: true });
 
@@ -395,7 +380,7 @@ describe('setSpotlightAction', () => {
   test('spotlights a facilitator-owned room canvas', async () => {
     const { modelId } = await seedRoomModel(fx.session.stageIds.shared_model, 0);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.session.id, modelId);
     expect(result).toEqual({ ok: true });
 
@@ -434,7 +419,7 @@ describe('setSpotlightAction', () => {
     }
     const modelId = modelRes.data.id as string;
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.blankStageSession.id, modelId);
     expect(result).toEqual({ ok: true });
 
@@ -463,7 +448,7 @@ describe('setSpotlightAction', () => {
     }
     const foreignModelId = modelRes.data.id as string;
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.session.id, foreignModelId);
     expect(result).toEqual({ ok: false, code: 'target_not_in_session' });
 
@@ -475,7 +460,7 @@ describe('setSpotlightAction', () => {
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
     await admin.from('models').update({ deleted_at: new Date().toISOString() }).eq('id', modelId);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.session.id, modelId);
     expect(result).toEqual({ ok: false, code: 'target_not_in_session' });
 
@@ -486,7 +471,7 @@ describe('setSpotlightAction', () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const setRes = await setSpotlightAction(fx.session.id, modelId);
     expect(setRes).toEqual({ ok: true });
 
@@ -507,7 +492,7 @@ describe('setSpotlightAction', () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
 
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const result = await setSpotlightAction(fx.session.id, modelId);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
 
@@ -515,7 +500,7 @@ describe('setSpotlightAction', () => {
   });
 
   test('returns unauthenticated when no caller', async () => {
-    currentClient = null;
+    setActionClient('anon');
     const result = await setSpotlightAction(fx.session.id, null);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });
@@ -525,11 +510,11 @@ describe('getSpotlightBannerAction', () => {
   test('returns banner state for a personal canvas (presenter = owner, isRoom false)', async () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
 
     // A viewer who is neither the facilitator nor the owner sees the banner.
-    currentClient = await signInAs(fx.bob);
+    setActionClient(await signInAs(fx.bob));
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toEqual({
       modelId,
@@ -549,7 +534,7 @@ describe('getSpotlightBannerAction', () => {
   test('hides from the facilitator (they drive the spotlight)', async () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
 
     const result = await getSpotlightBannerAction(fx.session.id);
@@ -565,10 +550,10 @@ describe('getSpotlightBannerAction', () => {
   test('hides from the owner of a personal canvas (they are already on it)', async () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
 
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toBeNull();
 
@@ -581,10 +566,10 @@ describe('getSpotlightBannerAction', () => {
 
   test('returns room title + isRoom=true for a room canvas, shown to any non-facilitator', async () => {
     const { modelId, roomTitle } = await seedRoomModel(fx.session.stageIds.shared_model, 0);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
 
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toEqual({
       modelId,
@@ -609,7 +594,7 @@ describe('getSpotlightBannerAction', () => {
       .update({ spotlight_target_model_id: null })
       .eq('id', fx.session.id);
 
-    currentClient = await signInAs(fx.bob);
+    setActionClient(await signInAs(fx.bob));
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toBeNull();
   });
@@ -617,18 +602,18 @@ describe('getSpotlightBannerAction', () => {
   test('returns null when the spotlit model was deleted (FK clears the pointer)', async () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
 
     await admin.from('models').delete().eq('id', modelId);
 
-    currentClient = await signInAs(fx.bob);
+    setActionClient(await signInAs(fx.bob));
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toBeNull();
   });
 
   test('returns null when no caller', async () => {
-    currentClient = null;
+    setActionClient('anon');
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toBeNull();
   });
@@ -659,7 +644,7 @@ async function clearInvitations(): Promise<void> {
 
 describe('inviteParticipantsByEmailAction', () => {
   test('rejects over-cap (26 emails) with over_cap', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const emails = Array.from({ length: 26 }, () => freshInviteEmail());
     const result = await inviteParticipantsByEmailAction(fx.session.id, emails);
     expect(result).toEqual({ ok: false, code: 'over_cap' });
@@ -668,7 +653,7 @@ describe('inviteParticipantsByEmailAction', () => {
   test('marks invalid emails as invalid_email and processes the rest', async () => {
     await clearInvitations();
     const goodEmail = freshInviteEmail();
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [
       'not-an-email',
       goodEmail,
@@ -683,7 +668,7 @@ describe('inviteParticipantsByEmailAction', () => {
     await clearInvitations();
     const email = freshInviteEmail();
     const upper = email.toUpperCase();
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [email, upper]);
     if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
     expect(result.results[0]?.email).toBe(email);
@@ -695,7 +680,7 @@ describe('inviteParticipantsByEmailAction', () => {
   test('returns already_member for an active participant', async () => {
     await clearInvitations();
     await ensureActiveParticipant(fx.alice);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [fx.alice.email]);
     if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
     expect(result.results[0]).toEqual({
@@ -715,7 +700,7 @@ describe('inviteParticipantsByEmailAction', () => {
   test('writes a session_invitations row for a brand-new email (sent_invite)', async () => {
     await clearInvitations();
     const email = freshInviteEmail();
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [email]);
     if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
     expect(result.results[0]).toEqual({ email, status: 'sent_invite' });
@@ -738,7 +723,7 @@ describe('inviteParticipantsByEmailAction', () => {
     // Create a fresh user so we control their participation state.
     const newcomer = await createTestUser();
     try {
-      currentClient = await signInAs(fx.facilitator);
+      setActionClient(await signInAs(fx.facilitator));
       const result = await inviteParticipantsByEmailAction(fx.session.id, [newcomer.email]);
       if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
       expect(result.results[0]).toEqual({
@@ -762,13 +747,13 @@ describe('inviteParticipantsByEmailAction', () => {
   });
 
   test('rejects non-facilitator caller with not_facilitator', async () => {
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [freshInviteEmail()]);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
   });
 
   test('returns unauthenticated when no caller', async () => {
-    currentClient = null;
+    setActionClient('anon');
     const result = await inviteParticipantsByEmailAction(fx.session.id, [freshInviteEmail()]);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });
@@ -789,7 +774,7 @@ describe('cancelInvitationAction', () => {
     }
     const invitationId = insertRes.data.id as string;
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await cancelInvitationAction(invitationId);
     expect(result).toEqual({ ok: true });
 
@@ -819,7 +804,7 @@ describe('cancelInvitationAction', () => {
     }
     const invitationId = insertRes.data.id as string;
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await cancelInvitationAction(invitationId);
     expect(result).toEqual({ ok: false, code: 'already_claimed' });
 
@@ -844,7 +829,7 @@ describe('cancelInvitationAction', () => {
     }
     const invitationId = insertRes.data.id as string;
 
-    currentClient = await signInAs(fx.alice);
+    setActionClient(await signInAs(fx.alice));
     const result = await cancelInvitationAction(invitationId);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
 
@@ -852,7 +837,7 @@ describe('cancelInvitationAction', () => {
   });
 
   test('rejects unknown invitation id with invitation_not_found', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await cancelInvitationAction('00000000-0000-0000-0000-000000000000');
     expect(result).toEqual({ ok: false, code: 'invitation_not_found' });
   });
@@ -873,7 +858,7 @@ describe('resendInvitationAction', () => {
     }
     const invitationId = insertRes.data.id as string;
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await resendInvitationAction(invitationId);
     expect(result).toEqual({ ok: true });
 
