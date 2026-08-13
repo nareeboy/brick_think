@@ -5,65 +5,7 @@
 // the participant edits. Uses Supabase Realtime via the useModelRealtime
 // hook; participant's autosave debounces at 1s, so total ≤ ~2s.
 
-import type { BrowserContext, Page } from '@playwright/test';
-
-import { dropFirstBrickAt, expect, suppressFirstRunOverlays, test } from './fixtures';
-
-interface ParticipantSetup {
-  context: BrowserContext;
-  page: Page;
-  email: string;
-  userId: string;
-}
-
-async function setUpParticipant(
-  facilitatorPage: Page,
-  sessionId: string,
-  facilitatorEmail: string,
-): Promise<ParticipantSetup> {
-  const res = await facilitatorPage.request.post('/api/test/seed-session-member', {
-    data: { sessionId, callerEmail: facilitatorEmail },
-  });
-  if (!res.ok()) {
-    throw new Error(`seed-session-member failed (${res.status()}): ${await res.text()}`);
-  }
-  const { email, userId } = (await res.json()) as { email: string; userId: string };
-
-  const browser = facilitatorPage.context().browser();
-  if (!browser) throw new Error('browser missing');
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
-  // Suppress first-run overlays — same list as the signedInPage fixture.
-  // A stale hand-rolled copy here (missing bt_canvas_tutorial_seen) once let
-  // the canvas tutorial popover cover the canvas centre and silently cancel
-  // the participant's brick drop.
-  await suppressFirstRunOverlays(page);
-
-  const signInRes = await page.request.post('/api/test/sign-in', { data: { email } });
-  if (!signInRes.ok()) {
-    throw new Error(
-      `participant sign-in failed (${signInRes.status()}): ${await signInRes.text()}`,
-    );
-  }
-
-  return { context, page, email, userId };
-}
-
-async function cleanupParticipant(
-  facilitatorPage: Page,
-  participant: ParticipantSetup,
-): Promise<void> {
-  const res = await facilitatorPage.request.post('/api/test/delete-user', {
-    data: { userId: participant.userId },
-  });
-  if (!res.ok()) {
-    console.warn(
-      `[e2e] participant cleanup failed for ${participant.email} (${participant.userId}): ${res.status()} ${await res.text()}`,
-    );
-  }
-  await participant.context.close();
-}
+import { cleanupParticipant, dropFirstBrickAt, expect, setUpParticipant, test } from './fixtures';
 
 test.describe('facilitator live read-only view', () => {
   test('facilitator sees participant brick add within 3s on individual_model', async ({
