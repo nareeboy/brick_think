@@ -1,4 +1,4 @@
--- supabase/migrations/20260519110000_models_realtime.sql
+-- supabase/migrations/20260519120000_models_realtime.sql
 -- Adds public.models to supabase_realtime so non-owner session-org-members
 -- can observe live updates to canvas_state + title via postgres_changes
 -- (facilitator live read-only view). Mirrors the stages/sessions pattern
