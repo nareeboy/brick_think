@@ -17,6 +17,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { forceDeleteAccount } from '@/lib/account/delete';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 
 export const dynamic = 'force-dynamic';
@@ -66,24 +67,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'email_not_allowed' }, { status: 403 });
   }
 
-  // Pre-clear model_versions authored by this user. The FK
-  // model_versions.created_by → profiles(id) is NO ACTION, and PG can
-  // check it before the parallel models.owner_profile_id CASCADE has
-  // deleted the same-user versions transitively — blocking the profile
-  // delete when a test exercises "save a version". Safe to delete here
-  // because gate 3 above already restricted us to the test domain.
-  const delVersions = await admin.from('model_versions').delete().eq('created_by', userId);
-  if (delVersions.error) {
+  // Reuse the production account-deletion path (storage sweep → owned-org
+  // deletes → auth delete). A bare auth.admin.deleteUser 500s with
+  // "Database error deleting user" for any test user who OWNS an org —
+  // organisations.owner_id → profiles is deliberately NO ACTION — and the
+  // seed-session fixture makes every facilitator an org owner. Unlike the
+  // real flow, forceDeleteAccount also hard-deletes orgs that still have
+  // other members (everything under a @brick-think.test owner is disposable
+  // test data — gate 3 above) AND retries with a fresh inventory: teardown
+  // can race an in-flight seed-session whose org commits mid-delete (a
+  // timed-out fixture aborts client-side; the server request keeps going).
+  try {
+    await forceDeleteAccount(userId);
+  } catch (err) {
     return NextResponse.json(
-      { error: 'pre_delete_versions_failed', detail: delVersions.error.message },
-      { status: 500 },
-    );
-  }
-
-  const delRes = await admin.auth.admin.deleteUser(userId);
-  if (delRes.error) {
-    return NextResponse.json(
-      { error: 'delete_failed', detail: delRes.error.message },
+      { error: 'delete_failed', detail: err instanceof Error ? err.message : String(err) },
       { status: 500 },
     );
   }

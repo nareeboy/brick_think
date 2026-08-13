@@ -10,7 +10,13 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
-  retries: 0,
+  // One retry on CI only: slow runners can lose timing races that never
+  // reproduce locally (first seen: onboarding start-model spotlight — the
+  // ?onboarding param-strip router.replace clobbered the createModelInStage
+  // navigation on the staging run for a commit whose identical PR run was
+  // green). A retried pass reports as "flaky" in the summary, so persistent
+  // problems stay visible; locally we keep 0 so races surface loudly.
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: 'list',
   use: {

@@ -140,3 +140,44 @@ export async function performAccountDelete(userId: string, plan: PreDeleteCheck)
     blocked: plan.blockingOrgs.length,
   });
 }
+
+/**
+ * Force-delete an account: owned orgs are hard-deleted regardless of other
+ * members (the caller vouches that everything under this user is disposable —
+ * the e2e delete-user route and any future admin force path).
+ *
+ * Retries with a fresh inventory because the delete can race in-flight
+ * org-creating requests from the same user: an org committed between the
+ * inventory and the GoTrue call makes the auth delete fail on the deliberate
+ * `organisations.owner_id` NO ACTION FK ("Database error deleting user").
+ * Concretely: Playwright aborts a timed-out fixture client-side, but the
+ * server keeps executing its seed-session request while teardown deletes the
+ * user. Re-inventorying picks the late org up on the next attempt; an aborted
+ * test has at most a couple of requests in flight, so this converges fast.
+ *
+ * `onBeforeAuthDelete` is a test seam — integration coverage injects the
+ * racing org between inventory and auth delete deterministically.
+ */
+export async function forceDeleteAccount(
+  userId: string,
+  opts: { attempts?: number; onBeforeAuthDelete?: () => Promise<void> } = {},
+): Promise<void> {
+  const attempts = opts.attempts ?? 3;
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 200 * attempt));
+    const plan = await preDeleteAccount(userId);
+    try {
+      await opts.onBeforeAuthDelete?.();
+      await performAccountDelete(userId, {
+        ...plan,
+        blockingOrgs: [],
+        soloEmptyOrgIds: [...plan.soloEmptyOrgIds, ...plan.blockingOrgs.map((o) => o.id)],
+      });
+      return;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
+}

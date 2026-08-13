@@ -75,15 +75,17 @@ test.describe('Per-stage picker + pre-session checklist', () => {
       { timeout: 5_000 },
     );
 
-    // 3. A11y manual toggle.
-    await signedInPage.getByRole('checkbox', { name: /Review accessibility/i }).check();
+    // 3. A11y manual toggle — now a role="switch" button ("Accessibility for
+    //    the pieces"); it ticks its own row but deliberately does NOT gate
+    //    "Ready to start" (pattern overlays are an optional aid).
+    await signedInPage.getByRole('switch', { name: /Accessibility for the pieces/i }).click();
     await expect(signedInPage.locator('[data-testid="checklist-item-a11y"]')).toHaveAttribute(
       'data-status',
       'done',
       { timeout: 5_000 },
     );
 
-    // 4. Ready-to-start pill.
+    // 4. Ready-to-start pill (brief + scenarios are the gating items).
     await expect(signedInPage.getByText(/Ready to start/i)).toBeVisible();
   });
 });

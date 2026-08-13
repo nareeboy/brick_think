@@ -3,10 +3,12 @@
 //   2. Host header is localhost / 127.0.0.1
 //   3. callerEmail matches @brick-think.test
 //
-// Creates a single shared_model room on the given session's shared_model stage,
-// enrols the supplied profile ids as members, and inserts the canonical
-// room-backed `models` row owned by the facilitator. Returns the room id and
-// the model id so the e2e spec can navigate directly to /app/designs/<modelId>.
+// Creates a single room on the given session's collaborative stage
+// (shared_model by default; system_model / guiding_principles via the optional
+// stageType field), enrols the supplied profile ids as members, and inserts
+// the canonical room-backed `models` row owned by the facilitator. Returns the
+// room id and the model id so the e2e spec can navigate directly to
+// /app/designs/<modelId>.
 //
 // Why a dedicated test route (vs calling setSharedModelRooms from the UI):
 // reactions/comments e2e wants to focus on live sync of brick feedback, not on
@@ -21,6 +23,7 @@ import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
 import { composeRoomCanvas } from '@/lib/sessions/stage-rooms';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
+import type { StageType } from '@/lib/sessions/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -47,7 +50,10 @@ interface SeedRoomBody {
   sessionId?: unknown;
   callerEmail?: unknown;
   memberProfileIds?: unknown;
+  stageType?: unknown;
 }
+
+const ROOM_AWARE_STAGE_TYPES = new Set(['shared_model', 'system_model', 'guiding_principles']);
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isEnabled(request)) return notFound();
@@ -77,6 +83,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (memberIds.length !== body.memberProfileIds.length) {
     return NextResponse.json({ error: 'invalid_members' }, { status: 400 });
   }
+  const stageTypeRaw = typeof body.stageType === 'string' ? body.stageType : 'shared_model';
+  if (!ROOM_AWARE_STAGE_TYPES.has(stageTypeRaw)) {
+    return NextResponse.json({ error: 'invalid_stage_type' }, { status: 400 });
+  }
+  const stageType = stageTypeRaw as StageType;
 
   const admin = getServiceSupabaseClient();
 
@@ -90,15 +101,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'session_not_found' }, { status: 404 });
   }
 
-  // Find the shared_model stage for this session.
+  // Find the requested collaborative stage for this session.
   const { data: stage, error: stageErr } = await admin
     .from('stages')
     .select('id')
     .eq('session_id', sessionId)
-    .eq('stage_type', 'shared_model')
+    .eq('stage_type', stageType)
     .maybeSingle();
   if (stageErr || !stage) {
-    return NextResponse.json({ error: 'shared_model_stage_not_found' }, { status: 404 });
+    return NextResponse.json({ error: 'stage_not_found' }, { status: 404 });
   }
   const stageId = stage.id as string;
 
@@ -138,7 +149,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .from('models')
     .insert({
       owner_profile_id: session.facilitator_id,
-      title: defaultModelTitle('shared_model'),
+      title: defaultModelTitle(stageType),
       canvas_state: composed as unknown as Json,
       session_id: sessionId,
       stage_id: stageId,

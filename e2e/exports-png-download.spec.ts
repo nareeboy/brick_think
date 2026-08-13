@@ -1,24 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import type { Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
-
-// Builder drag uses pointermove/pointerup attached to window. Reuses the
-// recipe from persistent-designs.spec.ts so the gesture trips the drag
-// threshold before the drop evaluates overCanvas.
-async function dragPieceOntoCanvas(page: Page): Promise<void> {
-  const piece = page.getByTestId('piece-card').nth(0);
-  const canvas = page.getByTestId('builder-canvas');
-  await expect(piece).toBeVisible();
-  await expect(canvas).toBeVisible();
-  const pieceBox = await piece.boundingBox();
-  const canvasBox = await canvas.boundingBox();
-  if (!pieceBox || !canvasBox) throw new Error('Could not measure piece or canvas bounding boxes');
-  await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(canvasBox.x + 220, canvasBox.y + 220, { steps: 12 });
-  await page.mouse.up();
-}
+import { expect, test, dropFirstBrickAt } from './fixtures';
 
 test('user can download a PNG of a design from the Builder', async ({ signedInPage: page }) => {
   await page.goto('/app/my-designs');
@@ -29,8 +11,7 @@ test('user can download a PNG of a design from the Builder', async ({ signedInPa
   await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
   await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
-  await page.getByRole('button', { name: /open pieces/i }).click();
-  await dragPieceOntoCanvas(page);
+  await dropFirstBrickAt(page, 220, 220);
   await expect(page.getByTestId('placed-brick')).toHaveCount(1);
 
   const [download] = await Promise.all([

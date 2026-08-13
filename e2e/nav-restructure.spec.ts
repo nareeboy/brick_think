@@ -8,9 +8,10 @@ test.describe('nav restructure', () => {
     await expect(nav.getByRole('link', { name: 'Scenarios' })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'My Designs' })).toBeVisible();
     await expect(nav.locator('a')).toHaveCount(3);
-    // Order matters: Workshops · Scenarios · My Designs.
+    // Order matters: My Designs · Workshops · Scenarios (BASE_LINKS in
+    // components/app/HeaderNav.tsx).
     const labels = await nav.locator('a').allTextContents();
-    expect(labels).toEqual(['Workshops', 'Scenarios', 'My Designs']);
+    expect(labels).toEqual(['My Designs', 'Workshops', 'Scenarios']);
   });
 
   test('New Design from My Designs creates a personal design', async ({ signedInPage }) => {
@@ -79,7 +80,7 @@ test.describe('nav restructure', () => {
 
   test('old /app/sessions route redirects to /app/workshops', async ({ signedInPage }) => {
     await signedInPage.goto('/app/sessions');
-    await expect(signedInPage).toHaveURL(/\/app\/orgs/);
+    await expect(signedInPage).toHaveURL(/\/app\/workshops/);
   });
 
   test('Send to a session duplicates the personal design', async ({

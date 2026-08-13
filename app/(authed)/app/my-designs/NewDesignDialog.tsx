@@ -111,33 +111,40 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
         </p>
 
         {!destination ? (
-          <ul data-testid="destination-list" className="mt-4 flex flex-col gap-2">
-            <li>
-              <button
-                type="button"
-                data-testid="destination-personal"
-                onClick={() => submitPersonal()}
-                disabled={pending}
-                className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1] disabled:opacity-60"
-              >
-                Personal
-                <span aria-hidden="true">→</span>
-              </button>
-            </li>
-            {orgs.map((o) => (
-              <li key={o.id}>
-                <button
-                  type="button"
-                  data-testid={`destination-org-${o.id}`}
-                  onClick={() => setDestination({ kind: 'org', org: o })}
-                  className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1]"
-                >
-                  {o.name}
-                  <span aria-hidden="true">→</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <div data-testid="destination-list" className="mt-4 flex flex-col gap-2">
+            <button
+              type="button"
+              data-testid="destination-personal"
+              onClick={() => submitPersonal()}
+              disabled={pending}
+              className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1] disabled:opacity-60"
+            >
+              Personal
+              <span aria-hidden="true">→</span>
+            </button>
+            {orgs.length > 0 ? (
+              <>
+                <h3 className="mt-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  Organisations
+                </h3>
+                <ul className="flex flex-col gap-2">
+                  {orgs.map((o) => (
+                    <li key={o.id}>
+                      <button
+                        type="button"
+                        data-testid={`destination-org-${o.id}`}
+                        onClick={() => setDestination({ kind: 'org', org: o })}
+                        className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1]"
+                      >
+                        {o.name}
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
         ) : (
           <div className="mt-4 flex flex-col gap-2">
             {sessionsLoading ? (
