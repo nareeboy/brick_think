@@ -122,8 +122,9 @@ test.describe('careers public application flow', () => {
       timeout: 15_000,
     });
 
-    // The panel also mentions the role title.
-    await expect(page.getByText(ROLE_TITLE)).toBeVisible();
+    // The panel also mentions the role title. The page h1 still carries the
+    // title too (strict-mode collision), so target the success copy line.
+    await expect(page.getByText(`Thanks for applying for ${ROLE_TITLE}`)).toBeVisible();
   });
 
   test('submitting without a CV shows the cv_missing error', async ({ page }) => {
@@ -141,7 +142,9 @@ test.describe('careers public application flow', () => {
     await page.getByRole('button', { name: 'Submit application' }).click();
 
     // The API returns code=cv_missing which maps to the error message below.
-    await expect(page.getByRole('alert')).toContainText('Please attach your CV', {
+    // Next's route announcer is also role="alert", so filter to the form's
+    // error paragraph instead of asserting on the bare role.
+    await expect(page.getByRole('alert').filter({ hasText: 'Please attach your CV' })).toBeVisible({
       timeout: 10_000,
     });
   });

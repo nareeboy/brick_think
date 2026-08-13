@@ -7,11 +7,8 @@
 // (ratchet down, never up).
 //
 // As of 2026-08-13 every route scans CLEAN (the WCAG 2.2 AA remediation
-// phases landed) except design-builder: 1 accepted `nested-interactive` on
-// the LayersPanel group row (div role="button" wrapping the Hide/Delete
-// group buttons — shipped with canvas multi-select, 2026-07-29). Fixing it
-// means restructuring the row's drag/keyboard model; tracked in the
-// tech-debt backlog.
+// phases landed; the LayersPanel group-row nested-interactive found when the
+// ratchet was introduced was fixed the same day).
 
 import AxeBuilder from '@axe-core/playwright';
 
@@ -49,9 +46,7 @@ const STATIC_ROUTES = [
 // Session-detail's accepted count (dynamic route, scanned separately below).
 const SESSION_DETAIL_ACCEPTED = 0;
 
-// design-builder: the known LayersPanel group-row `nested-interactive` (see
-// header comment). Ratchet back to 0 when the row is restructured.
-const DESIGN_BUILDER_ACCEPTED = 1;
+const DESIGN_BUILDER_ACCEPTED = 0;
 
 function assertRatchet(routeName: string, accepted: number, violations: AxeViolations) {
   expect(

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, dropFirstBrickAt } from './fixtures';
 
 test.describe('session-scoped designs', () => {
   test('start, edit, refresh, reopen a stage model', async ({
@@ -21,22 +21,9 @@ test.describe('session-scoped designs', () => {
     await expect(page.getByTestId('builder-breadcrumb')).toBeVisible();
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
-    // Open the pieces drawer so piece-card elements become interactive.
-    await page.getByRole('button', { name: /open pieces/i }).click();
-
     // Add a brick (drag the first piece onto the canvas) so we have state
     // to autosave + recover.
-    const piece = page.getByTestId('piece-card').nth(0);
-    const canvas = page.getByTestId('builder-canvas');
-    await expect(piece).toBeVisible();
-    await expect(canvas).toBeVisible();
-    const pieceBox = await piece.boundingBox();
-    const canvasBox = await canvas.boundingBox();
-    if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-    await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(canvasBox.x + 200, canvasBox.y + 200, { steps: 12 });
-    await page.mouse.up();
+    await dropFirstBrickAt(page, 200, 200);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
 
     // Wait for autosave to land. The save-status indicator transitions to

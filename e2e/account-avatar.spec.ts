@@ -42,11 +42,12 @@ test.describe('account avatar', () => {
       /\/storage\/v1\/object\/public\/avatars\/[a-f0-9-]+\/avatar\.png\?v=\d+$/,
     );
 
-    // My Designs heading avatar: the avatar <img> sits as a sibling of the
-    // eyebrow + <h1> inside `<main><header>…</header>`. Asserting on the first
-    // <img> inside main's first <header> is robust against minor markup shifts
-    // (e.g. wrapping the title in an extra div).
-    const myDesignsHeadingAvatar = signedInPage.locator('main header img').first();
+    // My Designs heading avatar: the page header is a PageBanner <section>
+    // (not a <header>), so anchor on the avatars-bucket src instead — the only
+    // other <img>s inside <main> are model-thumbnails design cards.
+    const myDesignsHeadingAvatar = signedInPage
+      .locator('main img[src*="/storage/v1/object/public/avatars/"]')
+      .first();
     await expect(myDesignsHeadingAvatar).toHaveAttribute(
       'src',
       /\/storage\/v1\/object\/public\/avatars\/[a-f0-9-]+\/avatar\.png\?v=\d+$/,

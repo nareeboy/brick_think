@@ -1,41 +1,4 @@
-import type { Page } from '@playwright/test';
-
-import { test, expect } from './fixtures';
-
-// The builder uses a custom pointer-event drag system (not HTML5 drag), so
-// Playwright's locator.dragTo() doesn't fire the right events. We synthesize
-// the gesture via page.mouse.* — startDrag in components/builder/dragPiece.tsx
-// listens on pointermove/pointerup attached to window after onPointerDown.
-async function dragPieceOntoCanvas(
-  page: Page,
-  pieceIndex = 0,
-  dropOffset: { x: number; y: number } = { x: 120, y: 240 },
-): Promise<{ dropX: number; dropY: number }> {
-  const piece = page.getByTestId('piece-card').nth(pieceIndex);
-  const canvas = page.getByTestId('builder-canvas');
-  await expect(piece).toBeVisible();
-  await expect(canvas).toBeVisible();
-
-  const pieceBox = await piece.boundingBox();
-  const canvasBox = await canvas.boundingBox();
-  if (!pieceBox || !canvasBox) {
-    throw new Error('Could not measure piece or canvas bounding boxes');
-  }
-
-  const startX = pieceBox.x + pieceBox.width / 2;
-  const startY = pieceBox.y + pieceBox.height / 2;
-  const dropX = canvasBox.x + dropOffset.x;
-  const dropY = canvasBox.y + dropOffset.y;
-
-  await page.mouse.move(startX, startY);
-  await page.mouse.down();
-  // Take several steps so the drag threshold trips and overCanvas evaluates
-  // mid-drag rather than only on the final pointer-up.
-  await page.mouse.move(dropX, dropY, { steps: 12 });
-  await page.mouse.up();
-
-  return { dropX, dropY };
-}
+import { test, expect, dropFirstBrickAt } from './fixtures';
 
 test.describe('persistent designs', () => {
   test('a brick survives a page refresh', async ({ signedInPage: page }) => {
@@ -47,8 +10,7 @@ test.describe('persistent designs', () => {
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
-    await page.getByRole('button', { name: /open pieces/i }).click();
-    await dragPieceOntoCanvas(page);
+    await dropFirstBrickAt(page, 120, 240);
 
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
     await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
@@ -69,8 +31,7 @@ test.describe('persistent designs', () => {
     await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
 
-    await page.getByRole('button', { name: /open pieces/i }).click();
-    await dragPieceOntoCanvas(page);
+    await dropFirstBrickAt(page, 120, 240);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
     await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
       timeout: 15_000,
@@ -139,8 +100,7 @@ test.describe('persistent designs', () => {
     if (!designId) throw new Error('could not extract design id from url');
 
     await expect(page.getByTestId('builder-canvas')).toBeVisible();
-    await page.getByRole('button', { name: /open pieces/i }).click();
-    await dragPieceOntoCanvas(page);
+    await dropFirstBrickAt(page, 120, 240);
     await expect(page.getByTestId('placed-brick')).toHaveCount(1);
     await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
       timeout: 15_000,

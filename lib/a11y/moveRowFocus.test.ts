@@ -4,7 +4,7 @@ import { moveRowFocus } from './moveRowFocus';
 
 describe('moveRowFocus', () => {
   let panel: HTMLDivElement;
-  let rows: HTMLDivElement[];
+  let rows: HTMLButtonElement[];
 
   beforeEach(() => {
     panel = document.createElement('div');
@@ -12,12 +12,11 @@ describe('moveRowFocus', () => {
 
     // Build three focusable rows inside the panel.
     rows = ['row-0', 'row-1', 'row-2'].map((id) => {
-      const div = document.createElement('div');
-      div.setAttribute('role', 'button');
-      div.setAttribute('tabindex', '0');
-      div.id = id;
-      panel.appendChild(div);
-      return div;
+      const button = document.createElement('button');
+      button.setAttribute('data-layer-row', '');
+      button.id = id;
+      panel.appendChild(button);
+      return button;
     });
 
     document.body.appendChild(panel);
@@ -55,12 +54,10 @@ describe('moveRowFocus', () => {
 
   it('falls back to the nearest <section> when no layers-panel ancestor exists', () => {
     const section = document.createElement('section');
-    const a = document.createElement('div');
-    a.setAttribute('role', 'button');
-    a.setAttribute('tabindex', '0');
-    const b = document.createElement('div');
-    b.setAttribute('role', 'button');
-    b.setAttribute('tabindex', '0');
+    const a = document.createElement('button');
+    a.setAttribute('data-layer-row', '');
+    const b = document.createElement('button');
+    b.setAttribute('data-layer-row', '');
     section.appendChild(a);
     section.appendChild(b);
     document.body.appendChild(section);

@@ -100,7 +100,11 @@ export function PiecesDrawer() {
       </button>
 
       {/* z-40: above the canvas chrome (Share/Export/Notes sit at z-30),
-          below modals (z-50). */}
+          below modals (z-50). top-[72px] keeps the panel BELOW the top chrome
+          row (buttons at top-5 + h-11 end at 64px): at z-40 an inset-y-3 panel
+          used to cover Share/Export/the toggle itself, making them unreachable
+          while the drawer was open (light-dismiss never fires for a click the
+          panel swallows — this is also what broke the share-links e2e). */}
       <div
         ref={panelRef}
         data-testid="pieces-drawer-panel"
@@ -110,7 +114,7 @@ export function PiecesDrawer() {
         // violation that every scan missed while the cookie-consent banner's
         // role="dialog" made axe-core treat a modal as open and skip the rule).
         inert={!open}
-        className={`pointer-events-none absolute inset-y-3 right-3 z-40 w-[min(360px,calc(100%-1.5rem))] transition-[transform,opacity] duration-300 ease-out ${
+        className={`pointer-events-none absolute bottom-3 right-3 top-[72px] z-40 w-[min(360px,calc(100%-1.5rem))] transition-[transform,opacity] duration-300 ease-out ${
           open
             ? 'translate-x-0 opacity-100'
             : 'pointer-events-none translate-x-[calc(100%+1rem)] opacity-0'

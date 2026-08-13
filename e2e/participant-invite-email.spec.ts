@@ -81,14 +81,13 @@ test.describe('email invite flow with Mailpit', () => {
     await expect(rosterButton).toBeVisible();
     await rosterButton.click();
 
-    // Wait for modal to appear. The RosterInviteBlock is rendered inside.
-    // Use more specific selectors to avoid strict mode issues with duplicate text.
-    await expect(
-      facPage.getByRole('paragraph').filter({ hasText: 'Copy invite link' }),
-    ).toBeVisible();
-    await expect(
-      facPage.getByRole('paragraph').filter({ hasText: 'Invite by email' }),
-    ).toBeVisible();
+    // Wait for the Roster modal; the RosterInviteBlock renders inside it.
+    // "Copy invite link" is the copy BUTTON's label (the section heading is
+    // "Invite link"), and "Invite by email" is a plain label line.
+    const rosterModal = facPage.getByTestId('roster-modal');
+    await expect(rosterModal).toBeVisible();
+    await expect(rosterModal.getByRole('button', { name: 'Copy invite link' })).toBeVisible();
+    await expect(rosterModal.getByText('Invite by email')).toBeVisible();
 
     // Find the email input. It's a plain <input type="email"> with placeholder text.
     // The input should have a placeholder like "Enter email addresses..."

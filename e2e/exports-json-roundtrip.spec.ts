@@ -1,20 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
-
-async function dragPieceOntoCanvas(page: Page): Promise<void> {
-  const piece = page.getByTestId('piece-card').nth(0);
-  const canvas = page.getByTestId('builder-canvas');
-  await expect(piece).toBeVisible();
-  await expect(canvas).toBeVisible();
-  const pieceBox = await piece.boundingBox();
-  const canvasBox = await canvas.boundingBox();
-  if (!pieceBox || !canvasBox) throw new Error('Could not measure piece or canvas bounding boxes');
-  await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(canvasBox.x + 220, canvasBox.y + 220, { steps: 12 });
-  await page.mouse.up();
-}
+import { expect, test, dropFirstBrickAt } from './fixtures';
 
 async function brickIdsOnPage(page: Page): Promise<string[]> {
   const ids = await page
@@ -40,8 +26,7 @@ test('JSON export round-trips: imported design matches source bricks', async ({
   // Place a brick + wait for autosave to flush so the canvas_state row is in
   // the DB before we download (the JSON export reads from in-memory live
   // state on Builder, but a saved row is needed if anything later re-reads).
-  await page.getByRole('button', { name: /open pieces/i }).click();
-  await dragPieceOntoCanvas(page);
+  await dropFirstBrickAt(page, 220, 220);
   await expect(page.getByTestId('placed-brick')).toHaveCount(1);
   await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
     timeout: 15_000,

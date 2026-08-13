@@ -1,131 +1,141 @@
+// e2e/bring-in-previous-model.spec.ts
+//
+// "Bringing in previous models" on the collaborative stages.
+//
+// The stage-rooms rework RETIRED the manual "Bring in my previous model"
+// affordance on room-backed canvases (app/(authed)/app/designs/[id]/page.tsx
+// suppresses it when the model has a room_id): rooms auto-import at creation
+// instead. This spec locks in that composition contract end-to-end through
+// the facilitator's Manage-rooms UI:
+//
+//   1. shared_model rooms — setSharedModelRooms seeds each room's canvas with
+//      its members' individual_model canvases, laid out as lanes.
+//   2. system_model rooms — setDownstreamStageRooms composes each room's
+//      canvas from the selected upstream shared_model rooms' canvases.
+//
+// In both cases the member sees their bricks on the room canvas without any
+// manual import, and the legacy bring-in button must NOT render there.
+
 import type { Page } from '@playwright/test';
 
-import { expect, test } from './fixtures';
+import {
+  cleanupParticipant,
+  dropFirstBrickAt,
+  expect,
+  setUpParticipant,
+  test,
+  type ParticipantSetup,
+} from './fixtures';
 
-async function dropFirstBrickAt(page: Page, offsetX: number, offsetY: number): Promise<void> {
-  await page.getByRole('button', { name: /open pieces/i }).click();
-  const piece = page.getByTestId('piece-card').nth(0);
-  const canvas = page.getByTestId('builder-canvas');
-  await piece.waitFor();
-  await canvas.waitFor();
-  const pieceBox = await piece.boundingBox();
-  const canvasBox = await canvas.boundingBox();
-  if (!pieceBox || !canvasBox) throw new Error('measurement failed');
-  await page.mouse.move(pieceBox.x + pieceBox.width / 2, pieceBox.y + pieceBox.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(canvasBox.x + offsetX, canvasBox.y + offsetY, { steps: 12 });
-  await page.mouse.up();
+/** Member builds an individual_model with one brick; autosave must land
+ *  before room creation — the composer reads canvas_state from the row. */
+async function buildIndividualModel(member: ParticipantSetup, sessionId: string): Promise<void> {
+  await member.page.goto(`/app/sessions/${sessionId}`);
+  await member.page
+    .getByTestId('stage-card-individual_model')
+    .getByTestId('start-model-individual_model')
+    .click();
+  await member.page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+  await expect(member.page.getByTestId('builder-canvas')).toBeVisible();
+  await dropFirstBrickAt(member.page, 220, 220);
+  await expect(member.page.getByTestId('placed-brick')).toHaveCount(1);
+  await expect(member.page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
+    timeout: 15_000,
+  });
 }
 
-test.describe('bring in my previous model', () => {
-  test('shared_model: clicker bricks propagate to peer + button hides afterwards', async ({
-    signedInPage: page,
+/** Facilitator creates a single shared_model room containing the member via
+ *  the Manage rooms dialog (the real product flow — this is what composes the
+ *  member's individual_model into the room canvas). */
+async function createSharedRoomWithMember(facPage: Page, sessionId: string, memberEmail: string) {
+  await facPage.goto(`/app/sessions/${sessionId}`);
+  const sharedCard = facPage.getByTestId('stage-card-shared_model');
+  await sharedCard.getByTestId('manage-rooms-button').click();
+  const dialog = facPage.getByTestId('manage-rooms-dialog');
+  await expect(dialog).toBeVisible();
+  // Assign the (only unassigned) member to Room 1 via their row's picker.
+  const memberRow = dialog.locator('li').filter({ hasText: memberEmail.split('@')[0] });
+  await memberRow.getByRole('combobox', { name: 'Move to room' }).selectOption('0');
+  await dialog.getByTestId('save-rooms-button').click();
+  await expect(dialog).toBeHidden();
+  await expect(sharedCard.getByTestId('room-row-0')).toBeVisible();
+}
+
+test.describe('room composition brings in previous models', () => {
+  test('shared_model room canvas is seeded with the member individual model', async ({
+    signedInPage: facPage,
+    signedInEmail: facEmail,
     seededSession,
   }) => {
-    // 1. Build an individual_model with one brick.
-    await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-individual_model')
-      .getByTestId('start-model-individual_model')
-      .click();
-    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-    await expect(page.getByTestId('builder-canvas')).toBeVisible();
-    await dropFirstBrickAt(page, 220, 220);
-    await expect(page.getByTestId('placed-brick')).toHaveCount(1);
-    // The server-side import action reads canvas_state from the row, so the
-    // autosave PATCH for the brick add must land before we navigate away.
-    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
-      timeout: 15_000,
-    });
+    const member = await setUpParticipant(facPage, seededSession.sessionId, facEmail);
+    try {
+      // 1. Member builds an individual_model with one brick.
+      await buildIndividualModel(member, seededSession.sessionId);
 
-    // 2. Back to the session page; start the shared_model.
-    await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-shared_model')
-      .getByTestId('start-model-shared_model')
-      .click();
-    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-    await expect(page.getByTestId('builder-canvas')).toBeVisible();
-    const sharedUrl = page.url();
+      // 2. Facilitator partitions the shared_model stage into one room
+      //    containing the member.
+      await createSharedRoomWithMember(facPage, seededSession.sessionId, member.email);
 
-    // 3. The empty-state button is visible.
-    const button = page.getByTestId('bring-in-previous-model');
-    await expect(button).toBeVisible();
+      // 3. Member opens their room from the session page…
+      await member.page.goto(`/app/sessions/${seededSession.sessionId}`);
+      await member.page.getByTestId('stage-card-shared_model').getByTestId('open-my-room').click();
+      await member.page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+      await expect(member.page.getByTestId('builder-canvas')).toBeVisible();
 
-    // 4. Tab B opens the same shared_model URL.
-    const pageB = await page.context().newPage();
-    await pageB.goto(sharedUrl);
-    await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
+      // 4. …and finds their individual-model brick already composed in as a
+      //    lane — no manual import step.
+      await expect(member.page.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
 
-    // 5. Click the button on Tab A.
-    await button.click();
+      // 5. The legacy manual affordance is suppressed on room canvases.
+      await expect(member.page.getByTestId('bring-in-previous-model')).toHaveCount(0);
 
-    // 6. Brick appears on Tab A and propagates to Tab B within the Yjs budget.
-    await expect(page.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
-    await expect(pageB.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
-
-    // 7. The button is gone on Tab A (alreadyImported gate).
-    await page.reload();
-    await expect(page.getByTestId('bring-in-previous-model')).toHaveCount(0);
+      // 6. The composed brick propagates live to a second tab (Yjs doc seeded
+      //    from the composed canvas_state).
+      const pageB = await member.context.newPage();
+      await pageB.goto(member.page.url());
+      await expect(pageB.getByTestId('builder-canvas')).toBeVisible();
+      await expect(pageB.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
+    } finally {
+      await cleanupParticipant(facPage, member);
+    }
   });
 
-  test('system_model: server-copied bricks visible after reload', async ({
-    signedInPage: page,
+  test('system_model room composes from the upstream shared_model room', async ({
+    signedInPage: facPage,
+    signedInEmail: facEmail,
     seededSession,
   }) => {
-    // 1. Seed the individual_model with a brick.
-    await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-individual_model')
-      .getByTestId('start-model-individual_model')
-      .click();
-    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-    await dropFirstBrickAt(page, 200, 200);
-    await expect(page.getByTestId('placed-brick')).toHaveCount(1);
-    // Wait for autosave to persist the canvas_state before navigating away —
-    // shared_model bring-in reads source via the same row.
-    await expect(page.getByTestId('save-status')).toHaveAttribute('data-status', 'saved', {
-      timeout: 15_000,
-    });
+    const member = await setUpParticipant(facPage, seededSession.sessionId, facEmail);
+    try {
+      // 1. Member seeds their individual_model with a brick; facilitator
+      //    creates the shared_model room (composes that brick in).
+      await buildIndividualModel(member, seededSession.sessionId);
+      await createSharedRoomWithMember(facPage, seededSession.sessionId, member.email);
 
-    // 2. Start the shared_model so the session has a populated shared row
-    //    (system_model pulls from session_shared shared_model).
-    await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-shared_model')
-      .getByTestId('start-model-shared_model')
-      .click();
-    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-    // If the flag is on, click "bring in" to seed the shared canvas; if off,
-    // drop a brick manually so the shared_model isn't empty.
-    const inButton = page.getByTestId('bring-in-previous-model');
-    if (await inButton.isVisible()) {
-      await inButton.click();
-      await expect(page.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
-    } else {
-      await dropFirstBrickAt(page, 220, 220);
-      await expect(page.getByTestId('placed-brick')).toHaveCount(1);
+      // 2. Facilitator creates one system_model room sourced from the
+      //    upstream shared room (source-toggle-{room}-{srcPosition}).
+      const systemCard = facPage.getByTestId('stage-card-system_model');
+      await systemCard.getByTestId('manage-rooms-button').click();
+      const downstreamDialog = facPage.getByTestId('manage-downstream-rooms-dialog');
+      await expect(downstreamDialog).toBeVisible();
+      // The source toggle is an aria-pressed button, not a checkbox.
+      const sourceToggle = downstreamDialog.getByTestId('source-toggle-0-0');
+      await sourceToggle.click();
+      await expect(sourceToggle).toHaveAttribute('aria-pressed', 'true');
+      await downstreamDialog.getByTestId('save-downstream-rooms-button').click();
+      await expect(downstreamDialog).toBeHidden();
+      await expect(systemCard.getByTestId('room-row-0')).toBeVisible();
+
+      // 3. Member opens their system_model room and sees the brick composed
+      //    through from the shared room; the manual affordance stays hidden.
+      await member.page.goto(`/app/sessions/${seededSession.sessionId}`);
+      await member.page.getByTestId('stage-card-system_model').getByTestId('open-my-room').click();
+      await member.page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
+      await expect(member.page.getByTestId('builder-canvas')).toBeVisible();
+      await expect(member.page.getByTestId('placed-brick')).toHaveCount(1, { timeout: 5000 });
+      await expect(member.page.getByTestId('bring-in-previous-model')).toHaveCount(0);
+    } finally {
+      await cleanupParticipant(facPage, member);
     }
-    // shared_model writes through the Yjs worker, which debounces its
-    // models.canvas_state projection by YJS_PERSIST_DEBOUNCE_MS (500ms in
-    // playwright.config.ts). system_model's server-side import reads that
-    // canvas_state directly, so we must wait for the projection to land
-    // before navigating away. 1.5s = debounce + DB write headroom.
-    await page.waitForTimeout(1500);
-
-    // 3. Open the system_model and click "bring in".
-    await page.goto(`/app/sessions/${seededSession.sessionId}`);
-    await page
-      .getByTestId('stage-card-system_model')
-      .getByTestId('start-model-system_model')
-      .click();
-    await page.waitForURL(/\/app\/designs\/[0-9a-f-]+/);
-    const systemButton = page.getByTestId('bring-in-previous-model');
-    await expect(systemButton).toBeVisible();
-    await systemButton.click();
-    // Server-copied branch triggers window.location.reload(); wait for the
-    // bricks to render after the reload.
-    await expect(page.getByTestId('placed-brick')).toHaveCount(1, { timeout: 10000 });
-    await expect(page.getByTestId('bring-in-previous-model')).toHaveCount(0);
   });
 });
