@@ -122,7 +122,7 @@ Notes:
 
 - Empty `site_admin_emails` → no admins (safe default for a fresh clone).
 - Promotion never demotes: removing an email from `site_admin_emails` does **not** strip an existing admin — revoke explicitly with `update public.profiles set is_site_admin = false where email = '...'`.
-- A local `pnpm db:reset` wipes all data, so re-run the grant after a reset.
+- A local `pnpm db:reset` wipes all data. To survive resets, put the grant in a **local-only seed**: drop an idempotent `.sql` file (the two lines above, with `on conflict (email) do nothing`) into `supabase/seeds/` — the directory is gitignored (no hardcoded admin ever reaches the repo) and loaded on every reset via the `./seeds/*.sql` glob in [supabase/config.toml](supabase/config.toml). `pnpm db:reset` and `pnpm db:start` additionally run [scripts/apply-local-seeds.mjs](scripts/apply-local-seeds.mjs), which resolves those seed files from the **primary checkout**, so resets run from a git worktree (where the gitignored directory doesn't exist) apply them too. Seed files must stay idempotent — on the primary checkout they run twice (CLI glob + script).
 
 ## Auth and local user testing
 
