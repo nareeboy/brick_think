@@ -83,7 +83,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
     startTransition(async () => {
       const result = await inviteParticipantsByEmailAction(sessionId, emails);
       if (result.ok) {
-        setResults(result.results);
+        setResults(result.data.results);
         setEmails([]);
         setInputValue('');
       }

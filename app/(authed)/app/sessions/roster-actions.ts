@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
@@ -46,16 +47,10 @@ async function assertFacilitator(sessionId: string): Promise<string | null> {
 
 // ── removeParticipantAction ─────────────────────────────────────────────────
 
-export type RemoveParticipantResult =
-  | { ok: true }
-  | {
-      ok: false;
-      code:
-        | 'unauthenticated'
-        | 'not_facilitator'
-        | 'cannot_remove_facilitator'
-        | 'participant_not_found';
-    };
+export type RemoveParticipantResult = ActionResult<
+  null,
+  'unauthenticated' | 'not_facilitator' | 'cannot_remove_facilitator' | 'participant_not_found'
+>;
 
 /**
  * Soft-delete a participant from a session and atomically wipe any
@@ -137,14 +132,15 @@ export async function removeParticipantAction(
   }
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 // ── restoreParticipantAction ────────────────────────────────────────────────
 
-export type RestoreParticipantResult =
-  | { ok: true }
-  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'participant_not_found' };
+export type RestoreParticipantResult = ActionResult<
+  null,
+  'unauthenticated' | 'not_facilitator' | 'participant_not_found'
+>;
 
 /**
  * Clear a soft-delete on session_participants — the facilitator-side undo
@@ -189,14 +185,15 @@ export async function restoreParticipantAction(
   }
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 // ── setSpotlightAction ──────────────────────────────────────────────────────
 
-export type SetSpotlightResult =
-  | { ok: true }
-  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'target_not_in_session' };
+export type SetSpotlightResult = ActionResult<
+  null,
+  'unauthenticated' | 'not_facilitator' | 'target_not_in_session'
+>;
 
 /**
  * Point the session's spotlight at a *canvas* (`models` row), or clear it
@@ -249,7 +246,7 @@ export async function setSpotlightAction(
   }
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 // ── getSpotlightBannerAction ────────────────────────────────────────────────
@@ -382,9 +379,10 @@ export type InviteStatus =
   | 'already_member'
   | 'failed';
 
-export type InviteParticipantsByEmailResult =
-  | { ok: true; results: Array<{ email: string; status: InviteStatus }> }
-  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'over_cap' };
+export type InviteParticipantsByEmailResult = ActionResult<
+  { results: Array<{ email: string; status: InviteStatus }> },
+  'unauthenticated' | 'not_facilitator' | 'over_cap'
+>;
 
 /**
  * Send Supabase-templated invite emails (or magic-link sign-ins, for
@@ -442,7 +440,7 @@ export async function inviteParticipantsByEmailAction(
     // migration), refuse without throwing — the UI surfaces all-failed.
     return {
       ok: true,
-      results: emails.map((email) => ({ email, status: 'failed' as InviteStatus })),
+      data: { results: emails.map((email) => ({ email, status: 'failed' as InviteStatus })) },
     };
   }
   // Send-side URL for the magic_link / invite email templates. We route
@@ -567,17 +565,15 @@ export async function inviteParticipantsByEmailAction(
   }
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true, results };
+  return { ok: true, data: { results } };
 }
 
 // ── cancelInvitationAction ──────────────────────────────────────────────────
 
-export type CancelInvitationResult =
-  | { ok: true }
-  | {
-      ok: false;
-      code: 'unauthenticated' | 'not_facilitator' | 'invitation_not_found' | 'already_claimed';
-    };
+export type CancelInvitationResult = ActionResult<
+  null,
+  'unauthenticated' | 'not_facilitator' | 'invitation_not_found' | 'already_claimed'
+>;
 
 /**
  * Hard-delete a pending invitation. Refuses on a claimed invite (the
@@ -616,22 +612,15 @@ export async function cancelInvitationAction(
   }
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 // ── resendInvitationAction ──────────────────────────────────────────────────
 
-export type ResendInvitationResult =
-  | { ok: true }
-  | {
-      ok: false;
-      code:
-        | 'unauthenticated'
-        | 'not_facilitator'
-        | 'invitation_not_found'
-        | 'already_claimed'
-        | 'failed';
-    };
+export type ResendInvitationResult = ActionResult<
+  null,
+  'unauthenticated' | 'not_facilitator' | 'invitation_not_found' | 'already_claimed' | 'failed'
+>;
 
 /**
  * Re-send a pending invitation by replaying the same email through
@@ -667,7 +656,7 @@ export async function resendInvitationAction(
     if (send.code === 'not_facilitator') return { ok: false, code: 'not_facilitator' };
     return { ok: false, code: 'failed' };
   }
-  const perEmail = send.results[0];
+  const perEmail = send.data.results[0];
   if (!perEmail) return { ok: false, code: 'failed' };
   if (
     perEmail.status === 'sent_invite' ||
@@ -677,7 +666,7 @@ export async function resendInvitationAction(
     // already_member surfaces as ok because the participant has effectively
     // already joined — the resend was a no-op against a now-redundant audit
     // row but there's nothing more to do.
-    return { ok: true };
+    return { ok: true, data: null };
   }
   return { ok: false, code: 'failed' };
 }

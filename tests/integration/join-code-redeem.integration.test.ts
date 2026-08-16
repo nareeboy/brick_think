@@ -136,7 +136,7 @@ describe('redeemJoinCodeAction', () => {
   test('fresh redemption inserts participant + fires exactly one participant_joined notification', async () => {
     setActionClient(await signInAs(fx.participant));
     const result = await redeemJoinCodeAction(fx.sessionCode);
-    expect(result).toEqual({ ok: true, sessionId: fx.session.id });
+    expect(result).toEqual({ ok: true, data: { sessionId: fx.session.id } });
 
     const admin = getAdminClient();
 
@@ -166,7 +166,7 @@ describe('redeemJoinCodeAction', () => {
     // Precondition: first test ran and inserted exactly one notification.
     setActionClient(await signInAs(fx.participant));
     const result = await redeemJoinCodeAction(fx.sessionCode);
-    expect(result).toEqual({ ok: true, sessionId: fx.session.id });
+    expect(result).toEqual({ ok: true, data: { sessionId: fx.session.id } });
 
     const admin = getAdminClient();
     const notifRes = await admin
@@ -229,7 +229,7 @@ describe('redeemJoinCodeAction', () => {
       setActionClient(await signInAs(lowercaseUser));
       const lower = fx.sessionCode.toLowerCase();
       const result = await redeemJoinCodeAction(lower);
-      expect(result).toEqual({ ok: true, sessionId: fx.session.id });
+      expect(result).toEqual({ ok: true, data: { sessionId: fx.session.id } });
     } finally {
       await cleanupTestUser(lowercaseUser.id);
     }
@@ -255,7 +255,7 @@ describe('rotateJoinCodeAction', () => {
     const rotateResult = await rotateJoinCodeAction(fx.session.id);
     expect(rotateResult.ok).toBe(true);
     if (!rotateResult.ok) throw new Error('Expected ok=true');
-    const newCode = rotateResult.code;
+    const newCode = rotateResult.data.code;
 
     // Verify the new code is 6 chars (Crockford base32).
     expect(newCode).toMatch(/^[23456789ABCDEFGHJKMNPQRSTVWXYZ]{6}$/);
@@ -277,7 +277,7 @@ describe('rotateJoinCodeAction', () => {
     try {
       setActionClient(await signInAs(freshUserForNewTest));
       const newResult = await redeemJoinCodeAction(newCode);
-      expect(newResult).toEqual({ ok: true, sessionId: fx.session.id });
+      expect(newResult).toEqual({ ok: true, data: { sessionId: fx.session.id } });
     } finally {
       await cleanupTestUser(freshUserForNewTest.id);
     }

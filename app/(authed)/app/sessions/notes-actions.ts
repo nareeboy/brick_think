@@ -2,13 +2,15 @@
 
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { FACILITATOR_NOTES_MAX } from '@/lib/sessions/facilitatorNotes';
 
-export type UpdateFacilitatorNotesResult =
-  | { ok: true }
-  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'over_cap' | 'session_not_found' };
+export type UpdateFacilitatorNotesResult = ActionResult<
+  null,
+  'unauthenticated' | 'not_facilitator' | 'over_cap' | 'session_not_found'
+>;
 
 export async function updateFacilitatorNotesAction(
   sessionId: string,
@@ -36,5 +38,5 @@ export async function updateFacilitatorNotesAction(
 
   await service.from('sessions').update({ facilitator_notes: normalised }).eq('id', sessionId);
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
