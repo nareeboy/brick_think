@@ -205,7 +205,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
 
   // 4. system_model / guiding_principles: rooms are opt-in. If rooms exist on
   //    this stage, route to the caller's transitively-assigned room (via
-  //    public.can_edit_room). If no rooms exist, fall through to the legacy
+  //    public.can_edit_rooms). If no rooms exist, fall through to the legacy
   //    per-participant personal-canvas flow.
   if (stageType === 'system_model' || stageType === 'guiding_principles') {
     const stageRoomsRes = await supabase.from('stage_rooms').select('id').eq('stage_id', stageId);
@@ -224,20 +224,20 @@ export async function createModelInStage(formData: FormData): Promise<void> {
         throw new Error(`Room canvas lookup failed: ${roomModelsRes.error.message}`);
       }
       const svc = getServiceSupabaseClient();
+      const candidateIds = (roomModelsRes.data ?? [])
+        .filter((row) => row.room_id && row.id)
+        .map((row) => row.id);
       let targetModelId: string | null = null;
-      for (const row of roomModelsRes.data ?? []) {
-        if (!row.room_id || !row.id) continue;
-        const rpc = await svc.rpc('can_edit_room', {
+      if (candidateIds.length > 0) {
+        const rpc = await svc.rpc('can_edit_rooms', {
           p_profile_id: user.id,
-          p_model_id: row.id,
+          p_model_ids: candidateIds,
         });
         if (rpc.error) {
-          throw new Error(`can_edit_room failed: ${rpc.error.message}`);
+          throw new Error(`can_edit_rooms failed: ${rpc.error.message}`);
         }
-        if (rpc.data) {
-          targetModelId = row.id;
-          break;
-        }
+        const editable = new Set(rpc.data ?? []);
+        targetModelId = candidateIds.find((id) => editable.has(id)) ?? null;
       }
       if (!targetModelId) {
         throw new Error(

@@ -272,3 +272,119 @@ describe('setDownstreamStageRooms (integration)', () => {
     expect(outsiderCheck.data).toBe(false);
   });
 });
+
+describe('can_edit_rooms batch variant (integration)', () => {
+  /**
+   * Seeds shared rooms (Team A: alice+bob, Team B: carol) plus a system_model
+   * room sourced from Team A, and returns every room-backed model id involved.
+   */
+  async function seedRoomsAndCollectModelIds(): Promise<{
+    teamAModelId: string;
+    teamBModelId: string;
+    systemModelId: string;
+  }> {
+    const { roomIds: sharedRoomIds } = await setupSharedRooms();
+    setActionClient(await signInAs(fx.facilitator));
+    const sysRes = await setDownstreamStageRooms({
+      stageId: fx.session.stageIds.system_model,
+      rooms: [{ sourceRoomIds: [sharedRoomIds[0]!] }], // Team A only
+    });
+    if (!sysRes.ok) throw new Error(sysRes.code);
+
+    const admin = getAdminClient();
+    const modelFor = async (roomId: string): Promise<string> => {
+      const res = await admin.from('models').select('id').eq('room_id', roomId).single();
+      if (res.error || !res.data) throw new Error(`modelFor(${roomId}): ${res.error?.message}`);
+      return res.data.id;
+    };
+    return {
+      teamAModelId: await modelFor(sharedRoomIds[0]!),
+      teamBModelId: await modelFor(sharedRoomIds[1]!),
+      systemModelId: await modelFor(sysRes.data.roomIds[0]!),
+    };
+  }
+
+  test('agrees with per-id can_edit_room for every profile in the fixture', async () => {
+    const { teamAModelId, teamBModelId, systemModelId } = await seedRoomsAndCollectModelIds();
+    const allIds = [teamAModelId, teamBModelId, systemModelId];
+    const admin = getAdminClient();
+
+    for (const profile of [fx.facilitator, fx.alice, fx.carol, fx.outsider]) {
+      const batch = await admin.rpc('can_edit_rooms', {
+        p_profile_id: profile.id,
+        p_model_ids: allIds,
+      });
+      expect(batch.error).toBeNull();
+      const batchSet = new Set(batch.data ?? []);
+
+      for (const modelId of allIds) {
+        const single = await admin.rpc('can_edit_room', {
+          p_profile_id: profile.id,
+          p_model_id: modelId,
+        });
+        expect(single.error).toBeNull();
+        // Parity is the contract: the batch variant must answer exactly like
+        // the per-id function for every (profile, model) pair.
+        expect(batchSet.has(modelId)).toBe(single.data === true);
+      }
+    }
+  });
+
+  test('facilitator gets every room model; members only their transitive rooms', async () => {
+    const { teamAModelId, teamBModelId, systemModelId } = await seedRoomsAndCollectModelIds();
+    const allIds = [teamAModelId, teamBModelId, systemModelId];
+    const admin = getAdminClient();
+
+    const call = async (profileId: string): Promise<string[]> => {
+      const res = await admin.rpc('can_edit_rooms', {
+        p_profile_id: profileId,
+        p_model_ids: allIds,
+      });
+      expect(res.error).toBeNull();
+      return [...(res.data ?? [])].sort();
+    };
+
+    expect(await call(fx.facilitator.id)).toEqual([...allIds].sort());
+    // alice: Team A member → Team A shared room + the system room sourced from it.
+    expect(await call(fx.alice.id)).toEqual([teamAModelId, systemModelId].sort());
+    // carol: Team B only; the system room draws from Team A, not Team B.
+    expect(await call(fx.carol.id)).toEqual([teamBModelId]);
+    expect(await call(fx.outsider.id)).toEqual([]);
+  });
+
+  test('ignores unknown ids and non-room models', async () => {
+    const { teamAModelId } = await seedRoomsAndCollectModelIds();
+    const admin = getAdminClient();
+
+    // alice's personal individual_model canvas: a real model with room_id null.
+    const personalRes = await admin
+      .from('models')
+      .select('id')
+      .eq('owner_profile_id', fx.alice.id)
+      .eq('stage_id', fx.session.stageIds.individual_model)
+      .is('room_id', null)
+      .limit(1)
+      .single();
+    if (personalRes.error || !personalRes.data) {
+      throw new Error(`personal model lookup: ${personalRes.error?.message}`);
+    }
+    const unknownId = '00000000-0000-0000-0000-000000000999';
+
+    const res = await admin.rpc('can_edit_rooms', {
+      p_profile_id: fx.alice.id,
+      p_model_ids: [teamAModelId, personalRes.data.id, unknownId],
+    });
+    expect(res.error).toBeNull();
+    expect([...(res.data ?? [])]).toEqual([teamAModelId]);
+  });
+
+  test('empty input returns empty, not an error', async () => {
+    const admin = getAdminClient();
+    const res = await admin.rpc('can_edit_rooms', {
+      p_profile_id: fx.alice.id,
+      p_model_ids: [],
+    });
+    expect(res.error).toBeNull();
+    expect(res.data ?? []).toEqual([]);
+  });
+});

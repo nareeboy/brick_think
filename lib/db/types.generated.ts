@@ -1421,6 +1421,10 @@ export type Database = {
         Args: { p_model_id: string; p_profile_id: string }
         Returns: boolean
       }
+      can_edit_rooms: {
+        Args: { p_model_ids: string[]; p_profile_id: string }
+        Returns: string[]
+      }
       can_read_model: {
         Args: { p_model_id: string; p_profile_id: string }
         Returns: boolean

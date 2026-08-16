@@ -294,10 +294,29 @@ export default async function SessionDetailPage({
     void stageById;
 
     // Compute the current user's room id per stage. shared_model is direct
-    // membership lookup; downstream stages use public.can_edit_room (service
-    // role) on each room's model id. With workshop-scale N (<10 rooms/stage)
-    // the per-room RPC fan-out is cheap.
-    const svc = getServiceSupabaseClient();
+    // membership lookup; downstream stages use public.can_edit_rooms (service
+    // role) — ONE batched RPC over every downstream room model on the page
+    // instead of a serialized can_edit_room round-trip per room.
+    const downstreamModelIds: string[] = [];
+    for (const stage of stages) {
+      const stageType = stage.stage_type as StageType;
+      if (stageType !== 'system_model' && stageType !== 'guiding_principles') continue;
+      for (const room of roomsByStageId[stage.id] ?? []) {
+        downstreamModelIds.push(room.modelId);
+      }
+    }
+    let editableModelIds = new Set<string>();
+    if (downstreamModelIds.length > 0) {
+      const svc = getServiceSupabaseClient();
+      const rpc = await svc.rpc('can_edit_rooms', {
+        p_profile_id: user.id,
+        p_model_ids: downstreamModelIds,
+      });
+      if (rpc.error) {
+        throw new Error(`can_edit_rooms failed: ${rpc.error.message}`);
+      }
+      editableModelIds = new Set(rpc.data ?? []);
+    }
     for (const stage of stages) {
       const stageType = stage.stage_type as StageType;
       const stageRooms = roomsByStageId[stage.id] ?? [];
@@ -311,21 +330,8 @@ export default async function SessionDetailPage({
         continue;
       }
       if (stageType === 'system_model' || stageType === 'guiding_principles') {
-        let assigned: string | null = null;
-        for (const room of stageRooms) {
-          const rpc = await svc.rpc('can_edit_room', {
-            p_profile_id: user.id,
-            p_model_id: room.modelId,
-          });
-          if (rpc.error) {
-            throw new Error(`can_edit_room failed: ${rpc.error.message}`);
-          }
-          if (rpc.data) {
-            assigned = room.id;
-            break;
-          }
-        }
-        myRoomIdByStageId[stage.id] = assigned;
+        const assigned = stageRooms.find((r) => editableModelIds.has(r.modelId)) ?? null;
+        myRoomIdByStageId[stage.id] = assigned?.id ?? null;
         continue;
       }
       myRoomIdByStageId[stage.id] = null;
