@@ -18,19 +18,22 @@ const STAGE_DURATION_MAX_SECONDS = 2 * 60 * 60; // 2 hour ceiling
 
 // ── Return types ──────────────────────────────────────────────────────────────
 
-export type StageActionFailure =
-  | { ok: false; code: 'unauthenticated' }
-  | { ok: false; code: 'invalid_uuid' }
-  | { ok: false; code: 'stage_not_found' }
-  | { ok: false; code: 'session_not_found' }
-  | { ok: false; code: 'not_facilitator' }
-  | { ok: false; code: 'invalid_transition'; from: string; verb: StageVerb }
-  | { ok: false; code: 'no_next_stage' }
-  | { ok: false; code: 'no_previous_completed_stage' }
-  | { ok: false; code: 'invalid_extend_amount' }
-  | { ok: false; code: 'invalid_duration_amount' };
+export type StageActionError =
+  | 'unauthenticated'
+  | 'invalid_uuid'
+  | 'stage_not_found'
+  | 'session_not_found'
+  | 'not_facilitator'
+  | 'no_next_stage'
+  | 'no_previous_completed_stage'
+  | 'invalid_extend_amount'
+  | 'invalid_duration_amount';
 
-export type StageActionResult = { ok: true } | StageActionFailure;
+export type StageActionFailure =
+  | { ok: false; code: StageActionError; message?: string }
+  | { ok: false; code: 'invalid_transition'; from: string; verb: StageVerb };
+
+export type StageActionResult = { ok: true; data: null } | StageActionFailure;
 
 // ── Internal stage shape returned from the joined select ─────────────────────
 
@@ -201,7 +204,7 @@ export async function startStageAction(stageId: string): Promise<StageActionResu
   }
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -235,7 +238,7 @@ export async function pauseStageAction(stageId: string): Promise<StageActionResu
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -278,7 +281,7 @@ export async function resumeStageAction(stageId: string): Promise<StageActionRes
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -326,7 +329,7 @@ export async function extendStageAction(
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -386,7 +389,7 @@ export async function advanceStageAction(stageId: string): Promise<StageActionRe
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -467,7 +470,7 @@ export async function rollbackStageAction(targetStageId: string): Promise<StageA
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -516,7 +519,7 @@ export async function resetStageAction(stageId: string): Promise<StageActionResu
   if (ev.error) throw new Error(`stage event insert failed: ${ev.error.message}`);
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -557,7 +560,7 @@ export async function updateStageDurationAction(
   if (upd.error) throw new Error(`updateStageDuration update failed: ${upd.error.message}`);
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -601,7 +604,7 @@ export async function endSessionAction(sessionId: string): Promise<StageActionRe
     return { ok: false, code: 'not_facilitator' };
   }
   if (sessRes.data.status === 'completed') {
-    return { ok: true }; // idempotent — already ended
+    return { ok: true, data: null }; // idempotent — already ended
   }
 
   const svc = getServiceSupabaseClient();
@@ -645,5 +648,5 @@ export async function endSessionAction(sessionId: string): Promise<StageActionRe
   });
 
   revalidate(sessionId);
-  return { ok: true };
+  return { ok: true, data: null };
 }

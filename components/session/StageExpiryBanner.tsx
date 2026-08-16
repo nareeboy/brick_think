@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-type StageActionResult = { ok: boolean; code?: string };
+import type { StageActionResult } from '@/app/(authed)/app/sessions/stage-controller-actions';
 
 export type StageExpiryBannerActions = {
   extend: (id: string, seconds: number) => Promise<StageActionResult>;
@@ -32,7 +32,7 @@ export function StageExpiryBanner({ stageId, isLastStage, actions, messageForCod
     try {
       const result = await fn();
       if (!result.ok) {
-        setErrorMessage(messageForCode(result.code ?? 'unknown'));
+        setErrorMessage(messageForCode(result.code));
       }
     } catch (err) {
       setErrorMessage('Unexpected error. Refresh to recover.');
