@@ -4,7 +4,7 @@
 //   * Owner can upload a 256x256 PNG blob → object lands at
 //     'avatars/<uid>/avatar.png', profiles.avatar_url is set to the public
 //     URL with a ?v=<digits> cache-buster.
-//   * Rejects non-PNG MIME (image/jpeg) with kind='error', reason='invalid_image'.
+//   * Rejects non-PNG MIME (image/jpeg) with { ok: false, code: 'invalid_image' }.
 //   * Rejects oversize blob (> 100 KB) with same error shape.
 //   * removeAvatarAction nulls avatar_url + deletes the storage object,
 //     and is idempotent on second invocation.
@@ -79,15 +79,15 @@ describe('updateAvatarAction', () => {
     setActionClient(await signInAs(fx.owner));
     const result = await updateAvatarAction(formDataWith(fakeBlob('image/png', 4096)));
 
-    expect(result.kind).toBe('ok');
-    if (result.kind !== 'ok') return;
-    expect(result.url).toMatch(
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.url).toMatch(
       new RegExp(`/storage/v1/object/public/avatars/${fx.owner.id}/avatar\\.png\\?v=\\d+$`),
     );
 
     const admin = getAdminClient();
     const verify = await admin.from('profiles').select('avatar_url').eq('id', fx.owner.id).single();
-    expect(verify.data?.avatar_url).toBe(result.url);
+    expect(verify.data?.avatar_url).toBe(result.data.url);
 
     // Confirm the object exists in storage.
     const list = await admin.storage.from('avatars').list(fx.owner.id);
@@ -98,14 +98,14 @@ describe('updateAvatarAction', () => {
   test('rejects a non-PNG MIME with invalid_image', async () => {
     setActionClient(await signInAs(fx.owner));
     const result = await updateAvatarAction(formDataWith(fakeBlob('image/jpeg', 4096)));
-    expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
+    expect(result).toEqual({ ok: false, code: 'invalid_image' });
   });
 
   test('rejects a blob over the 512 KB cap with invalid_image', async () => {
     setActionClient(await signInAs(fx.owner));
     const oversize = fakeBlob('image/png', 512 * 1024 + 1);
     const result = await updateAvatarAction(formDataWith(oversize));
-    expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
+    expect(result).toEqual({ ok: false, code: 'invalid_image' });
   });
 
   test('rejects a PNG MIME blob with non-PNG magic bytes (anti-spoof)', async () => {
@@ -115,7 +115,7 @@ describe('updateAvatarAction', () => {
     const fd = new FormData();
     fd.append('avatar', lying, 'avatar.png');
     const result = await updateAvatarAction(fd);
-    expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
+    expect(result).toEqual({ ok: false, code: 'invalid_image' });
   });
 
   test("RLS prevents an outsider from writing the owner's avatar object", async () => {
@@ -137,10 +137,10 @@ describe('removeAvatarAction', () => {
     // Seed: upload first via the action.
     setActionClient(await signInAs(fx.owner));
     const seeded = await updateAvatarAction(formDataWith(fakeBlob('image/png', 4096)));
-    expect(seeded.kind).toBe('ok');
+    expect(seeded.ok).toBe(true);
 
     const first = await removeAvatarAction();
-    expect(first.kind).toBe('ok');
+    expect(first).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const after = await admin.from('profiles').select('avatar_url').eq('id', fx.owner.id).single();
@@ -151,6 +151,6 @@ describe('removeAvatarAction', () => {
 
     // Second call must not throw and must return ok — idempotent.
     const second = await removeAvatarAction();
-    expect(second.kind).toBe('ok');
+    expect(second).toEqual({ ok: true, data: null });
   });
 });

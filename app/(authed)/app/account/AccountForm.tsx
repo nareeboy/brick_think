@@ -32,10 +32,10 @@ export function AccountForm({ initialFullName, email, initialAvatarUrl }: Props)
     start(async () => {
       try {
         const result: UpdateProfileResult = await updateProfileAction(name);
-        if (result.kind === 'ok') {
+        if (result.ok) {
           setFeedback({ kind: 'ok', text: 'Saved.' });
         } else {
-          setFeedback({ kind: 'error', text: result.reason });
+          setFeedback({ kind: 'error', text: result.message ?? 'Failed to save' });
         }
       } catch (e) {
         setFeedback({
@@ -50,7 +50,7 @@ export function AccountForm({ initialFullName, email, initialAvatarUrl }: Props)
     setFeedback(null);
     startRemove(async () => {
       const result = await removeAvatarAction();
-      if (result.kind === 'ok') {
+      if (result.ok) {
         setAvatarUrl(null);
         setConfirmRemove(false);
       } else {
