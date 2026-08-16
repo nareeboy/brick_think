@@ -3,10 +3,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { PageBanner } from '@/components/app/PageBanner';
-import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 export const metadata: Metadata = { title: 'Workshops' };
@@ -62,14 +60,6 @@ export default async function OrgsPage() {
     member_count: countByOrg.get(o.id) ?? 0,
   }));
 
-  // Onboarding walkthrough — the orgs list is where step 1 (create an org)
-  // happens. We already have the user's orgs, so pass them in to skip a
-  // duplicate membership query.
-  const onboardingProgress = await computeFacilitatorChecklistProgress(supabase, user.id, {
-    orgIds: summaries.map((o) => o.id),
-    firstOrgId: summaries[0]?.id ?? null,
-  });
-
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <PageBanner
@@ -85,8 +75,6 @@ export default async function OrgsPage() {
         }
       />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-        <FacilitatorChecklist progress={onboardingProgress} />
-
         {orgs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center text-[13px] text-zinc-500">
             No workshops yet. Create one to share designs with teammates.

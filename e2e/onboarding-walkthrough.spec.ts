@@ -21,12 +21,7 @@ test.describe('onboarding walkthrough', () => {
     // bt_session_tour_seen=1 on the second load and the spotlight tour (and
     // its skip button) could never appear.
     await signedInPage.addInitScript(() => {
-      const KEYS = [
-        'bt_welcome_seen',
-        'bt_checklist_dismissed',
-        'bt_checklist_complete',
-        'bt_session_tour_seen',
-      ];
+      const KEYS = ['bt_welcome_seen', 'bt_session_tour_seen'];
       const SNAP = '__bt_e2e_ob_snapshot';
       const raw = window.sessionStorage.getItem(SNAP);
       if (raw === null) {
@@ -48,71 +43,53 @@ test.describe('onboarding walkthrough', () => {
     });
   });
 
-  test('facilitator sees welcome modal then checklist', async ({ signedInPage }) => {
+  test('facilitator sees the three-card welcome modal on first visit', async ({ signedInPage }) => {
     await signedInPage.goto('/app/my-designs');
 
     const modal = signedInPage.getByTestId('onboarding-welcome-modal');
     await expect(modal).toBeVisible();
-    await modal.getByTestId('onboarding-welcome-cta').click();
+    await expect(modal).toContainText('Start building right away');
+    await expect(modal).toContainText('Start your first workshop');
+    await expect(modal).toContainText('Start a session');
+
+    await modal.getByTestId('onboarding-welcome-skip').click();
     await expect(modal).toHaveCount(0);
 
-    await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
-    await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute('data-done', '0');
-
-    // Welcome modal does not re-fire on reload.
+    // Skipping persists — the modal does not re-fire on reload.
     await signedInPage.reload();
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
-    await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
   });
 
-  test('checklist auto-collapses once all steps are done', async ({
+  test('workshop card navigates to the workshops page and dismisses for good', async ({
     signedInPage,
-    seededSession,
   }) => {
-    // seededSession creates org + session for the user but no models yet.
-    // The walkthrough checklist follows the user onto the org detail page too,
-    // where step 2 (create a session) happens.
-    await signedInPage.goto(`/app/workshops/${seededSession.orgId}`);
-    await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
-    await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute('data-done', '1');
-
-    // To tick step 3, navigate into the session and start a model.
-    await signedInPage.goto(`/app/sessions/${seededSession.sessionId}`);
-    // Dismiss the spotlight tour first so it doesn't intercept clicks.
-    await signedInPage.getByTestId('onboarding-spotlight-skip').click();
-    // The walkthrough checklist follows the user onto the session page — steps
-    // 1 & 2 are done (org + session exist) but step 3 (start a model) is not.
-    await expect(signedInPage.getByTestId('onboarding-checklist')).toBeVisible();
-    await expect(signedInPage.getByTestId('onboarding-step-org')).toHaveAttribute('data-done', '1');
-    await expect(signedInPage.getByTestId('onboarding-step-session')).toHaveAttribute(
-      'data-done',
-      '1',
-    );
-    await expect(signedInPage.getByTestId('onboarding-step-model')).toHaveAttribute(
-      'data-done',
-      '0',
-    );
-    // Click the first "Start your model" button.
-    await signedInPage.locator('[data-testid^="start-model-"]').first().click();
-    // Wait for the design page to open, then go back to my-designs.
-    await expect(signedInPage).toHaveURL(/\/app\/designs\//);
     await signedInPage.goto('/app/my-designs');
+    await signedInPage.getByTestId('onboarding-welcome-card-workshop').click();
+    await expect(signedInPage).toHaveURL(/\/app\/workshops$/);
 
-    await expect(signedInPage.getByTestId('onboarding-checklist-complete')).toBeVisible();
-
-    // After a reload, the complete card has auto-dismissed.
-    await signedInPage.reload();
-    await expect(signedInPage.getByTestId('onboarding-checklist-complete')).toHaveCount(0);
-    await expect(signedInPage.getByTestId('onboarding-checklist')).toHaveCount(0);
+    // The choice marked the walkthrough seen — back on my-designs, no modal.
+    await signedInPage.goto('/app/my-designs');
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
   });
 
-  test('create-session spotlight fires from the checklist deep-link', async ({
+  test('build card creates a personal design and opens its canvas', async ({ signedInPage }) => {
+    await signedInPage.goto('/app/my-designs');
+    await signedInPage.getByTestId('onboarding-welcome-card-build').click();
+    await expect(signedInPage).toHaveURL(/\/app\/designs\//);
+  });
+
+  test('session card deep-links into the first workshop and fires the create-session spotlight', async ({
     signedInPage,
     seededSession,
   }) => {
-    // The checklist's step 2 link carries ?onboarding=create-session; landing
-    // on the org page with that param fires the spotlight on the button.
-    await signedInPage.goto(`/app/workshops/${seededSession.orgId}?onboarding=create-session`);
+    // seededSession gives the user a workshop, so the session card deep-links
+    // into it with ?onboarding=create-session, which fires the spotlight on
+    // the Create session button.
+    await signedInPage.goto('/app/my-designs');
+    await signedInPage.getByTestId('onboarding-welcome-card-session').click();
+    await expect(signedInPage).toHaveURL(
+      new RegExp(`/app/workshops/${seededSession.orgId}\\?onboarding=create-session`),
+    );
 
     const spotlight = signedInPage.getByTestId('create-session-spotlight');
     await expect(spotlight).toBeVisible();
@@ -132,8 +109,8 @@ test.describe('onboarding walkthrough', () => {
     signedInPage,
     seededSession,
   }) => {
-    // Checklist step 3 carries ?onboarding=start-model; landing on the session
-    // with it runs the two-step spotlight and suppresses the auto-tour.
+    // ?onboarding=start-model on a session runs the two-step spotlight and
+    // suppresses the auto-tour (deep-linkable; no longer wired from a card).
     await signedInPage.goto(`/app/sessions/${seededSession.sessionId}?onboarding=start-model`);
 
     const spotlight = signedInPage.getByTestId('start-model-spotlight');
@@ -170,7 +147,7 @@ test.describe('onboarding walkthrough', () => {
 
   test('replay walkthrough re-fires the modal', async ({ signedInPage }) => {
     await signedInPage.goto('/app/my-designs');
-    await signedInPage.getByTestId('onboarding-welcome-cta').click();
+    await signedInPage.getByTestId('onboarding-welcome-skip').click();
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
 
     await signedInPage.goto('/app/account');

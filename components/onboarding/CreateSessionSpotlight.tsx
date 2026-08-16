@@ -68,9 +68,9 @@ export function CreateSessionSpotlight() {
     // element). The button lives in the page header so it's usually visible.
     el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
-    // Track the target every frame rather than only on scroll/resize: the
-    // FacilitatorChecklist mounts after hydration and pushes the header down,
-    // a layout shift that fires no scroll/resize event. The rAF loop keeps the
+    // Track the target every frame rather than only on scroll/resize: late-
+    // mounting siblings (e.g. banners) can push the header down after
+    // hydration, a layout shift that fires no scroll/resize event. The rAF loop keeps the
     // cut-out glued to the button through hydration, mount, and scroll. We only
     // setRect when the box actually moves, so it settles to a no-op quickly.
     let rafId = 0;

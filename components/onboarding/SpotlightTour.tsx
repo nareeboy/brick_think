@@ -76,8 +76,8 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
   }, [markSessionTourSeen]);
 
   // Track the target every frame so the cut-out stays glued to it through
-  // hydration and layout shifts — e.g. the FacilitatorChecklist mounts above
-  // the header after hydration and pushes targets down, a shift that fires no
+  // hydration and layout shifts — e.g. late-mounting siblings above the
+  // header can push targets down after hydration, a shift that fires no
   // scroll/resize event. setRect only fires when the box actually moves, so
   // tracking settles to a no-op. A missing target silently advances.
   useLayoutEffect(() => {
