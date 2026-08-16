@@ -60,6 +60,14 @@ describe('OnboardingWelcome', () => {
     await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
   });
 
+  it('clicking the dimmed backdrop does NOT dismiss the modal', async () => {
+    render(<OnboardingWelcome firstOrgId={null} />);
+    await screen.findByTestId('onboarding-welcome-modal');
+    fireEvent.click(screen.getByTestId('onboarding-welcome-modal-backdrop'));
+    expect(screen.getByTestId('onboarding-welcome-modal')).toBeTruthy();
+    expect(localStorage.getItem('bt_welcome_seen')).toBeNull();
+  });
+
   it('the close button dismisses the modal and persists the flag', async () => {
     render(<OnboardingWelcome firstOrgId={null} />);
     fireEvent.click(await screen.findByTestId('onboarding-welcome-close'));

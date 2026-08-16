@@ -53,6 +53,7 @@ export function OnboardingWelcome({ firstOrgId }: Props) {
       dataTestid="onboarding-welcome-modal"
       titleId={titleId}
       onClose={markWelcomeSeen}
+      backdropCloses={false}
       panelClassName="w-full max-w-4xl"
     >
       <div className="animate-modal-in relative max-h-[calc(100dvh-2rem)] overflow-y-auto rounded-2xl border border-zinc-200/70 bg-white p-7 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.32)] sm:p-9">
