@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { ALLOWED_PRE_SESSION_KEYS, type PreSessionCheckKey } from '@/lib/sessions/preSessionCheck';
@@ -13,21 +14,23 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 // runtime ALLOWED_PRE_SESSION_KEYS constant lives in the non-server module
 // imported above.
 
-export type ScenarioActionFailure =
-  | { ok: false; code: 'unauthenticated' }
-  | { ok: false; code: 'invalid_uuid' }
-  | { ok: false; code: 'stage_not_found' }
-  | { ok: false; code: 'session_not_found' }
-  | { ok: false; code: 'not_facilitator' }
-  | { ok: false; code: 'scenario_not_found' }
-  | { ok: false; code: 'scenario_stage_mismatch' }
-  | { ok: false; code: 'brief_too_long' }
-  | { ok: false; code: 'body_too_long' }
-  | { ok: false; code: 'title_too_long' }
-  | { ok: false; code: 'invalid_check_key' }
-  | { ok: false; code: 'invalid_check_value' };
+export type ScenarioActionResult = ActionResult<
+  null,
+  | 'unauthenticated'
+  | 'invalid_uuid'
+  | 'stage_not_found'
+  | 'session_not_found'
+  | 'not_facilitator'
+  | 'scenario_not_found'
+  | 'scenario_stage_mismatch'
+  | 'brief_too_long'
+  | 'body_too_long'
+  | 'title_too_long'
+  | 'invalid_check_key'
+  | 'invalid_check_value'
+>;
 
-export type ScenarioActionResult = { ok: true } | ScenarioActionFailure;
+export type ScenarioActionFailure = Extract<ScenarioActionResult, { ok: false }>;
 
 const BRIEF_MAX_CHARS = 4000;
 
@@ -93,7 +96,7 @@ export async function setStageScenarioAction(
   if (upd.error) throw new Error(`setStageScenario update failed: ${upd.error.message}`);
 
   revalidatePath(`/app/sessions/${stage.session_id}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -134,7 +137,7 @@ export async function updateSessionBriefAction(
   if (upd.error) throw new Error(`updateSessionBrief update failed: ${upd.error.message}`);
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 /**
@@ -182,7 +185,7 @@ export async function updatePreSessionCheckAction(
   if (upd.error) throw new Error(`updatePreSessionCheck update failed: ${upd.error.message}`);
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 const BODY_OVERRIDE_MAX_CHARS = 4000;
@@ -258,5 +261,5 @@ export async function updateStageScenarioOverridesAction(
   }
 
   revalidatePath(`/app/sessions/${stage.session_id}`);
-  return { ok: true };
+  return { ok: true, data: null };
 }

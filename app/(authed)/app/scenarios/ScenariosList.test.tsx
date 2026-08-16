@@ -8,9 +8,9 @@ import type { Scenario } from '@/lib/scenarios/types';
 // The list imports the server-actions module (delete flow); stub it so the
 // component tree renders without a server-action runtime.
 vi.mock('./actions', () => ({
-  deleteScenarioAction: vi.fn(async () => ({ ok: true, id: 'x' })),
-  createScenarioAction: vi.fn(async () => ({ ok: true, id: 'x' })),
-  updateScenarioAction: vi.fn(async () => ({ ok: true, id: 'x' })),
+  deleteScenarioAction: vi.fn(async () => ({ ok: true, data: { id: 'x' } })),
+  createScenarioAction: vi.fn(async () => ({ ok: true, data: { id: 'x' } })),
+  updateScenarioAction: vi.fn(async () => ({ ok: true, data: { id: 'x' } })),
 }));
 
 afterEach(cleanup);

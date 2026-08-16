@@ -84,7 +84,7 @@ describe('setStageScenarioAction', () => {
   test('facilitator can pick a scenario for a stage', async () => {
     setActionClient(await signInAs(fx.facilitator));
     const result = await setStageScenarioAction(fx.skillBuildingStageId, fx.templateScenarioId);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const stage = await admin
@@ -98,7 +98,7 @@ describe('setStageScenarioAction', () => {
   test('passing null clears the pick', async () => {
     setActionClient(await signInAs(fx.facilitator));
     const result = await setStageScenarioAction(fx.skillBuildingStageId, null);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
     const admin = getAdminClient();
     const stage = await admin
       .from('stages')
@@ -158,7 +158,7 @@ describe('updateSessionBriefAction', () => {
   test('facilitator writes a brief', async () => {
     setActionClient(await signInAs(fx.facilitator));
     const result = await updateSessionBriefAction(fx.session.id, 'Workshop brief goes here.');
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
     const admin = getAdminClient();
     const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
     expect(sess.data?.brief_text).toBe('Workshop brief goes here.');
@@ -166,7 +166,7 @@ describe('updateSessionBriefAction', () => {
 
   test('null clears the brief', async () => {
     setActionClient(await signInAs(fx.facilitator));
-    expect(await updateSessionBriefAction(fx.session.id, null)).toEqual({ ok: true });
+    expect(await updateSessionBriefAction(fx.session.id, null)).toEqual({ ok: true, data: null });
     const admin = getAdminClient();
     const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
     expect(sess.data?.brief_text).toBeNull();
@@ -178,7 +178,7 @@ describe('updateSessionBriefAction', () => {
     await admin.from('sessions').update({ brief_text: 'prior' }).eq('id', fx.session.id);
 
     setActionClient(await signInAs(fx.facilitator));
-    expect(await updateSessionBriefAction(fx.session.id, '   ')).toEqual({ ok: true });
+    expect(await updateSessionBriefAction(fx.session.id, '   ')).toEqual({ ok: true, data: null });
     const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
     expect(sess.data?.brief_text).toBeNull();
   });
@@ -217,7 +217,7 @@ describe('updatePreSessionCheckAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', true);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
     const sess = await admin
       .from('sessions')
       .select('pre_session_check')
@@ -235,7 +235,7 @@ describe('updatePreSessionCheckAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', false);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
     const sess = await admin
       .from('sessions')
       .select('pre_session_check')
