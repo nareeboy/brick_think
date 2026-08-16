@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { setActionClient } from './_helpers/action-mocks';
 
+import { parseCanvasState } from '@/lib/models/canvasState';
 import type { CanvasState } from '@/lib/models/types';
 import {
   addOrgMember,
@@ -199,7 +200,7 @@ describe('setDownstreamStageRooms (integration)', () => {
       .select('id, canvas_state')
       .eq('room_id', systemRoomId)
       .single();
-    const canvas = modelRes.data?.canvas_state as unknown as CanvasState;
+    const canvas = parseCanvasState(modelRes.data?.canvas_state);
     // Each lane group is "{laneLabel}'s Build"; we expect at least one lane
     // worth of group rename since Team A's canvas was seeded with alice's bricks.
     expect(canvas.groups.length).toBeGreaterThanOrEqual(1);

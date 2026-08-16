@@ -65,12 +65,7 @@ export async function setStageScenarioAction(
   }
   if (!stageRes.data) return { ok: false, code: 'stage_not_found' };
 
-  const stage = stageRes.data as unknown as {
-    id: string;
-    session_id: string;
-    stage_type: string;
-    sessions: { id: string; facilitator_id: string | null };
-  };
+  const stage = stageRes.data;
 
   if (stage.sessions.facilitator_id !== user.id) {
     return { ok: false, code: 'not_facilitator' };
@@ -239,11 +234,7 @@ export async function updateStageScenarioOverridesAction(
   }
   if (!stageRes.data) return { ok: false, code: 'stage_not_found' };
 
-  const stage = stageRes.data as unknown as {
-    id: string;
-    session_id: string;
-    sessions: { id: string; facilitator_id: string | null };
-  };
+  const stage = stageRes.data;
   if (stage.sessions.facilitator_id !== user.id) {
     return { ok: false, code: 'not_facilitator' };
   }

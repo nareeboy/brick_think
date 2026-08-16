@@ -9,9 +9,9 @@ import { GET } from './route';
 type ExchangeFn = (code: string) => Promise<{ error: { message: string } | null }>;
 
 function mockSupabase(exchange: ExchangeFn): void {
-  (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+  vi.mocked(createServerSupabaseClient).mockResolvedValue({
     auth: { exchangeCodeForSession: exchange },
-  });
+  } as Awaited<ReturnType<typeof createServerSupabaseClient>>);
 }
 
 function makeRequest(search: string): Request {

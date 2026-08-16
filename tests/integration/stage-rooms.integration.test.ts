@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { setActionClient } from './_helpers/action-mocks';
 
+import { parseCanvasState } from '@/lib/models/canvasState';
 import type { CanvasState } from '@/lib/models/types';
 import {
   addOrgMember,
@@ -172,7 +173,7 @@ describe('setSharedModelRooms (integration)', () => {
     }
     // Alice's room got her individual_model bricks composed in.
     const aliceRoomModel = modelsRes.data?.find((m) => m.room_id === res.data.roomIds[0]);
-    const canvas = aliceRoomModel?.canvas_state as unknown as CanvasState;
+    const canvas = parseCanvasState(aliceRoomModel?.canvas_state);
     expect(canvas.groups).toHaveLength(1);
     expect(canvas.groups[0]?.name).toMatch(/Build$/);
     expect(canvas.bricks).toHaveLength(1);

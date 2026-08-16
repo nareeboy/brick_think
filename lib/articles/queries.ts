@@ -150,7 +150,7 @@ export async function listArticlesForAdmin(): Promise<ArticleListItem[]> {
     .select(ROW_WITH_AUTHOR)
     .order('updated_at', { ascending: false });
   if (error) throw new Error(`Failed to load articles: ${error.message}`);
-  return ((data ?? []) as unknown as JoinedRow[]).map((row) => ({
+  return (data ?? []).map((row) => ({
     id: row.id,
     slug: row.slug,
     title: row.title,
@@ -171,18 +171,7 @@ export async function getArticleByIdForAdmin(id: string): Promise<ArticleDetail 
     .maybeSingle();
   if (error) throw new Error(`Failed to load article: ${error.message}`);
   if (!data) return null;
-  return toDetail(supabase, data as unknown as JoinedRow);
-}
-
-interface PublicListRow extends CoverCreditCols {
-  id: string;
-  slug: string;
-  title: string;
-  excerpt: string | null;
-  cover_image_path: string | null;
-  status: 'draft' | 'published';
-  published_at: string | null;
-  author_profile_id: string | null;
+  return toDetail(supabase, data);
 }
 
 export async function listPublishedArticles(): Promise<PublishedArticleSummary[]> {
@@ -193,9 +182,7 @@ export async function listPublishedArticles(): Promise<PublishedArticleSummary[]
     .eq('status', 'published')
     .order('published_at', { ascending: false });
   if (error) throw new Error(`Failed to load published articles: ${error.message}`);
-  const rows = ((data ?? []) as unknown as PublicListRow[]).filter(
-    (row) => row.published_at !== null,
-  );
+  const rows = (data ?? []).filter((row) => row.published_at !== null);
   const authors = await loadPublicAuthors(
     rows.map((r) => r.author_profile_id).filter((id): id is string => Boolean(id)),
   );
@@ -216,10 +203,6 @@ export async function listPublishedArticles(): Promise<PublishedArticleSummary[]
   });
 }
 
-interface PublicDetailRow extends PublicListRow {
-  body_html: string;
-}
-
 export async function getPublishedArticleBySlug(
   slug: string,
 ): Promise<PublishedArticleDetail | null> {
@@ -232,7 +215,7 @@ export async function getPublishedArticleBySlug(
     .maybeSingle();
   if (error) throw new Error(`Failed to load article: ${error.message}`);
   if (!data) return null;
-  const row = data as unknown as PublicDetailRow;
+  const row = data;
   if (row.published_at === null) return null;
   const authors = row.author_profile_id
     ? await loadPublicAuthors([row.author_profile_id])

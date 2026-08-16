@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { STAGE_DEFAULT_DURATIONS_SECONDS, defaultModelTitle } from '@/lib/sessions/stage-labels';
 import {
@@ -273,7 +273,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
     .insert({
       owner_profile_id: user.id,
       title: defaultModelTitle(stageType),
-      canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
+      canvas_state: toJson(EMPTY_CANVAS_STATE),
       session_id: sessionId,
       stage_id: stageId,
     })

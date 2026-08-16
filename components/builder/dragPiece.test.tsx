@@ -118,7 +118,7 @@ describe('DragPieceProvider / addAtCenter', () => {
     });
 
     expect(mockAddBrick).toHaveBeenCalledTimes(1);
-    const instance = mockAddBrick.mock.calls[0]?.[0] as unknown as {
+    const instance = mockAddBrick.mock.calls[0]?.[0] as {
       id: string;
       code: string;
       image: string;
@@ -151,7 +151,7 @@ describe('DragPieceProvider / addAtCenter', () => {
       ctx!.addAtCenter(SAMPLE_BRICK);
     });
 
-    const instance = mockAddBrick.mock.calls[0]?.[0] as unknown as { x: number; y: number };
+    const instance = mockAddBrick.mock.calls[0]?.[0] as { x: number; y: number };
     expect(instance.x).toBe(400); // (800/2 - 0) / 1
     expect(instance.y).toBe(300); // (600/2 - 0) / 1
 

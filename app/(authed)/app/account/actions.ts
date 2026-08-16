@@ -8,7 +8,7 @@ import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { isPng } from '@/lib/images/validatePng';
 import { type A11yPreferences } from '@/lib/a11y/preferences';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 
 const MAX_NAME_LENGTH = 80;
 
@@ -152,7 +152,7 @@ export async function updateA11yPreferencesAction(
 
   const { error } = await supabase
     .from('profiles')
-    .update({ a11y_preferences: next as unknown as Json })
+    .update({ a11y_preferences: toJson(next) })
     .eq('id', user.id);
   if (error) return { ok: false, code: 'save_failed', message: error.message };
 

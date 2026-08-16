@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import type { CanvasState } from '@/lib/models/types';
 import { IMPORT_RULES, isImportTarget, remapCanvasForImport } from '@/lib/sessions/stage-import';
@@ -153,7 +153,7 @@ export async function bringInPreviousModel(targetModelId: string): Promise<Bring
   const remapped = remapCanvasForImport(sourceCanvas, {});
   const upd = await svc
     .from('models')
-    .update({ canvas_state: remapped as unknown as Json })
+    .update({ canvas_state: toJson(remapped) })
     .eq('id', targetModelId);
   if (upd.error) {
     throw new Error(`bringInPreviousModel: target update failed: ${upd.error.message}`);

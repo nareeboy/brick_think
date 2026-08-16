@@ -249,6 +249,7 @@ describe('updatePreSessionCheckAction', () => {
     expect(
       await updatePreSessionCheckAction(
         fx.session.id,
+        // eslint-disable-next-line no-restricted-syntax -- deliberately invalid key to probe validation
         'consent_collected' as unknown as 'a11y_reviewed',
         true,
       ),
@@ -261,6 +262,7 @@ describe('updatePreSessionCheckAction', () => {
       await updatePreSessionCheckAction(
         fx.session.id,
         'a11y_reviewed',
+        // eslint-disable-next-line no-restricted-syntax -- deliberately invalid value to probe validation
         'yes' as unknown as boolean,
       ),
     ).toEqual({ ok: false, code: 'invalid_check_value' });

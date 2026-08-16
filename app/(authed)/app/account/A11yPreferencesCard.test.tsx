@@ -9,7 +9,7 @@ vi.mock('./actions', () => ({
 import { updateA11yPreferencesAction } from './actions';
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 
-const mockAction = updateA11yPreferencesAction as unknown as ReturnType<typeof vi.fn>;
+const mockAction = vi.mocked(updateA11yPreferencesAction);
 
 afterEach(() => cleanup());
 

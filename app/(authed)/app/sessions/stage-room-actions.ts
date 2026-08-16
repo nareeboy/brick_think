@@ -3,9 +3,9 @@
 import { revalidatePath } from 'next/cache';
 
 import type { ActionResult } from '@/lib/actions/result';
+import { toJson } from '@/lib/db/json';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import type { Json } from '@/lib/db/types.generated';
 import { parseCanvasState } from '@/lib/models/canvasState';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
 import { composeRoomCanvas, type RoomLaneInput } from '@/lib/sessions/stage-rooms';
@@ -223,7 +223,7 @@ export async function setSharedModelRooms(input: {
       .insert({
         owner_profile_id: sessionRes.data.facilitator_id,
         title: defaultModelTitle('shared_model'),
-        canvas_state: composed as unknown as Json,
+        canvas_state: toJson(composed),
         session_id: sessionId,
         stage_id: input.stageId,
         room_id: roomId,
@@ -420,7 +420,7 @@ export async function setDownstreamStageRooms(input: {
     const modelInsert = await svc.from('models').insert({
       owner_profile_id: sessionRes.data.facilitator_id,
       title: defaultModelTitle(stageType),
-      canvas_state: composed as unknown as Json,
+      canvas_state: toJson(composed),
       session_id: sessionId,
       stage_id: input.stageId,
       room_id: roomId,
@@ -465,11 +465,7 @@ export async function deleteSharedModelRoom(
     .maybeSingle();
   if (roomRes.error || !roomRes.data) return { ok: false, code: 'stage_not_found' };
 
-  const stage = (
-    roomRes.data as unknown as {
-      stages: { session_id: string; sessions: { facilitator_id: string } };
-    }
-  ).stages;
+  const stage = roomRes.data.stages;
   const sessionId = stage.session_id;
   if (stage.sessions.facilitator_id !== user.id) return { ok: false, code: 'not_facilitator' };
 

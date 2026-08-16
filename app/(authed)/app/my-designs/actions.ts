@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 import { isKnownBrickCode } from '@/lib/bricks/manifest';
 import { parseExportEnvelope } from '@/lib/exports/json';
 import { parseCanvasState } from '@/lib/models/canvasState';
@@ -96,7 +96,7 @@ export async function createDesignAction(input: CreateDesignInput): Promise<stri
     .insert({
       owner_profile_id: user.id,
       title: 'Untitled model',
-      canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
+      canvas_state: toJson(EMPTY_CANVAS_STATE),
       org_id: null,
       session_id: sessionId,
       stage_id: stageId,
@@ -288,7 +288,7 @@ async function createPersonalModelFromCanvasState(
     .insert({
       owner_profile_id: userId,
       title: input.title,
-      canvas_state: input.canvasState as unknown as Json,
+      canvas_state: toJson(input.canvasState),
       org_id: null,
       session_id: null,
       stage_id: null,

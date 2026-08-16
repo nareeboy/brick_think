@@ -101,7 +101,7 @@ async function requireFacilitatorForStage(
     return { error: { ok: false, code: 'stage_not_found' } };
   }
 
-  const stage = stageRes.data as unknown as StageWithSession;
+  const stage: StageWithSession = stageRes.data;
 
   if (stage.sessions.facilitator_id !== user.id) {
     return { error: { ok: false, code: 'not_facilitator' } };

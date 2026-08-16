@@ -20,7 +20,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 import { composeRoomCanvas } from '@/lib/sessions/stage-rooms';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
@@ -150,7 +150,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     .insert({
       owner_profile_id: session.facilitator_id,
       title: defaultModelTitle(stageType),
-      canvas_state: composed as unknown as Json,
+      canvas_state: toJson(composed),
       session_id: sessionId,
       stage_id: stageId,
       room_id: roomId,

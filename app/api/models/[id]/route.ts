@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { toJson } from '@/lib/db/json';
 import type { Json } from '@/lib/db/types.generated';
 import { parseCanvasState } from '@/lib/models/canvasState';
 
@@ -35,7 +36,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   if (body.canvas_state !== undefined) {
-    update.canvas_state = parseCanvasState(body.canvas_state) as unknown as Json;
+    update.canvas_state = toJson(parseCanvasState(body.canvas_state));
   }
 
   if (Object.keys(update).length === 0) {

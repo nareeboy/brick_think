@@ -12,9 +12,9 @@ type VerifyOtpFn = (args: {
 }) => Promise<{ error: { message: string; code?: string } | null }>;
 
 function mockSupabase(verifyOtp: VerifyOtpFn): void {
-  (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+  vi.mocked(createServerSupabaseClient).mockResolvedValue({
     auth: { verifyOtp },
-  });
+  } as Awaited<ReturnType<typeof createServerSupabaseClient>>);
 }
 
 function makeRequest(search: string, headers: Record<string, string> = {}): Request {

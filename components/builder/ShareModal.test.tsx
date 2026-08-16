@@ -16,7 +16,7 @@ function mockListResponse(rows: unknown[]) {
   global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => ({ links: rows }),
-  } as unknown as Response);
+  } as Response);
 }
 
 afterEach(() => cleanup());
@@ -47,7 +47,7 @@ describe('<ShareModal>', () => {
 
   it('creates a new link via the server action and auto-copies it', async () => {
     mockListResponse([]);
-    (createShareLink as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    vi.mocked(createShareLink).mockResolvedValue({
       id: 'l2',
       token: 'newtoken'.padEnd(43, 'y'),
       expiresAt: null,
@@ -73,7 +73,7 @@ describe('<ShareModal>', () => {
         expires_at: null,
       },
     ]);
-    (revokeShareLink as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    vi.mocked(revokeShareLink).mockResolvedValue(undefined);
 
     render(<ShareModal modelId="m1" open onClose={() => {}} />);
     const revokeBtn = await screen.findByRole('button', { name: /revoke/i });

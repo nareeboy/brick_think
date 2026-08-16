@@ -9,7 +9,7 @@ vi.mock('@/lib/db/serviceRole', () => ({
 import { createServiceRoleSupabaseClient } from '@/lib/db/serviceRole';
 
 function mockSelectSingle(payload: { data: unknown; error: unknown }): void {
-  (createServiceRoleSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+  (createServiceRoleSupabaseClient as ReturnType<typeof vi.fn>).mockReturnValue({
     from: () => ({
       select: () => ({
         eq: () => ({
@@ -24,7 +24,7 @@ describe('getCanvasForToken', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns not_found for shape-invalid token without hitting the DB', async () => {
-    const spy = createServiceRoleSupabaseClient as unknown as ReturnType<typeof vi.fn>;
+    const spy = vi.mocked(createServiceRoleSupabaseClient);
     const result = await getCanvasForToken('short');
     expect(result).toEqual({ status: 'not_found' });
     expect(spy).not.toHaveBeenCalled();

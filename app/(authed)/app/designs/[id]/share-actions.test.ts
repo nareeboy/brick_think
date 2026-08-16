@@ -14,7 +14,7 @@ function mockUser(
 ) {
   const inserted: unknown[] = [];
   const updated: { revoked_at?: string }[] = [];
-  (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (createServerSupabaseClient as ReturnType<typeof vi.fn>).mockResolvedValue({
     auth: { getUser: async () => ({ data: { user: userId ? { id: userId } : null } }) },
     from: (_table: string) => ({
       select: () => ({
@@ -74,11 +74,12 @@ describe('createShareLink', () => {
 
   it('rejects invalid ttl strings', async () => {
     mockUser('u1');
+    // eslint-disable-next-line no-restricted-syntax -- deliberately invalid ttl to probe validation
     await expect(createShareLink('m1', 'forever' as unknown as '1d')).rejects.toThrow();
   });
 
   it('throws when the model is not visible to the user (RLS-filtered or non-existent)', async () => {
-    (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+    (createServerSupabaseClient as ReturnType<typeof vi.fn>).mockResolvedValue({
       auth: { getUser: async () => ({ data: { user: { id: 'u1' } } }) },
       from: () => ({
         select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
