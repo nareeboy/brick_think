@@ -3,9 +3,8 @@
 import type Konva from 'konva';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import { Image as KImage, Layer, Rect, Stage, Transformer } from 'react-konva';
+import { Layer, Rect, Stage, Transformer } from 'react-konva';
 
-import { useBrickImage } from '@/components/canvas/BrickImage';
 import { reorderBricksWithinGroups, type ReorderDirection } from '@/lib/canvas/reorder';
 import { fitToBox, padBbox, unionRects } from '@/lib/canvas/thumbnailBox';
 import { usePeerPresence } from '@/lib/yjs/usePeerPresence';
@@ -15,9 +14,25 @@ import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import { extractColorFromCode, nextColorVariant } from '@/lib/bricks/color-from-code';
 import { brickToCell } from '@/lib/bricks/grid';
 
+import { BrickNode } from './BrickNode';
 import { BrickPatternOverlay } from './BrickPatternOverlay';
 import { CanvasA11yMirror, type MirrorBrick } from './CanvasA11yMirror';
 import { CanvasContextMenu } from './CanvasContextMenu';
+import {
+  brickAabb,
+  PAN_DRAG_THRESHOLD_PX,
+  selectionOverlay,
+  type CanvasGesture,
+} from './canvasGeometry';
+import {
+  RedoIcon,
+  TrashIcon,
+  UndoIcon,
+  undoShortcutLabel,
+  ZoomButton,
+  ZoomInIcon,
+  ZoomOutIcon,
+} from './canvasChrome';
 import { patternForColor } from '@/lib/bricks/patterns';
 import {
   MAX_PIECE_SIZE,
@@ -26,171 +41,7 @@ import {
   MIN_ZOOM,
   ZOOM_STEP,
   useBuilderState,
-  type BrickInstance,
 } from './builderState';
-
-const PAN_DRAG_THRESHOLD_PX = 3;
-
-// World-space axis-aligned bounding box of a (possibly rotated) brick.
-function brickAabb(brick: BrickInstance): { x1: number; y1: number; x2: number; y2: number } {
-  const rad = (brick.rotation * Math.PI) / 180;
-  const cos = Math.abs(Math.cos(rad));
-  const sin = Math.abs(Math.sin(rad));
-  const halfW = (brick.width * cos + brick.height * sin) / 2;
-  const halfH = (brick.width * sin + brick.height * cos) / 2;
-  return { x1: brick.x - halfW, y1: brick.y - halfH, x2: brick.x + halfW, y2: brick.y + halfH };
-}
-
-// Screen position for the trash button: top-centre of the union AABB of the
-// whole selection.
-function selectionOverlay(
-  bricks: BrickInstance[],
-  pan: { x: number; y: number },
-  zoom: number,
-): { left: number; top: number } | null {
-  if (bricks.length === 0) return null;
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  for (const b of bricks) {
-    const box = brickAabb(b);
-    minX = Math.min(minX, box.x1);
-    maxX = Math.max(maxX, box.x2);
-    minY = Math.min(minY, box.y1);
-  }
-  return {
-    left: ((minX + maxX) / 2) * zoom + pan.x,
-    top: minY * zoom + pan.y,
-  };
-}
-
-// A drag gesture that starts on the empty canvas background. `candidate`
-// becomes `pan` (Space held or touch) or `marquee` (mouse/pen) once the
-// pointer travels past the drag threshold; a candidate that never moves is
-// a click on empty canvas, which clears the selection.
-type CanvasGesture =
-  | { mode: 'pan'; last: { x: number; y: number } }
-  | { mode: 'candidate'; startClient: { x: number; y: number }; shiftKey: boolean }
-  | {
-      mode: 'marquee';
-      startWorld: { x: number; y: number };
-      currentWorld: { x: number; y: number };
-      shiftKey: boolean;
-    };
-
-interface BrickNodeProps {
-  brick: BrickInstance;
-  selected: boolean;
-  /**
-   * Whether this brick accepts pointer interaction (drag / select / transform).
-   * False while Space-pan is held OR the canvas is read-only — both cases want
-   * the pointer-down to fall through to the canvas-level pan handler instead of
-   * grabbing the brick.
-   */
-  interactive: boolean;
-  onPointerSelect: (id: string, shiftKey: boolean) => void;
-  onClickSelect: (id: string, shiftKey: boolean) => void;
-  onDragStart: (id: string) => void;
-  onDragMove: (id: string, x: number, y: number) => void;
-  onDragEnd: (id: string, x: number, y: number) => void;
-  onRotate: (id: string) => void;
-  onResize: (id: string, width: number, height: number) => void;
-  onContextMenu: (id: string, evt: MouseEvent) => void;
-  registerNode: (id: string, node: Konva.Image | null) => void;
-  onInteractStart: () => void;
-  onInteractEnd: () => void;
-}
-
-function BrickNode({
-  brick,
-  selected,
-  interactive,
-  onPointerSelect,
-  onClickSelect,
-  onDragStart,
-  onDragMove,
-  onDragEnd,
-  onRotate,
-  onResize,
-  onContextMenu,
-  registerNode,
-  onInteractStart,
-  onInteractEnd,
-}: BrickNodeProps) {
-  const image = useBrickImage(brick.image);
-  const nodeRef = useRef<Konva.Image | null>(null);
-
-  if (!image) return null;
-
-  return (
-    <KImage
-      ref={(node) => {
-        nodeRef.current = node;
-        registerNode(brick.id, node);
-      }}
-      image={image}
-      x={brick.x}
-      y={brick.y}
-      width={brick.width}
-      height={brick.height}
-      offsetX={brick.width / 2}
-      offsetY={brick.height / 2}
-      rotation={brick.rotation}
-      // Horizontal mirror around the brick centre (offset = centre, so a
-      // negative x-scale flips in place).
-      scaleX={brick.flippedX ? -1 : 1}
-      // Suppress brick interactions (select/drag/transform) while Space-pan is
-      // held or the canvas is read-only, so the pointer-down on a brick falls
-      // through to the canvas-level pan handler instead of moving the piece.
-      draggable={interactive}
-      listening={interactive}
-      stroke={selected ? '#a8482a' : undefined}
-      strokeWidth={selected ? 3 : 0}
-      shadowColor={selected ? '#a8482a' : 'transparent'}
-      shadowBlur={selected ? 18 : 0}
-      shadowOpacity={selected ? 0.35 : 0}
-      onMouseDown={(e: Konva.KonvaEventObject<MouseEvent>) =>
-        onPointerSelect(brick.id, e.evt.shiftKey)
-      }
-      onTap={() => onPointerSelect(brick.id, false)}
-      // Konva suppresses click after a drag, so this only fires for a
-      // press-and-release in place — the collapse-to-single gesture.
-      onClick={(e: Konva.KonvaEventObject<MouseEvent>) => onClickSelect(brick.id, e.evt.shiftKey)}
-      onDblClick={() => onRotate(brick.id)}
-      onDblTap={() => onRotate(brick.id)}
-      onContextMenu={(e: Konva.KonvaEventObject<PointerEvent>) => onContextMenu(brick.id, e.evt)}
-      onDragStart={() => {
-        onInteractStart();
-        onDragStart(brick.id);
-      }}
-      onTransformStart={onInteractStart}
-      onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
-        onDragMove(brick.id, e.target.x(), e.target.y());
-      }}
-      onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => {
-        onDragEnd(brick.id, e.target.x(), e.target.y());
-        onInteractEnd();
-      }}
-      onTransformEnd={() => {
-        const node = nodeRef.current;
-        if (!node) {
-          onInteractEnd();
-          return;
-        }
-        // abs() because a flipped brick's base x-scale is -1, so the
-        // transformer reports a negative composite scale.
-        const sx = Math.abs(node.scaleX());
-        const sy = Math.abs(node.scaleY());
-        const nextW = Math.max(MIN_PIECE_SIZE, Math.min(MAX_PIECE_SIZE, brick.width * sx));
-        const nextH = Math.max(MIN_PIECE_SIZE, Math.min(MAX_PIECE_SIZE, brick.height * sy));
-        node.scaleX(brick.flippedX ? -1 : 1);
-        node.scaleY(1);
-        onResize(brick.id, nextW, nextH);
-        onInteractEnd();
-      }}
-    />
-  );
-}
 
 export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: boolean } = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -999,119 +850,4 @@ export function BuilderCanvas({ colourblindMode = false }: { colourblindMode?: b
       ) : null}
     </div>
   );
-}
-
-function ZoomButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      type="button"
-      className="inline-flex h-9 w-9 !cursor-pointer items-center justify-center rounded-xl text-zinc-500 transition-colors hover:bg-zinc-900/5 hover:text-zinc-900 disabled:!cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-zinc-500"
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
-
-function ZoomInIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-      <path d="M8 11h6" />
-      <path d="M11 8v6" />
-    </svg>
-  );
-}
-
-function TrashIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M3 6h18" />
-      <path d="m5 6 1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14" />
-      <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-    </svg>
-  );
-}
-
-function ZoomOutIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-      <path d="M8 11h6" />
-    </svg>
-  );
-}
-
-function UndoIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M9 13 4 8l5-5" />
-      <path d="M4 8h11a5 5 0 0 1 0 10h-4" />
-    </svg>
-  );
-}
-
-function RedoIcon({ className = '' }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m15 13 5-5-5-5" />
-      <path d="M20 8H9a5 5 0 0 0 0 10h4" />
-    </svg>
-  );
-}
-
-function undoShortcutLabel(action: 'undo' | 'redo'): string {
-  const isMac =
-    typeof navigator !== 'undefined' && /mac|iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (action === 'undo') return isMac ? 'Undo (⌘Z)' : 'Undo (Ctrl+Z)';
-  return isMac ? 'Redo (⇧⌘Z)' : 'Redo (Ctrl+Shift+Z)';
 }

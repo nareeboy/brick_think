@@ -1,12 +1,14 @@
 // Integration tests for stage-controller-actions — 6 verbs, all facilitator-only.
 //
 // Pattern follows account-actions.integration.test.ts:
-//   - vi.mock('next/cache') + vi.mock('@/lib/db/server') before the action import
+//   - server-action mocks come from setup.ts (_helpers/action-mocks.ts);
+//     per-test identity via setActionClient()
 //   - getServiceSupabaseClient() is NOT mocked — it works against the real local stack
 //   - Per-test fixture via createTestUser / createTestOrg / createTestSession / addOrgMember
 //   - getAdminClient() for post-action DB verification (bypasses RLS)
 
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   addOrgMember,
@@ -21,26 +23,7 @@ import {
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
 import { CANONICAL_STAGE_TYPES } from '@/lib/sessions/types';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
-// ── vi.mock calls MUST come before the import of any module that uses them ──
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('next/navigation', () => ({
-  redirect: (url?: string) => {
-    throw new Error(`__redirect__:${url ?? ''}`);
-  },
-}));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set in test');
-    return currentClient;
-  }),
-}));
-
-// Import AFTER mocks are registered.
 import {
   startStageAction,
   pauseStageAction,
@@ -158,14 +141,14 @@ async function getSessionRow(sessionId: string) {
 describe('stage-controller-actions (integration)', () => {
   // ── UUID validation ──────────────────────────────────────────────────────
   test('returns invalid_uuid for a garbage stageId', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await startStageAction('not-a-uuid');
     expect(result).toEqual({ ok: false, code: 'invalid_uuid' });
   });
 
   // ── start → pause → resume round-trip ────────────────────────────────────
   test('start → pause → resume updates status and paused-time fields', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session, stages } = await freshSession();
     const stageId = mustGet(stages, 0, 'stage 0');
 
@@ -206,7 +189,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── pause from pending → invalid_transition ───────────────────────────────
   test('pause from pending returns invalid_transition', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const result = await pauseStageAction(mustGet(stages, 0));
     expect(result).toMatchObject({ ok: false, code: 'invalid_transition', verb: 'pause' });
@@ -214,7 +197,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── resume from active → invalid_transition ───────────────────────────────
   test('resume from active (not paused) returns invalid_transition', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const s0 = mustGet(stages, 0);
     await startStageAction(s0);
@@ -224,7 +207,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── extend bumps extended_seconds ─────────────────────────────────────────
   test('extend twice accumulates extended_seconds', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const s0 = mustGet(stages, 0);
     await startStageAction(s0);
@@ -238,7 +221,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── extend rejects invalid amounts ────────────────────────────────────────
   test('extend rejects zero, negative, float, and values over 3600', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const s0 = mustGet(stages, 0);
     await startStageAction(s0);
@@ -263,7 +246,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── advance moves pointer + completes current ─────────────────────────────
   test('advance completes current stage and moves session pointer to next', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session, stages } = await freshSession();
     const s0 = mustGet(stages, 0);
     const s1 = mustGet(stages, 1);
@@ -285,7 +268,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── advance from last stage → no_next_stage ──────────────────────────────
   test('advance from the last stage returns no_next_stage', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const lastStage = mustGet(stages, stages.length - 1, 'last stage');
 
@@ -295,7 +278,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── rollback resets from + target ─────────────────────────────────────────
   test('rollback resets from-stage to pending and target back to active', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session, stages } = await freshSession();
     const s0 = mustGet(stages, 0);
     const s1 = mustGet(stages, 1);
@@ -345,7 +328,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── rollback on a pending stage → invalid_transition ─────────────────────
   test('rollback on a non-completed stage returns invalid_transition', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     // stages[0] is pending — not completed → should fail the state-machine gate
     const result = await rollbackStageAction(mustGet(stages, 0));
@@ -356,7 +339,7 @@ describe('stage-controller-actions (integration)', () => {
   test('rollback when sessions.current_stage_id is null → no_previous_completed_stage', async () => {
     const { session, stages } = await freshSession();
     const s0 = mustGet(stages, 0);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
 
     await startStageAction(s0);
     await advanceStageAction(s0); // s0 completed, next stage becomes current_stage_id
@@ -371,7 +354,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── extend rejects null-duration stages ──────────────────────────────────
   test('extend rejects null-duration stages', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session, stages } = await freshSession();
     const s0 = mustGet(stages, 0);
 
@@ -388,7 +371,7 @@ describe('stage-controller-actions (integration)', () => {
   test('extend accepts the boundary value 3600 seconds', async () => {
     const { stages } = await freshSession();
     const s0 = mustGet(stages, 0);
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
 
     await startStageAction(s0);
     const result = await extendStageAction(s0, 3600);
@@ -399,7 +382,7 @@ describe('stage-controller-actions (integration)', () => {
   test('org member who is not the facilitator gets not_facilitator', async () => {
     // participant is an org member so RLS lets them read the stage,
     // but the action's facilitator_id check rejects them.
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     const { stages } = await freshSession();
     const result = await startStageAction(mustGet(stages, 0));
     expect(result).toMatchObject({ ok: false, code: 'not_facilitator' });
@@ -407,7 +390,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── stage_not_found: outsider not in org — RLS hides the row ─────────────
   test('outsider not in org gets stage_not_found (RLS hides the row)', async () => {
-    currentClient = await signInAs(fx.outsider);
+    setActionClient(await signInAs(fx.outsider));
     const { stages } = await freshSession();
     const result = await startStageAction(mustGet(stages, 0));
     expect(result).toEqual({ ok: false, code: 'stage_not_found' });
@@ -415,7 +398,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── stage_events written for each successful verb ─────────────────────────
   test('each successful action writes a stage_event row', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const admin = getAdminClient();
     const { stages } = await freshSession();
     const s0 = mustGet(stages, 0);
@@ -438,7 +421,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── reset ─────────────────────────────────────────────────────────────────
   test('reset on an active stage gives it a fresh clock and clears counters', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const [s0] = stages;
     expect(s0).toBeDefined();
@@ -480,7 +463,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('reset on a paused stage promotes back to active', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
@@ -496,7 +479,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('reset rejects a pending stage', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
@@ -507,7 +490,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── updateStageDuration ───────────────────────────────────────────────────
   test('updateStageDuration sets duration on a pending stage', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
@@ -520,7 +503,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('updateStageDuration rejects out-of-range values', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
@@ -540,7 +523,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('updateStageDuration accepts the 60s and 7200s boundary values', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
@@ -550,7 +533,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('updateStageDuration rejects a stage that is not pending', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { stages } = await freshSession();
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
@@ -562,7 +545,7 @@ describe('stage-controller-actions (integration)', () => {
 
   // ── endSession ────────────────────────────────────────────────────────────
   test('endSession on a live session marks it + the current stage completed', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session, stages } = await freshSession();
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
@@ -592,7 +575,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('endSession with no active stage still completes the session', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session } = await freshSession();
 
     expect(await endSessionAction(session.id)).toEqual({ ok: true });
@@ -603,7 +586,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('endSession is idempotent on an already-completed session', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session } = await freshSession();
 
     await endSessionAction(session.id);
@@ -612,7 +595,7 @@ describe('stage-controller-actions (integration)', () => {
 
   test('endSession rejects a non-facilitator', async () => {
     const { session } = await freshSession();
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     expect(await endSessionAction(session.id)).toMatchObject({
       ok: false,
       code: 'not_facilitator',
@@ -620,14 +603,14 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('endSession returns session_not_found for a non-existent uuid', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await endSessionAction('00000000-0000-0000-0000-000000000000');
     expect(result).toMatchObject({ ok: false, code: 'session_not_found' });
   });
 
   // ── start after stop (resume workshop) ────────────────────────────────────
   test('startStage on a pending stage after endSession promotes session back to live', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session, stages } = await freshSession();
     const [s0, s1] = stages;
     if (!s0 || !s1) throw new Error('stages[0..1] missing');
@@ -665,7 +648,7 @@ describe('stage-controller-actions (integration)', () => {
   });
 
   test('startStage on the just-stopped completed stage revives it with a fresh clock', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const { session, stages } = await freshSession();
     const s0 = mustGet(stages, 0, 'stage 0');
 

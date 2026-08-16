@@ -37,8 +37,21 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Test
-        run: pnpm test
+      - name: Test (with coverage)
+        # Same suite as `pnpm test`, plus v8 coverage. vitest.config.ts
+        # coverage.thresholds enforces the ratchet floor — the run fails if
+        # coverage drops below it.
+        run: pnpm test:coverage
+
+      - name: Upload coverage summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-summary
+          path: |
+            coverage/coverage-summary.json
+            coverage/lcov.info
+          retention-days: 14
 
   build:
     # Catches what tsc can't: server/client boundary violations ('server-only'

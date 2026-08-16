@@ -1,7 +1,8 @@
 // Integration tests for redeemJoinCodeAction.
 //
 // Pattern follows scenarios.integration.test.ts:
-//   - vi.mock('next/cache') + vi.mock('@/lib/db/server') before the action import
+//   - server-action mocks come from setup.ts (_helpers/action-mocks.ts);
+//     per-test identity via setActionClient()
 //   - getServiceSupabaseClient() is NOT mocked — works against the real local stack
 //   - Per-test fixture via createTestUser / createTestOrg / createTestSession
 //
@@ -14,8 +15,8 @@
 // by the user. Sessions a kicked / joined user merely participates in are
 // fine — they cascade off the facilitator, which we delete first.
 
-import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   cleanupTestUser,
@@ -23,27 +24,11 @@ import {
   createTestSession,
   createTestUser,
   getAdminClient,
-  makeAnonClient,
   signInAs,
   type TestOrg,
   type TestSession,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) {
-      // Mimic the unauthenticated branch — a fresh anon client with no
-      // session. The action only calls .auth.getUser(), which returns
-      // { user: null } here, so the action short-circuits at the auth gate.
-      return makeAnonClient();
-    }
-    return currentClient;
-  }),
-}));
 
 import {
   redeemJoinCodeAction,
@@ -132,7 +117,7 @@ beforeAll(async () => {
 });
 
 afterEach(() => {
-  currentClient = null;
+  setActionClient(null);
 });
 
 afterAll(async () => {
@@ -149,7 +134,7 @@ afterAll(async () => {
 
 describe('redeemJoinCodeAction', () => {
   test('fresh redemption inserts participant + fires exactly one participant_joined notification', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     const result = await redeemJoinCodeAction(fx.sessionCode);
     expect(result).toEqual({ ok: true, sessionId: fx.session.id });
 
@@ -179,7 +164,7 @@ describe('redeemJoinCodeAction', () => {
 
   test('idempotent re-redemption: still ok, but no second notification', async () => {
     // Precondition: first test ran and inserted exactly one notification.
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     const result = await redeemJoinCodeAction(fx.sessionCode);
     expect(result).toEqual({ ok: true, sessionId: fx.session.id });
 
@@ -194,7 +179,7 @@ describe('redeemJoinCodeAction', () => {
   });
 
   test('kicked user (soft-deleted row) is refused with removed_by_facilitator', async () => {
-    currentClient = await signInAs(fx.kickedUser);
+    setActionClient(await signInAs(fx.kickedUser));
     const result = await redeemJoinCodeAction(fx.kickedSessionCode);
     expect(result).toEqual({ ok: false, code: 'removed_by_facilitator' });
 
@@ -210,13 +195,13 @@ describe('redeemJoinCodeAction', () => {
   });
 
   test('completed session is refused with session_completed', async () => {
-    currentClient = await signInAs(fx.completedSessionUser);
+    setActionClient(await signInAs(fx.completedSessionUser));
     const result = await redeemJoinCodeAction(fx.completedSessionCode);
     expect(result).toEqual({ ok: false, code: 'session_completed' });
   });
 
   test('unknown code returns code_not_found (well-shaped but unused)', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     // Six chars all drawn from the alphabet but not assigned to any session
     // — keep collision probability laughable by picking a string that's
     // also not the backfilled code for the fixture session.
@@ -229,7 +214,7 @@ describe('redeemJoinCodeAction', () => {
   });
 
   test('shape-invalid code returns code_not_found (no DB round-trip needed)', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     // Too short.
     expect(await redeemJoinCodeAction('ABC')).toEqual({ ok: false, code: 'code_not_found' });
     // Right length, character outside the Crockford-trimmed alphabet ('O' / '0' / 'I' / 'L' / 'U' / '1' all excluded).
@@ -241,7 +226,7 @@ describe('redeemJoinCodeAction', () => {
     // Use a fresh user so the idempotent branch doesn't mask the lookup.
     const lowercaseUser = await createTestUser();
     try {
-      currentClient = await signInAs(lowercaseUser);
+      setActionClient(await signInAs(lowercaseUser));
       const lower = fx.sessionCode.toLowerCase();
       const result = await redeemJoinCodeAction(lower);
       expect(result).toEqual({ ok: true, sessionId: fx.session.id });
@@ -251,10 +236,10 @@ describe('redeemJoinCodeAction', () => {
   });
 
   test('unauthenticated caller returns unauthenticated', async () => {
-    // currentClient stays null → the mocked createServerSupabaseClient
+    // 'anon' → the mocked createServerSupabaseClient
     // returns a fresh anon client with no session, so auth.getUser() yields
     // { user: null } and the action short-circuits.
-    currentClient = null;
+    setActionClient('anon');
     const result = await redeemJoinCodeAction(fx.sessionCode);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });
@@ -266,7 +251,7 @@ describe('rotateJoinCodeAction', () => {
     const oldCode = fx.sessionCode;
 
     // Rotate as facilitator.
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const rotateResult = await rotateJoinCodeAction(fx.session.id);
     expect(rotateResult.ok).toBe(true);
     if (!rotateResult.ok) throw new Error('Expected ok=true');
@@ -279,7 +264,7 @@ describe('rotateJoinCodeAction', () => {
     // Verify old code no longer redeems (shape-valid but unknown).
     const freshUserForOldTest = await createTestUser();
     try {
-      currentClient = await signInAs(freshUserForOldTest);
+      setActionClient(await signInAs(freshUserForOldTest));
       const oldResult = await redeemJoinCodeAction(oldCode);
       expect(oldResult).toEqual({ ok: false, code: 'code_not_found' });
     } finally {
@@ -290,7 +275,7 @@ describe('rotateJoinCodeAction', () => {
     // branch doesn't mask the lookup).
     const freshUserForNewTest = await createTestUser();
     try {
-      currentClient = await signInAs(freshUserForNewTest);
+      setActionClient(await signInAs(freshUserForNewTest));
       const newResult = await redeemJoinCodeAction(newCode);
       expect(newResult).toEqual({ ok: true, sessionId: fx.session.id });
     } finally {
@@ -299,19 +284,19 @@ describe('rotateJoinCodeAction', () => {
   });
 
   test('non-facilitator gets not_facilitator', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     const result = await rotateJoinCodeAction(fx.session.id);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
   });
 
   test('unknown session id gets session_not_found', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await rotateJoinCodeAction('00000000-0000-0000-0000-000000000000');
     expect(result).toEqual({ ok: false, code: 'session_not_found' });
   });
 
   test('unauthenticated caller gets unauthenticated', async () => {
-    currentClient = null;
+    setActionClient('anon');
     const result = await rotateJoinCodeAction(fx.session.id);
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
   });

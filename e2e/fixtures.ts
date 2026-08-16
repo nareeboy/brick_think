@@ -41,6 +41,53 @@ function makeTestEmail(): string {
   return `e2e-${suffix}@brick-think.test`;
 }
 
+const MAILPIT_BASE_URL = 'http://127.0.0.1:54324';
+
+export interface MailpitMessage {
+  subject: string;
+  html: string;
+  text: string;
+}
+
+// Poll Mailpit's search API for the newest message sent to `addr`; throws if
+// nothing arrives within `timeoutMs`. Shared by every spec that reads email
+// (magic-link-token-hash, participant-invite-email) — extend here, not with
+// a spec-local copy.
+export async function getMailpitMessage(addr: string, timeoutMs = 10_000): Promise<MailpitMessage> {
+  const start = Date.now();
+  const url = `${MAILPIT_BASE_URL}/api/v1/search?query=${encodeURIComponent(`to:${addr}`)}`;
+
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = (await res.json()) as { messages?: Array<{ ID: string; Subject: string }> };
+        const message = data.messages?.[0];
+        if (message) {
+          const bodyRes = await fetch(`${MAILPIT_BASE_URL}/api/v1/message/${message.ID}`);
+          if (bodyRes.ok) {
+            const body = (await bodyRes.json()) as {
+              Subject?: string;
+              HTML?: string;
+              Text?: string;
+            };
+            return {
+              subject: body.Subject ?? message.Subject,
+              html: body.HTML ?? '',
+              text: body.Text ?? '',
+            };
+          }
+        }
+      }
+    } catch {
+      // Mailpit not reachable yet; retry.
+    }
+    await new Promise((r) => setTimeout(r, 400));
+  }
+
+  throw new Error(`getMailpitMessage: no email arrived for ${addr} within ${timeoutMs}ms`);
+}
+
 // Suppress every first-run overlay so specs see a "returning user" UI: the
 // welcome modal / checklist / session tour, the canvas builder tutorial, and
 // the cookie-consent card (which otherwise overlays the sidebar-bottom
