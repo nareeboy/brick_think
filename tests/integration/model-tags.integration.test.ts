@@ -7,7 +7,8 @@
 //     access to (RLS join through public.models).
 //   * Invalid tag shapes are dropped silently by normalisation, not 500.
 
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   cleanupTestUser,
@@ -18,22 +19,6 @@ import {
   type TestOrg,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-import type { SupabaseClient } from '@supabase/supabase-js';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('next/navigation', () => ({
-  redirect: (url?: string) => {
-    throw new Error(`__redirect__:${url ?? ''}`);
-  },
-}));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set');
-    return currentClient;
-  }),
-}));
 
 import {
   createDesignAction,
@@ -65,7 +50,7 @@ afterAll(async () => {
 
 describe('setModelTagsAction', () => {
   test('writes a tag set and reads it back via the admin client', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const modelId = await createDesignAction({ orgId: null, sessionId: null });
     try {
       const saved = await setModelTagsAction(modelId, ['design', 'lego-bricks']);
@@ -85,7 +70,7 @@ describe('setModelTagsAction', () => {
   });
 
   test('whole-set replace removes tags absent from the new list', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const modelId = await createDesignAction({ orgId: null, sessionId: null });
     try {
       await setModelTagsAction(modelId, ['a', 'b', 'c']);
@@ -104,7 +89,7 @@ describe('setModelTagsAction', () => {
   });
 
   test('drops invalid tag values via normalisation', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const modelId = await createDesignAction({ orgId: null, sessionId: null });
     try {
       const saved = await setModelTagsAction(modelId, [
@@ -121,7 +106,7 @@ describe('setModelTagsAction', () => {
   });
 
   test('non-owner reading tags via SELECT returns zero rows (RLS)', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const modelId = await createDesignAction({ orgId: null, sessionId: null });
     try {
       await setModelTagsAction(modelId, ['secret']);
@@ -136,10 +121,10 @@ describe('setModelTagsAction', () => {
   });
 
   test('non-owner writing tags is refused by ownership pre-check', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const modelId = await createDesignAction({ orgId: null, sessionId: null });
     try {
-      currentClient = await signInAs(fx.outsider);
+      setActionClient(await signInAs(fx.outsider));
       await expect(setModelTagsAction(modelId, ['nope'])).rejects.toThrow(
         /not owned by you|not found/i,
       );
@@ -151,7 +136,7 @@ describe('setModelTagsAction', () => {
 
 describe('renameTagAction', () => {
   test('renames a tag across all owned designs that carry it', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const a = await createDesignAction({ orgId: null, sessionId: null });
     const b = await createDesignAction({ orgId: null, sessionId: null });
     try {
@@ -175,7 +160,7 @@ describe('renameTagAction', () => {
   test('collapses cleanly when the target already exists on a model', async () => {
     // A model carrying both `old` and `new` would, without ON CONFLICT, blow up
     // on the insert half of the rename. Verify the upsert path handles it.
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const id = await createDesignAction({ orgId: null, sessionId: null });
     try {
       await setModelTagsAction(id, ['old', 'new']);
@@ -190,16 +175,16 @@ describe('renameTagAction', () => {
   });
 
   test('no-op when nothing carries the source tag', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     await expect(renameTagAction('does-not-exist', 'something')).resolves.toBe('something');
   });
 
   test('does not touch tags on other users’ designs', async () => {
-    currentClient = await signInAs(fx.outsider);
+    setActionClient(await signInAs(fx.outsider));
     const theirs = await createDesignAction({ orgId: null, sessionId: null });
     await setModelTagsAction(theirs, ['old']);
 
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const mine = await createDesignAction({ orgId: null, sessionId: null });
     try {
       await setModelTagsAction(mine, ['old']);
@@ -217,7 +202,7 @@ describe('renameTagAction', () => {
   });
 
   test('rejects target tag shapes that survive normalisation as invalid', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     // Empty, leading hyphen, and >32 chars cannot be rescued by normaliseTag,
     // so the action refuses. Casing and whitespace ARE rescued — that's the
     // editor's friendliness, not a bug.

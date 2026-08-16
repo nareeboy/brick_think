@@ -5,9 +5,8 @@
 // test stays deterministic — every other dependency is the real thing.
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { vi } from 'vitest';
 
+import { setActionClient } from './_helpers/action-mocks';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import {
   cleanupTestUser,
@@ -21,21 +20,6 @@ import {
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
 
-// --- Mocks --------------------------------------------------------------
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set in test');
-    return currentClient;
-  }),
-}));
-
-// Import AFTER mocks are registered (Vitest hoists `vi.mock` but ergonomic
-// to keep the convention consistent with the other integration suites).
 import { saveNarration } from '@/app/(authed)/app/designs/narration-actions';
 
 // --- Fixture ------------------------------------------------------------
@@ -82,7 +66,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  currentClient = await signInAs(fx.owner);
+  setActionClient(await signInAs(fx.owner));
 });
 
 // --- Tests --------------------------------------------------------------
@@ -117,9 +101,9 @@ describe('saveNarration (integration)', () => {
   });
 
   it('non-owner → not_owner error', async () => {
-    // Override currentClient to authenticate as a different user. The action
+    // Swap the acting client to authenticate as a different user. The action
     // returns not_owner before ever reaching the cleanup hook.
-    currentClient = await signInAs(fx.nonOwner);
+    setActionClient(await signInAs(fx.nonOwner));
 
     const res = await saveNarration(fx.modelId, 'some transcript', null);
     expect(res).toEqual({ ok: false, code: 'not_owner' });
@@ -143,7 +127,7 @@ describe('saveNarration (integration)', () => {
     if (m.error || !m.data) throw new Error(`participant model insert failed: ${m.error?.message}`);
     const participantModelId = m.data.id as string;
 
-    currentClient = await signInAs(fx.nonOwner);
+    setActionClient(await signInAs(fx.nonOwner));
     const res = await saveNarration(participantModelId, 'attendee telling their story', 1500);
 
     expect(res.ok).toBe(true);

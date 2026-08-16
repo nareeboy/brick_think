@@ -18,7 +18,7 @@ import { FacilitatorNotesCard } from './FacilitatorNotesCard';
 import { PreSessionChecklist } from './PreSessionChecklist';
 import { RosterButton } from '@/components/session/RosterButton';
 import { SessionRoleChip } from './SessionRoleChip';
-import { SessionStages, type ParticipantModel } from './SessionStages';
+import { SessionStages, type ParticipantModel, type StageViewModel } from './SessionStages';
 import { SessionTitle } from './SessionTitle';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
 import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
@@ -27,6 +27,7 @@ import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types';
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
 import { ActiveStageBar } from '@/components/session/ActiveStageBar';
+import { SessionStagesProvider } from '@/components/session/SessionStagesProvider';
 import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
@@ -405,12 +406,19 @@ export default async function SessionDetailPage({
     scenariosByStageType[s.stage_type] = bucket;
     scenarioById.set(s.id, s);
   }
-  const pickedScenarioByStageId: Record<string, Scenario | null> = {};
-  for (const stage of stages) {
-    pickedScenarioByStageId[stage.id] = stage.scenario_id
-      ? (scenarioById.get(stage.scenario_id) ?? null)
-      : null;
-  }
+  // One view-model per stage, keyed by stage id — everything the stage card
+  // needs beyond the live stage row itself (participants, rooms, upstream
+  // picker data, my room, picked scenario). Replaces the six parallel
+  // per-stage Records SessionStages used to take.
+  const stageViewModels: StageViewModel[] = stages.map((s) => ({
+    stageId: s.id,
+    participants: participantsByStage[s.id] ?? [],
+    rooms: roomsByStageId[s.id] ?? [],
+    upstreamRooms: upstreamRoomsByStageId[s.id] ?? [],
+    upstreamStageType: upstreamStageTypeByStageId[s.id] ?? null,
+    myRoomId: myRoomIdByStageId[s.id] ?? null,
+    pickedScenario: s.scenario_id ? (scenarioById.get(s.scenario_id) ?? null) : null,
+  }));
 
   // Private notes are facilitator-only (not org-admin), and the helper itself
   // enforces that gate — call it for the facilitator's view and skip the
@@ -493,67 +501,64 @@ export default async function SessionDetailPage({
         }
       />
       <div className="mx-auto max-w-[1200px] px-5 py-10">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-          <div className="flex min-w-0 flex-1 flex-col gap-6">
-            <FacilitatorChecklist progress={onboardingProgress} />
-            <PreSessionChecklist
-              sessionId={session.id}
-              sessionStatus={session.status}
-              briefText={session.brief_text ?? ''}
-              preSessionCheck={(session.pre_session_check as Record<string, unknown>) ?? {}}
-              canManage={canManageSession}
-              stages={stages.map((s) => ({
-                id: s.id,
-                stage_type: s.stage_type as StageType,
-                scenarioId: s.scenario_id ?? null,
-                title: s.title,
-              }))}
-              scenariosByStageType={scenariosByStageType}
-            />
-            <SessionStages
-              sessionId={session.id}
-              sessionTitle={session.title}
-              initialStages={stages}
-              initialSession={initialSession}
-              ownedModels={ownedModels}
-              participantsByStage={participantsByStage}
-              canManageSession={canManageSession}
-              roomsByStageId={roomsByStageId}
-              orgMembers={orgMembers}
-              upstreamRoomsByStageId={upstreamRoomsByStageId}
-              upstreamStageTypeByStageId={upstreamStageTypeByStageId}
-              myRoomIdByStageId={myRoomIdByStageId}
-              currentUserId={user.id}
-              pickedScenarioByStageId={pickedScenarioByStageId}
-            />
-            <SpotlightTour
-              canManageSession={canManageSession}
-              suppressed={startModelSpotlightActive}
-            />
-            <Suspense fallback={null}>
-              <StartModelSpotlight />
-            </Suspense>
-            <ParticipantCoachMark />
-          </div>
-          {isFacilitator ? (
-            <aside className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
-              <ActiveStageBar
+        <SessionStagesProvider
+          sessionId={session.id}
+          initialStages={stages}
+          initialSession={initialSession}
+        >
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="flex min-w-0 flex-1 flex-col gap-6">
+              <FacilitatorChecklist progress={onboardingProgress} />
+              <PreSessionChecklist
+                sessionId={session.id}
+                sessionStatus={session.status}
+                briefText={session.brief_text ?? ''}
+                preSessionCheck={(session.pre_session_check as Record<string, unknown>) ?? {}}
+                canManage={canManageSession}
+                stages={stages.map((s) => ({
+                  id: s.id,
+                  stage_type: s.stage_type as StageType,
+                  scenarioId: s.scenario_id ?? null,
+                  title: s.title,
+                }))}
+                scenariosByStageType={scenariosByStageType}
+              />
+              <SessionStages
                 sessionId={session.id}
                 sessionTitle={session.title}
-                initialStages={stages}
-                initialSession={initialSession}
+                ownedModels={ownedModels}
                 canManageSession={canManageSession}
+                orgMembers={orgMembers}
+                currentUserId={user.id}
+                stageViewModels={stageViewModels}
               />
-              <div className="min-h-0 flex-1">
-                <FacilitatorNotesCard
+              <SpotlightTour
+                canManageSession={canManageSession}
+                suppressed={startModelSpotlightActive}
+              />
+              <Suspense fallback={null}>
+                <StartModelSpotlight />
+              </Suspense>
+              <ParticipantCoachMark />
+            </div>
+            {isFacilitator ? (
+              <aside className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
+                <ActiveStageBar
                   sessionId={session.id}
-                  initialValue={facilitatorNotes}
-                  fillHeight
+                  sessionTitle={session.title}
+                  canManageSession={canManageSession}
                 />
-              </div>
-            </aside>
-          ) : null}
-        </div>
+                <div className="min-h-0 flex-1">
+                  <FacilitatorNotesCard
+                    sessionId={session.id}
+                    initialValue={facilitatorNotes}
+                    fillHeight
+                  />
+                </div>
+              </aside>
+            ) : null}
+          </div>
+        </SessionStagesProvider>
       </div>
     </main>
   );

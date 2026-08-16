@@ -13,36 +13,11 @@
 
 import { expect, test } from '@playwright/test';
 
-const MAILPIT_BASE_URL = 'http://127.0.0.1:54324';
+import { getMailpitMessage } from './fixtures';
 
 function makeTestEmail(): string {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   return `e2e-mlth-${suffix}@brick-think.test`;
-}
-
-async function getLatestMailpitMessage(
-  addr: string,
-  timeoutMs = 15_000,
-): Promise<{ html: string; text: string }> {
-  const start = Date.now();
-  const url = `${MAILPIT_BASE_URL}/api/v1/search?query=${encodeURIComponent(`to:${addr}`)}`;
-
-  while (Date.now() - start < timeoutMs) {
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = (await res.json()) as { messages?: Array<{ ID: string }> };
-      const message = data.messages?.[0];
-      if (message) {
-        const bodyRes = await fetch(`${MAILPIT_BASE_URL}/api/v1/message/${message.ID}`);
-        if (bodyRes.ok) {
-          const body = (await bodyRes.json()) as { HTML?: string; Text?: string };
-          return { html: body.HTML ?? '', text: body.Text ?? '' };
-        }
-      }
-    }
-    await new Promise((r) => setTimeout(r, 400));
-  }
-  throw new Error(`getLatestMailpitMessage: no email arrived for ${addr} within ${timeoutMs}ms`);
 }
 
 function extractAuthLink(emailBody: string): string {
@@ -70,7 +45,7 @@ test.describe('sign-in magic link uses token-hash flow', () => {
     await expect(page.getByText(/Sign-in link sent/i)).toBeVisible({ timeout: 10_000 });
 
     // 2. Pull the email and assert the link uses /auth/confirm with token_hash.
-    const message = await getLatestMailpitMessage(email);
+    const message = await getMailpitMessage(email, 15_000);
     const body = message.html || message.text;
     expect(body).toContain('/auth/confirm');
     expect(body).toMatch(/token_hash=/);

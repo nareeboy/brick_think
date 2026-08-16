@@ -11,7 +11,8 @@
 //   * RLS: an outsider's RLS-scoped client cannot upload to
 //     'avatars/<owner-uid>/avatar.png'.
 
-import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   cleanupTestUser,
@@ -20,25 +21,7 @@ import {
   signInAs,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('next/navigation', () => ({
-  redirect: (url?: string) => {
-    throw new Error(`__redirect__:${url ?? ''}`);
-  },
-}));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set');
-    return currentClient;
-  }),
-}));
-
-// These imports MUST appear after the vi.mock calls so the action picks up
-// the mocked next/cache and lib/db/server modules.
 import { removeAvatarAction, updateAvatarAction } from '@/app/(authed)/app/account/actions';
 
 interface Fixture {
@@ -70,7 +53,7 @@ afterAll(async () => {
 beforeEach(async () => {
   // Each test signs in fresh; null out so an accidentally-unguarded test
   // throws loudly rather than reusing the previous user.
-  currentClient = null;
+  setActionClient(null);
 });
 
 // PNG magic bytes: 89 50 4E 47 0D 0A 1A 0A. The server validates with
@@ -93,7 +76,7 @@ function formDataWith(blob: Blob): FormData {
 
 describe('updateAvatarAction', () => {
   test('uploads a valid PNG and writes the public URL with a cache-buster', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const result = await updateAvatarAction(formDataWith(fakeBlob('image/png', 4096)));
 
     expect(result.kind).toBe('ok');
@@ -113,20 +96,20 @@ describe('updateAvatarAction', () => {
   });
 
   test('rejects a non-PNG MIME with invalid_image', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const result = await updateAvatarAction(formDataWith(fakeBlob('image/jpeg', 4096)));
     expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
   });
 
   test('rejects a blob over the 512 KB cap with invalid_image', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const oversize = fakeBlob('image/png', 512 * 1024 + 1);
     const result = await updateAvatarAction(formDataWith(oversize));
     expect(result).toEqual({ kind: 'error', reason: 'invalid_image' });
   });
 
   test('rejects a PNG MIME blob with non-PNG magic bytes (anti-spoof)', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const buf = new Uint8Array(4096); // zeroed — no PNG magic
     const lying = new Blob([buf], { type: 'image/png' });
     const fd = new FormData();
@@ -152,7 +135,7 @@ describe('updateAvatarAction', () => {
 describe('removeAvatarAction', () => {
   test('deletes the storage object and nulls avatar_url; idempotent on retry', async () => {
     // Seed: upload first via the action.
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const seeded = await updateAvatarAction(formDataWith(fakeBlob('image/png', 4096)));
     expect(seeded.kind).toBe('ok');
 

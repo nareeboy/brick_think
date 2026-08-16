@@ -1,13 +1,14 @@
 // Integration tests for scenario-actions — facilitator-gated, RLS-scoped.
 //
 // Pattern follows stage-controller.integration.test.ts:
-//   - vi.mock('next/cache') + vi.mock('@/lib/db/server') before the action import
+//   - server-action mocks come from setup.ts (see _helpers/action-mocks.ts);
+//     per-test identity via setActionClient()
 //   - getServiceSupabaseClient() is NOT mocked — works against the real local stack
 //   - Per-test fixture via createTestUser / createTestOrg / createTestSession / addOrgMember
 
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
+import { setActionClient } from './_helpers/action-mocks';
 import {
   addOrgMember,
   cleanupTestUser,
@@ -20,16 +21,6 @@ import {
   type TestSession,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set in test');
-    return currentClient;
-  }),
-}));
 
 import {
   setStageScenarioAction,
@@ -91,7 +82,7 @@ afterAll(async () => {
 
 describe('setStageScenarioAction', () => {
   test('facilitator can pick a scenario for a stage', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setStageScenarioAction(fx.skillBuildingStageId, fx.templateScenarioId);
     expect(result).toEqual({ ok: true });
 
@@ -105,7 +96,7 @@ describe('setStageScenarioAction', () => {
   });
 
   test('passing null clears the pick', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setStageScenarioAction(fx.skillBuildingStageId, null);
     expect(result).toEqual({ ok: true });
     const admin = getAdminClient();
@@ -118,19 +109,19 @@ describe('setStageScenarioAction', () => {
   });
 
   test('non-facilitator participant is refused', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     const result = await setStageScenarioAction(fx.skillBuildingStageId, fx.templateScenarioId);
     expect(result).toEqual({ ok: false, code: 'not_facilitator' });
   });
 
   test('outsider gets stage_not_found (RLS hides the row)', async () => {
-    currentClient = await signInAs(fx.outsider);
+    setActionClient(await signInAs(fx.outsider));
     const result = await setStageScenarioAction(fx.skillBuildingStageId, fx.templateScenarioId);
     expect(result).toEqual({ ok: false, code: 'stage_not_found' });
   });
 
   test('invalid stage uuid', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await setStageScenarioAction('not-a-uuid', fx.templateScenarioId)).toEqual({
       ok: false,
       code: 'invalid_uuid',
@@ -138,7 +129,7 @@ describe('setStageScenarioAction', () => {
   });
 
   test('unknown scenario id', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await setStageScenarioAction(
       fx.skillBuildingStageId,
       '00000000-0000-0000-0000-000000000000',
@@ -147,7 +138,7 @@ describe('setStageScenarioAction', () => {
   });
 
   test('scenario for a different stage_type is refused', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     // Find an individual_model template — won't match the skill_building stage.
     const admin = getAdminClient();
     const wrong = await admin
@@ -165,7 +156,7 @@ describe('setStageScenarioAction', () => {
 
 describe('updateSessionBriefAction', () => {
   test('facilitator writes a brief', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await updateSessionBriefAction(fx.session.id, 'Workshop brief goes here.');
     expect(result).toEqual({ ok: true });
     const admin = getAdminClient();
@@ -174,7 +165,7 @@ describe('updateSessionBriefAction', () => {
   });
 
   test('null clears the brief', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await updateSessionBriefAction(fx.session.id, null)).toEqual({ ok: true });
     const admin = getAdminClient();
     const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
@@ -186,14 +177,14 @@ describe('updateSessionBriefAction', () => {
     const admin = getAdminClient();
     await admin.from('sessions').update({ brief_text: 'prior' }).eq('id', fx.session.id);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await updateSessionBriefAction(fx.session.id, '   ')).toEqual({ ok: true });
     const sess = await admin.from('sessions').select('brief_text').eq('id', fx.session.id).single();
     expect(sess.data?.brief_text).toBeNull();
   });
 
   test('rejects briefs over 4000 chars', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const long = 'a'.repeat(4001);
     expect(await updateSessionBriefAction(fx.session.id, long)).toEqual({
       ok: false,
@@ -202,7 +193,7 @@ describe('updateSessionBriefAction', () => {
   });
 
   test('non-facilitator is refused', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     expect(await updateSessionBriefAction(fx.session.id, 'sneaky')).toEqual({
       ok: false,
       code: 'not_facilitator',
@@ -210,7 +201,7 @@ describe('updateSessionBriefAction', () => {
   });
 
   test('invalid uuid', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await updateSessionBriefAction('not-a-uuid', 'x')).toEqual({
       ok: false,
       code: 'invalid_uuid',
@@ -224,7 +215,7 @@ describe('updatePreSessionCheckAction', () => {
     const admin = getAdminClient();
     await admin.from('sessions').update({ pre_session_check: {} }).eq('id', fx.session.id);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', true);
     expect(result).toEqual({ ok: true });
     const sess = await admin
@@ -242,7 +233,7 @@ describe('updatePreSessionCheckAction', () => {
       .update({ pre_session_check: { a11y_reviewed: true, future_key: 'kept' } })
       .eq('id', fx.session.id);
 
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     const result = await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', false);
     expect(result).toEqual({ ok: true });
     const sess = await admin
@@ -254,7 +245,7 @@ describe('updatePreSessionCheckAction', () => {
   });
 
   test('rejects keys outside the whitelist', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(
       await updatePreSessionCheckAction(
         fx.session.id,
@@ -265,7 +256,7 @@ describe('updatePreSessionCheckAction', () => {
   });
 
   test('rejects non-boolean values', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(
       await updatePreSessionCheckAction(
         fx.session.id,
@@ -276,7 +267,7 @@ describe('updatePreSessionCheckAction', () => {
   });
 
   test('non-facilitator refused', async () => {
-    currentClient = await signInAs(fx.participant);
+    setActionClient(await signInAs(fx.participant));
     expect(await updatePreSessionCheckAction(fx.session.id, 'a11y_reviewed', true)).toEqual({
       ok: false,
       code: 'not_facilitator',
@@ -284,7 +275,7 @@ describe('updatePreSessionCheckAction', () => {
   });
 
   test('invalid uuid', async () => {
-    currentClient = await signInAs(fx.facilitator);
+    setActionClient(await signInAs(fx.facilitator));
     expect(await updatePreSessionCheckAction('nope', 'a11y_reviewed', true)).toEqual({
       ok: false,
       code: 'invalid_uuid',

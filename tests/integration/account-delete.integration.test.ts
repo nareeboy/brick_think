@@ -18,7 +18,8 @@
 //     invalid_input; owned org with members → typed blocked (nothing
 //     deleted); clean account → deletes and redirects to /sign-in.
 
-import { afterAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   addOrgMember,
@@ -30,22 +31,6 @@ import {
   signInAs,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-import type { SupabaseClient } from '@supabase/supabase-js';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('next/navigation', () => ({
-  redirect: (url?: string) => {
-    throw new Error(`__redirect__:${url ?? ''}`);
-  },
-}));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set');
-    return currentClient;
-  }),
-}));
 
 // Import AFTER mocks are registered. lib/account/delete.ts itself uses the
 // real service-role client against the local stack (env from .env.test).
@@ -179,7 +164,7 @@ describe('performAccountDelete', () => {
 describe('deleteAccountAction', () => {
   test('rejects a mismatched confirmation email without deleting anything', async () => {
     const user = await newUser();
-    currentClient = await signInAs(user);
+    setActionClient(await signInAs(user));
 
     const result = await deleteAccountAction('someone-else@brick-think.test');
     expect(result.kind).toBe('invalid_input');
@@ -191,7 +176,7 @@ describe('deleteAccountAction', () => {
     const member = await newUser();
     const org = await createTestOrg({ ownerId: owner.id });
     await addOrgMember({ orgId: org.id, profileId: member.id, role: 'member' });
-    currentClient = await signInAs(owner);
+    setActionClient(await signInAs(owner));
 
     const result = await deleteAccountAction(owner.email);
     expect(result.kind).toBe('blocked');
@@ -204,7 +189,7 @@ describe('deleteAccountAction', () => {
   test('deletes a clean account end-to-end and redirects to sign-in', async () => {
     const user = await newUser();
     const org = await createTestOrg({ ownerId: user.id });
-    currentClient = await signInAs(user);
+    setActionClient(await signInAs(user));
 
     await expect(deleteAccountAction(user.email)).rejects.toThrow(
       '__redirect__:/sign-in?reason=account_deleted',
@@ -218,7 +203,7 @@ describe('deleteAccountAction', () => {
 
   test('confirmation email match is case- and whitespace-insensitive', async () => {
     const user = await newUser();
-    currentClient = await signInAs(user);
+    setActionClient(await signInAs(user));
 
     await expect(deleteAccountAction(`  ${user.email.toUpperCase()}  `)).rejects.toThrow(
       '__redirect__:/sign-in?reason=account_deleted',

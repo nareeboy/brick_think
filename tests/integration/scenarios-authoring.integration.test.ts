@@ -14,7 +14,8 @@
 //     private to the creator, but readable by others once picked into a
 //     stage of a session they can see.
 
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   addOrgMember,
@@ -27,17 +28,6 @@ import {
   type TestOrg,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-import type { SupabaseClient } from '@supabase/supabase-js';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set');
-    return currentClient;
-  }),
-}));
 
 import {
   createScenarioAction,
@@ -82,7 +72,7 @@ afterAll(async () => {
 
 describe('createScenarioAction', () => {
   test('org member creates a scenario in their own org', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const res = await createScenarioAction({ ...draft, orgId: fx.org.id });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -96,13 +86,13 @@ describe('createScenarioAction', () => {
   });
 
   test('creating in a foreign org is refused', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const res = await createScenarioAction({ ...draft, orgId: fx.outsiderOrg.id });
     expect(res).toEqual({ ok: false, code: 'not_org_member' });
   });
 
   test('invalid input is refused before touching the DB', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const res = await createScenarioAction({ ...draft, orgId: fx.org.id, title: '   ' });
     expect(res).toEqual({ ok: false, code: 'invalid_input' });
   });
@@ -138,7 +128,7 @@ describe('createScenarioAction', () => {
 
 describe('updateScenarioAction / deleteScenarioAction', () => {
   async function seedScenario(): Promise<string> {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const res = await createScenarioAction({ ...draft, orgId: fx.org.id });
     if (!res.ok) throw new Error(`seed create failed: ${res.code}`);
     return res.id;
@@ -146,7 +136,7 @@ describe('updateScenarioAction / deleteScenarioAction', () => {
 
   test('creator updates their own scenario', async () => {
     const id = await seedScenario();
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const res = await updateScenarioAction(id, {
       ...draft,
       orgId: fx.org.id,
@@ -167,7 +157,7 @@ describe('updateScenarioAction / deleteScenarioAction', () => {
 
   test('fellow org member cannot update someone else’s scenario', async () => {
     const id = await seedScenario();
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await updateScenarioAction(id, { ...draft, orgId: fx.org.id, title: 'Hijacked' });
     expect(res).toEqual({ ok: false, code: 'not_found_or_not_creator' });
 
@@ -204,7 +194,7 @@ describe('updateScenarioAction / deleteScenarioAction', () => {
 
   test('creator deletes their own scenario', async () => {
     const id = await seedScenario();
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const res = await deleteScenarioAction(id);
     expect(res.ok).toBe(true);
 
@@ -215,7 +205,7 @@ describe('updateScenarioAction / deleteScenarioAction', () => {
 
   test('fellow org member cannot delete someone else’s scenario', async () => {
     const id = await seedScenario();
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await deleteScenarioAction(id);
     expect(res).toEqual({ ok: false, code: 'not_found_or_not_creator' });
 
@@ -227,7 +217,7 @@ describe('updateScenarioAction / deleteScenarioAction', () => {
 
 describe('read isolation', () => {
   test('fellow org member sees the custom row; outsider does not', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const created = await createScenarioAction({ ...draft, orgId: fx.org.id });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -252,7 +242,7 @@ describe('read isolation', () => {
 
 describe('personal scenarios (org_id NULL)', () => {
   test('creating with orgId null lands a personal row', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const res = await createScenarioAction({ ...draft, orgId: null });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -269,7 +259,7 @@ describe('personal scenarios (org_id NULL)', () => {
   });
 
   test('personal rows are private — even fellow org members cannot read them', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const created = await createScenarioAction({ ...draft, orgId: null });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -284,7 +274,7 @@ describe('personal scenarios (org_id NULL)', () => {
   });
 
   test('a personal row becomes readable to session viewers once picked into a stage', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const created = await createScenarioAction({ ...draft, orgId: null });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -318,7 +308,7 @@ describe('personal scenarios (org_id NULL)', () => {
   });
 
   test('creator can update a personal row and move it into an org', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const created = await createScenarioAction({ ...draft, orgId: null });
     expect(created.ok).toBe(true);
     if (!created.ok) return;
@@ -337,7 +327,7 @@ describe('personal scenarios (org_id NULL)', () => {
   });
 
   test('cannot move a personal row into a foreign org', async () => {
-    currentClient = await signInAs(fx.creator);
+    setActionClient(await signInAs(fx.creator));
     const created = await createScenarioAction({ ...draft, orgId: null });
     expect(created.ok).toBe(true);
     if (!created.ok) return;

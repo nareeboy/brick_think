@@ -1,15 +1,16 @@
 // Integration tests for brick-feedback server actions.
 //
-// Pattern mirrors scenarios.integration.test.ts: per-file mock of next/cache
-// and @/lib/db/server so the action calls swap in a freshly signed-in anon
-// client via `currentClient`. RLS is exercised end-to-end — the
+// Pattern mirrors scenarios.integration.test.ts: next/cache and
+// @/lib/db/server are mocked suite-wide in setup.ts, and each test swaps in
+// a freshly signed-in client via setActionClient(). RLS is exercised
+// end-to-end — the
 // can_edit_room walk decides who can react / comment / soft-delete.
 //
 // Fixture has a room-backed shared_model canvas seeded via setSharedModelRooms
 // so both reactions and comments tables behave as in production.
 
-import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import { COMMENT_BODY_MAX } from '@/lib/brickFeedback/palette';
 import {
@@ -25,17 +26,6 @@ import {
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
 
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set in test');
-    return currentClient;
-  }),
-}));
-
-// Imports AFTER mocks register.
 import {
   addCommentAction,
   softDeleteCommentAction,
@@ -78,7 +68,7 @@ beforeAll(async () => {
   // Seed a single shared_model room containing both members. The facilitator
   // is intentionally NOT enrolled so we can exercise the org-member /
   // non-room-member axis cleanly.
-  currentClient = await signInAs(facilitator);
+  setActionClient(await signInAs(facilitator));
   const roomsRes = await setSharedModelRooms({
     stageId: session.stageIds.shared_model,
     rooms: [{ title: 'Team A', profileIds: [member.id, otherMember.id] }],
@@ -127,7 +117,7 @@ beforeEach(async () => {
 
 describe('toggleReactionAction', () => {
   test('adds a reaction when none exists', async () => {
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await toggleReactionAction(fx.modelId, BRICK_ID, '👍');
     expect(res).toEqual({ ok: true, isReacted: true });
 
@@ -143,7 +133,7 @@ describe('toggleReactionAction', () => {
   });
 
   test('toggling an existing reaction removes it', async () => {
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const first = await toggleReactionAction(fx.modelId, BRICK_ID, '❤️');
     expect(first).toEqual({ ok: true, isReacted: true });
 
@@ -162,28 +152,20 @@ describe('toggleReactionAction', () => {
   });
 
   test('invalid emoji is rejected', async () => {
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await toggleReactionAction(fx.modelId, BRICK_ID, '🦄');
     expect(res).toEqual({ ok: false, code: 'invalid_emoji' });
   });
 
   test('non-room-member (org outsider) cannot react', async () => {
-    currentClient = await signInAs(fx.outsider);
+    setActionClient(await signInAs(fx.outsider));
     const res = await toggleReactionAction(fx.modelId, BRICK_ID, '👍');
     expect(res).toEqual({ ok: false, code: 'cannot_edit_room' });
   });
 
   test('unauthenticated caller is rejected', async () => {
     // A brand-new anon client without a signed-in user.
-    const env = {
-      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
-      anon: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    };
-    if (!env.url || !env.anon) throw new Error('test env missing');
-    const { createClient } = await import('@supabase/supabase-js');
-    currentClient = createClient(env.url, env.anon, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
+    setActionClient('anon');
     const res = await toggleReactionAction(fx.modelId, BRICK_ID, '👍');
     expect(res).toEqual({ ok: false, code: 'unauthenticated' });
   });
@@ -191,7 +173,7 @@ describe('toggleReactionAction', () => {
 
 describe('addCommentAction', () => {
   test('inserts a comment and returns its id', async () => {
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await addCommentAction(fx.modelId, BRICK_ID, '  Looks great  ');
     expect(res.ok).toBe(true);
     if (!res.ok) return;
@@ -212,20 +194,20 @@ describe('addCommentAction', () => {
   });
 
   test('empty body (after trim) is rejected', async () => {
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await addCommentAction(fx.modelId, BRICK_ID, '   \n  ');
     expect(res).toEqual({ ok: false, code: 'empty_body' });
   });
 
   test('body over the cap is rejected before DB', async () => {
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const body = 'a'.repeat(COMMENT_BODY_MAX + 1);
     const res = await addCommentAction(fx.modelId, BRICK_ID, body);
     expect(res).toEqual({ ok: false, code: 'over_cap' });
   });
 
   test('non-room-member cannot comment (RLS rejects insert)', async () => {
-    currentClient = await signInAs(fx.outsider);
+    setActionClient(await signInAs(fx.outsider));
     const res = await addCommentAction(fx.modelId, BRICK_ID, 'hello');
     expect(res).toEqual({ ok: false, code: 'cannot_edit_room' });
   });
@@ -251,7 +233,7 @@ describe('softDeleteCommentAction', () => {
   test('author can soft-delete their own comment', async () => {
     const commentId = await seedComment(fx.member);
 
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await softDeleteCommentAction(commentId);
     expect(res).toEqual({ ok: true });
 
@@ -272,7 +254,7 @@ describe('softDeleteCommentAction', () => {
     // the in-room peer here (not the facilitator) because the facilitator
     // is not enrolled in the room, so RLS would hide the row entirely and
     // we'd see `comment_not_found` rather than `not_author`.
-    currentClient = await signInAs(fx.otherMember);
+    setActionClient(await signInAs(fx.otherMember));
     const res = await softDeleteCommentAction(commentId);
     expect(res).toEqual({ ok: false, code: 'not_author' });
 
@@ -293,7 +275,7 @@ describe('softDeleteCommentAction', () => {
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', commentId);
 
-    currentClient = await signInAs(fx.member);
+    setActionClient(await signInAs(fx.member));
     const res = await softDeleteCommentAction(commentId);
     expect(res).toEqual({ ok: false, code: 'already_deleted' });
   });

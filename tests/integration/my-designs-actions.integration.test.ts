@@ -1,8 +1,8 @@
 // Integration coverage for `createDesignAction`.
 //
-// Strategy: vi.mock the Next.js plumbing (`next/cache`, `next/navigation`,
-// and the cookie-based `createServerSupabaseClient`) so the server action
-// can be imported and invoked from Vitest. The mocked client returns a real
+// Strategy: the Next.js plumbing (`next/cache`, `next/navigation`, and the
+// cookie-based `createServerSupabaseClient`) is mocked suite-wide in
+// setup.ts (see _helpers/action-mocks.ts). The mocked client returns a real
 // supabase-js anon client signed in as the test user — so the action's
 // SELECTs, INSERT, and the RLS that gates them all run against the local
 // Supabase stack. End-to-end coverage (button click -> redirect to builder)
@@ -12,8 +12,9 @@
 // cleans them up in `afterAll`, matching sessions-rls and the rest of the
 // integration suite.
 
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
+import { setActionClient } from './_helpers/action-mocks';
 import {
   addOrgMember,
   cleanupTestUser,
@@ -26,37 +27,7 @@ import {
   type TestSession,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Mocks must be declared before importing the action. vi.mock is hoisted
-// above imports by Vitest, so the order in source is symbolic but the
-// `currentClient` reference needs to be a module-level mutable.
-let currentClient: SupabaseClient | null = null;
-const redirects: Array<string | undefined> = [];
-
-vi.mock('next/cache', () => ({
-  revalidatePath: vi.fn(),
-}));
-
-vi.mock('next/navigation', () => ({
-  redirect: (url?: string) => {
-    redirects.push(url);
-    // Match Next's real behaviour: redirect() throws a sentinel so callers
-    // bail out. We use a plain Error and let tests assert on .toThrow.
-    throw new Error(`__redirect__:${url ?? ''}`);
-  },
-}));
-
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) {
-      throw new Error('Test bug: currentClient not set before action call');
-    }
-    return currentClient;
-  }),
-}));
-
-// Import AFTER the mocks so the action picks them up.
 import {
   createDesignAction,
   duplicateToSessionAction,
@@ -97,7 +68,7 @@ afterAll(async () => {
 
 describe('createDesignAction', () => {
   test('personal create (orgId=null, sessionId=null) yields a row with no context', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const id = await createDesignAction({ orgId: null, sessionId: null });
     expect(id).toMatch(/^[0-9a-f-]{36}$/);
 
@@ -119,7 +90,7 @@ describe('createDesignAction', () => {
   });
 
   test('session-scoped create sets session_id + stage_id (skill_building, position 0) and leaves org_id null', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const id = await createDesignAction({
       orgId: fx.org.id,
       sessionId: fx.session.id,
@@ -147,7 +118,7 @@ describe('createDesignAction', () => {
   test('throws when orgId belongs to an org the caller is not a member of', async () => {
     // outsider is not a member of `fx.org`. Construct a fake sessionId-shaped
     // UUID (it won't be reached — the membership check fails first).
-    currentClient = await signInAs(fx.outsider);
+    setActionClient(await signInAs(fx.outsider));
     await expect(
       createDesignAction({
         orgId: fx.org.id,
@@ -162,7 +133,7 @@ describe('duplicateToSessionAction', () => {
     const admin = getAdminClient();
 
     // Create a personal design (no session, no org) for fx.owner.
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const sourceId = await createDesignAction({ orgId: null, sessionId: null });
 
     // Tag the canvas state with a marker so we can prove the copy carried it over.
@@ -175,7 +146,7 @@ describe('duplicateToSessionAction', () => {
       .eq('id', sourceId);
 
     try {
-      currentClient = await signInAs(fx.owner);
+      setActionClient(await signInAs(fx.owner));
       const newId = await duplicateToSessionAction({
         sourceModelId: sourceId,
         orgId: fx.org.id,
@@ -228,11 +199,11 @@ describe('duplicateToSessionAction', () => {
     });
 
     // The sender — fx.owner — creates a personal design.
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const sourceId = await createDesignAction({ orgId: null, sessionId: null });
 
     try {
-      currentClient = await signInAs(fx.owner);
+      setActionClient(await signInAs(fx.owner));
       await expect(
         duplicateToSessionAction({
           sourceModelId: sourceId,
@@ -259,11 +230,11 @@ describe('duplicateToSessionAction', () => {
         role: 'member',
       });
 
-      currentClient = await signInAs(fx.owner);
+      setActionClient(await signInAs(fx.owner));
       const sourceId = await createDesignAction({ orgId: null, sessionId: null });
 
       try {
-        currentClient = await signInAs(otherMember);
+        setActionClient(await signInAs(otherMember));
         await expect(
           duplicateToSessionAction({
             sourceModelId: sourceId,

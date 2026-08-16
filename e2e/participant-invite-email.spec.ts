@@ -8,60 +8,11 @@
 //   4. The UI displays "sent invite" status for the email.
 //   5. Mailpit API confirms the email arrived with the join URL in its body.
 
-import { expect, test } from './fixtures';
-
-const MAILPIT_BASE_URL = 'http://127.0.0.1:54324';
+import { expect, getMailpitMessage, test } from './fixtures';
 
 function makeInviteeEmail(): string {
   const suffix = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   return `e2e-invitee-${suffix}@brick-think.test`;
-}
-
-/**
- * Poll Mailpit's search API to find an email sent to the given address.
- * Returns the full message (HTML/Text body + metadata) when found, or throws
- * after timeout if not found.
- */
-async function getMailpitMessage(
-  addr: string,
-  timeoutMs = 10_000,
-): Promise<{ subject: string; html: string; text: string }> {
-  const start = Date.now();
-  const url = `${MAILPIT_BASE_URL}/api/v1/search?query=${encodeURIComponent(`to:${addr}`)}`;
-
-  while (Date.now() - start < timeoutMs) {
-    try {
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = (await res.json()) as {
-          messages?: Array<{ ID: string; Subject: string }>;
-        };
-        const message = data.messages?.[0];
-        if (message) {
-          const bodyRes = await fetch(`${MAILPIT_BASE_URL}/api/v1/message/${message.ID}`);
-          if (bodyRes.ok) {
-            const bodyData = (await bodyRes.json()) as {
-              Subject?: string;
-              HTML?: string;
-              Text?: string;
-            };
-            return {
-              subject: bodyData.Subject ?? message.Subject,
-              html: bodyData.HTML ?? '',
-              text: bodyData.Text ?? '',
-            };
-          }
-        }
-      }
-    } catch {
-      // Network error; retry.
-    }
-
-    // Wait before retrying.
-    await new Promise((r) => setTimeout(r, 500));
-  }
-
-  throw new Error(`getMailpitMessage: no email arrived for ${addr} within ${timeoutMs}ms`);
 }
 
 test.describe('email invite flow with Mailpit', () => {

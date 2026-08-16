@@ -11,7 +11,8 @@
 //     using/with-check enforces id = auth.uid()), so the outsider can't
 //     overwrite the owner's name even if they bypass our action.
 
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { setActionClient } from './_helpers/action-mocks';
 
 import {
   cleanupTestUser,
@@ -20,22 +21,6 @@ import {
   signInAs,
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
-import type { SupabaseClient } from '@supabase/supabase-js';
-
-let currentClient: SupabaseClient | null = null;
-
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
-vi.mock('next/navigation', () => ({
-  redirect: (url?: string) => {
-    throw new Error(`__redirect__:${url ?? ''}`);
-  },
-}));
-vi.mock('@/lib/db/server', () => ({
-  createServerSupabaseClient: vi.fn(async () => {
-    if (!currentClient) throw new Error('currentClient not set');
-    return currentClient;
-  }),
-}));
 
 import { updateProfileAction } from '@/app/(authed)/app/account/actions';
 
@@ -61,7 +46,7 @@ afterAll(async () => {
 
 describe('updateProfileAction', () => {
   test('saves a trimmed display name and reads back from the profile row', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const result = await updateProfileAction('  Naresh  ');
     expect(result).toEqual({ kind: 'ok', fullName: 'Naresh' });
 
@@ -71,7 +56,7 @@ describe('updateProfileAction', () => {
   });
 
   test('an empty string clears full_name to null', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     await updateProfileAction('Something');
     const cleared = await updateProfileAction('   ');
     expect(cleared).toEqual({ kind: 'ok', fullName: null });
@@ -82,7 +67,7 @@ describe('updateProfileAction', () => {
   });
 
   test('rejects names longer than the 80-character cap with invalid_input', async () => {
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     const result = await updateProfileAction('x'.repeat(81));
     expect(result.kind).toBe('invalid_input');
     if (result.kind === 'invalid_input') {
@@ -92,7 +77,7 @@ describe('updateProfileAction', () => {
 
   test('RLS prevents an outsider from overwriting another user’s name', async () => {
     // First the owner sets their own name.
-    currentClient = await signInAs(fx.owner);
+    setActionClient(await signInAs(fx.owner));
     await updateProfileAction('Owner Name');
 
     // Then the outsider signs in and tries to update the owner's row directly
