@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
@@ -27,7 +28,7 @@ export type StageRoomError =
   | 'unknown_source_room'
   | 'upstream_stage_missing';
 
-export type StageRoomResult<T> = { ok: true; data: T } | { ok: false; code: StageRoomError };
+export type StageRoomResult<T> = ActionResult<T, StageRoomError>;
 
 interface RoomInput {
   /** Optional facilitator-supplied label. Defaults to "Room N". */
