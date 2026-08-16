@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 import { parseCanvasState } from '@/lib/models/canvasState';
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -52,7 +52,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .insert({
       model_id: id,
       label: label && label.length > 0 ? label : null,
-      canvas_state: state as unknown as Json,
+      canvas_state: toJson(state),
       created_by: user.id,
     })
     .select('id, label, created_at')

@@ -256,7 +256,7 @@ describe('removeParticipantAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await removeParticipantAction(fx.session.id, fx.alice.id);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
 
@@ -315,7 +315,7 @@ describe('restoreParticipantAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await restoreParticipantAction(fx.session.id, fx.alice.id);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const partRes = await admin
@@ -361,7 +361,7 @@ describe('setSpotlightAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.session.id, modelId);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     const sessRes = await admin
       .from('sessions')
@@ -382,7 +382,7 @@ describe('setSpotlightAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.session.id, modelId);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const sessRes = await admin
@@ -421,7 +421,7 @@ describe('setSpotlightAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await setSpotlightAction(fx.blankStageSession.id, modelId);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     await admin
       .from('sessions')
@@ -473,10 +473,10 @@ describe('setSpotlightAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const setRes = await setSpotlightAction(fx.session.id, modelId);
-    expect(setRes).toEqual({ ok: true });
+    expect(setRes).toEqual({ ok: true, data: null });
 
     const clearRes = await setSpotlightAction(fx.session.id, null);
-    expect(clearRes).toEqual({ ok: true });
+    expect(clearRes).toEqual({ ok: true, data: null });
 
     const sessRes = await admin
       .from('sessions')
@@ -511,7 +511,7 @@ describe('getSpotlightBannerAction', () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
     setActionClient(await signInAs(fx.facilitator));
-    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true, data: null });
 
     // A viewer who is neither the facilitator nor the owner sees the banner.
     setActionClient(await signInAs(fx.bob));
@@ -535,7 +535,7 @@ describe('getSpotlightBannerAction', () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
     setActionClient(await signInAs(fx.facilitator));
-    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true, data: null });
 
     const result = await getSpotlightBannerAction(fx.session.id);
     expect(result).toBeNull();
@@ -551,7 +551,7 @@ describe('getSpotlightBannerAction', () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
     setActionClient(await signInAs(fx.facilitator));
-    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true, data: null });
 
     setActionClient(await signInAs(fx.alice));
     const result = await getSpotlightBannerAction(fx.session.id);
@@ -567,7 +567,7 @@ describe('getSpotlightBannerAction', () => {
   test('returns room title + isRoom=true for a room canvas, shown to any non-facilitator', async () => {
     const { modelId, roomTitle } = await seedRoomModel(fx.session.stageIds.shared_model, 0);
     setActionClient(await signInAs(fx.facilitator));
-    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true, data: null });
 
     setActionClient(await signInAs(fx.alice));
     const result = await getSpotlightBannerAction(fx.session.id);
@@ -603,7 +603,7 @@ describe('getSpotlightBannerAction', () => {
     const admin = getAdminClient();
     const modelId = await seedParticipantModel(fx.alice, fx.session.stageIds.individual_model);
     setActionClient(await signInAs(fx.facilitator));
-    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true });
+    expect(await setSpotlightAction(fx.session.id, modelId)).toEqual({ ok: true, data: null });
 
     await admin.from('models').delete().eq('id', modelId);
 
@@ -659,9 +659,9 @@ describe('inviteParticipantsByEmailAction', () => {
       goodEmail,
     ]);
     if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
-    expect(result.results[0]).toEqual({ email: 'not-an-email', status: 'invalid_email' });
-    expect(result.results[1]?.email).toBe(goodEmail);
-    expect(result.results[1]?.status).toBe('sent_invite');
+    expect(result.data.results[0]).toEqual({ email: 'not-an-email', status: 'invalid_email' });
+    expect(result.data.results[1]?.email).toBe(goodEmail);
+    expect(result.data.results[1]?.status).toBe('sent_invite');
   });
 
   test('dedupes case-insensitively', async () => {
@@ -671,10 +671,10 @@ describe('inviteParticipantsByEmailAction', () => {
     setActionClient(await signInAs(fx.facilitator));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [email, upper]);
     if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
-    expect(result.results[0]?.email).toBe(email);
-    expect(result.results[0]?.status).toBe('sent_invite');
-    expect(result.results[1]?.email).toBe(email);
-    expect(result.results[1]?.status).toBe('duplicate');
+    expect(result.data.results[0]?.email).toBe(email);
+    expect(result.data.results[0]?.status).toBe('sent_invite');
+    expect(result.data.results[1]?.email).toBe(email);
+    expect(result.data.results[1]?.status).toBe('duplicate');
   });
 
   test('returns already_member for an active participant', async () => {
@@ -683,7 +683,7 @@ describe('inviteParticipantsByEmailAction', () => {
     setActionClient(await signInAs(fx.facilitator));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [fx.alice.email]);
     if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
-    expect(result.results[0]).toEqual({
+    expect(result.data.results[0]).toEqual({
       email: fx.alice.email.toLowerCase(),
       status: 'already_member',
     });
@@ -703,7 +703,7 @@ describe('inviteParticipantsByEmailAction', () => {
     setActionClient(await signInAs(fx.facilitator));
     const result = await inviteParticipantsByEmailAction(fx.session.id, [email]);
     if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
-    expect(result.results[0]).toEqual({ email, status: 'sent_invite' });
+    expect(result.data.results[0]).toEqual({ email, status: 'sent_invite' });
 
     const admin = getAdminClient();
     const row = await admin
@@ -726,7 +726,7 @@ describe('inviteParticipantsByEmailAction', () => {
       setActionClient(await signInAs(fx.facilitator));
       const result = await inviteParticipantsByEmailAction(fx.session.id, [newcomer.email]);
       if (!result.ok) throw new Error(`expected ok, got ${JSON.stringify(result)}`);
-      expect(result.results[0]).toEqual({
+      expect(result.data.results[0]).toEqual({
         email: newcomer.email.toLowerCase(),
         status: 'sent_magiclink',
       });
@@ -776,7 +776,7 @@ describe('cancelInvitationAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await cancelInvitationAction(invitationId);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     const after = await admin
       .from('session_invitations')
@@ -860,7 +860,7 @@ describe('resendInvitationAction', () => {
 
     setActionClient(await signInAs(fx.facilitator));
     const result = await resendInvitationAction(invitationId);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     // Unique-open-invite partial index makes the audit insert a no-op
     // (23505 swallowed) — exactly one row should still exist.

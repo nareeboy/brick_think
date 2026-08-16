@@ -30,11 +30,11 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
     setFeedback(null);
     start(async () => {
       const result: AddMemberResult = await addOrgMemberAction(orgId, trimmed);
-      if (result.kind === 'ok') {
+      if (result.ok && result.data.status === 'added') {
         setEmail('');
         setFeedback({
           kind: 'ok',
-          text: `${result.recipientDisplay} was added to ${result.orgName}.`,
+          text: `${result.data.recipientDisplay} was added to ${result.data.orgName}.`,
         });
         // Admin-side confirmation toast — surfaces a top-level toast in
         // addition to the inline dialog feedback, mirroring the recipient
@@ -45,7 +45,7 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
           id: `local-org-add-${Date.now()}`,
           recipient_profile_id: '',
           kind: 'org_added',
-          title: `${result.recipientDisplay} was added to ${result.orgName}`,
+          title: `${result.data.recipientDisplay} was added to ${result.data.orgName}`,
           body: 'They have been notified.',
           link_url: `/app/workshops/${orgId}`,
           actor_profile_id: null,
@@ -56,18 +56,18 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
         });
         return;
       }
-      if (result.kind === 'invited') {
+      if (result.ok && result.data.status === 'invited') {
         setEmail('');
         setFeedback({
           kind: 'ok',
-          text: `Invitation emailed to ${result.email}. They'll join ${result.orgName} when they sign up.`,
+          text: `Invitation emailed to ${result.data.email}. They'll join ${result.data.orgName} when they sign up.`,
         });
         pushToast({
           id: `local-org-invite-${Date.now()}`,
           recipient_profile_id: '',
           kind: 'org_added',
-          title: `Invite sent to ${result.email}`,
-          body: `They'll join ${result.orgName} after signing up.`,
+          title: `Invite sent to ${result.data.email}`,
+          body: `They'll join ${result.data.orgName} after signing up.`,
           link_url: null,
           actor_profile_id: null,
           org_id: orgId,
@@ -77,29 +77,32 @@ export function AddMemberDialog({ orgId, onClose }: Props) {
         });
         return;
       }
-      if (result.kind === 'invite_pending') {
+      // Both success statuses returned above; this narrows `result` to the
+      // failure arms for the branches below.
+      if (result.ok) return;
+      if (result.code === 'invite_pending') {
         setFeedback({
           kind: 'error',
           text: `An invitation is already pending for ${result.email}.`,
         });
         return;
       }
-      if (result.kind === 'invite_failed') {
+      if (result.code === 'invite_failed') {
         setFeedback({
           kind: 'error',
           text: `Could not send invite email: ${result.message}`,
         });
         return;
       }
-      if (result.kind === 'invalid_input') {
+      if (result.code === 'invalid_input') {
         setFeedback({ kind: 'error', text: 'Please enter an email address.' });
         return;
       }
-      if (result.kind === 'already_member') {
+      if (result.code === 'already_member') {
         setFeedback({ kind: 'error', text: 'They are already a member.' });
         return;
       }
-      if (result.kind === 'forbidden') {
+      if (result.code === 'forbidden') {
         setFeedback({ kind: 'error', text: 'Only admins can add members.' });
       }
     });

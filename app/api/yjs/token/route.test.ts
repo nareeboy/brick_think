@@ -14,7 +14,7 @@ function mockSupabase(opts: {
   user: { id: string } | null;
   modelRow: { id: string } | null;
 }): void {
-  (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (createServerSupabaseClient as ReturnType<typeof vi.fn>).mockResolvedValue({
     auth: { getUser: async () => ({ data: { user: opts.user } }) },
     from: () => ({
       select: () => ({

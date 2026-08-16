@@ -7,17 +7,16 @@
 
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { validateScenarioDraft, type ScenarioDraftInput } from '@/lib/scenarios/authoring';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type ScenarioActionResult =
-  | { ok: true; id: string }
-  | {
-      ok: false;
-      code: 'unauthenticated' | 'invalid_input' | 'not_org_member' | 'not_found_or_not_creator';
-    };
+export type ScenarioActionResult = ActionResult<
+  { id: string },
+  'unauthenticated' | 'invalid_input' | 'not_org_member' | 'not_found_or_not_creator'
+>;
 
 export async function createScenarioAction(
   input: ScenarioDraftInput,
@@ -55,7 +54,7 @@ export async function createScenarioAction(
   }
 
   revalidatePath('/app/scenarios');
-  return { ok: true, id: res.data.id };
+  return { ok: true, data: { id: res.data.id } };
 }
 
 export async function updateScenarioAction(
@@ -98,7 +97,7 @@ export async function updateScenarioAction(
   }
 
   revalidatePath('/app/scenarios');
-  return { ok: true, id };
+  return { ok: true, data: { id } };
 }
 
 export async function deleteScenarioAction(id: string): Promise<ScenarioActionResult> {
@@ -120,5 +119,5 @@ export async function deleteScenarioAction(id: string): Promise<ScenarioActionRe
   }
 
   revalidatePath('/app/scenarios');
-  return { ok: true, id };
+  return { ok: true, data: { id } };
 }

@@ -39,14 +39,14 @@ describe('<BrickImage>', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('renders nothing while the image is loading', () => {
-    (loadBrickImage as unknown as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+    vi.mocked(loadBrickImage).mockReturnValue(new Promise<never>(() => {}));
     const { container } = render(<BrickImage brick={brick} />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders the Konva image with positioning and rotation after load', async () => {
     const fake = { src: '/bricks/1x1.png' } as HTMLImageElement;
-    (loadBrickImage as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(fake);
+    vi.mocked(loadBrickImage).mockResolvedValue(fake);
 
     render(<BrickImage brick={brick} />);
     const node = await screen.findByTestId('kimage');

@@ -204,7 +204,7 @@ describe('thumbnail capture trigger', () => {
         await Promise.resolve();
       });
 
-      const fetchCalls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
+      const fetchCalls = vi.mocked(fetch).mock.calls;
       const thumbnailCall = fetchCalls.find((args: unknown[]) => {
         const url = args[0];
         return typeof url === 'string' && url.includes('/thumbnail');
@@ -458,11 +458,7 @@ describe('multi-select', () => {
       ),
     });
     act(() => result.current.selectBricks(['b2', 'b1']));
-    const states = (
-      result.current.awareness as unknown as {
-        getStates: () => Map<number, { user: { selectedBrickId: string | null } }>;
-      }
-    ).getStates();
+    const states = result.current.awareness!.getStates();
     expect(states.get(42)!.user.selectedBrickId).toBe('b2');
   });
 });
@@ -550,11 +546,7 @@ describe('BuilderProvider awareness publishing', () => {
       result.current.selectBrick('b1');
     });
 
-    const states = (
-      result.current.awareness as unknown as {
-        getStates: () => Map<number, { user: { cursor: unknown; selectedBrickId: string | null } }>;
-      }
-    ).getStates();
+    const states = result.current.awareness!.getStates();
     const self42 = states.get(42)!;
     expect(self42.user.cursor).toEqual({ x: 10, y: 20 });
     expect(self42.user.selectedBrickId).toBe('b1');

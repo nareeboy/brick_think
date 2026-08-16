@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import type { StageActionResult } from '@/app/(authed)/app/sessions/stage-controller-actions';
 import { computeRemainingMs } from '@/lib/sessions/computeRemainingMs';
 import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { StageType } from '@/lib/sessions/types';
@@ -9,12 +10,12 @@ import type { StageType } from '@/lib/sessions/types';
 import type { SessionRow, StageRow } from './useSessionStages';
 
 export type StageActionsBundle = {
-  start: (id: string) => Promise<{ ok: boolean; code?: string }>;
-  pause: (id: string) => Promise<{ ok: boolean; code?: string }>;
-  resume: (id: string) => Promise<{ ok: boolean; code?: string }>;
-  extend: (id: string, seconds: number) => Promise<{ ok: boolean; code?: string }>;
-  advance: (id: string) => Promise<{ ok: boolean; code?: string }>;
-  rollback: (id: string) => Promise<{ ok: boolean; code?: string }>;
+  start: (id: string) => Promise<StageActionResult>;
+  pause: (id: string) => Promise<StageActionResult>;
+  resume: (id: string) => Promise<StageActionResult>;
+  extend: (id: string, seconds: number) => Promise<StageActionResult>;
+  advance: (id: string) => Promise<StageActionResult>;
+  rollback: (id: string) => Promise<StageActionResult>;
 };
 
 type Props = {
@@ -83,14 +84,13 @@ function StageRowCard({
 }) {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const wrap = (fn: () => Promise<{ ok: boolean; code?: string }>) => async () => {
+  const wrap = (fn: () => Promise<StageActionResult>) => async () => {
     setPending(true);
     setErrorMessage(null);
     try {
       const result = await fn();
       if (!result.ok) {
-        const code = (result as { code?: string }).code ?? 'unknown';
-        setErrorMessage(messageForCode(code));
+        setErrorMessage(messageForCode(result.code));
       }
     } catch (err) {
       setErrorMessage('Unexpected error. Refresh to recover.');

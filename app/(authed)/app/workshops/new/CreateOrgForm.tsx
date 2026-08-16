@@ -42,15 +42,15 @@ export function CreateOrgForm() {
     fd.set('slug', trimmedSlug);
     start(async () => {
       const result: CreateOrgResult = await createOrgAction(fd);
-      if (result.kind === 'ok') {
-        router.push(`/app/workshops/${result.orgId}`);
+      if (result.ok) {
+        router.push(`/app/workshops/${result.data.orgId}`);
         return;
       }
-      if (result.kind === 'slug_taken') {
+      if (result.code === 'slug_taken') {
         setError('That slug is already taken. Try another.');
         return;
       }
-      if (result.kind === 'invalid_input') {
+      if (result.code === 'invalid_input') {
         setError(`Invalid ${result.field}.`);
         return;
       }

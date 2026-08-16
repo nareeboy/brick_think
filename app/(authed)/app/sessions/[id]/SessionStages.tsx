@@ -29,6 +29,7 @@ import {
   rollbackStageAction,
   startStageAction,
   updateStageDurationAction,
+  type StageActionResult,
 } from '../stage-controller-actions';
 
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
@@ -622,14 +623,13 @@ function StageTimerControls({
 }) {
   const [pending, setPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const wrap = (fn: () => Promise<{ ok: boolean; code?: string }>) => async () => {
+  const wrap = (fn: () => Promise<StageActionResult>) => async () => {
     setPending(true);
     setErrorMessage(null);
     try {
       const result = await fn();
       if (!result.ok) {
-        const code = (result as { code?: string }).code ?? 'unknown';
-        setErrorMessage(messageForCode(code));
+        setErrorMessage(messageForCode(result.code));
       }
     } catch (err) {
       setErrorMessage('Unexpected error. Refresh to recover.');
@@ -793,7 +793,7 @@ function StageDurationEditor({ stage }: { stage: LiveStageRow }) {
     try {
       const result = await STAGE_ACTIONS.updateDuration(stage.id, seconds);
       if (!result.ok) {
-        setErrorMessage(messageForCode((result as { code?: string }).code ?? 'unknown'));
+        setErrorMessage(messageForCode(result.code));
         return;
       }
       setEditing(false);
@@ -961,7 +961,7 @@ export function EndSessionButton({
     try {
       const result = await STAGE_ACTIONS.endSession(sessionId);
       if (!result.ok) {
-        setErrorMessage(messageForCode((result as { code?: string }).code ?? 'unknown'));
+        setErrorMessage(messageForCode(result.code));
         return;
       }
       setConfirming(false);

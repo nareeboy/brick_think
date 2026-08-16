@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import type { UpdateFacilitatorNotesResult } from '@/app/(authed)/app/sessions/notes-actions';
 import { FACILITATOR_NOTES_MAX } from '@/lib/sessions/facilitatorNotesConstants';
 
 interface Props {
   initialValue: string | null;
-  onSave: (value: string | null) => Promise<{ ok: boolean }>;
+  onSave: (value: string | null) => Promise<UpdateFacilitatorNotesResult>;
   disabled?: boolean;
   ariaLabel?: string;
   // When true, the editor fills its parent's height and the textarea scrolls

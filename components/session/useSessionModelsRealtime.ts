@@ -23,7 +23,7 @@ export function useSessionModelsRealtime(sessionId: string): {
     const cleanupChannel = subscribeAuthedChannel({
       channelKey: `session-models:${sessionId}`,
       attach: (channel) =>
-        channel.on(
+        channel.on<{ id: string }>(
           'postgres_changes',
           {
             event: 'UPDATE',
@@ -33,9 +33,7 @@ export function useSessionModelsRealtime(sessionId: string): {
           },
           (payload) => {
             if (cancelled) return;
-            const next = (payload as unknown as { new?: { id: string } }).new;
-            if (!next?.id) return;
-            const id = next.id;
+            const { id } = payload.new;
             setLastUpdatedAt((prev) => {
               const copy = new Map(prev);
               copy.set(id, Date.now());

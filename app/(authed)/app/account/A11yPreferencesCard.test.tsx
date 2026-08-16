@@ -3,20 +3,20 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('./actions', () => ({
-  updateA11yPreferencesAction: vi.fn().mockResolvedValue({ ok: true }),
+  updateA11yPreferencesAction: vi.fn().mockResolvedValue({ ok: true, data: null }),
 }));
 
 import { updateA11yPreferencesAction } from './actions';
 import { A11yPreferencesCard } from './A11yPreferencesCard';
 
-const mockAction = updateA11yPreferencesAction as unknown as ReturnType<typeof vi.fn>;
+const mockAction = vi.mocked(updateA11yPreferencesAction);
 
 afterEach(() => cleanup());
 
 describe('<A11yPreferencesCard>', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockAction.mockResolvedValue({ ok: true });
+    mockAction.mockResolvedValue({ ok: true, data: null });
   });
 
   it('renders with initialColourblindMode=false → checkbox unchecked', () => {
@@ -52,7 +52,7 @@ describe('<A11yPreferencesCard>', () => {
   });
 
   it('rolls back checkbox state and shows error when action returns { ok: false }', async () => {
-    mockAction.mockResolvedValue({ ok: false, error: 'Save failed' });
+    mockAction.mockResolvedValue({ ok: false, code: 'save_failed', message: 'Save failed' });
 
     render(<A11yPreferencesCard initialColourblindMode={false} />);
     const checkbox = screen.getByTestId('colourblind-mode-toggle') as HTMLInputElement;

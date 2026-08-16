@@ -43,14 +43,12 @@ export function useModelRealtime(
     const cleanup = subscribeAuthedChannel({
       channelKey: `model:${modelId}`,
       attach: (channel) =>
-        channel.on(
+        channel.on<ModelRealtimePayload>(
           'postgres_changes',
           { event: 'UPDATE', schema: 'public', table: 'models', filter: `id=eq.${modelId}` },
           (payload) => {
             if (cancelled) return;
-            const next = (payload as unknown as { new?: ModelRealtimePayload }).new;
-            if (!next) return;
-            onUpdate({ title: next.title, canvas_state: next.canvas_state });
+            onUpdate({ title: payload.new.title, canvas_state: payload.new.canvas_state });
           },
         ),
       onStatus: (status) => {

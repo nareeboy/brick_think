@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { Database } from '@/lib/db/types.generated';
+
 /** Session statuses where an attendee still has a session to walk into. */
 const ACTIVE_SESSION_STATUSES = ['draft', 'scheduled', 'live'] as const;
 
@@ -36,7 +38,7 @@ function toNavSession(s: SessionShape): NavSession {
  * is_org_member self-read on org_memberships.
  */
 export async function getMyActiveSessionsForNav(
-  supabase: SupabaseClient,
+  supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<NavSession[]> {
   const byId = new Map<string, NavSession>();
@@ -50,11 +52,8 @@ export async function getMyActiveSessionsForNav(
     .in('sessions.status', [...ACTIVE_SESSION_STATUSES]);
 
   if (!participantRes.error && participantRes.data) {
-    const rows = participantRes.data as unknown as Array<{
-      sessions: SessionShape | SessionShape[] | null;
-    }>;
-    for (const row of rows) {
-      const s = Array.isArray(row.sessions) ? row.sessions[0] : row.sessions;
+    for (const row of participantRes.data) {
+      const s: SessionShape | null = row.sessions;
       if (s) byId.set(s.id, toNavSession(s));
     }
   }
@@ -74,8 +73,7 @@ export async function getMyActiveSessionsForNav(
       .eq('status', 'live');
 
     if (!orgSessionsRes.error && orgSessionsRes.data) {
-      const rows = orgSessionsRes.data as Array<SessionShape & { facilitator_id: string | null }>;
-      for (const s of rows) {
+      for (const s of orgSessionsRes.data) {
         if (s.facilitator_id === userId) continue; // facilitators navigate via Orgs
         if (!byId.has(s.id)) byId.set(s.id, toNavSession(s));
       }

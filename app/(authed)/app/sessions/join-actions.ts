@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { dispatchParticipantJoinedNotification } from '@/lib/notifications/dispatch';
@@ -25,12 +26,10 @@ import { isValidJoinCodeShape } from '@/lib/sessions/joinCode';
 //                               explain "the facilitator removed you" rather
 //                               than "we couldn't find that code".
 
-export type RedeemJoinCodeResult =
-  | { ok: true; sessionId: string }
-  | {
-      ok: false;
-      code: 'unauthenticated' | 'code_not_found' | 'session_completed' | 'removed_by_facilitator';
-    };
+export type RedeemJoinCodeResult = ActionResult<
+  { sessionId: string },
+  'unauthenticated' | 'code_not_found' | 'session_completed' | 'removed_by_facilitator'
+>;
 
 export async function redeemJoinCodeAction(code: string): Promise<RedeemJoinCodeResult> {
   // Shape check first — no DB round-trip on garbage input. We collapse
@@ -146,7 +145,7 @@ export async function redeemJoinCodeAction(code: string): Promise<RedeemJoinCode
   } catch {
     // no-op — server-component render path doesn't permit revalidatePath
   }
-  return { ok: true, sessionId };
+  return { ok: true, data: { sessionId } };
 }
 
 // Rotate the session's join code — facilitator-only, generates a fresh code and
@@ -157,9 +156,10 @@ export async function redeemJoinCodeAction(code: string): Promise<RedeemJoinCode
 //   * `not_facilitator`  — caller is not the session facilitator
 //   * `session_not_found`— session id is unknown
 
-export type RotateJoinCodeResult =
-  | { ok: true; code: string }
-  | { ok: false; code: 'unauthenticated' | 'not_facilitator' | 'session_not_found' };
+export type RotateJoinCodeResult = ActionResult<
+  { code: string },
+  'unauthenticated' | 'not_facilitator' | 'session_not_found'
+>;
 
 export async function rotateJoinCodeAction(sessionId: string): Promise<RotateJoinCodeResult> {
   const supabase = await createServerSupabaseClient();
@@ -197,5 +197,5 @@ export async function rotateJoinCodeAction(sessionId: string): Promise<RotateJoi
   }
 
   revalidatePath(`/app/sessions/${sessionId}`);
-  return { ok: true, code: newCode };
+  return { ok: true, data: { code: newCode } };
 }

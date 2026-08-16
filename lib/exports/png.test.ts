@@ -6,7 +6,15 @@ import type { CanvasState } from '@/lib/models/types';
 const TRANSPARENT_1X1 =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-const toDataURL = vi.fn(() => TRANSPARENT_1X1);
+interface DataUrlConfig {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  pixelRatio?: number;
+}
+
+const toDataURL = vi.fn((_config?: DataUrlConfig) => TRANSPARENT_1X1);
 const getClientRect = vi.fn(() => ({ x: 0, y: 0, width: 100, height: 50 }));
 
 const fakeLayer = {
@@ -63,6 +71,7 @@ describe('renderCanvasToPngBlob — stage mode', () => {
   it('calls toDataURL with the padded bbox and returns image/png', async () => {
     const blob = await renderCanvasToPngBlob({
       canvasState: sampleState,
+      // eslint-disable-next-line no-restricted-syntax -- minimal Konva.Stage stub; typing the full class is noise
       stage: fakeStage as unknown as Konva.Stage,
       padding: 10,
       pixelRatio: 2,
@@ -71,7 +80,7 @@ describe('renderCanvasToPngBlob — stage mode', () => {
     expect(toDataURL).toHaveBeenCalledTimes(1);
     const firstCall = toDataURL.mock.calls[0];
     expect(firstCall).toBeDefined();
-    const arg = (firstCall as unknown as [Record<string, number>])[0];
+    const arg = firstCall![0]!;
     expect(arg.x).toBe(-10);
     expect(arg.y).toBe(-10);
     expect(arg.width).toBe(120);

@@ -66,7 +66,7 @@ describe('updateFacilitatorNotesAction + getFacilitatorNotes', () => {
   test('facilitator writes and reads back the same string', async () => {
     setActionClient(await signInAs(fx.facilitator));
     const result = await updateFacilitatorNotesAction(fx.session.id, 'Private prep notes.');
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     setActionClient(await signInAs(fx.facilitator));
     const read = await getFacilitatorNotes(fx.session.id);
@@ -82,7 +82,7 @@ describe('updateFacilitatorNotesAction + getFacilitatorNotes', () => {
       .eq('id', fx.session.id);
 
     setActionClient(await signInAs(fx.facilitator));
-    expect(await updateFacilitatorNotesAction(fx.session.id, '')).toEqual({ ok: true });
+    expect(await updateFacilitatorNotesAction(fx.session.id, '')).toEqual({ ok: true, data: null });
 
     setActionClient(await signInAs(fx.facilitator));
     expect(await getFacilitatorNotes(fx.session.id)).toBeNull();
@@ -93,7 +93,10 @@ describe('updateFacilitatorNotesAction + getFacilitatorNotes', () => {
     await admin.from('sessions').update({ facilitator_notes: 'something' }).eq('id', fx.session.id);
 
     setActionClient(await signInAs(fx.facilitator));
-    expect(await updateFacilitatorNotesAction(fx.session.id, '   \n\t  ')).toEqual({ ok: true });
+    expect(await updateFacilitatorNotesAction(fx.session.id, '   \n\t  ')).toEqual({
+      ok: true,
+      data: null,
+    });
 
     setActionClient(await signInAs(fx.facilitator));
     expect(await getFacilitatorNotes(fx.session.id)).toBeNull();
@@ -110,7 +113,7 @@ describe('updateFacilitatorNotesAction + getFacilitatorNotes', () => {
     setActionClient(await signInAs(fx.facilitator));
     const atCap = 'y'.repeat(FACILITATOR_NOTES_MAX);
     const result = await updateFacilitatorNotesAction(fx.session.id, atCap);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     setActionClient(await signInAs(fx.facilitator));
     expect(await getFacilitatorNotes(fx.session.id)).toBe(atCap);

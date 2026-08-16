@@ -1,6 +1,8 @@
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { StageActionResult } from '@/app/(authed)/app/sessions/stage-controller-actions';
+
 import { StageController, type StageActionsBundle } from './StageController';
 
 // No @testing-library/jest-dom in this repo — assert via vanilla DOM API
@@ -34,12 +36,12 @@ const sessionRow = { id: 's', current_stage_id: null, status: 'draft' };
 
 function mockActions() {
   return {
-    start: vi.fn().mockResolvedValue({ ok: true }),
-    pause: vi.fn().mockResolvedValue({ ok: true }),
-    resume: vi.fn().mockResolvedValue({ ok: true }),
-    extend: vi.fn().mockResolvedValue({ ok: true }),
-    advance: vi.fn().mockResolvedValue({ ok: true }),
-    rollback: vi.fn().mockResolvedValue({ ok: true }),
+    start: vi.fn().mockResolvedValue({ ok: true, data: null }),
+    pause: vi.fn().mockResolvedValue({ ok: true, data: null }),
+    resume: vi.fn().mockResolvedValue({ ok: true, data: null }),
+    extend: vi.fn().mockResolvedValue({ ok: true, data: null }),
+    advance: vi.fn().mockResolvedValue({ ok: true, data: null }),
+    rollback: vi.fn().mockResolvedValue({ ok: true, data: null }),
   };
 }
 
@@ -191,11 +193,11 @@ describe('StageController', () => {
   });
 
   it('disables button while action is pending', async () => {
-    let resolveAdvance: ((v: { ok: boolean }) => void) | null = null;
+    let resolveAdvance: ((v: StageActionResult) => void) | null = null;
     const actions: StageActionsBundle = {
       ...mockActions(),
       advance: (_id: string) =>
-        new Promise<{ ok: boolean }>((res) => {
+        new Promise<StageActionResult>((res) => {
           resolveAdvance = res;
         }),
     };
@@ -213,7 +215,8 @@ describe('StageController', () => {
     const button = screen.getByRole('button', { name: /^advance$/i });
     fireEvent.click(button);
     await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(true));
-    if (resolveAdvance !== null) (resolveAdvance as (v: { ok: boolean }) => void)({ ok: true });
+    if (resolveAdvance !== null)
+      (resolveAdvance as (v: StageActionResult) => void)({ ok: true, data: null });
     await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
   });
 });

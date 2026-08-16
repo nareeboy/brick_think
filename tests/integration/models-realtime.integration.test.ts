@@ -84,17 +84,12 @@ describe('models Realtime delivery', () => {
     facClient.realtime.setAuth(token);
 
     const received: Array<{ canvas_state: unknown; title: string }> = [];
-    const channel: RealtimeChannel = facClient
-      .channel(`model:${fx.modelId}`)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'models', filter: `id=eq.${fx.modelId}` },
-        (payload) => {
-          const next = (payload as unknown as { new?: { canvas_state: unknown; title: string } })
-            .new;
-          if (next) received.push(next);
-        },
-      );
+    const channel: RealtimeChannel = facClient.channel(`model:${fx.modelId}`).on<{
+      canvas_state: unknown;
+      title: string;
+    }>('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'models', filter: `id=eq.${fx.modelId}` }, (payload) => {
+      received.push(payload.new);
+    });
 
     try {
       await new Promise<void>((resolve, reject) => {

@@ -167,8 +167,8 @@ export function NarrationParticipantTrigger({ modelId, sessionId, profileId, dis
   async function persist(raw: string): Promise<void> {
     const res = await saveNarration(modelId, raw, speech.durationMs || null);
     if (res.ok) {
-      setSavedTranscript(res.transcript);
-      setSavedCleaned(res.cleaned);
+      setSavedTranscript(res.data.transcript);
+      setSavedCleaned(res.data.cleaned);
       channel.sendAck({ modelId, profileId, state: 'saved' });
       void broadcastNarrationSaved(sessionId);
       setPhase('saved');

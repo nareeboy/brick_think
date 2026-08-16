@@ -153,7 +153,7 @@ describe('stage-controller-actions (integration)', () => {
     const stageId = mustGet(stages, 0, 'stage 0');
 
     // Start
-    expect(await startStageAction(stageId)).toEqual({ ok: true });
+    expect(await startStageAction(stageId)).toEqual({ ok: true, data: null });
 
     const afterStart = await getStageRow(stageId);
     expect(afterStart.status).toBe('active');
@@ -167,7 +167,7 @@ describe('stage-controller-actions (integration)', () => {
 
     // Pause
     const t0 = Date.now();
-    expect(await pauseStageAction(stageId)).toEqual({ ok: true });
+    expect(await pauseStageAction(stageId)).toEqual({ ok: true, data: null });
 
     const afterPause = await getStageRow(stageId);
     expect(afterPause.status).toBe('paused');
@@ -177,7 +177,7 @@ describe('stage-controller-actions (integration)', () => {
     await new Promise((r) => setTimeout(r, 50));
 
     // Resume
-    expect(await resumeStageAction(stageId)).toEqual({ ok: true });
+    expect(await resumeStageAction(stageId)).toEqual({ ok: true, data: null });
 
     const afterResume = await getStageRow(stageId);
     expect(afterResume.status).toBe('active');
@@ -212,8 +212,8 @@ describe('stage-controller-actions (integration)', () => {
     const s0 = mustGet(stages, 0);
     await startStageAction(s0);
 
-    expect(await extendStageAction(s0, 60)).toEqual({ ok: true });
-    expect(await extendStageAction(s0, 60)).toEqual({ ok: true });
+    expect(await extendStageAction(s0, 60)).toEqual({ ok: true, data: null });
+    expect(await extendStageAction(s0, 60)).toEqual({ ok: true, data: null });
 
     const row = await getStageRow(s0);
     expect(row.extended_seconds).toBe(120);
@@ -252,7 +252,7 @@ describe('stage-controller-actions (integration)', () => {
     const s1 = mustGet(stages, 1);
 
     await startStageAction(s0);
-    expect(await advanceStageAction(s0)).toEqual({ ok: true });
+    expect(await advanceStageAction(s0)).toEqual({ ok: true, data: null });
 
     const completedStage = await getStageRow(s0);
     expect(completedStage.status).toBe('completed');
@@ -288,7 +288,7 @@ describe('stage-controller-actions (integration)', () => {
     await advanceStageAction(s0); // s0 → completed; pointer → s1
     await startStageAction(s1); // s1 → active
 
-    expect(await rollbackStageAction(s0)).toEqual({ ok: true });
+    expect(await rollbackStageAction(s0)).toEqual({ ok: true, data: null });
 
     // s0 should be active again with fresh started_at, all runtime cleared
     const target = await getStageRow(s0);
@@ -375,7 +375,7 @@ describe('stage-controller-actions (integration)', () => {
 
     await startStageAction(s0);
     const result = await extendStageAction(s0, 3600);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
   });
 
   // ── not_facilitator: org member who isn't the facilitator ────────────────
@@ -434,7 +434,7 @@ describe('stage-controller-actions (integration)', () => {
     await resumeStageAction(s0);
 
     const result = await resetStageAction(s0);
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const reset = await admin
@@ -471,7 +471,7 @@ describe('stage-controller-actions (integration)', () => {
     await startStageAction(s0);
     await pauseStageAction(s0);
 
-    expect(await resetStageAction(s0)).toEqual({ ok: true });
+    expect(await resetStageAction(s0)).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const row = await admin.from('stages').select('status').eq('id', s0).single();
@@ -495,7 +495,7 @@ describe('stage-controller-actions (integration)', () => {
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
 
-    expect(await updateStageDurationAction(s0, 1800)).toEqual({ ok: true });
+    expect(await updateStageDurationAction(s0, 1800)).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const row = await admin.from('stages').select('duration_seconds').eq('id', s0).single();
@@ -528,8 +528,8 @@ describe('stage-controller-actions (integration)', () => {
     const [s0] = stages;
     if (!s0) throw new Error('stages[0] missing');
 
-    expect(await updateStageDurationAction(s0, 60)).toEqual({ ok: true });
-    expect(await updateStageDurationAction(s0, 7200)).toEqual({ ok: true });
+    expect(await updateStageDurationAction(s0, 60)).toEqual({ ok: true, data: null });
+    expect(await updateStageDurationAction(s0, 7200)).toEqual({ ok: true, data: null });
   });
 
   test('updateStageDuration rejects a stage that is not pending', async () => {
@@ -551,7 +551,7 @@ describe('stage-controller-actions (integration)', () => {
     if (!s0) throw new Error('stages[0] missing');
 
     await startStageAction(s0);
-    expect(await endSessionAction(session.id)).toEqual({ ok: true });
+    expect(await endSessionAction(session.id)).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const sessionRow = await admin
@@ -578,7 +578,7 @@ describe('stage-controller-actions (integration)', () => {
     setActionClient(await signInAs(fx.facilitator));
     const { session } = await freshSession();
 
-    expect(await endSessionAction(session.id)).toEqual({ ok: true });
+    expect(await endSessionAction(session.id)).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const sessionRow = await admin.from('sessions').select('status').eq('id', session.id).single();
@@ -590,7 +590,7 @@ describe('stage-controller-actions (integration)', () => {
     const { session } = await freshSession();
 
     await endSessionAction(session.id);
-    expect(await endSessionAction(session.id)).toEqual({ ok: true });
+    expect(await endSessionAction(session.id)).toEqual({ ok: true, data: null });
   });
 
   test('endSession rejects a non-facilitator', async () => {
@@ -628,7 +628,7 @@ describe('stage-controller-actions (integration)', () => {
     expect(stoppedSession.data?.status).toBe('completed');
 
     // Facilitator clicks Start on the next pending stage to resume.
-    expect(await startStageAction(s1)).toEqual({ ok: true });
+    expect(await startStageAction(s1)).toEqual({ ok: true, data: null });
 
     const resumedSession = await admin
       .from('sessions')
@@ -672,7 +672,7 @@ describe('stage-controller-actions (integration)', () => {
     expect(stopped.data?.extended_seconds).toBe(60);
 
     // Facilitator clicks Start on the same just-stopped stage to revive it.
-    expect(await startStageAction(s0)).toEqual({ ok: true });
+    expect(await startStageAction(s0)).toEqual({ ok: true, data: null });
 
     const revivedStage = await admin
       .from('stages')

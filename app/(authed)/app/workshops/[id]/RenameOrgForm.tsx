@@ -46,20 +46,20 @@ export function RenameOrgForm({ orgId, initialName }: Props) {
     }
     start(async () => {
       const result: RenameOrgResult = await renameOrgAction(orgId, trimmed);
-      if (result.kind === 'ok') {
+      if (result.ok) {
         setEditing(false);
         router.refresh();
         return;
       }
-      if (result.kind === 'invalid_input') {
+      if (result.code === 'invalid_input') {
         setError('Name must be 1–80 characters.');
         return;
       }
-      if (result.kind === 'forbidden') {
+      if (result.code === 'forbidden') {
         setError("You don't have permission to rename this workshop.");
         return;
       }
-      if (result.kind === 'not_found') {
+      if (result.code === 'not_found') {
         setError('This workshop no longer exists.');
         return;
       }

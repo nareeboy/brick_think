@@ -167,7 +167,8 @@ describe('deleteAccountAction', () => {
     setActionClient(await signInAs(user));
 
     const result = await deleteAccountAction('someone-else@brick-think.test');
-    expect(result.kind).toBe('invalid_input');
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe('invalid_input');
     expect(await authUserExists(user.id)).toBe(true);
   });
 
@@ -179,9 +180,11 @@ describe('deleteAccountAction', () => {
     setActionClient(await signInAs(owner));
 
     const result = await deleteAccountAction(owner.email);
-    expect(result.kind).toBe('blocked');
-    if (result.kind === 'blocked') {
+    expect(result.ok).toBe(false);
+    if (!result.ok && result.code === 'blocked') {
       expect(result.reasons.map((r) => r.id)).toEqual([org.id]);
+    } else {
+      throw new Error(`expected blocked, got ${JSON.stringify(result)}`);
     }
     expect(await authUserExists(owner.id)).toBe(true);
   });

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { STAGE_DEFAULT_DURATIONS_SECONDS, defaultModelTitle } from '@/lib/sessions/stage-labels';
 import {
@@ -66,44 +66,25 @@ export async function createSession(formData: FormData): Promise<void> {
     throw new Error('You are not a member of that workshop');
   }
 
-  // Mint a join_code up front so the participant-join flow works the
-  // moment the session exists. Without this every freshly-created session
-  // has join_code = NULL and `/app/join/<code>` can never resolve it.
-  // generate_join_code is a SECURITY DEFINER plpgsql function (see
-  // 20260520200000_session_join_and_roster.sql) that retries up to 16
-  // times for collision; mirrors the pattern used in
-  // /api/test/seed-session/route.ts.
-  const joinCodeRes = await supabase.rpc('generate_join_code');
-  if (joinCodeRes.error || !joinCodeRes.data) {
-    throw new Error(`Failed to generate join code: ${joinCodeRes.error?.message ?? 'unknown'}`);
-  }
-  const joinCode = joinCodeRes.data as string;
-
-  const sessionRes = await supabase
-    .from('sessions')
-    .insert({
-      org_id: orgId,
-      facilitator_id: user.id,
-      title,
-      join_code: joinCode,
-    })
-    .select('id')
-    .single();
-  if (sessionRes.error || !sessionRes.data) {
-    throw new Error(`Failed to create session: ${sessionRes.error?.message}`);
-  }
-  const sessionId = sessionRes.data.id;
-
+  // Atomic create: create_session_with_stages (SECURITY INVOKER plpgsql,
+  // 20260813171336) mints the join code, inserts the session and its stages
+  // in one transaction, so a mid-flight failure can never orphan a 0-stage
+  // session. RLS on sessions/stages still applies (invoker), and the stage
+  // catalog stays TS-owned — passed in as the jsonb payload.
   const stageRows = CANONICAL_STAGE_TYPES.map((stage_type, position) => ({
-    session_id: sessionId,
     stage_type,
     position,
     duration_seconds: STAGE_DEFAULT_DURATIONS_SECONDS[stage_type],
   }));
-  const stagesRes = await supabase.from('stages').insert(stageRows);
-  if (stagesRes.error) {
-    throw new Error(`Failed to create stages: ${stagesRes.error.message}`);
+  const createRes = await supabase.rpc('create_session_with_stages', {
+    p_org_id: orgId,
+    p_title: title,
+    p_stages: stageRows,
+  });
+  if (createRes.error || !createRes.data) {
+    throw new Error(`Failed to create session: ${createRes.error?.message ?? 'unknown'}`);
   }
+  const sessionId = createRes.data;
 
   revalidatePath(`/app/workshops/${orgId}`);
   redirect(`/app/sessions/${sessionId}`);
@@ -224,7 +205,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
 
   // 4. system_model / guiding_principles: rooms are opt-in. If rooms exist on
   //    this stage, route to the caller's transitively-assigned room (via
-  //    public.can_edit_room). If no rooms exist, fall through to the legacy
+  //    public.can_edit_rooms). If no rooms exist, fall through to the legacy
   //    per-participant personal-canvas flow.
   if (stageType === 'system_model' || stageType === 'guiding_principles') {
     const stageRoomsRes = await supabase.from('stage_rooms').select('id').eq('stage_id', stageId);
@@ -243,20 +224,20 @@ export async function createModelInStage(formData: FormData): Promise<void> {
         throw new Error(`Room canvas lookup failed: ${roomModelsRes.error.message}`);
       }
       const svc = getServiceSupabaseClient();
+      const candidateIds = (roomModelsRes.data ?? [])
+        .filter((row) => row.room_id && row.id)
+        .map((row) => row.id);
       let targetModelId: string | null = null;
-      for (const row of roomModelsRes.data ?? []) {
-        if (!row.room_id || !row.id) continue;
-        const rpc = await svc.rpc('can_edit_room', {
+      if (candidateIds.length > 0) {
+        const rpc = await svc.rpc('can_edit_rooms', {
           p_profile_id: user.id,
-          p_model_id: row.id,
+          p_model_ids: candidateIds,
         });
         if (rpc.error) {
-          throw new Error(`can_edit_room failed: ${rpc.error.message}`);
+          throw new Error(`can_edit_rooms failed: ${rpc.error.message}`);
         }
-        if (rpc.data) {
-          targetModelId = row.id;
-          break;
-        }
+        const editable = new Set(rpc.data ?? []);
+        targetModelId = candidateIds.find((id) => editable.has(id)) ?? null;
       }
       if (!targetModelId) {
         throw new Error(
@@ -292,7 +273,7 @@ export async function createModelInStage(formData: FormData): Promise<void> {
     .insert({
       owner_profile_id: user.id,
       title: defaultModelTitle(stageType),
-      canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
+      canvas_state: toJson(EMPTY_CANVAS_STATE),
       session_id: sessionId,
       stage_id: stageId,
     })

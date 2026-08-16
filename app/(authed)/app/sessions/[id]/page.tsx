@@ -105,7 +105,7 @@ export default async function SessionDetailPage({
   if (stagesRes.error) {
     throw new Error(`Failed to load stages: ${stagesRes.error.message}`);
   }
-  const stages = (stagesRes.data ?? []) as unknown as LiveStageRow[];
+  const stages: LiveStageRow[] = stagesRes.data ?? [];
   const completedStageCount = stages.filter((s) => s.status === 'completed').length;
   const initialSession: SessionRow = {
     id: session.id,
@@ -157,7 +157,7 @@ export default async function SessionDetailPage({
     owner_profile_id: string;
     profiles: { email: string; full_name: string | null } | null;
   }
-  const allModels = ((modelsRes.data ?? []) as unknown as ModelRowFromQuery[]).filter(
+  const allModels = ((modelsRes.data ?? []) as ModelRowFromQuery[]).filter(
     (m): m is ModelRowFromQuery & { stage_id: string } => m.stage_id !== null,
   );
   const ownedModels = allModels
@@ -294,10 +294,29 @@ export default async function SessionDetailPage({
     void stageById;
 
     // Compute the current user's room id per stage. shared_model is direct
-    // membership lookup; downstream stages use public.can_edit_room (service
-    // role) on each room's model id. With workshop-scale N (<10 rooms/stage)
-    // the per-room RPC fan-out is cheap.
-    const svc = getServiceSupabaseClient();
+    // membership lookup; downstream stages use public.can_edit_rooms (service
+    // role) — ONE batched RPC over every downstream room model on the page
+    // instead of a serialized can_edit_room round-trip per room.
+    const downstreamModelIds: string[] = [];
+    for (const stage of stages) {
+      const stageType = stage.stage_type as StageType;
+      if (stageType !== 'system_model' && stageType !== 'guiding_principles') continue;
+      for (const room of roomsByStageId[stage.id] ?? []) {
+        downstreamModelIds.push(room.modelId);
+      }
+    }
+    let editableModelIds = new Set<string>();
+    if (downstreamModelIds.length > 0) {
+      const svc = getServiceSupabaseClient();
+      const rpc = await svc.rpc('can_edit_rooms', {
+        p_profile_id: user.id,
+        p_model_ids: downstreamModelIds,
+      });
+      if (rpc.error) {
+        throw new Error(`can_edit_rooms failed: ${rpc.error.message}`);
+      }
+      editableModelIds = new Set(rpc.data ?? []);
+    }
     for (const stage of stages) {
       const stageType = stage.stage_type as StageType;
       const stageRooms = roomsByStageId[stage.id] ?? [];
@@ -311,21 +330,8 @@ export default async function SessionDetailPage({
         continue;
       }
       if (stageType === 'system_model' || stageType === 'guiding_principles') {
-        let assigned: string | null = null;
-        for (const room of stageRooms) {
-          const rpc = await svc.rpc('can_edit_room', {
-            p_profile_id: user.id,
-            p_model_id: room.modelId,
-          });
-          if (rpc.error) {
-            throw new Error(`can_edit_room failed: ${rpc.error.message}`);
-          }
-          if (rpc.data) {
-            assigned = room.id;
-            break;
-          }
-        }
-        myRoomIdByStageId[stage.id] = assigned;
+        const assigned = stageRooms.find((r) => editableModelIds.has(r.modelId)) ?? null;
+        myRoomIdByStageId[stage.id] = assigned?.id ?? null;
         continue;
       }
       myRoomIdByStageId[stage.id] = null;
@@ -344,7 +350,12 @@ export default async function SessionDetailPage({
       .eq('org_id', session.org_id),
     supabase
       .from('session_participants')
-      .select('profile_id, profiles:profile_id ( email, full_name )')
+      // FK-name hint: session_participants has two FKs to profiles
+      // (profile_id, removed_by_profile_id), so a bare column hint is
+      // ambiguous to the type-level query parser.
+      .select(
+        'profile_id, profiles:profiles!session_participants_profile_id_fkey ( email, full_name )',
+      )
       .eq('session_id', session.id)
       .is('removed_at', null),
   ]);
@@ -365,16 +376,10 @@ export default async function SessionDetailPage({
       label: row.profiles?.full_name?.trim() || row.profiles?.email || 'Unknown',
     });
   };
-  for (const row of (orgMembersRes.data ?? []) as unknown as {
-    profile_id: string;
-    profiles: { email: string; full_name: string | null } | null;
-  }[]) {
+  for (const row of orgMembersRes.data ?? []) {
     addRow(row);
   }
-  for (const row of (sessionParticipantsRes.data ?? []) as unknown as {
-    profile_id: string;
-    profiles: { email: string; full_name: string | null } | null;
-  }[]) {
+  for (const row of sessionParticipantsRes.data ?? []) {
     addRow(row);
   }
   // The facilitator observes rooms read-only and never builds in them, so they
@@ -396,7 +401,7 @@ export default async function SessionDetailPage({
   if (scenarioRes.error) {
     throw new Error(`Failed to load scenarios: ${scenarioRes.error.message}`);
   }
-  const allScenarios = (scenarioRes.data ?? []) as unknown as Scenario[];
+  const allScenarios: Scenario[] = scenarioRes.data ?? [];
 
   const scenariosByStageType: Partial<Record<StageType, Scenario[]>> = {};
   const scenarioById = new Map<string, Scenario>();
