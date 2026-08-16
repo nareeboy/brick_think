@@ -42,7 +42,7 @@ export default async function JoinPage({ params }: JoinPageProps) {
   }
 
   const result = await redeemJoinCodeAction(code);
-  if (result.ok) redirect(`/app/sessions/${result.sessionId}`);
+  if (result.ok) redirect(`/app/sessions/${result.data.sessionId}`);
 
   return <NotAvailable reason={result.code} sessionTitle={session.title} />;
 }

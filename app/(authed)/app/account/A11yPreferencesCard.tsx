@@ -21,7 +21,7 @@ export function A11yPreferencesCard({ initialColourblindMode }: Props) {
     startTransition(async () => {
       const res = await updateA11yPreferencesAction(fd);
       if (!res.ok) {
-        setError(res.error);
+        setError(res.message ?? 'Could not save your preference.');
         // Roll back optimistic state so the checkbox reflects truth.
         setColourblindMode(!next);
       }

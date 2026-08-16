@@ -42,16 +42,16 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
     }
     start(async () => {
       const result: DeleteOrgResult = await deleteOrgAction(orgId);
-      if (result.kind === 'ok') {
+      if (result.ok) {
         router.push('/app/workshops');
         router.refresh();
         return;
       }
-      if (result.kind === 'forbidden') {
+      if (result.code === 'forbidden') {
         setError('Only the owner can delete this workshop.');
         return;
       }
-      if (result.kind === 'not_found') {
+      if (result.code === 'not_found') {
         router.push('/app/workshops');
         router.refresh();
         return;

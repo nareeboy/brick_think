@@ -79,9 +79,9 @@ describe('saveNarration (integration)', () => {
 
     expect(res.ok).toBe(true);
     if (!res.ok) throw new Error('expected ok');
-    expect(res.cleanupStatus).toBe('skipped');
-    expect(res.transcript).toBe('spoken words here');
-    expect(res.cleaned).toBe(false);
+    expect(res.data.cleanupStatus).toBe('skipped');
+    expect(res.data.transcript).toBe('spoken words here');
+    expect(res.data.cleaned).toBe(false);
 
     const row = await getAdminClient()
       .from('model_narrations')
@@ -133,8 +133,8 @@ describe('saveNarration (integration)', () => {
     expect(res.ok).toBe(true);
     if (!res.ok) throw new Error('expected ok');
     // Open-core stub: no cleanup ever runs.
-    expect(res.cleaned).toBe(false);
-    expect(res.cleanupStatus).toBe('skipped');
-    expect(res.transcript).toBe('attendee telling their story');
+    expect(res.data.cleaned).toBe(false);
+    expect(res.data.cleanupStatus).toBe('skipped');
+    expect(res.data.transcript).toBe('attendee telling their story');
   });
 });

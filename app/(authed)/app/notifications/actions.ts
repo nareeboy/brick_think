@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
-import type { NotificationRow } from '@/lib/notifications/types';
+import type { NotificationKind, NotificationRow } from '@/lib/notifications/types';
 
 async function requireUserId(): Promise<string> {
   const supabase = await createServerSupabaseClient();
@@ -63,10 +63,13 @@ export async function fetchRecentNotifications(limit = 20): Promise<Notification
     )
     .eq('recipient_profile_id', userId)
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(limit)
+    // The DB column is plain text; narrow it to the NotificationKind union the
+    // app-level row type declares.
+    .overrideTypes<Array<{ kind: NotificationKind }>>();
   if (error) {
     console.error('fetchRecentNotifications failed', error);
     return [];
   }
-  return (data ?? []) as unknown as NotificationRow[];
+  return data ?? [];
 }

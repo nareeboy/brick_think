@@ -26,7 +26,7 @@ import {
   type TestUser,
 } from '@/lib/testing/supabase-test-client';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 
 const PAGE_SIZE = 24;
 const TOTAL_DESIGNS = 30;
@@ -50,12 +50,12 @@ beforeAll(async () => {
   const ownerRows = Array.from({ length: TOTAL_DESIGNS }, (_, i) => ({
     owner_profile_id: fx.owner.id,
     title: `Design ${String(i + 1).padStart(3, '0')}`,
-    canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
+    canvas_state: toJson(EMPTY_CANVAS_STATE),
   }));
   const outsiderRows = Array.from({ length: 5 }, (_, i) => ({
     owner_profile_id: fx.outsider.id,
     title: `Outsider ${i + 1}`,
-    canvas_state: EMPTY_CANVAS_STATE as unknown as Json,
+    canvas_state: toJson(EMPTY_CANVAS_STATE),
   }));
   const ownerIns = await admin.from('models').insert(ownerRows);
   if (ownerIns.error) throw new Error(`seed owner failed: ${ownerIns.error.message}`);

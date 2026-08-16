@@ -27,6 +27,7 @@ function makeMockAwareness(peers: Map<number, { user: PeerUser }>): {
     clientID: 1,
   };
   return {
+    // eslint-disable-next-line no-restricted-syntax -- minimal Awareness stub; typing the full class is noise
     awareness: mock as unknown as Awareness,
     notify: () => listeners.forEach((cb) => cb()),
   };

@@ -127,7 +127,7 @@ export function NotificationsProvider({ profileId, initial, children }: Props) {
       channelKey: `notifications:${profileId}`,
       attach: (channel) =>
         channel
-          .on(
+          .on<NotificationRow>(
             'postgres_changes',
             {
               event: 'INSERT',
@@ -137,8 +137,7 @@ export function NotificationsProvider({ profileId, initial, children }: Props) {
             },
             (payload) => {
               if (cancelled) return;
-              const next = (payload as unknown as { new?: NotificationRow }).new;
-              if (!next) return;
+              const next = payload.new;
               setNotifications((prev) => {
                 if (prev.some((n) => n.id === next.id)) return prev;
                 return [next, ...prev];
@@ -150,7 +149,7 @@ export function NotificationsProvider({ profileId, initial, children }: Props) {
               }
             },
           )
-          .on(
+          .on<NotificationRow>(
             'postgres_changes',
             {
               event: 'UPDATE',
@@ -160,8 +159,7 @@ export function NotificationsProvider({ profileId, initial, children }: Props) {
             },
             (payload) => {
               if (cancelled) return;
-              const next = (payload as unknown as { new?: NotificationRow }).new;
-              if (!next) return;
+              const next = payload.new;
               setNotifications((prev) => prev.map((n) => (n.id === next.id ? next : n)));
             },
           ),

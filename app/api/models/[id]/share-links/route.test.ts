@@ -6,7 +6,7 @@ import { createServerSupabaseClient } from '@/lib/db/server';
 import { GET } from './route';
 
 function mockSupabase(opts: { user: { id: string } | null; rows: unknown[] }) {
-  (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+  (createServerSupabaseClient as ReturnType<typeof vi.fn>).mockResolvedValue({
     auth: { getUser: async () => ({ data: { user: opts.user } }) },
     from: () => ({
       select: () => ({

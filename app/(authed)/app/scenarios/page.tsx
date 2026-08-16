@@ -39,7 +39,7 @@ export default async function ScenariosPage() {
   if (res.error) {
     throw new Error(`Failed to load scenarios: ${res.error.message}`);
   }
-  const allVisible = (res.data ?? []) as unknown as Scenario[];
+  const allVisible: Scenario[] = res.data ?? [];
 
   // Workshops the caller belongs to — the editor's destination options and
   // the org-name labels on custom-scenario chips.

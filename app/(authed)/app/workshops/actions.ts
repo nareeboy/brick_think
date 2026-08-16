@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
@@ -20,9 +21,8 @@ async function requireUser() {
 }
 
 export type CreateOrgResult =
-  | { kind: 'ok'; orgId: string }
-  | { kind: 'invalid_input'; field: 'name' | 'slug' }
-  | { kind: 'slug_taken' };
+  | ActionResult<{ orgId: string }, 'slug_taken'>
+  | { ok: false; code: 'invalid_input'; field: 'name' | 'slug' };
 
 export async function createOrgAction(formData: FormData): Promise<CreateOrgResult> {
   const { user } = await requireUser();
@@ -30,10 +30,10 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
   const slug = String(formData.get('slug') ?? '').trim();
 
   if (name.length < 1 || name.length > 80) {
-    return { kind: 'invalid_input', field: 'name' };
+    return { ok: false, code: 'invalid_input', field: 'name' };
   }
   if (!isValidSlug(slug)) {
-    return { kind: 'invalid_input', field: 'slug' };
+    return { ok: false, code: 'invalid_input', field: 'slug' };
   }
 
   // Service-role insert: the application-level invariant (owner_id = user.id) is
@@ -49,29 +49,33 @@ export async function createOrgAction(formData: FormData): Promise<CreateOrgResu
     .select('id')
     .single();
   if (error) {
-    if (error.code === '23505') return { kind: 'slug_taken' };
+    if (error.code === '23505') return { ok: false, code: 'slug_taken' };
     throw new Error(`Failed to create workshop: ${error.message}`);
   }
   if (!data) throw new Error('Failed to create workshop: no id returned');
 
   revalidatePath('/app/workshops');
   revalidatePath('/app/my-designs');
-  return { kind: 'ok', orgId: data.id };
+  return { ok: true, data: { orgId: data.id } };
 }
 
+/**
+ * Success is itself two-fold (existing user added vs invite emailed) —
+ * discriminated by `data.status`. `invite_pending` is a failure code carrying
+ * the email so the dialog can echo it back.
+ */
 export type AddMemberResult =
-  | { kind: 'ok'; recipientDisplay: string; orgName: string }
-  | { kind: 'invited'; email: string; orgName: string }
-  | { kind: 'invite_pending'; email: string }
-  | { kind: 'invalid_input' }
-  | { kind: 'already_member' }
-  | { kind: 'forbidden' }
-  | { kind: 'invite_failed'; message: string };
+  | ActionResult<
+      | { status: 'added'; recipientDisplay: string; orgName: string }
+      | { status: 'invited'; email: string; orgName: string },
+      'invalid_input' | 'already_member' | 'forbidden' | 'invite_failed'
+    >
+  | { ok: false; code: 'invite_pending'; email: string };
 
 export async function addOrgMemberAction(orgId: string, email: string): Promise<AddMemberResult> {
   const { supabase, user } = await requireUser();
   const trimmed = email.trim();
-  if (trimmed.length === 0) return { kind: 'invalid_input' };
+  if (trimmed.length === 0) return { ok: false, code: 'invalid_input' };
 
   // The caller must be an org admin/owner to add anyone. We hand-roll this
   // check up front so the unknown-email invite path doesn't leak the
@@ -85,7 +89,7 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
     .maybeSingle();
   if (adminProbeError) throw new Error(`Auth check failed: ${adminProbeError.message}`);
   if (!adminProbe || (adminProbe.role !== 'owner' && adminProbe.role !== 'admin')) {
-    return { kind: 'forbidden' };
+    return { ok: false, code: 'forbidden' };
   }
 
   const service = getServiceSupabaseClient();
@@ -122,14 +126,14 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
       .eq('org_id', orgId)
       .eq('profile_id', profile.id);
     if (countError) throw new Error(`Membership check failed: ${countError.message}`);
-    if ((count ?? 0) > 0) return { kind: 'already_member' };
+    if ((count ?? 0) > 0) return { ok: false, code: 'already_member' };
 
     const { error: insertError } = await supabase
       .from('org_memberships')
       .insert({ org_id: orgId, profile_id: profile.id, role: 'member' });
     if (insertError) {
-      if (insertError.code === '42501') return { kind: 'forbidden' };
-      if (insertError.code === '23505') return { kind: 'already_member' };
+      if (insertError.code === '42501') return { ok: false, code: 'forbidden' };
+      if (insertError.code === '23505') return { ok: false, code: 'already_member' };
       throw new Error(`Add member failed: ${insertError.message}`);
     }
 
@@ -147,7 +151,7 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
     });
 
     revalidatePath(`/app/workshops/${orgId}`);
-    return { kind: 'ok', recipientDisplay, orgName };
+    return { ok: true, data: { status: 'added', recipientDisplay, orgName } };
   }
 
   // No profile → send an invite. Idempotent on the (org_id, email) unique
@@ -159,7 +163,9 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
     invited_by: user.id,
   });
   if (inviteInsertError) {
-    if (inviteInsertError.code === '23505') return { kind: 'invite_pending', email: trimmed };
+    if (inviteInsertError.code === '23505') {
+      return { ok: false, code: 'invite_pending', email: trimmed };
+    }
     throw new Error(`Invite create failed: ${inviteInsertError.message}`);
   }
 
@@ -180,11 +186,11 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
       .eq('org_id', orgId)
       .eq('email', trimmed)
       .is('claimed_at', null);
-    return { kind: 'invite_failed', message: inviteRes.error.message };
+    return { ok: false, code: 'invite_failed', message: inviteRes.error.message };
   }
 
   revalidatePath(`/app/workshops/${orgId}`);
-  return { kind: 'invited', email: trimmed, orgName };
+  return { ok: true, data: { status: 'invited', email: trimmed, orgName } };
 }
 
 export async function removeOrgMemberAction(orgId: string, profileId: string): Promise<void> {
@@ -204,17 +210,13 @@ export async function removeOrgMemberAction(orgId: string, profileId: string): P
   revalidatePath('/app/my-designs');
 }
 
-export type RenameOrgResult =
-  | { kind: 'ok' }
-  | { kind: 'invalid_input' }
-  | { kind: 'forbidden' }
-  | { kind: 'not_found' };
+export type RenameOrgResult = ActionResult<null, 'invalid_input' | 'forbidden' | 'not_found'>;
 
 export async function renameOrgAction(orgId: string, name: string): Promise<RenameOrgResult> {
   const { supabase } = await requireUser();
   const trimmed = name.trim();
   if (trimmed.length < 1 || trimmed.length > 80) {
-    return { kind: 'invalid_input' };
+    return { ok: false, code: 'invalid_input' };
   }
 
   // RLS restricts UPDATE to admins/owners. A row only comes back from
@@ -226,7 +228,7 @@ export async function renameOrgAction(orgId: string, name: string): Promise<Rena
     .eq('id', orgId)
     .select('id');
   if (error) {
-    if (error.code === '42501') return { kind: 'forbidden' };
+    if (error.code === '42501') return { ok: false, code: 'forbidden' };
     throw new Error(`Rename failed: ${error.message}`);
   }
   if (!data || data.length === 0) {
@@ -234,16 +236,16 @@ export async function renameOrgAction(orgId: string, name: string): Promise<Rena
       .from('organisations')
       .select('id', { count: 'exact', head: true })
       .eq('id', orgId);
-    return (count ?? 0) === 0 ? { kind: 'not_found' } : { kind: 'forbidden' };
+    return (count ?? 0) === 0 ? { ok: false, code: 'not_found' } : { ok: false, code: 'forbidden' };
   }
 
   revalidatePath('/app/workshops');
   revalidatePath(`/app/workshops/${orgId}`);
   revalidatePath('/app/my-designs');
-  return { kind: 'ok' };
+  return { ok: true, data: null };
 }
 
-export type DeleteOrgResult = { kind: 'ok' } | { kind: 'forbidden' } | { kind: 'not_found' };
+export type DeleteOrgResult = ActionResult<null, 'forbidden' | 'not_found'>;
 
 export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
   const { supabase } = await requireUser();
@@ -258,7 +260,7 @@ export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
     .eq('id', orgId)
     .select('id');
   if (error) {
-    if (error.code === '42501') return { kind: 'forbidden' };
+    if (error.code === '42501') return { ok: false, code: 'forbidden' };
     throw new Error(`Delete failed: ${error.message}`);
   }
   if (!data || data.length === 0) {
@@ -266,10 +268,10 @@ export async function deleteOrgAction(orgId: string): Promise<DeleteOrgResult> {
       .from('organisations')
       .select('id', { count: 'exact', head: true })
       .eq('id', orgId);
-    return (count ?? 0) === 0 ? { kind: 'not_found' } : { kind: 'forbidden' };
+    return (count ?? 0) === 0 ? { ok: false, code: 'not_found' } : { ok: false, code: 'forbidden' };
   }
 
   revalidatePath('/app/workshops');
   revalidatePath('/app/my-designs');
-  return { kind: 'ok' };
+  return { ok: true, data: null };
 }

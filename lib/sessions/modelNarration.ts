@@ -100,14 +100,6 @@ export async function getMyNarration(
   return mapNarrationRow(data as NarrationRow);
 }
 
-interface CombinedRow {
-  model_id: string;
-  transcript: string;
-  cleaned: boolean;
-  created_at: string;
-  profile: { full_name: string | null; email: string | null } | null;
-}
-
 /**
  * Batch read of COMBINED narrations for a set of models, keyed by model id.
  * Service-role with NO per-model read gate — the CALLER must already be
@@ -133,7 +125,7 @@ export async function getCombinedNarrationsForModelIds(
     string,
     Array<{ speakerName: string; transcript: string; cleaned: boolean }>
   >();
-  for (const raw of (data ?? []) as unknown as CombinedRow[]) {
+  for (const raw of data ?? []) {
     const speakerName = raw.profile?.full_name?.trim() || raw.profile?.email || 'Participant';
     const list = byModel.get(raw.model_id) ?? [];
     list.push({ speakerName, transcript: raw.transcript, cleaned: raw.cleaned });

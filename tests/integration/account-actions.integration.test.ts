@@ -48,7 +48,7 @@ describe('updateProfileAction', () => {
   test('saves a trimmed display name and reads back from the profile row', async () => {
     setActionClient(await signInAs(fx.owner));
     const result = await updateProfileAction('  Naresh  ');
-    expect(result).toEqual({ kind: 'ok', fullName: 'Naresh' });
+    expect(result).toEqual({ ok: true, data: { fullName: 'Naresh' } });
 
     const admin = getAdminClient();
     const verify = await admin.from('profiles').select('full_name').eq('id', fx.owner.id).single();
@@ -59,7 +59,7 @@ describe('updateProfileAction', () => {
     setActionClient(await signInAs(fx.owner));
     await updateProfileAction('Something');
     const cleared = await updateProfileAction('   ');
-    expect(cleared).toEqual({ kind: 'ok', fullName: null });
+    expect(cleared).toEqual({ ok: true, data: { fullName: null } });
 
     const admin = getAdminClient();
     const verify = await admin.from('profiles').select('full_name').eq('id', fx.owner.id).single();
@@ -69,9 +69,10 @@ describe('updateProfileAction', () => {
   test('rejects names longer than the 80-character cap with invalid_input', async () => {
     setActionClient(await signInAs(fx.owner));
     const result = await updateProfileAction('x'.repeat(81));
-    expect(result.kind).toBe('invalid_input');
-    if (result.kind === 'invalid_input') {
-      expect(result.reason).toMatch(/80/);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.code).toBe('invalid_input');
+      expect(result.message).toMatch(/80/);
     }
   });
 

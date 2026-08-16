@@ -115,11 +115,11 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
 
     startTransition(async () => {
       const result = await updateAvatarAction(fd);
-      if (result.kind === 'ok') {
-        onUploaded(result.url);
+      if (result.ok) {
+        onUploaded(result.data.url);
         onClose();
       } else {
-        setError(reasonToMessage(result.reason));
+        setError(messageForCode(result.code));
       }
     });
   }
@@ -276,13 +276,10 @@ export function AvatarUploadDialog({ open, currentName, onClose, onUploaded }: P
   );
 }
 
-function reasonToMessage(reason: string): string {
-  if (reason === 'invalid_image')
-    return 'That image could not be used. Please try a different one.';
-  if (reason.startsWith('upload_failed:')) return 'Upload failed. Please try again.';
-  if (reason.startsWith('profile_update_failed:'))
-    return 'Could not save your photo. Please try again.';
-  return 'Something went wrong. Please try again.';
+function messageForCode(code: 'invalid_image' | 'upload_failed' | 'profile_update_failed'): string {
+  if (code === 'invalid_image') return 'That image could not be used. Please try a different one.';
+  if (code === 'upload_failed') return 'Upload failed. Please try again.';
+  return 'Could not save your photo. Please try again.';
 }
 
 async function rasterise(imageSrc: string, area: Area): Promise<Blob> {

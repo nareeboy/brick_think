@@ -23,7 +23,7 @@ type ErrorCode = 'mic_denied' | 'no_speech_detected' | 'unknown' | null;
 
 function getCtor(): (new () => SpeechRecognitionLike) | null {
   if (typeof window === 'undefined') return null;
-  const w = window as unknown as {
+  const w = window as {
     SpeechRecognition?: new () => SpeechRecognitionLike;
     webkitSpeechRecognition?: new () => SpeechRecognitionLike;
   };

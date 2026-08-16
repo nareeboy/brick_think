@@ -78,7 +78,7 @@ describe('createScenarioAction', () => {
     if (!res.ok) return;
 
     const admin = getAdminClient();
-    const row = await admin.from('scenarios').select('*').eq('id', res.id).single();
+    const row = await admin.from('scenarios').select('*').eq('id', res.data.id).single();
     expect(row.data?.created_by).toBe(fx.creator.id);
     expect(row.data?.org_id).toBe(fx.org.id);
     expect(row.data?.is_template).toBe(false);
@@ -131,7 +131,7 @@ describe('updateScenarioAction / deleteScenarioAction', () => {
     setActionClient(await signInAs(fx.creator));
     const res = await createScenarioAction({ ...draft, orgId: fx.org.id });
     if (!res.ok) throw new Error(`seed create failed: ${res.code}`);
-    return res.id;
+    return res.data.id;
   }
 
   test('creator updates their own scenario', async () => {
@@ -226,7 +226,7 @@ describe('read isolation', () => {
     const memberRead = await memberClient
       .from('scenarios')
       .select('id')
-      .eq('id', created.id)
+      .eq('id', created.data.id)
       .maybeSingle();
     expect(memberRead.data).not.toBeNull();
 
@@ -234,7 +234,7 @@ describe('read isolation', () => {
     const outsiderRead = await outsiderClient
       .from('scenarios')
       .select('id')
-      .eq('id', created.id)
+      .eq('id', created.data.id)
       .maybeSingle();
     expect(outsiderRead.data).toBeNull();
   });
@@ -251,7 +251,7 @@ describe('personal scenarios (org_id NULL)', () => {
     const row = await admin
       .from('scenarios')
       .select('org_id, created_by, is_template')
-      .eq('id', res.id)
+      .eq('id', res.data.id)
       .single();
     expect(row.data?.org_id).toBeNull();
     expect(row.data?.created_by).toBe(fx.creator.id);
@@ -268,7 +268,7 @@ describe('personal scenarios (org_id NULL)', () => {
     const read = await memberClient
       .from('scenarios')
       .select('id')
-      .eq('id', created.id)
+      .eq('id', created.data.id)
       .maybeSingle();
     expect(read.data).toBeNull();
   });
@@ -283,7 +283,7 @@ describe('personal scenarios (org_id NULL)', () => {
     const admin = getAdminClient();
     const upd = await admin
       .from('stages')
-      .update({ scenario_id: created.id })
+      .update({ scenario_id: created.data.id })
       .eq('id', session.stageIds.individual_model);
     expect(upd.error).toBeNull();
 
@@ -293,7 +293,7 @@ describe('personal scenarios (org_id NULL)', () => {
     const read = await memberClient
       .from('scenarios')
       .select('id, title')
-      .eq('id', created.id)
+      .eq('id', created.data.id)
       .maybeSingle();
     expect(read.data).not.toBeNull();
 
@@ -302,7 +302,7 @@ describe('personal scenarios (org_id NULL)', () => {
     const outsiderRead = await outsiderClient
       .from('scenarios')
       .select('id')
-      .eq('id', created.id)
+      .eq('id', created.data.id)
       .maybeSingle();
     expect(outsiderRead.data).toBeNull();
   });
@@ -313,7 +313,7 @@ describe('personal scenarios (org_id NULL)', () => {
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
-    const moved = await updateScenarioAction(created.id, {
+    const moved = await updateScenarioAction(created.data.id, {
       ...draft,
       orgId: fx.org.id,
       title: 'Promoted to the workshop',
@@ -321,7 +321,11 @@ describe('personal scenarios (org_id NULL)', () => {
     expect(moved.ok).toBe(true);
 
     const admin = getAdminClient();
-    const row = await admin.from('scenarios').select('org_id, title').eq('id', created.id).single();
+    const row = await admin
+      .from('scenarios')
+      .select('org_id, title')
+      .eq('id', created.data.id)
+      .single();
     expect(row.data?.org_id).toBe(fx.org.id);
     expect(row.data?.title).toBe('Promoted to the workshop');
   });
@@ -332,11 +336,11 @@ describe('personal scenarios (org_id NULL)', () => {
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
-    const res = await updateScenarioAction(created.id, { ...draft, orgId: fx.outsiderOrg.id });
+    const res = await updateScenarioAction(created.data.id, { ...draft, orgId: fx.outsiderOrg.id });
     expect(res.ok).toBe(false);
 
     const admin = getAdminClient();
-    const row = await admin.from('scenarios').select('org_id').eq('id', created.id).single();
+    const row = await admin.from('scenarios').select('org_id').eq('id', created.data.id).single();
     expect(row.data?.org_id).toBeNull();
   });
 });

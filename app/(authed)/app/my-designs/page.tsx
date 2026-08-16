@@ -238,7 +238,7 @@ export default async function MyDesignsPage({
     }
     throw new Error(`Failed to load designs: ${error.message}`);
   }
-  const rows = (data ?? []) as unknown as RawRow[];
+  const rows: RawRow[] = data ?? [];
   const totalCount = count ?? rows.length;
 
   const trashRes = await trashCountPromise;
@@ -263,7 +263,7 @@ export default async function MyDesignsPage({
     if (sRes.error) {
       throw new Error(`Failed to load sessions: ${sRes.error.message}`);
     }
-    for (const row of (sRes.data ?? []) as unknown as SessionLookupRow[]) {
+    for (const row of sRes.data ?? []) {
       sessionById.set(row.id, row);
     }
   }

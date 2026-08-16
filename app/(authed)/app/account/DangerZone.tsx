@@ -14,7 +14,9 @@ export function DangerZone({ email }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [blocked, setBlocked] = useState<DeleteAccountResult | null>(null);
+  const [blocked, setBlocked] = useState<Extract<DeleteAccountResult, { code: 'blocked' }> | null>(
+    null,
+  );
   const [pending, start] = useTransition();
   const titleId = useId();
 
@@ -32,15 +34,15 @@ export function DangerZone({ email }: Props) {
     start(async () => {
       try {
         const result = await deleteAccountAction(typed);
-        if (result.kind === 'invalid_input') {
-          setError(result.reason);
+        if (!result.ok && result.code === 'invalid_input') {
+          setError(result.message ?? 'Could not delete account.');
           return;
         }
-        if (result.kind === 'blocked') {
+        if (!result.ok && result.code === 'blocked') {
           setBlocked(result);
           return;
         }
-        // 'ok' won't reach here — the action redirects.
+        // ok won't reach here — the action redirects.
       } catch (err) {
         // NEXT_REDIRECT throws are the success path; let them bubble.
         if (
@@ -94,7 +96,7 @@ export function DangerZone({ email }: Props) {
               </p>
             </div>
 
-            {blocked && blocked.kind === 'blocked' ? (
+            {blocked ? (
               <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] text-red-800">
                 <p className="font-semibold">Resolve these first:</p>
                 <ul className="mt-1 list-disc pl-4">

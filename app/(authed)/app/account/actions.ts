@@ -4,16 +4,15 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { performAccountDelete, preDeleteAccount, type BlockingOrg } from '@/lib/account/delete';
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { isPng } from '@/lib/images/validatePng';
 import { type A11yPreferences } from '@/lib/a11y/preferences';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 
 const MAX_NAME_LENGTH = 80;
 
-export type UpdateProfileResult =
-  | { kind: 'ok'; fullName: string | null }
-  | { kind: 'invalid_input'; reason: string };
+export type UpdateProfileResult = ActionResult<{ fullName: string | null }, 'invalid_input'>;
 
 export async function updateProfileAction(rawName: string): Promise<UpdateProfileResult> {
   const supabase = await createServerSupabaseClient();
@@ -25,8 +24,9 @@ export async function updateProfileAction(rawName: string): Promise<UpdateProfil
   const trimmed = String(rawName ?? '').trim();
   if (trimmed.length > MAX_NAME_LENGTH) {
     return {
-      kind: 'invalid_input',
-      reason: `Name must be ${MAX_NAME_LENGTH} characters or fewer.`,
+      ok: false,
+      code: 'invalid_input',
+      message: `Name must be ${MAX_NAME_LENGTH} characters or fewer.`,
     };
   }
 
@@ -41,7 +41,7 @@ export async function updateProfileAction(rawName: string): Promise<UpdateProfil
   // The header reads full_name in the (authed) layout — bust those paths too.
   revalidatePath('/app/my-designs');
   revalidatePath('/app/workshops');
-  return { kind: 'ok', fullName: next };
+  return { ok: true, data: { fullName: next } };
 }
 
 const ALLOWED_AVATAR_MIME = 'image/png' as const;
@@ -50,7 +50,10 @@ const ALLOWED_AVATAR_MIME = 'image/png' as const;
 // has headroom without unbounding the upload surface.
 const MAX_AVATAR_BYTES = 512 * 1024;
 
-export type UpdateAvatarResult = { kind: 'ok'; url: string } | { kind: 'error'; reason: string };
+export type UpdateAvatarResult = ActionResult<
+  { url: string },
+  'invalid_image' | 'upload_failed' | 'profile_update_failed'
+>;
 
 export async function updateAvatarAction(formData: FormData): Promise<UpdateAvatarResult> {
   const supabase = await createServerSupabaseClient();
@@ -62,22 +65,22 @@ export async function updateAvatarAction(formData: FormData): Promise<UpdateAvat
   const raw = formData.get('avatar');
   if (!(raw instanceof Blob)) {
     console.warn('avatar rejected: not a Blob', { type: typeof raw });
-    return { kind: 'error', reason: 'invalid_image' };
+    return { ok: false, code: 'invalid_image' };
   }
   if (raw.type !== ALLOWED_AVATAR_MIME) {
     console.warn('avatar rejected: wrong MIME', { mime: raw.type, size: raw.size });
-    return { kind: 'error', reason: 'invalid_image' };
+    return { ok: false, code: 'invalid_image' };
   }
   if (raw.size === 0 || raw.size > MAX_AVATAR_BYTES) {
     console.warn('avatar rejected: size out of range', { size: raw.size, max: MAX_AVATAR_BYTES });
-    return { kind: 'error', reason: 'invalid_image' };
+    return { ok: false, code: 'invalid_image' };
   }
   if (!(await isPng(raw))) {
     console.warn('avatar rejected: PNG magic-byte check failed', {
       mime: raw.type,
       size: raw.size,
     });
-    return { kind: 'error', reason: 'invalid_image' };
+    return { ok: false, code: 'invalid_image' };
   }
 
   const path = `${user.id}/avatar.png`;
@@ -87,7 +90,7 @@ export async function updateAvatarAction(formData: FormData): Promise<UpdateAvat
     cacheControl: '0',
   });
   if (upload.error) {
-    return { kind: 'error', reason: `upload_failed:${upload.error.message}` };
+    return { ok: false, code: 'upload_failed', message: upload.error.message };
   }
 
   const publicUrlRes = supabase.storage.from('avatars').getPublicUrl(path);
@@ -95,16 +98,16 @@ export async function updateAvatarAction(formData: FormData): Promise<UpdateAvat
 
   const res = await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
   if (res.error) {
-    return { kind: 'error', reason: `profile_update_failed:${res.error.message}` };
+    return { ok: false, code: 'profile_update_failed', message: res.error.message };
   }
 
   revalidatePath('/app/account');
   revalidatePath('/app/my-designs');
   revalidatePath('/app/workshops');
-  return { kind: 'ok', url };
+  return { ok: true, data: { url } };
 }
 
-export type RemoveAvatarResult = { kind: 'ok' } | { kind: 'error'; reason: string };
+export type RemoveAvatarResult = ActionResult<null, 'profile_update_failed'>;
 
 export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
   const supabase = await createServerSupabaseClient();
@@ -123,23 +126,25 @@ export async function removeAvatarAction(): Promise<RemoveAvatarResult> {
 
   const res = await supabase.from('profiles').update({ avatar_url: null }).eq('id', user.id);
   if (res.error) {
-    return { kind: 'error', reason: `profile_update_failed:${res.error.message}` };
+    return { ok: false, code: 'profile_update_failed', message: res.error.message };
   }
 
   revalidatePath('/app/account');
   revalidatePath('/app/my-designs');
   revalidatePath('/app/workshops');
-  return { kind: 'ok' };
+  return { ok: true, data: null };
 }
+
+export type UpdateA11yPreferencesResult = ActionResult<null, 'unauthenticated' | 'save_failed'>;
 
 export async function updateA11yPreferencesAction(
   formData: FormData,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<UpdateA11yPreferencesResult> {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: 'Not signed in.' };
+  if (!user) return { ok: false, code: 'unauthenticated', message: 'Not signed in.' };
 
   // Form submits checkbox value as 'on' when checked, absent when not.
   const colourblindMode = formData.get('colourblindMode') === 'on';
@@ -147,21 +152,20 @@ export async function updateA11yPreferencesAction(
 
   const { error } = await supabase
     .from('profiles')
-    .update({ a11y_preferences: next as unknown as Json })
+    .update({ a11y_preferences: toJson(next) })
     .eq('id', user.id);
-  if (error) return { ok: false, error: error.message };
+  if (error) return { ok: false, code: 'save_failed', message: error.message };
 
   // Pages that read the preference need to revalidate.
   revalidatePath('/app/account');
   revalidatePath('/app/designs', 'layout');
 
-  return { ok: true };
+  return { ok: true, data: null };
 }
 
 export type DeleteAccountResult =
-  | { kind: 'ok' }
-  | { kind: 'invalid_input'; reason: string }
-  | { kind: 'blocked'; reasons: BlockingOrg[] };
+  | ActionResult<null, 'invalid_input'>
+  | { ok: false; code: 'blocked'; reasons: BlockingOrg[] };
 
 export async function deleteAccountAction(confirmEmail: string): Promise<DeleteAccountResult> {
   const supabase = await createServerSupabaseClient();
@@ -172,18 +176,19 @@ export async function deleteAccountAction(confirmEmail: string): Promise<DeleteA
 
   const expectedEmail = user.email ?? '';
   if (!expectedEmail) {
-    return { kind: 'invalid_input', reason: 'Your account has no email on record.' };
+    return { ok: false, code: 'invalid_input', message: 'Your account has no email on record.' };
   }
   if (confirmEmail.trim().toLowerCase() !== expectedEmail.toLowerCase()) {
     return {
-      kind: 'invalid_input',
-      reason: `Type ${expectedEmail} to confirm.`,
+      ok: false,
+      code: 'invalid_input',
+      message: `Type ${expectedEmail} to confirm.`,
     };
   }
 
   const plan = await preDeleteAccount(user.id);
   if (plan.blockingOrgs.length > 0) {
-    return { kind: 'blocked', reasons: plan.blockingOrgs };
+    return { ok: false, code: 'blocked', reasons: plan.blockingOrgs };
   }
 
   await performAccountDelete(user.id, plan);

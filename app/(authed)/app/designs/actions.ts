@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 import { createServerSupabaseClient } from '@/lib/db/server';
-import type { Json } from '@/lib/db/types.generated';
+import { toJson } from '@/lib/db/json';
 import { parseCanvasState, serializeCanvasState } from '@/lib/models/canvasState';
 
 async function requireUser() {
@@ -123,7 +123,7 @@ export async function restoreVersionAction(modelId: string, versionId: string): 
   const snapshotRes = await supabase.from('model_versions').insert({
     model_id: modelId,
     label: 'Before restore',
-    canvas_state: serializeCanvasState(currentState) as unknown as Json,
+    canvas_state: toJson(serializeCanvasState(currentState)),
     created_by: user.id,
   });
   if (snapshotRes.error) {
@@ -133,7 +133,7 @@ export async function restoreVersionAction(modelId: string, versionId: string): 
   // 3. Overwrite the model with the target state.
   const updateRes = await supabase
     .from('models')
-    .update({ canvas_state: serializeCanvasState(targetState) as unknown as Json })
+    .update({ canvas_state: toJson(serializeCanvasState(targetState)) })
     .eq('id', modelId);
   if (updateRes.error) {
     throw new Error(`Restore failed: ${updateRes.error.message}`);

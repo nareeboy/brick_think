@@ -64,8 +64,8 @@ export function useSessionStages(sessionId: string): {
       if (stagesRes.error) console.error('useSessionStages: stages fetch failed', stagesRes.error);
       if (sessionRes.error)
         console.error('useSessionStages: session fetch failed', sessionRes.error);
-      if (stagesRes.data) setStages(stagesRes.data as unknown as StageRow[]);
-      if (sessionRes.data) setSession(sessionRes.data as unknown as SessionRow);
+      if (stagesRes.data) setStages(stagesRes.data);
+      if (sessionRes.data) setSession(sessionRes.data);
       setReady(true);
     };
 
@@ -78,15 +78,13 @@ export function useSessionStages(sessionId: string): {
       channelKey: `session:${sessionId}`,
       attach: (ch) =>
         ch
-          .on(
+          .on<StageRow>(
             'postgres_changes',
             { event: '*', schema: 'public', table: 'stages', filter: `session_id=eq.${sessionId}` },
             (payload) => {
               if (cancelled) return;
-              const eventType = (payload as unknown as { eventType?: string }).eventType;
-              const next = (payload as unknown as { new?: StageRow }).new;
-              const old = (payload as unknown as { old?: { id: string } }).old;
-              if (eventType === 'INSERT' && next) {
+              if (payload.eventType === 'INSERT') {
+                const next = payload.new;
                 setStages((prev) => {
                   // Guard against Realtime replaying INSERT events for rows
                   // already present in the initial fetch (can happen when the
@@ -95,20 +93,22 @@ export function useSessionStages(sessionId: string): {
                   if (prev.some((s) => s.id === next.id)) return prev;
                   return [...prev, next].sort((a, b) => a.position - b.position);
                 });
-              } else if (eventType === 'UPDATE' && next) {
+              } else if (payload.eventType === 'UPDATE') {
+                const next = payload.new;
                 setStages((prev) => prev.map((s) => (s.id === next.id ? next : s)));
-              } else if (eventType === 'DELETE' && old) {
-                setStages((prev) => prev.filter((s) => s.id !== old.id));
+              } else if (payload.eventType === 'DELETE') {
+                // `old` is Partial<StageRow> — only REPLICA IDENTITY columns arrive.
+                const oldId = payload.old.id;
+                if (oldId) setStages((prev) => prev.filter((s) => s.id !== oldId));
               }
             },
           )
-          .on(
+          .on<SessionRow>(
             'postgres_changes',
             { event: 'UPDATE', schema: 'public', table: 'sessions', filter: `id=eq.${sessionId}` },
             (payload) => {
               if (cancelled) return;
-              const next = (payload as unknown as { new?: SessionRow }).new;
-              if (next) setSession(next);
+              setSession(payload.new);
             },
           ),
       onStatus: (status) => {

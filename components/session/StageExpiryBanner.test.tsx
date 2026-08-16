@@ -15,8 +15,8 @@ function mockActions(): StageExpiryBannerActions & {
   advance: ReturnType<typeof vi.fn>;
 } {
   return {
-    extend: vi.fn().mockResolvedValue({ ok: true }),
-    advance: vi.fn().mockResolvedValue({ ok: true }),
+    extend: vi.fn().mockResolvedValue({ ok: true, data: null }),
+    advance: vi.fn().mockResolvedValue({ ok: true, data: null }),
   };
 }
 
@@ -86,8 +86,13 @@ describe('StageExpiryBanner', () => {
 
   it('surfaces an inline error message when the action returns a known code', async () => {
     const actions: StageExpiryBannerActions = {
-      extend: vi.fn().mockResolvedValue({ ok: true }),
-      advance: vi.fn().mockResolvedValue({ ok: false, code: 'invalid_transition' }),
+      extend: vi.fn().mockResolvedValue({ ok: true, data: null }),
+      advance: vi.fn().mockResolvedValue({
+        ok: false,
+        code: 'invalid_transition',
+        from: 'pending',
+        verb: 'start',
+      }),
     };
     render(
       <StageExpiryBanner
@@ -104,7 +109,7 @@ describe('StageExpiryBanner', () => {
 
   it('treats a thrown action as a generic error', async () => {
     const actions: StageExpiryBannerActions = {
-      extend: vi.fn().mockResolvedValue({ ok: true }),
+      extend: vi.fn().mockResolvedValue({ ok: true, data: null }),
       advance: vi.fn().mockRejectedValue(new Error('boom')),
     };
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});

@@ -6,8 +6,8 @@ import { PreSessionChecklist } from './PreSessionChecklist';
 import type { StageType } from '@/lib/sessions/types';
 
 vi.mock('@/app/(authed)/app/sessions/scenario-actions', () => ({
-  updateSessionBriefAction: vi.fn(async () => ({ ok: true })),
-  updatePreSessionCheckAction: vi.fn(async () => ({ ok: true })),
+  updateSessionBriefAction: vi.fn(async () => ({ ok: true, data: null })),
+  updatePreSessionCheckAction: vi.fn(async () => ({ ok: true, data: null })),
 }));
 
 afterEach(cleanup);

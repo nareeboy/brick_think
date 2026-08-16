@@ -1421,6 +1421,10 @@ export type Database = {
         Args: { p_model_id: string; p_profile_id: string }
         Returns: boolean
       }
+      can_edit_rooms: {
+        Args: { p_model_ids: string[]; p_profile_id: string }
+        Returns: string[]
+      }
       can_read_model: {
         Args: { p_model_id: string; p_profile_id: string }
         Returns: boolean
@@ -1428,6 +1432,10 @@ export type Database = {
       can_see_profile_via_session: {
         Args: { p_profile_id: string }
         Returns: boolean
+      }
+      create_session_with_stages: {
+        Args: { p_org_id: string; p_stages: Json; p_title: string }
+        Returns: string
       }
       generate_join_code: { Args: never; Returns: string }
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }

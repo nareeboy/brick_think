@@ -134,7 +134,7 @@ describe('bringInPreviousModel (integration)', () => {
 
     const res = await bringInPreviousModel(targetId);
 
-    expect(res).toMatchObject({ ok: true, mode: 'server_copied' });
+    expect(res).toMatchObject({ ok: true, data: { mode: 'server_copied' } });
     const canvas = await readCanvas(targetId);
     expect(canvas.bricks).toHaveLength(1);
     expect(canvas.bricks[0]!.id).not.toBe(POPULATED_CANVAS.bricks[0]!.id);
@@ -160,9 +160,9 @@ describe('bringInPreviousModel (integration)', () => {
     const res = await bringInPreviousModel(sharedId);
 
     expect(res.ok).toBe(true);
-    if (res.ok && res.mode === 'client_append') {
-      expect(res.source.bricks).toHaveLength(1);
-      expect(res.source.groups[0]!.name).toMatch(/Build$/);
+    if (res.ok && res.data.mode === 'client_append') {
+      expect(res.data.source.bricks).toHaveLength(1);
+      expect(res.data.source.groups[0]!.name).toMatch(/Build$/);
     } else {
       throw new Error(`expected client_append mode, got ${JSON.stringify(res)}`);
     }
@@ -187,7 +187,7 @@ describe('bringInPreviousModel (integration)', () => {
 
     const res = await bringInPreviousModel(targetId);
 
-    expect(res).toMatchObject({ ok: true, mode: 'server_copied' });
+    expect(res).toMatchObject({ ok: true, data: { mode: 'server_copied' } });
     const canvas = await readCanvas(targetId);
     expect(canvas.bricks).toHaveLength(1);
     expect(await countImports(targetId, fx.participant.id)).toBe(1);
@@ -209,7 +209,7 @@ describe('bringInPreviousModel (integration)', () => {
 
     const res = await bringInPreviousModel(targetId);
 
-    expect(res).toMatchObject({ ok: true, mode: 'server_copied' });
+    expect(res).toMatchObject({ ok: true, data: { mode: 'server_copied' } });
     const canvas = await readCanvas(targetId);
     expect(canvas.bricks).toHaveLength(1);
     expect(await countImports(targetId, fx.participant.id)).toBe(1);

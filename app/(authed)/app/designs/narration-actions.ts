@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { NarrationCleanupStatus } from '@/lib/sessions/modelNarration';
@@ -11,14 +12,10 @@ import { cleanupNarration } from '@/lib/premium/server';
 // covers cleaning a transcript of this size; longer input is truncated.
 const TRANSCRIPT_MAX = 20000;
 
-export type SaveNarrationResult =
-  | {
-      ok: true;
-      transcript: string;
-      cleaned: boolean;
-      cleanupStatus: NarrationCleanupStatus;
-    }
-  | { ok: false; code: 'unauthenticated' | 'not_owner' | 'empty_transcript' | 'model_not_found' };
+export type SaveNarrationResult = ActionResult<
+  { transcript: string; cleaned: boolean; cleanupStatus: NarrationCleanupStatus },
+  'unauthenticated' | 'not_owner' | 'empty_transcript' | 'model_not_found'
+>;
 
 export async function saveNarration(
   modelId: string,
@@ -114,5 +111,5 @@ export async function saveNarration(
   if (upsert.error) throw new Error(`model_narrations upsert failed: ${upsert.error.message}`);
 
   revalidatePath(`/app/designs/${modelId}`);
-  return { ok: true, transcript, cleaned, cleanupStatus };
+  return { ok: true, data: { transcript, cleaned, cleanupStatus } };
 }

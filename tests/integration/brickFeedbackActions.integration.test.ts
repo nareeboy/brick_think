@@ -119,7 +119,7 @@ describe('toggleReactionAction', () => {
   test('adds a reaction when none exists', async () => {
     setActionClient(await signInAs(fx.member));
     const res = await toggleReactionAction(fx.modelId, BRICK_ID, '👍');
-    expect(res).toEqual({ ok: true, isReacted: true });
+    expect(res).toEqual({ ok: true, data: { isReacted: true } });
 
     const admin = getAdminClient();
     const rows = await admin
@@ -135,10 +135,10 @@ describe('toggleReactionAction', () => {
   test('toggling an existing reaction removes it', async () => {
     setActionClient(await signInAs(fx.member));
     const first = await toggleReactionAction(fx.modelId, BRICK_ID, '❤️');
-    expect(first).toEqual({ ok: true, isReacted: true });
+    expect(first).toEqual({ ok: true, data: { isReacted: true } });
 
     const second = await toggleReactionAction(fx.modelId, BRICK_ID, '❤️');
-    expect(second).toEqual({ ok: true, isReacted: false });
+    expect(second).toEqual({ ok: true, data: { isReacted: false } });
 
     const admin = getAdminClient();
     const rows = await admin
@@ -177,13 +177,13 @@ describe('addCommentAction', () => {
     const res = await addCommentAction(fx.modelId, BRICK_ID, '  Looks great  ');
     expect(res.ok).toBe(true);
     if (!res.ok) return;
-    expect(res.commentId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(res.data.commentId).toMatch(/^[0-9a-f-]{36}$/);
 
     const admin = getAdminClient();
     const row = await admin
       .from('brick_comments')
       .select('body, profile_id, model_id, brick_id, deleted_at')
-      .eq('id', res.commentId)
+      .eq('id', res.data.commentId)
       .single();
     // Trim is applied before insert.
     expect(row.data?.body).toBe('Looks great');
@@ -235,7 +235,7 @@ describe('softDeleteCommentAction', () => {
 
     setActionClient(await signInAs(fx.member));
     const res = await softDeleteCommentAction(commentId);
-    expect(res).toEqual({ ok: true });
+    expect(res).toEqual({ ok: true, data: null });
 
     const admin = getAdminClient();
     const row = await admin

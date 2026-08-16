@@ -53,6 +53,18 @@ export default tseslint.config(
       ],
       '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // Ban double-casting through unknown (`x as unknown as T`) — it erases
+      // type safety completely. Sanctioned escape hatches: toJson() in
+      // lib/db/json.ts for Json column writes, vi.mocked() for test doubles,
+      // or a targeted eslint-disable with a one-line justification.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "TSAsExpression > TSAsExpression[typeAnnotation.type='TSUnknownKeyword']",
+          message:
+            'Do not cast through unknown. Use toJson() for Json columns, vi.mocked() for mocks, or add a justified eslint-disable.',
+        },
+      ],
       'react/prop-types': 'off',
     },
   },
