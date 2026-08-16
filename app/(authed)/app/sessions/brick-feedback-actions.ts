@@ -2,6 +2,7 @@
 
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { COMMENT_BODY_MAX, isValidReactionEmoji } from '@/lib/brickFeedback/palette';
+import type { ActionResult } from '@/lib/actions/result';
 
 // Brick-feedback writes flow through the user-scoped Supabase client so RLS
 // (specifically `can_edit_room`) is the source of truth for who may react /
@@ -9,13 +10,14 @@ import { COMMENT_BODY_MAX, isValidReactionEmoji } from '@/lib/brickFeedback/pale
 // invariants (auth present, payload shape valid) and to translate Postgres
 // errors back into a stable discriminated union the client can switch on.
 
-export type ToggleReactionResult =
-  | { ok: true; isReacted: boolean }
-  | { ok: false; code: 'unauthenticated' | 'cannot_edit_room' | 'invalid_emoji' };
+export type ToggleReactionResult = ActionResult<
+  { isReacted: boolean },
+  'unauthenticated' | 'cannot_edit_room' | 'invalid_emoji'
+>;
 
 /**
  * Toggle the caller's reaction with `emoji` on a given brick. Idempotent:
- * re-asserting an existing reaction returns `{ ok: true, isReacted: true }`
+ * re-asserting an existing reaction returns `{ ok: true, data: { isReacted: true } }`
  * via the 23505-on-insert race path; calling on a row the caller owns
  * deletes it. RLS rejects non-room-members as `cannot_edit_room`.
  */
@@ -54,7 +56,7 @@ export async function toggleReactionAction(
       .eq('profile_id', user.id)
       .eq('emoji', emoji);
     if (error) return { ok: false, code: 'cannot_edit_room' };
-    return { ok: true, isReacted: false };
+    return { ok: true, data: { isReacted: false } };
   }
 
   const { error } = await userSupabase.from('brick_reactions').insert({
@@ -68,15 +70,17 @@ export async function toggleReactionAction(
     // between our select and insert. The PK uniqueness fires 23505 — that's
     // a successful no-op from the caller's point of view (the reaction is
     // present, which is what they asked for).
-    if ((error as { code?: string }).code === '23505') return { ok: true, isReacted: true };
+    if ((error as { code?: string }).code === '23505')
+      return { ok: true, data: { isReacted: true } };
     return { ok: false, code: 'cannot_edit_room' };
   }
-  return { ok: true, isReacted: true };
+  return { ok: true, data: { isReacted: true } };
 }
 
-export type AddCommentResult =
-  | { ok: true; commentId: string }
-  | { ok: false; code: 'unauthenticated' | 'cannot_edit_room' | 'over_cap' | 'empty_body' };
+export type AddCommentResult = ActionResult<
+  { commentId: string },
+  'unauthenticated' | 'cannot_edit_room' | 'over_cap' | 'empty_body'
+>;
 
 /**
  * Insert a new comment on a brick. Body is trimmed; empty after trim is
@@ -104,12 +108,13 @@ export async function addCommentAction(
     .select('id')
     .single();
   if (error || !data) return { ok: false, code: 'cannot_edit_room' };
-  return { ok: true, commentId: data.id as string };
+  return { ok: true, data: { commentId: data.id as string } };
 }
 
-export type SoftDeleteCommentResult =
-  | { ok: true }
-  | { ok: false; code: 'unauthenticated' | 'not_author' | 'comment_not_found' | 'already_deleted' };
+export type SoftDeleteCommentResult = ActionResult<
+  null,
+  'unauthenticated' | 'not_author' | 'comment_not_found' | 'already_deleted'
+>;
 
 /**
  * Soft-delete a comment by stamping `deleted_at`. Only the comment's author
@@ -141,5 +146,5 @@ export async function softDeleteCommentAction(commentId: string): Promise<SoftDe
     .update({ deleted_at: new Date().toISOString() })
     .eq('id', commentId);
   if (error) return { ok: false, code: 'not_author' };
-  return { ok: true };
+  return { ok: true, data: null };
 }

@@ -117,7 +117,7 @@ export function BringInPreviousModelCard() {
         setError(message);
         return;
       }
-      if (res.mode === 'server_copied') {
+      if (res.data.mode === 'server_copied') {
         // BuilderProvider state initialises once via useState(()⇒…); a full
         // reload remounts the builder with the new initial canvas.
         window.location.reload();
@@ -126,7 +126,7 @@ export function BringInPreviousModelCard() {
       // client_append (shared_model) — bricks land via Yjs in the local doc.
       // Mark imported so the card hides immediately without waiting for the
       // server-rendered alreadyImported prop to refresh on next navigation.
-      appendImportedBricks(res.source);
+      appendImportedBricks(res.data.source);
       markJustImported();
     });
   };

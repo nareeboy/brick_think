@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import type { Json } from '@/lib/db/types.generated';
@@ -12,20 +13,16 @@ import type { StageType } from '@/lib/sessions/types';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type BringInResult =
-  | { ok: true; mode: 'server_copied' }
-  | { ok: true; mode: 'client_append'; source: CanvasState }
-  | {
-      ok: false;
-      code:
-        | 'unauthenticated'
-        | 'invalid_uuid'
-        | 'model_not_found'
-        | 'unsupported_target_stage'
-        | 'source_not_found'
-        | 'already_imported'
-        | 'destination_not_empty';
-    };
+export type BringInResult = ActionResult<
+  { mode: 'server_copied' } | { mode: 'client_append'; source: CanvasState },
+  | 'unauthenticated'
+  | 'invalid_uuid'
+  | 'model_not_found'
+  | 'unsupported_target_stage'
+  | 'source_not_found'
+  | 'already_imported'
+  | 'destination_not_empty'
+>;
 
 export async function bringInPreviousModel(targetModelId: string): Promise<BringInResult> {
   if (!UUID_RE.test(targetModelId)) {
@@ -140,7 +137,7 @@ export async function bringInPreviousModel(targetModelId: string): Promise<Bring
       profileRes.data?.full_name?.trim() || profileRes.data?.email?.split('@')[0] || 'Guest';
 
     const remapped = remapCanvasForImport(sourceCanvas, { renameRootGroupTo: displayName });
-    return { ok: true, mode: 'client_append', source: remapped };
+    return { ok: true, data: { mode: 'client_append', source: remapped } };
   }
 
   // Autosave-backed branch (individual_model | system_model | guiding_principles).
@@ -171,5 +168,5 @@ export async function bringInPreviousModel(targetModelId: string): Promise<Bring
   }
   revalidatePath(`/app/sessions/${target.session_id}`);
   revalidatePath('/app/designs/[id]', 'page');
-  return { ok: true, mode: 'server_copied' };
+  return { ok: true, data: { mode: 'server_copied' } };
 }
