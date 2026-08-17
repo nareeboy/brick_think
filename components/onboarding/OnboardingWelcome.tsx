@@ -30,7 +30,13 @@ const REPRISE_DELAY_MS = 1800;
  * tour is mid-flight (any `?onboarding=` param) it stays hidden so it never
  * covers its own tours. "Replay walkthrough" clears all of it and starts over.
  */
-export function OnboardingWelcome() {
+interface Props {
+  /** Invited session guests never see the modal — its three pathways are
+   *  facilitator work. They keep the in-context spotlight tours instead. */
+  guest?: boolean;
+}
+
+export function OnboardingWelcome({ guest = false }: Props) {
   const {
     role,
     welcomeSeen,
@@ -92,6 +98,7 @@ export function OnboardingWelcome() {
   // last completion's reprise, or on hub pages) with all three ticks and a
   // single "Build together" CTA that dismisses it for good.
   if (
+    guest ||
     !hydrated ||
     role !== 'facilitator' ||
     welcomeSeen ||

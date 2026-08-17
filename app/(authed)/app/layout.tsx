@@ -10,6 +10,7 @@ import { PresenceHeartbeat } from '@/components/app/PresenceHeartbeat';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome';
+import { isTutorialGuest } from '@/lib/onboarding/guestGate';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -56,8 +57,11 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const userAvatarUrl = profileRes.data?.avatar_url ?? null;
   const isSiteAdmin = profileRes.data?.is_site_admin === true;
-  const navSessions = await getMyActiveSessionsForNav(supabase, user.id);
-  const initialNotifications = await fetchRecentNotifications();
+  const [navSessions, initialNotifications, tutorialGuest] = await Promise.all([
+    getMyActiveSessionsForNav(supabase, user.id),
+    fetchRecentNotifications(),
+    isTutorialGuest(supabase, user.id),
+  ]);
 
   return (
     <NotificationsProvider profileId={user.id} initial={initialNotifications}>
@@ -78,9 +82,11 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
         </HideOnAdminRoutes>
         <PresenceHeartbeat />
         {/* Global welcome/tutorial modal — decides for itself when to show
-            (hub pages, or the reprise after a pathway completes). */}
+            (hub pages, or the reprise after a pathway completes). Invited
+            guests never see it; they still get the in-context spotlight
+            tours (session page + canvas). */}
         <Suspense fallback={null}>
-          <OnboardingWelcome />
+          <OnboardingWelcome guest={tutorialGuest} />
         </Suspense>
       </div>
     </NotificationsProvider>

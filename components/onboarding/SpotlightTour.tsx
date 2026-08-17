@@ -21,30 +21,42 @@ interface Step {
   body: ReactNode;
 }
 
-const STEPS: Step[] = [
-  {
-    selector: '[data-tour-id="session-header"]',
-    title: 'This is a session',
-    body: 'The cards below are stages — different exercises you move through together.',
-  },
-  {
-    selector: '[data-tour-id="first-stage-card"]',
-    title: 'Stages',
-    body: (
-      <>
-        Each card is one exercise. Press <span className="font-semibold text-zinc-900">Start</span>{' '}
-        to open the stage and run its timer for the group, and use{' '}
-        <span className="font-semibold text-zinc-900">Create Example Model</span> to build a
-        reference model participants can compare their own builds against.
-      </>
-    ),
-  },
-  {
-    selector: '[data-tour-id="stage-meta-pencil"]',
-    title: 'Rename a stage',
-    body: "Edit a stage's title or description for this session if the defaults don't fit.",
-  },
-];
+// Step 2 speaks to what the viewer actually sees on the stage card:
+// facilitators get the timer Start + Create Example Model controls, while
+// participants only get Start your model.
+function buildSteps(canManageSession: boolean): Step[] {
+  return [
+    {
+      selector: '[data-tour-id="session-header"]',
+      title: 'This is a session',
+      body: 'The cards below are stages — different exercises you move through together.',
+    },
+    {
+      selector: '[data-tour-id="first-stage-card"]',
+      title: 'Stages',
+      body: canManageSession ? (
+        <>
+          Each card is one exercise. Press{' '}
+          <span className="font-semibold text-zinc-900">Start</span> to open the stage and run its
+          timer for the group, and use{' '}
+          <span className="font-semibold text-zinc-900">Create Example Model</span> to build a
+          reference model participants can compare their own builds against.
+        </>
+      ) : (
+        <>
+          Each card is one exercise. When the facilitator opens a stage, press{' '}
+          <span className="font-semibold text-zinc-900">Start your model</span> to open your canvas
+          and build your own take on it.
+        </>
+      ),
+    },
+    {
+      selector: '[data-tour-id="stage-meta-pencil"]',
+      title: 'Rename a stage',
+      body: "Edit a stage's title or description for this session if the defaults don't fit.",
+    },
+  ];
+}
 
 interface Props {
   canManageSession: boolean;
@@ -72,7 +84,7 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
   // which would cause the useLayoutEffect to re-fire needlessly.
   const visibleSteps = useMemo(
     () =>
-      STEPS.filter((step) => {
+      buildSteps(canManageSession).filter((step) => {
         if (step.selector === '[data-tour-id="stage-meta-pencil"]' && !canManageSession) {
           return false;
         }
