@@ -77,11 +77,22 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
     setEmails(emails.filter((e) => e !== email));
   }
 
+  // A typed-but-uncommitted address (no Enter/comma yet) still counts:
+  // clicking Send flushes the draft into the list, so the button must not
+  // stay disabled while valid text sits in the input.
+  function draftEmails(): string[] {
+    return inputValue
+      .split(/[,\n]/)
+      .map((s) => s.trim())
+      .filter((c) => c && !emails.includes(c));
+  }
+
   function handleSendInvites() {
-    if (emails.length === 0) return;
+    const toSend = [...emails, ...draftEmails()];
+    if (toSend.length === 0) return;
 
     startTransition(async () => {
-      const result = await inviteParticipantsByEmailAction(sessionId, emails);
+      const result = await inviteParticipantsByEmailAction(sessionId, toSend);
       if (result.ok) {
         setResults(result.data.results);
         setEmails([]);
@@ -218,7 +229,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
         <button
           type="button"
           onClick={handleSendInvites}
-          disabled={emails.length === 0 || pending}
+          disabled={(emails.length === 0 && inputValue.trim() === '') || pending}
           className="h-9 w-full cursor-pointer rounded-lg bg-[#a8482a] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#a4502e] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? 'Sending…' : 'Send invites'}
