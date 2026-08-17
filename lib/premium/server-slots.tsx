@@ -12,3 +12,5 @@ export { AccountNavSlot } from '@brickthink/premium/server-slots';
 export type { AccountNavSlotProps } from '@brickthink/premium';
 export { AdminNavSlot } from '@brickthink/premium/server-slots';
 export type { AdminNavSlotProps } from '@brickthink/premium';
+export { ChatWidgetSlot } from '@brickthink/premium/server-slots';
+export type { ChatWidgetSlotProps } from '@brickthink/premium';

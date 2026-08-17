@@ -195,7 +195,7 @@ export function StartModelSpotlight() {
             data-testid="start-model-spotlight-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >
-            Skip
+            Skip tour
           </button>
           <button
             type="button"

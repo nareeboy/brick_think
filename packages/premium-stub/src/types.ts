@@ -53,3 +53,6 @@ export type AdminNavSlotProps = Record<string, never>;
 
 /** Marketing "Pricing" link. Premium renders the real link; stub renders nothing. */
 export type PricingLinkSlotProps = { variant: 'nav' | 'footer' };
+
+/** Bottom-right support-chat widget. Stub renders nothing; premium renders the FAB + panel. */
+export type ChatWidgetSlotProps = { profileId: string };

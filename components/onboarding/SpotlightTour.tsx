@@ -1,34 +1,62 @@
 'use client';
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { useOnboardingState } from './useOnboardingState';
+import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
 
 interface Step {
   selector: string;
   title: string;
-  body: string;
+  body: ReactNode;
 }
 
-const STEPS: Step[] = [
-  {
-    selector: '[data-tour-id="session-header"]',
-    title: 'This is a session',
-    body: 'The cards below are stages — different exercises you move through together.',
-  },
-  {
-    selector: '[data-tour-id="first-stage-card"]',
-    title: 'Stages',
-    body: 'Click a stage to start your model for it.',
-  },
-  {
-    selector: '[data-tour-id="stage-meta-pencil"]',
-    title: 'Rename a stage',
-    body: "Edit a stage's title or description for this session if the defaults don't fit.",
-  },
-];
+// Step 2 speaks to what the viewer actually sees on the stage card:
+// facilitators get the timer Start + Create Example Model controls, while
+// participants only get Start your model.
+function buildSteps(canManageSession: boolean): Step[] {
+  return [
+    {
+      selector: '[data-tour-id="session-header"]',
+      title: 'This is a session',
+      body: 'The cards below are stages — different exercises you move through together.',
+    },
+    {
+      selector: '[data-tour-id="first-stage-card"]',
+      title: 'Stages',
+      body: canManageSession ? (
+        <>
+          Each card is one exercise. Press{' '}
+          <span className="font-semibold text-zinc-900">Start</span> to open the stage and run its
+          timer for the group, and use{' '}
+          <span className="font-semibold text-zinc-900">Create Example Model</span> to build a
+          reference model participants can compare their own builds against.
+        </>
+      ) : (
+        <>
+          Each card is one exercise. When the facilitator opens a stage, press{' '}
+          <span className="font-semibold text-zinc-900">Start your model</span> to open your canvas
+          and build your own take on it.
+        </>
+      ),
+    },
+    {
+      selector: '[data-tour-id="stage-meta-pencil"]',
+      title: 'Rename a stage',
+      body: "Edit a stage's title or description for this session if the defaults don't fit.",
+    },
+  ];
+}
 
 interface Props {
   canManageSession: boolean;
@@ -39,7 +67,8 @@ interface Props {
 }
 
 export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
-  const { role, sessionTourSeen, hydrated, markSessionTourSeen } = useOnboardingState();
+  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathDone } =
+    useOnboardingState();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const titleId = useId();
@@ -55,7 +84,7 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
   // which would cause the useLayoutEffect to re-fire needlessly.
   const visibleSteps = useMemo(
     () =>
-      STEPS.filter((step) => {
+      buildSteps(canManageSession).filter((step) => {
         if (step.selector === '[data-tour-id="stage-meta-pencil"]' && !canManageSession) {
           return false;
         }
@@ -75,9 +104,20 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
     markSessionTourSeen();
   }, [markSessionTourSeen]);
 
+  // Warm exit — completing the tour or clicking Skip tour. The session
+  // pathway ticks on the welcome modal, confetti fires, and the modal
+  // returns afterwards if pathways remain. Esc (and the silent missing-
+  // target advance) use the quiet finish() above instead.
+  const finishWarm = useCallback(() => {
+    markPathDone('session');
+    void celebrate();
+    requestWelcomeReprise();
+    finish();
+  }, [markPathDone, finish]);
+
   // Track the target every frame so the cut-out stays glued to it through
-  // hydration and layout shifts — e.g. the FacilitatorChecklist mounts above
-  // the header after hydration and pushes targets down, a shift that fires no
+  // hydration and layout shifts — e.g. late-mounting siblings above the
+  // header can push targets down after hydration, a shift that fires no
   // scroll/resize event. setRect only fires when the box actually moves, so
   // tracking settles to a no-op. A missing target silently advances.
   useLayoutEffect(() => {
@@ -205,21 +245,19 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
         <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
-            onClick={finish}
+            onClick={finishWarm}
             data-testid="onboarding-spotlight-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >
-            Skip
+            Skip tour
           </button>
           <button
             ref={ctaRef}
             type="button"
             onClick={() => {
               if (isLast) {
-                // Genuine completion — celebrate. (Skip/Esc also call finish()
-                // but deliberately get no confetti.)
-                void celebrate();
-                finish();
+                // Genuine completion — tick + confetti + modal reprise.
+                finishWarm();
                 return;
               }
               setRect(null);
