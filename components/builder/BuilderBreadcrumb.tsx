@@ -21,7 +21,7 @@ export function BuilderBreadcrumb({ sessionContext }: { sessionContext: SessionC
       >
         <path d="m15 18-6-6 6-6" />
       </svg>
-      Back to session
+      Back to session list page
     </Link>
   );
 }
