@@ -33,6 +33,7 @@ const defaultProps = {
   stages: baseStages,
   canManage: true,
   scenariosByStageType: {},
+  orgs: [],
 };
 
 describe('PreSessionChecklist', () => {

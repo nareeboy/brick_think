@@ -88,4 +88,42 @@ test.describe('Per-stage picker + pre-session checklist', () => {
     // 4. Ready-to-start pill (brief + scenarios are the gating items).
     await expect(signedInPage.getByText(/Ready to start/i)).toBeVisible();
   });
+
+  test('facilitator creates a custom scenario from inside the picker and picks it', async ({
+    signedInPage,
+    seededSession,
+  }) => {
+    await signedInPage.goto(`/app/sessions/${seededSession.sessionId}`);
+
+    // Open the picker for the first stage (skill_building at position 0).
+    await signedInPage.getByRole('button', { name: /Pick a scenario for each stage/i }).click();
+    const stageId = Object.values(seededSession.stageIds)[0]!;
+    await signedInPage.locator(`[data-testid="scenario-pick-${stageId}"]`).click();
+
+    // Library templates render with no "Your scenarios" section yet.
+    await expect(signedInPage.getByTestId('scenario-picker-confirm').first()).toBeVisible();
+    await expect(signedInPage.getByText('Your scenarios')).toHaveCount(0);
+
+    // Create a custom scenario without leaving the modal. The editor opens
+    // with the picker's stage preselected.
+    await signedInPage.getByTestId('picker-new-scenario').click();
+    await signedInPage.getByLabel('Title').fill('Picker-born scenario');
+    await signedInPage.getByLabel('Prompt').fill('Build the thing this picker created.');
+    await signedInPage.getByTestId('scenario-editor-save').click();
+
+    // The editor closes and the refreshed picker lists the new scenario in
+    // its custom section, above the library.
+    const dialog = signedInPage.getByRole('dialog');
+    await expect(dialog.getByText('Your scenarios')).toBeVisible({ timeout: 10_000 });
+    await expect(dialog.getByText('Picker-born scenario')).toBeVisible();
+
+    // Search narrows to the new scenario, then pick it.
+    await dialog.getByRole('searchbox', { name: /Search scenarios/i }).fill('Picker-born');
+    await expect(dialog.getByTestId('scenario-picker-confirm')).toHaveCount(1);
+    await dialog.getByTestId('scenario-picker-confirm').click();
+    await expect(signedInPage.locator(`[data-testid="scenario-pick-${stageId}"]`)).toHaveText(
+      /Change/,
+      { timeout: 5_000 },
+    );
+  });
 });

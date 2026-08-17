@@ -1,17 +1,20 @@
 import Link from 'next/link';
 
 import { Avatar } from '@/components/app/Avatar';
+import type { GlobalRole } from '@/lib/account/globalRole';
 import type { NavSession } from '@/lib/sessions/navSessions';
 import { BrickGlyph } from '@/components/app/BrickGlyph';
 import { HeaderInner } from '@/components/app/HeaderInner';
 import { HeaderNav } from '@/components/app/HeaderNav';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { RoleSwitcher } from '@/components/app/RoleSwitcher';
 import { adminPanelEnabled } from '@/lib/premium/server';
 
 interface Props {
   userName: string;
   userEmail: string | null;
   userAvatarUrl: string | null;
+  role: GlobalRole;
   isSiteAdmin?: boolean;
   sessions?: NavSession[];
 }
@@ -20,6 +23,7 @@ export function GlobalHeader({
   userName,
   userEmail,
   userAvatarUrl,
+  role,
   isSiteAdmin = false,
   sessions = [],
 }: Props) {
@@ -37,7 +41,7 @@ export function GlobalHeader({
               BrickThink
             </span>
           </Link>
-          <HeaderNav showAdmin={isSiteAdmin && adminPanelEnabled} sessions={sessions} />
+          <HeaderNav role={role} showAdmin={isSiteAdmin && adminPanelEnabled} sessions={sessions} />
         </div>
 
         <div className="flex items-center gap-1">
@@ -46,6 +50,7 @@ export function GlobalHeader({
             <span className="hidden max-w-[140px] truncate text-[13px] text-zinc-800 sm:inline">
               {userName}
             </span>
+            <RoleSwitcher serverRole={role} />
           </div>
           <div aria-hidden="true" className="h-6 w-px bg-zinc-900/10" />
           <a

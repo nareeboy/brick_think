@@ -21,8 +21,22 @@ export interface OrgOption {
 }
 
 type Props =
-  | { mode: 'create'; orgs: OrgOption[]; onClose: () => void }
-  | { mode: 'edit'; scenario: Scenario; orgs: OrgOption[]; onClose: () => void };
+  | {
+      mode: 'create';
+      orgs: OrgOption[];
+      onClose: () => void;
+      /** Preselects the stage — used by the session picker's create flow. */
+      initialStageType?: StageType;
+      /** Fires on a successful save, before onClose. */
+      onSaved?: (id: string) => void;
+    }
+  | {
+      mode: 'edit';
+      scenario: Scenario;
+      orgs: OrgOption[];
+      onClose: () => void;
+      onSaved?: (id: string) => void;
+    };
 
 const FIELD_CLASSES =
   'w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[13px] text-zinc-900 placeholder:text-zinc-500 focus:outline focus:outline-2 focus:outline-[#a8482a]/40';
@@ -52,7 +66,10 @@ export function ScenarioEditorDialog(props: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const [stageType, setStageType] = useState<StageType>(editing?.stage_type ?? 'skill_building');
+  const [stageType, setStageType] = useState<StageType>(
+    editing?.stage_type ??
+      (props.mode === 'create' ? (props.initialStageType ?? 'skill_building') : 'skill_building'),
+  );
   const [title, setTitle] = useState(editing?.title ?? '');
   const [body, setBody] = useState(editing?.body ?? '');
   const [duration, setDuration] = useState(String(editing?.duration_minutes ?? 15));
@@ -79,6 +96,7 @@ export function ScenarioEditorDialog(props: Props) {
         ? await updateScenarioAction(editing.id, input)
         : await createScenarioAction(input);
       if (result.ok) {
+        props.onSaved?.(result.data.id);
         onClose();
       } else {
         setError(messageForCode(result.code));

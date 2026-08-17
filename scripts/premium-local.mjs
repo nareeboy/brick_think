@@ -41,14 +41,6 @@ if (!existsSync(join(premium, 'manifest.mjs'))) {
 
 const { overlayFiles } = await import(pathToFileURL(join(premium, 'manifest.mjs')).href);
 
-// Files that also exist as committed open-core files (stub wrappers / generated
-// types) — restored via git on clean, never deleted.
-const DUAL = new Set([
-  'lib/premium/client.tsx',
-  'lib/premium/server.ts',
-  'lib/db/types.generated.ts',
-]);
-
 if (mode === 'apply') {
   for (const { from, to } of overlayFiles) {
     const dest = join(repoRoot, to);
@@ -65,12 +57,25 @@ if (mode === 'apply') {
     `[premium-local] applied ${overlayFiles.length} overlay files + deps: ${Object.keys(deps).join(', ')}`,
   );
 } else {
-  // clean: remove premium-only files, then restore the dual tracked files +
-  // package manifests from git (this is why the tooling must be committed —
-  // `git checkout package.json` would otherwise wipe uncommitted script edits).
+  // clean: remove premium-only files, then restore anything git-tracked that the
+  // overlay overwrote (stub wrappers, generated types, dual e2e specs) plus the
+  // package manifests. The tracked set is derived from git rather than hand-listed:
+  // a hand-maintained DUAL set once missed lib/premium/server-slots.tsx and
+  // e2e/admin-boundary.spec.ts, so premium:off silently DELETED those tracked
+  // files instead of restoring them. Tracked files are never deleted here.
+  const tracked = new Set(
+    execFileSync('git', ['ls-files', '-z'], { cwd: repoRoot })
+      .toString()
+      .split('\0')
+      .filter(Boolean),
+  );
   const touched = new Set();
+  const restore = [];
   for (const { to } of overlayFiles) {
-    if (DUAL.has(to)) continue;
+    if (tracked.has(to)) {
+      restore.push(to);
+      continue;
+    }
     const abs = join(repoRoot, to);
     if (existsSync(abs)) {
       rmSync(abs);
@@ -91,15 +96,7 @@ if (mode === 'apply') {
   }
   execFileSync(
     'git',
-    [
-      'checkout',
-      '--',
-      'lib/premium/server.ts',
-      'lib/premium/client.tsx',
-      'lib/db/types.generated.ts',
-      'package.json',
-      'pnpm-lock.yaml',
-    ],
+    ['checkout', '--', ...new Set([...restore, 'package.json', 'pnpm-lock.yaml'])],
     { cwd: repoRoot, stdio: 'inherit' },
   );
   console.log('[premium-local] removed overlay + restored open-core stubs.');
