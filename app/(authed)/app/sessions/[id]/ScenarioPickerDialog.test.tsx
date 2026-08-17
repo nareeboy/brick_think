@@ -53,6 +53,14 @@ const fixtures: Scenario[] = [
     is_template: false,
     created_by: 'me',
   }),
+  // A different stage's template — hidden by the default filter, pickable
+  // once the facilitator widens it.
+  scenario({
+    id: 'template-skill',
+    stage_type: 'skill_building',
+    title: 'Tower of any height',
+    body: 'Build a tower.',
+  }),
 ];
 
 function renderPicker(props: Partial<Parameters<typeof ScenarioPickerDialog>[0]> = {}) {
@@ -96,7 +104,7 @@ describe('ScenarioPickerDialog', () => {
   test('search with no hits shows the empty-match message', async () => {
     renderPicker();
     await userEvent.type(screen.getByRole('searchbox', { name: /Search scenarios/i }), 'zzz');
-    screen.getByText(/No scenarios match your search/i);
+    screen.getByText(/No scenarios match your filters/i);
   });
 
   test('"New scenario" opens the editor with the stage preselected', async () => {
@@ -117,6 +125,44 @@ describe('ScenarioPickerDialog', () => {
     // Editor closed; picker still open behind it.
     expect(screen.queryByRole('heading', { name: 'New scenario' })).toBeNull();
     screen.getByRole('heading', { name: /Pick a scenario for/i });
+  });
+
+  test("stage filter defaults to the stage's own type; other stages are one chip away", async () => {
+    renderPicker();
+    // Default: only individual_model rows.
+    expect(screen.queryByText('Tower of any height')).toBeNull();
+    screen.getByText('Your role today');
+    // Switch to the other stage's chip.
+    await userEvent.click(screen.getByRole('radio', { name: 'Skill-building' }));
+    screen.getByText('Tower of any height');
+    expect(screen.queryByText('Your role today')).toBeNull();
+    // "All" shows every stage's scenarios together (scoped to the stage
+    // chip group — the source filter has its own "All" chip).
+    const stageGroup = within(screen.getByRole('radiogroup', { name: 'Filter scenarios' }));
+    await userEvent.click(stageGroup.getByRole('radio', { name: 'All' }));
+    screen.getByText('Tower of any height');
+    screen.getByText('Your role today');
+  });
+
+  test('the Custom pill (a peer of the stage pills) narrows to caller-authored rows', async () => {
+    renderPicker();
+    // Custom sits in the same single-select chip row as the stage options.
+    const group = within(screen.getByRole('radiogroup', { name: 'Filter scenarios' }));
+    await userEvent.click(group.getByRole('radio', { name: 'Custom' }));
+    screen.getByText('Our quarterly ritual');
+    expect(screen.queryByText('Your role today')).toBeNull();
+    // Back to All: templates return.
+    await userEvent.click(group.getByRole('radio', { name: 'All' }));
+    screen.getByText('Your role today');
+    screen.getByText('Our quarterly ritual');
+  });
+
+  test('a scenario from another stage can be picked', async () => {
+    const { setStageScenarioAction } = await import('@/app/(authed)/app/sessions/scenario-actions');
+    renderPicker();
+    await userEvent.click(screen.getByRole('radio', { name: 'Skill-building' }));
+    await userEvent.click(screen.getByTestId('scenario-picker-confirm'));
+    expect(setStageScenarioAction).toHaveBeenCalledWith('st1', 'template-skill');
   });
 
   test('picking a scenario calls setStageScenarioAction with the stage and scenario ids', async () => {

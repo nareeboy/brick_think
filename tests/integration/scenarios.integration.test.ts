@@ -137,20 +137,32 @@ describe('setStageScenarioAction', () => {
     expect(result).toEqual({ ok: false, code: 'scenario_not_found' });
   });
 
-  test('scenario for a different stage_type is refused', async () => {
+  test('scenario from a different stage_type is allowed (cross-stage pick)', async () => {
     setActionClient(await signInAs(fx.facilitator));
-    // Find an individual_model template — won't match the skill_building stage.
+    // An individual_model template picked onto the skill_building stage —
+    // stage_type is a category label, not a restriction.
     const admin = getAdminClient();
-    const wrong = await admin
+    const other = await admin
       .from('scenarios')
       .select('id')
       .eq('is_template', true)
       .eq('stage_type', 'individual_model')
       .limit(1)
       .single();
-    expect(wrong.data?.id).toBeTruthy();
-    const result = await setStageScenarioAction(fx.skillBuildingStageId, wrong.data!.id);
-    expect(result).toEqual({ ok: false, code: 'scenario_stage_mismatch' });
+    expect(other.data?.id).toBeTruthy();
+    const result = await setStageScenarioAction(fx.skillBuildingStageId, other.data!.id);
+    expect(result).toEqual({ ok: true, data: null });
+    const stage = await admin
+      .from('stages')
+      .select('scenario_id')
+      .eq('id', fx.skillBuildingStageId)
+      .single();
+    expect(stage.data?.scenario_id).toBe(other.data!.id);
+    // Clear the pick so later tests see the fixture's baseline state.
+    expect(await setStageScenarioAction(fx.skillBuildingStageId, null)).toEqual({
+      ok: true,
+      data: null,
+    });
   });
 });
 

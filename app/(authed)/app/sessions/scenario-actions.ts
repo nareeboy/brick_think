@@ -22,7 +22,6 @@ export type ScenarioActionResult = ActionResult<
   | 'session_not_found'
   | 'not_facilitator'
   | 'scenario_not_found'
-  | 'scenario_stage_mismatch'
   | 'brief_too_long'
   | 'body_too_long'
   | 'title_too_long'
@@ -37,7 +36,10 @@ const BRIEF_MAX_CHARS = 4000;
 /**
  * Pick a template / org-scoped scenario for a stage, or clear the pick with
  * `scenarioId = null`. Facilitator-gated. No `stage_events` row — this is
- * config, not runtime; mirrors `updateStageMeta`.
+ * config, not runtime; mirrors `updateStageMeta`. Cross-stage picks are
+ * allowed: a scenario's stage_type is a category label, not a restriction —
+ * facilitators may run any exercise at any stage (the picker just defaults
+ * its filter to the stage's own type).
  */
 export async function setStageScenarioAction(
   stageId: string,
@@ -81,9 +83,6 @@ export async function setStageScenarioAction(
       throw new Error(`Failed to load scenario: ${scenarioRes.error.message}`);
     }
     if (!scenarioRes.data) return { ok: false, code: 'scenario_not_found' };
-    if (scenarioRes.data.stage_type !== stage.stage_type) {
-      return { ok: false, code: 'scenario_stage_mismatch' };
-    }
   }
 
   const svc = getServiceSupabaseClient();

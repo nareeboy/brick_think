@@ -1,7 +1,8 @@
 'use client';
 
-import { useId, useMemo, useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 
+import { ChipGroup } from '@/components/app/ChipGroup';
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 import { DURATION_BUCKETS, SCENARIO_SCOPES, filterScenarios } from '@/lib/scenarios/filter';
@@ -49,10 +50,6 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
   const [deleting, setDeleting] = useState<Scenario | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const stageGroupId = useId();
-  const durationGroupId = useId();
-  const scopeGroupId = useId();
-
   const filtered = useMemo(() => filterScenarios(scenarios, filter), [scenarios, filter]);
   // Custom scenarios lead; the ready-made library sits below a divider.
   const customRows = useMemo(() => filtered.filter((s) => !s.is_template), [filtered]);
@@ -106,7 +103,6 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
       <div className="mb-6 flex flex-wrap items-end gap-4">
         <ChipGroup<StageType | 'all'>
           ariaLabel="Filter by stage"
-          groupId={stageGroupId}
           value={filter.stage}
           onChange={(v) => setFilter((f) => ({ ...f, stage: v }))}
           options={[
@@ -116,14 +112,12 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
         />
         <ChipGroup<DurationBucket>
           ariaLabel="Filter by duration"
-          groupId={durationGroupId}
           value={filter.duration}
           onChange={(v) => setFilter((f) => ({ ...f, duration: v }))}
           options={DURATION_BUCKETS.map((d) => ({ value: d, label: DURATION_LABELS[d] }))}
         />
         <ChipGroup<ScenarioScope>
           ariaLabel="Filter by source"
-          groupId={scopeGroupId}
           value={filter.scope}
           onChange={(v) => setFilter((f) => ({ ...f, scope: v }))}
           options={SCENARIO_SCOPES.map((s) => ({ value: s, label: SCOPE_LABELS[s] }))}
@@ -243,40 +237,6 @@ export function ScenariosList({ scenarios, myProfileId, orgNames, orgs }: Props)
           onConfirm={confirmDelete}
         />
       )}
-    </div>
-  );
-}
-
-interface ChipGroupProps<T extends string> {
-  ariaLabel: string;
-  groupId: string;
-  value: T;
-  onChange: (v: T) => void;
-  options: { value: T; label: string }[];
-}
-
-function ChipGroup<T extends string>({ ariaLabel, value, onChange, options }: ChipGroupProps<T>) {
-  return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex flex-wrap gap-1">
-      {options.map((opt) => {
-        const active = opt.value === value;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => onChange(opt.value)}
-            className={`inline-flex h-9 items-center rounded-full px-3 text-[12px] font-medium transition-colors ${
-              active
-                ? 'bg-[#a8482a] text-white'
-                : 'bg-white text-zinc-700 ring-1 ring-zinc-200 hover:bg-zinc-900/5'
-            }`}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
     </div>
   );
 }
