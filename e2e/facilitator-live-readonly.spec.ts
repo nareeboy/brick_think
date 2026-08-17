@@ -5,7 +5,14 @@
 // the participant edits. Uses Supabase Realtime via the useModelRealtime
 // hook; participant's autosave debounces at 1s, so total ≤ ~2s.
 
-import { cleanupParticipant, dropFirstBrickAt, expect, setUpParticipant, test } from './fixtures';
+import {
+  cleanupParticipant,
+  dropFirstBrickAt,
+  expect,
+  setUpParticipant,
+  startStage,
+  test,
+} from './fixtures';
 
 test.describe('facilitator live read-only view', () => {
   test('facilitator sees participant brick add within 3s on individual_model', async ({
@@ -20,7 +27,9 @@ test.describe('facilitator live read-only view', () => {
     );
 
     try {
-      // Participant starts their own individual_model design.
+      // Facilitator starts the stage (participant Start-your-model is
+      // disabled while pending), then the participant starts their design.
+      await startStage(facilitatorPage, seededSession.sessionId, 'individual_model');
       await participant.page.goto(`/app/sessions/${seededSession.sessionId}`);
       await participant.page
         .getByTestId('stage-card-individual_model')
@@ -60,7 +69,9 @@ test.describe('facilitator live read-only view', () => {
     );
 
     try {
-      // Participant starts their own individual_model design.
+      // Facilitator starts the stage (participant Start-your-model is
+      // disabled while pending), then the participant starts their design.
+      await startStage(facilitatorPage, seededSession.sessionId, 'individual_model');
       await participant.page.goto(`/app/sessions/${seededSession.sessionId}`);
       await participant.page
         .getByTestId('stage-card-individual_model')

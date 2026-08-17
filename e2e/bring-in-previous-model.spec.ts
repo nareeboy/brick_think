@@ -23,13 +23,21 @@ import {
   dropFirstBrickAt,
   expect,
   setUpParticipant,
+  startStage,
   test,
   type ParticipantSetup,
 } from './fixtures';
 
 /** Member builds an individual_model with one brick; autosave must land
- *  before room creation — the composer reads canvas_state from the row. */
-async function buildIndividualModel(member: ParticipantSetup, sessionId: string): Promise<void> {
+ *  before room creation — the composer reads canvas_state from the row.
+ *  The facilitator starts the stage first — a participant's "Start your
+ *  model" button is disabled while the stage is pending. */
+async function buildIndividualModel(
+  facPage: Page,
+  member: ParticipantSetup,
+  sessionId: string,
+): Promise<void> {
+  await startStage(facPage, sessionId, 'individual_model');
   await member.page.goto(`/app/sessions/${sessionId}`);
   await member.page
     .getByTestId('stage-card-individual_model')
@@ -70,7 +78,7 @@ test.describe('room composition brings in previous models', () => {
     const member = await setUpParticipant(facPage, seededSession.sessionId, facEmail);
     try {
       // 1. Member builds an individual_model with one brick.
-      await buildIndividualModel(member, seededSession.sessionId);
+      await buildIndividualModel(facPage, member, seededSession.sessionId);
 
       // 2. Facilitator partitions the shared_model stage into one room
       //    containing the member.
@@ -109,7 +117,7 @@ test.describe('room composition brings in previous models', () => {
     try {
       // 1. Member seeds their individual_model with a brick; facilitator
       //    creates the shared_model room (composes that brick in).
-      await buildIndividualModel(member, seededSession.sessionId);
+      await buildIndividualModel(facPage, member, seededSession.sessionId);
       await createSharedRoomWithMember(facPage, seededSession.sessionId, member.email);
 
       // 2. Facilitator creates one system_model room sourced from the

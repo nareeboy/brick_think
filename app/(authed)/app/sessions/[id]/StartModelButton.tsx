@@ -8,12 +8,15 @@ export function StartModelButton({
   sessionId,
   stageId,
   stageType,
+  stageStatus,
   isTourTarget = false,
   canManage = false,
 }: {
   sessionId: string;
   stageId: string;
   stageType: string;
+  /** Runtime stage status (`pending` / `active` / `paused` / `completed`). */
+  stageStatus: string;
   isTourTarget?: boolean;
   /**
    * Facilitator/admin view. Flips the label to "Create Example Model" — the
@@ -22,6 +25,10 @@ export function StartModelButton({
   canManage?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  // Participants wait for the facilitator: until the stage is started ("Start
+  // this session" in the timer cluster), "Start your model" stays disabled.
+  // Facilitators are never locked — the example model can be built ahead.
+  const locked = !canManage && stageStatus === 'pending';
   return (
     <form
       action={(fd: FormData) => {
@@ -39,7 +46,8 @@ export function StartModelButton({
       <input type="hidden" name="stageId" value={stageId} />
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || locked}
+        {...(locked ? { title: 'Waiting for the facilitator to start this stage' } : {})}
         data-testid={`start-model-${stageType}`}
         {...(isTourTarget ? { 'data-tour-id': 'start-model-button' } : {})}
         className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/10 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-900/5 disabled:cursor-default disabled:opacity-60"

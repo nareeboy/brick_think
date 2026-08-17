@@ -14,8 +14,8 @@ test.describe('stage controller realtime propagation', () => {
 
     // Both tabs should show a "Start" button for stage 1 (skill_building, position 0).
     // The Stage controller section is above SessionStageList.
-    const startA = page.getByRole('button', { name: /^start$/i }).first();
-    const startB = pageB.getByRole('button', { name: /^start$/i }).first();
+    const startA = page.getByRole('button', { name: /^start this session$/i }).first();
+    const startB = pageB.getByRole('button', { name: /^start this session$/i }).first();
     await expect(startA).toBeVisible();
     await expect(startB).toBeVisible();
 
@@ -59,7 +59,7 @@ test.describe('stage controller realtime propagation', () => {
     // Tab B: after advance the previously-active stage flips to completed (its
     // Pause / Advance / Reset cluster disappears) and the next stage shows
     // Start. Rollback was deliberately removed in ce1aa60 — don't assert it.
-    await expect(pageB.getByRole('button', { name: /^start$/i }).first()).toBeVisible({
+    await expect(pageB.getByRole('button', { name: /^start this session$/i }).first()).toBeVisible({
       timeout: 3000,
     });
     // The just-completed stage no longer surfaces Pause anywhere on Tab B.
@@ -88,7 +88,7 @@ test.describe('stage controller realtime propagation', () => {
     // Tab A: go back to the session page and click Start on stage 1.
     await page.goto(`/app/sessions/${seededSession.sessionId}`);
     await page
-      .getByRole('button', { name: /^start$/i })
+      .getByRole('button', { name: /^start this session$/i })
       .first()
       .click();
 
