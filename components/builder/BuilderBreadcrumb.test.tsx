@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { BuilderBreadcrumb } from './BuilderBreadcrumb';
 
 describe('BuilderBreadcrumb', () => {
-  it('renders session title, stage label, and a link back to the session', () => {
+  it('renders a bold back link to the session page', () => {
     render(
       <BuilderBreadcrumb
         sessionContext={{
@@ -16,10 +16,11 @@ describe('BuilderBreadcrumb', () => {
     );
     // No @testing-library/jest-dom in this repo — assert via vanilla DOM API.
     const link = screen.getByRole('link', {
-      name: /quarterly retro/i,
+      name: /back to session list page/i,
     }) as HTMLAnchorElement;
     expect(link.getAttribute('href')).toBe('/app/sessions/11111111-2222-3333-4444-555555555555');
-    // getByText throws if absent — its return value is the assertion.
-    screen.getByText('Individual model');
+    // The session title and stage label are no longer rendered in the sidebar.
+    expect(screen.queryByText('Quarterly retro')).toBeNull();
+    expect(screen.queryByText('Individual model')).toBeNull();
   });
 });

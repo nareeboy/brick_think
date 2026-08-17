@@ -22,6 +22,7 @@ import { SessionStages, type ParticipantModel, type StageViewModel } from './Ses
 import { SessionTitle } from './SessionTitle';
 import type { OrgMemberSummary } from './ManageRoomsDialog';
 import type { UpstreamRoomSummary } from './ManageDownstreamRoomsDialog';
+import type { OrgOption } from '@/app/(authed)/app/scenarios/ScenarioEditorDialog';
 import type { StageRoomSummary } from './RoomsPanel';
 import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types';
@@ -410,6 +411,25 @@ export default async function SessionDetailPage({
   }
   const allScenarios: Scenario[] = scenarioRes.data ?? [];
 
+  // Workshops the caller can author scenarios into — the picker's create-flow
+  // destination options (mirrors /app/scenarios). Only fetched while the
+  // pre-session checklist (the picker's host) can render.
+  const isPreSession = session.status === 'draft' || session.status === 'scheduled';
+  let authoringOrgs: OrgOption[] = [];
+  if (canManageSession && isPreSession) {
+    const membershipRes = await supabase
+      .from('org_memberships')
+      .select('organisations:org_id ( id, name )')
+      .eq('profile_id', user.id);
+    if (membershipRes.error) {
+      throw new Error(`Failed to load workshops: ${membershipRes.error.message}`);
+    }
+    authoringOrgs = (membershipRes.data ?? [])
+      .map((row) => (row as { organisations: OrgOption | null }).organisations)
+      .filter((o): o is OrgOption => o !== null)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   const scenariosByStageType: Partial<Record<StageType, Scenario[]>> = {};
   const scenarioById = new Map<string, Scenario>();
   for (const s of allScenarios) {
@@ -525,6 +545,7 @@ export default async function SessionDetailPage({
                   title: s.title,
                 }))}
                 scenariosByStageType={scenariosByStageType}
+                orgs={authoringOrgs}
               />
               <SessionStages
                 sessionId={session.id}

@@ -7,6 +7,7 @@ import {
   updatePreSessionCheckAction,
   updateSessionBriefAction,
 } from '@/app/(authed)/app/sessions/scenario-actions';
+import type { OrgOption } from '@/app/(authed)/app/scenarios/ScenarioEditorDialog';
 import type { Scenario } from '@/lib/scenarios/types';
 import type { SessionStatus, StageType } from '@/lib/sessions/types';
 
@@ -30,6 +31,8 @@ interface Props {
   canManage: boolean;
   /** All caller-visible scenarios grouped by stage_type. Powers the picker. */
   scenariosByStageType: Partial<Record<StageType, Scenario[]>>;
+  /** Workshops the caller can author into — for the picker's create flow. */
+  orgs: OrgOption[];
 }
 
 type ItemStatus = 'done' | 'open' | 'disabled';
@@ -42,6 +45,7 @@ export function PreSessionChecklist({
   stages,
   canManage,
   scenariosByStageType,
+  orgs,
 }: Props) {
   const [draftBrief, setDraftBrief] = useState(briefText);
   const [colourblindOn, setColourblindOn] = useState<boolean>(
@@ -267,6 +271,7 @@ export function PreSessionChecklist({
           stageType={pickerStage.stage_type}
           scenarios={scenariosByStageType[pickerStage.stage_type] ?? []}
           currentScenarioId={pickerStage.scenarioId}
+          orgs={orgs}
           onClose={() => setPickerStageId(null)}
         />
       )}

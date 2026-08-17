@@ -101,6 +101,7 @@ export async function getMailpitMessage(addr: string, timeoutMs = 10_000): Promi
 // relevant key — Playwright runs init scripts in registration order.
 export async function suppressFirstRunOverlays(page: Page | BrowserContext): Promise<void> {
   await page.addInitScript(() => {
+    window.localStorage.setItem('bt_role_choice', 'facilitator');
     window.localStorage.setItem('bt_welcome_seen', '1');
     window.localStorage.setItem('bt_checklist_dismissed', '1');
     window.localStorage.setItem('bt_session_tour_seen', '1');
