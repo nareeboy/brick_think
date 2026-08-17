@@ -38,6 +38,12 @@ const KEYS = {
   pathBuildDone: 'bt_path_build_done',
   pathWorkshopDone: 'bt_path_workshop_done',
   pathSessionDone: 'bt_path_session_done',
+  // Sticky tutorial-guest marker. Set (client-side) the moment this browser
+  // provably participates in someone else's session, so the tutorial modal
+  // stays hidden even if that session — the only server-side evidence — is
+  // later deleted. Cleared by replayAll() (an explicit "show me the tutorial"
+  // from account settings outranks the guest inference).
+  tutorialGuest: 'bt_tutorial_guest',
 } as const;
 
 export type OnboardingPath = 'build' | 'workshop' | 'session';
@@ -111,6 +117,9 @@ export interface OnboardingState {
   markSessionTourSeen: () => void;
   markCanvasTutorialSeen: () => void;
   markPathDone: (path: OnboardingPath) => void;
+  /** True when this browser has been marked as an invited session guest. */
+  tutorialGuestSticky: boolean;
+  markTutorialGuest: () => void;
   replayAll: () => void;
 }
 
@@ -129,6 +138,7 @@ export function useOnboardingState(): OnboardingState {
   const [pathWorkshopDone, setPathWorkshopDone] = useState(false);
   const [pathSessionDone, setPathSessionDone] = useState(false);
   const [walkthroughReplay, setWalkthroughReplay] = useState(false);
+  const [tutorialGuestSticky, setTutorialGuestSticky] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -143,6 +153,7 @@ export function useOnboardingState(): OnboardingState {
       setPathWorkshopDone(readFlag(KEYS.pathWorkshopDone));
       setPathSessionDone(readFlag(KEYS.pathSessionDone));
       setWalkthroughReplay(readFlag(KEYS.walkthroughReplay));
+      setTutorialGuestSticky(readFlag(KEYS.tutorialGuest));
     };
     sync();
     setHydrated(true);
@@ -200,7 +211,15 @@ export function useOnboardingState(): OnboardingState {
     broadcastSync();
   }, []);
 
+  const markTutorialGuest = useCallback(() => {
+    window.localStorage.setItem(KEYS.tutorialGuest, '1');
+    setTutorialGuestSticky(true);
+    broadcastSync();
+  }, []);
+
   const replayAll = useCallback(() => {
+    window.localStorage.removeItem(KEYS.tutorialGuest);
+    setTutorialGuestSticky(false);
     window.localStorage.removeItem(KEYS.welcomeSeen);
     window.localStorage.removeItem(KEYS.checklistComplete);
     window.localStorage.removeItem(KEYS.checklistDismissed);
@@ -246,6 +265,8 @@ export function useOnboardingState(): OnboardingState {
     markSessionTourSeen,
     markCanvasTutorialSeen,
     markPathDone,
+    tutorialGuestSticky,
+    markTutorialGuest,
     replayAll,
   };
 }
