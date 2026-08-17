@@ -1,24 +1,27 @@
 import Link from 'next/link';
 
-import { stageLabel } from '@/lib/sessions/stage-labels';
 import type { SessionContext } from '@/lib/sessions/types';
 
 export function BuilderBreadcrumb({ sessionContext }: { sessionContext: SessionContext }) {
   return (
-    <div
-      className="flex flex-wrap items-baseline gap-1.5 text-[12px] text-zinc-600"
+    <Link
+      href={`/app/sessions/${sessionContext.sessionId}`}
+      className="inline-flex items-center gap-1 self-start text-[13px] font-bold text-zinc-900 underline-offset-2 hover:underline"
       data-testid="builder-breadcrumb"
     >
-      <Link
-        href={`/app/sessions/${sessionContext.sessionId}`}
-        className="font-medium text-zinc-700 underline-offset-2 hover:underline"
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-3.5 w-3.5"
+        aria-hidden="true"
       >
-        {sessionContext.sessionTitle}
-      </Link>
-      <span aria-hidden="true" className="text-zinc-400">
-        ›
-      </span>
-      <span>{stageLabel(sessionContext.stageType)}</span>
-    </div>
+        <path d="m15 18-6-6 6-6" />
+      </svg>
+      Back to session
+    </Link>
   );
 }
