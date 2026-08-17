@@ -111,7 +111,7 @@ function RoleChip({ role }: { role: GlobalRole }) {
       className="hidden items-center gap-1.5 rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-teal-900 sm:inline-flex"
     >
       <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-teal-600" />
-      Guest
+      Participant
     </span>
   );
 }
