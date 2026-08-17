@@ -136,10 +136,25 @@ describe('ScenarioPickerDialog', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'Skill-building' }));
     screen.getByText('Tower of any height');
     expect(screen.queryByText('Your role today')).toBeNull();
-    // "All" shows every stage's scenarios together.
-    await userEvent.click(screen.getByRole('radio', { name: 'All' }));
+    // "All" shows every stage's scenarios together (scoped to the stage
+    // chip group — the source filter has its own "All" chip).
+    const stageGroup = within(screen.getByRole('radiogroup', { name: 'Filter by stage' }));
+    await userEvent.click(stageGroup.getByRole('radio', { name: 'All' }));
     screen.getByText('Tower of any height');
     screen.getByText('Your role today');
+  });
+
+  test('source filter narrows to Custom or Library rows', async () => {
+    renderPicker();
+    const sourceGroup = within(screen.getByRole('radiogroup', { name: 'Filter by source' }));
+    // Custom: only the caller-authored row survives.
+    await userEvent.click(sourceGroup.getByRole('radio', { name: 'Custom' }));
+    screen.getByText('Our quarterly ritual');
+    expect(screen.queryByText('Your role today')).toBeNull();
+    // Library: templates only.
+    await userEvent.click(sourceGroup.getByRole('radio', { name: 'Library' }));
+    screen.getByText('Your role today');
+    expect(screen.queryByText('Our quarterly ritual')).toBeNull();
   });
 
   test('a scenario from another stage can be picked', async () => {

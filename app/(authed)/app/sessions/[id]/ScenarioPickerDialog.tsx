@@ -10,9 +10,9 @@ import {
 import { setStageScenarioAction } from '@/app/(authed)/app/sessions/scenario-actions';
 import { ChipGroup } from '@/components/app/ChipGroup';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
-import { filterScenarios } from '@/lib/scenarios/filter';
+import { SCENARIO_SCOPES, filterScenarios } from '@/lib/scenarios/filter';
 import { STAGE_CHIP_LABEL, stageChipClasses } from '@/lib/scenarios/stageChip';
-import type { Scenario } from '@/lib/scenarios/types';
+import type { Scenario, ScenarioScope } from '@/lib/scenarios/types';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 
 const NEUTRAL_CHIP =
@@ -22,6 +22,13 @@ const NEUTRAL_CHIP =
 // tone) so authored rows are recognisable inside the picker too.
 const CUSTOM_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-orange-100 text-orange-900';
+
+// Same labels the /app/scenarios filter bar used for its source chips.
+const SCOPE_LABELS: Record<ScenarioScope, string> = {
+  all: 'All',
+  library: 'Library',
+  custom: 'Custom',
+};
 
 const SECTION_HEADING =
   'mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500';
@@ -55,11 +62,12 @@ export function ScenarioPickerDialog({
   // label, not a restriction. The filter just defaults to this stage's own
   // exercises so the common case needs no extra click.
   const [stageFilter, setStageFilter] = useState<StageType | 'all'>(stageType);
+  const [scope, setScope] = useState<ScenarioScope>('all');
 
   // Same matcher the /app/scenarios library uses.
   const filtered = useMemo(
-    () => filterScenarios(scenarios, { stage: stageFilter, duration: 'any', search, scope: 'all' }),
-    [scenarios, stageFilter, search],
+    () => filterScenarios(scenarios, { stage: stageFilter, duration: 'any', search, scope }),
+    [scenarios, stageFilter, search, scope],
   );
   // Custom scenarios lead; the ready-made library sits below, mirroring the
   // section order on /app/scenarios.
@@ -169,7 +177,7 @@ export function ScenarioPickerDialog({
             </button>
           </div>
 
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             <ChipGroup<StageType | 'all'>
               ariaLabel="Filter by stage"
               value={stageFilter}
@@ -181,6 +189,12 @@ export function ScenarioPickerDialog({
                   label: STAGE_CHIP_LABEL[st],
                 })),
               ]}
+            />
+            <ChipGroup<ScenarioScope>
+              ariaLabel="Filter by source"
+              value={scope}
+              onChange={setScope}
+              options={SCENARIO_SCOPES.map((sc) => ({ value: sc, label: SCOPE_LABELS[sc] }))}
             />
           </div>
 
