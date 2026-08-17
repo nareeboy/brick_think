@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { Avatar } from '@/components/app/Avatar';
+import type { GlobalRole } from '@/lib/account/globalRole';
 import type { NavSession } from '@/lib/sessions/navSessions';
 import { BrickGlyph } from '@/components/app/BrickGlyph';
 import { HeaderInner } from '@/components/app/HeaderInner';
@@ -12,6 +13,7 @@ interface Props {
   userName: string;
   userEmail: string | null;
   userAvatarUrl: string | null;
+  role: GlobalRole;
   isSiteAdmin?: boolean;
   sessions?: NavSession[];
 }
@@ -20,6 +22,7 @@ export function GlobalHeader({
   userName,
   userEmail,
   userAvatarUrl,
+  role,
   isSiteAdmin = false,
   sessions = [],
 }: Props) {
@@ -37,7 +40,7 @@ export function GlobalHeader({
               BrickThink
             </span>
           </Link>
-          <HeaderNav showAdmin={isSiteAdmin && adminPanelEnabled} sessions={sessions} />
+          <HeaderNav role={role} showAdmin={isSiteAdmin && adminPanelEnabled} sessions={sessions} />
         </div>
 
         <div className="flex items-center gap-1">
@@ -46,6 +49,7 @@ export function GlobalHeader({
             <span className="hidden max-w-[140px] truncate text-[13px] text-zinc-800 sm:inline">
               {userName}
             </span>
+            <RoleChip role={role} />
           </div>
           <div aria-hidden="true" className="h-6 w-px bg-zinc-900/10" />
           <a
@@ -80,6 +84,35 @@ export function GlobalHeader({
         </div>
       </HeaderInner>
     </header>
+  );
+}
+
+/**
+ * Header-scale role chip. Mirrors the violet/teal role semantics of the
+ * page-level SessionRoleChip but at card-chip size with tinted fills — the
+ * saturated page-level treatment is reserved for the session eyebrow.
+ */
+function RoleChip({ role }: { role: GlobalRole }) {
+  if (role === 'facilitator') {
+    return (
+      <span
+        data-testid="header-role-chip"
+        className="hidden items-center gap-1.5 rounded-full bg-violet-100 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-violet-900 sm:inline-flex"
+      >
+        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-violet-600" />
+        Facilitator
+      </span>
+    );
+  }
+
+  return (
+    <span
+      data-testid="header-role-chip"
+      className="hidden items-center gap-1.5 rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-teal-900 sm:inline-flex"
+    >
+      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-teal-600" />
+      Guest
+    </span>
   );
 }
 

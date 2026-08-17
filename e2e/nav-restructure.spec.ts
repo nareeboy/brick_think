@@ -1,7 +1,13 @@
 import { test, expect } from './fixtures';
 
 test.describe('nav restructure', () => {
-  test('header has three links in canonical order', async ({ signedInPage }) => {
+  // seededSession makes the user an org owner + session facilitator — the
+  // full nav is facilitator-only (guests get the reduced nav below).
+  test('facilitator header has three links in canonical order', async ({
+    signedInPage,
+    seededSession,
+  }) => {
+    void seededSession;
     await signedInPage.goto('/app/my-designs');
     const nav = signedInPage.getByRole('navigation', { name: 'Primary' });
     await expect(nav.getByRole('link', { name: 'Workshops' })).toBeVisible();
@@ -12,6 +18,18 @@ test.describe('nav restructure', () => {
     // components/app/HeaderNav.tsx).
     const labels = await nav.locator('a').allTextContents();
     expect(labels).toEqual(['My Designs', 'Workshops', 'Scenarios']);
+  });
+
+  // A fresh account (no org, no facilitated session) resolves as a guest:
+  // Workshops and Scenarios are hidden, leaving only My Designs. Their
+  // session link (SessionNavLink) appears once they join a session.
+  test('guest header shows only My Designs', async ({ signedInPage }) => {
+    await signedInPage.goto('/app/my-designs');
+    const nav = signedInPage.getByRole('navigation', { name: 'Primary' });
+    await expect(nav.getByRole('link', { name: 'My Designs' })).toBeVisible();
+    await expect(nav.getByRole('link', { name: 'Workshops' })).toHaveCount(0);
+    await expect(nav.getByRole('link', { name: 'Scenarios' })).toHaveCount(0);
+    await expect(nav.locator('a')).toHaveCount(1);
   });
 
   test('New Design from My Designs creates a personal design', async ({ signedInPage }) => {
