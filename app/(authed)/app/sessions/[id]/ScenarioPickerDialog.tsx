@@ -10,9 +10,9 @@ import {
 import { setStageScenarioAction } from '@/app/(authed)/app/sessions/scenario-actions';
 import { ChipGroup } from '@/components/app/ChipGroup';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
-import { SCENARIO_SCOPES, filterScenarios } from '@/lib/scenarios/filter';
+import { filterScenarios } from '@/lib/scenarios/filter';
 import { STAGE_CHIP_LABEL, stageChipClasses } from '@/lib/scenarios/stageChip';
-import type { Scenario, ScenarioScope } from '@/lib/scenarios/types';
+import type { Scenario } from '@/lib/scenarios/types';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 
 const NEUTRAL_CHIP =
@@ -22,13 +22,6 @@ const NEUTRAL_CHIP =
 // tone) so authored rows are recognisable inside the picker too.
 const CUSTOM_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-orange-100 text-orange-900';
-
-// Same labels the /app/scenarios filter bar used for its source chips.
-const SCOPE_LABELS: Record<ScenarioScope, string> = {
-  all: 'All',
-  library: 'Library',
-  custom: 'Custom',
-};
 
 const SECTION_HEADING =
   'mb-2 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-500';
@@ -61,13 +54,21 @@ export function ScenarioPickerDialog({
   // Scenarios from any stage are pickable — the stage_type is a category
   // label, not a restriction. The filter just defaults to this stage's own
   // exercises so the common case needs no extra click.
-  const [stageFilter, setStageFilter] = useState<StageType | 'all'>(stageType);
-  const [scope, setScope] = useState<ScenarioScope>('all');
+  // One pill row: All, the five stages, and Custom (the caller's own
+  // scenarios across every stage) as a peer option. Defaults to this stage's
+  // own exercises so the common case needs no extra click.
+  const [filterChip, setFilterChip] = useState<StageType | 'all' | 'custom'>(stageType);
 
   // Same matcher the /app/scenarios library uses.
   const filtered = useMemo(
-    () => filterScenarios(scenarios, { stage: stageFilter, duration: 'any', search, scope }),
-    [scenarios, stageFilter, search, scope],
+    () =>
+      filterScenarios(scenarios, {
+        stage: filterChip === 'all' || filterChip === 'custom' ? 'all' : filterChip,
+        duration: 'any',
+        search,
+        scope: filterChip === 'custom' ? 'custom' : 'all',
+      }),
+    [scenarios, filterChip, search],
   );
   // Custom scenarios lead; the ready-made library sits below, mirroring the
   // section order on /app/scenarios.
@@ -177,24 +178,19 @@ export function ScenarioPickerDialog({
             </button>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <ChipGroup<StageType | 'all'>
-              ariaLabel="Filter by stage"
-              value={stageFilter}
-              onChange={setStageFilter}
+          <div className="mt-3">
+            <ChipGroup<StageType | 'all' | 'custom'>
+              ariaLabel="Filter scenarios"
+              value={filterChip}
+              onChange={setFilterChip}
               options={[
                 { value: 'all', label: 'All' },
                 ...CANONICAL_STAGE_TYPES.map((st) => ({
                   value: st,
                   label: STAGE_CHIP_LABEL[st],
                 })),
+                { value: 'custom', label: 'Custom' },
               ]}
-            />
-            <ChipGroup<ScenarioScope>
-              ariaLabel="Filter by source"
-              value={scope}
-              onChange={setScope}
-              options={SCENARIO_SCOPES.map((sc) => ({ value: sc, label: SCOPE_LABELS[sc] }))}
             />
           </div>
 
@@ -248,7 +244,9 @@ export function ScenarioPickerDialog({
         <ScenarioEditorDialog
           mode="create"
           orgs={orgs}
-          initialStageType={stageFilter === 'all' ? stageType : stageFilter}
+          initialStageType={
+            filterChip === 'all' || filterChip === 'custom' ? stageType : filterChip
+          }
           // The picker's list comes from server props — refresh re-renders the
           // session page so the new scenario appears in the (still open) list.
           onSaved={() => router.refresh()}
