@@ -20,10 +20,15 @@ test.describe('nav restructure', () => {
     expect(labels).toEqual(['My Designs', 'Workshops', 'Scenarios']);
   });
 
-  // A fresh account (no org, no facilitated session) resolves as a guest:
+  // A declared guest (role chooser / header switcher) gets the reduced nav:
   // Workshops and Scenarios are hidden, leaving only My Designs. Their
-  // session link (SessionNavLink) appears once they join a session.
+  // session link (SessionNavLink) appears once they join a session. The
+  // explicit choice overrides the fixture's pre-seeded facilitator answer.
   test('guest header shows only My Designs', async ({ signedInPage }) => {
+    await signedInPage.addInitScript(() => {
+      window.localStorage.setItem('bt_role_choice', 'guest');
+      window.localStorage.setItem('bt_tutorial_guest', '1');
+    });
     await signedInPage.goto('/app/my-designs');
     const nav = signedInPage.getByRole('navigation', { name: 'Primary' });
     await expect(nav.getByRole('link', { name: 'My Designs' })).toBeVisible();

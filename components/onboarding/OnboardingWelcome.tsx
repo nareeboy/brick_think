@@ -48,6 +48,7 @@ export function OnboardingWelcome({ guest = false }: Props) {
     pathWorkshopDone,
     pathSessionDone,
     tutorialGuestSticky,
+    roleChoice,
   } = useOnboardingState();
   const router = useRouter();
   const pathname = usePathname();
@@ -101,6 +102,9 @@ export function OnboardingWelcome({ guest = false }: Props) {
   if (
     guest ||
     tutorialGuestSticky ||
+    // The tutorial modal is for self-declared facilitators only — until the
+    // RoleChooser has been answered, nothing shows.
+    roleChoice !== 'facilitator' ||
     !hydrated ||
     role !== 'facilitator' ||
     welcomeSeen ||

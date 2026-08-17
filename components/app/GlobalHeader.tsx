@@ -7,6 +7,7 @@ import { BrickGlyph } from '@/components/app/BrickGlyph';
 import { HeaderInner } from '@/components/app/HeaderInner';
 import { HeaderNav } from '@/components/app/HeaderNav';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { RoleSwitcher } from '@/components/app/RoleSwitcher';
 import { adminPanelEnabled } from '@/lib/premium/server';
 
 interface Props {
@@ -49,7 +50,7 @@ export function GlobalHeader({
             <span className="hidden max-w-[140px] truncate text-[13px] text-zinc-800 sm:inline">
               {userName}
             </span>
-            <RoleChip role={role} />
+            <RoleSwitcher serverRole={role} />
           </div>
           <div aria-hidden="true" className="h-6 w-px bg-zinc-900/10" />
           <a
@@ -84,35 +85,6 @@ export function GlobalHeader({
         </div>
       </HeaderInner>
     </header>
-  );
-}
-
-/**
- * Header-scale role chip. Mirrors the violet/teal role semantics of the
- * page-level SessionRoleChip but at card-chip size with tinted fills — the
- * saturated page-level treatment is reserved for the session eyebrow.
- */
-function RoleChip({ role }: { role: GlobalRole }) {
-  if (role === 'facilitator') {
-    return (
-      <span
-        data-testid="header-role-chip"
-        className="hidden items-center gap-1.5 rounded-full bg-violet-100 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-violet-900 sm:inline-flex"
-      >
-        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-violet-600" />
-        Facilitator
-      </span>
-    );
-  }
-
-  return (
-    <span
-      data-testid="header-role-chip"
-      className="hidden items-center gap-1.5 rounded-full bg-teal-100 px-2.5 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-teal-900 sm:inline-flex"
-    >
-      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-teal-600" />
-      Participant
-    </span>
   );
 }
 
