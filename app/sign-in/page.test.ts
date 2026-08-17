@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/db/env', () => ({ isSupabaseConfigured: () => true }));
@@ -8,6 +10,10 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 vi.mock('./actions', () => ({ signInWithGoogle: vi.fn() }));
+// Keep the client form component out of the module graph: these tests only
+// exercise the server-side redirect, and loading the real form drags its
+// uncovered functions into the v8 coverage report (CI ratchet).
+vi.mock('./MagicLinkForm', () => ({ MagicLinkForm: () => null }));
 
 let adminPanelEnabled = false;
 vi.mock('@/lib/premium/server', () => ({
@@ -67,5 +73,15 @@ describe('SignInPage — already-signed-in redirect', () => {
     mockSupabase({ userId: 'u1', isSiteAdmin: true });
 
     await expect(render({ next: '/app/sessions' })).rejects.toThrow('REDIRECT:/app/sessions');
+  });
+
+  it('renders the sign-in landing for signed-out visitors', async () => {
+    mockSupabase({ userId: null });
+
+    const page = (await render()) as ReactElement;
+    const html = renderToStaticMarkup(page);
+
+    expect(html).toContain('Google');
+    expect(html).toContain('href="/terms"');
   });
 });
