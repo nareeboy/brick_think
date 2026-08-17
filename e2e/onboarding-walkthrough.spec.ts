@@ -58,6 +58,8 @@ test.describe('onboarding walkthrough', () => {
     const chooser = signedInPage.getByTestId('role-chooser');
     await expect(chooser).toBeVisible();
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
+    // The role question stands alone — no app chrome.
+    await expect(signedInPage.getByRole('navigation', { name: 'Primary' })).toHaveCount(0);
 
     await chooser.getByTestId('role-chooser-facilitator').click();
     await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
@@ -66,9 +68,13 @@ test.describe('onboarding walkthrough', () => {
 
   test('role chooser page: Guest suppresses the tutorial modal', async ({ signedInPage }) => {
     await signedInPage.addInitScript(() => {
-      // Fresh browser, but keep the guest answer once the test writes it —
-      // only remove the fixture's seed on the FIRST document load.
-      if (window.sessionStorage.getItem('__bt_role_answered') !== '1') {
+      // Fresh browser on the first load; after the test answers Guest, keep
+      // re-asserting that answer over the fixture's facilitator seed (which
+      // re-runs on every document load).
+      if (window.sessionStorage.getItem('__bt_role_answered') === '1') {
+        window.localStorage.setItem('bt_role_choice', 'guest');
+        window.localStorage.setItem('bt_tutorial_guest', '1');
+      } else {
         window.localStorage.removeItem('bt_role_choice');
         window.localStorage.removeItem('bt_tutorial_guest');
       }
@@ -87,6 +93,15 @@ test.describe('onboarding walkthrough', () => {
     await signedInPage.reload();
     await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
+
+    // The header pill reflects the choice and can reverse it: switching back
+    // to Facilitator restores the full nav and resumes the tutorial modal.
+    const nav = signedInPage.getByRole('navigation', { name: 'Primary' });
+    await expect(nav.getByRole('link', { name: 'Workshops' })).toHaveCount(0);
+    await signedInPage.getByTestId('header-role-chip').click();
+    await signedInPage.getByTestId('role-switch-facilitator').click();
+    await expect(nav.getByRole('link', { name: 'Workshops' })).toBeVisible();
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toBeVisible();
   });
 
   test('facilitator sees the three-card welcome modal; skip confirms then persists', async ({

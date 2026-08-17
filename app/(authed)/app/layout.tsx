@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 
 import { fetchRecentNotifications } from '@/app/(authed)/app/notifications/actions';
 import { GlobalHeader } from '@/components/app/GlobalHeader';
-import { HideOnAdminRoutes } from '@/components/app/HideOnAdminRoutes';
+import { HideOnChromelessRoutes } from '@/components/app/HideOnChromelessRoutes';
 import { PresenceHeartbeat } from '@/components/app/PresenceHeartbeat';
 import { getGlobalRole } from '@/lib/account/globalRole';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
@@ -69,7 +69,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
   return (
     <NotificationsProvider profileId={user.id} initial={initialNotifications}>
       <div className="flex h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
-        <HideOnAdminRoutes>
+        <HideOnChromelessRoutes>
           <GlobalHeader
             userName={userName}
             userEmail={email}
@@ -78,12 +78,12 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
             isSiteAdmin={isSiteAdmin}
             sessions={navSessions}
           />
-        </HideOnAdminRoutes>
+        </HideOnChromelessRoutes>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
         <NotificationToast />
-        <HideOnAdminRoutes>
+        <HideOnChromelessRoutes>
           <ChatWidgetSlot profileId={user.id} />
-        </HideOnAdminRoutes>
+        </HideOnChromelessRoutes>
         <PresenceHeartbeat />
         {/* Global welcome/tutorial modal — decides for itself when to show
             (hub pages, or the reprise after a pathway completes). Invited

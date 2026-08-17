@@ -237,6 +237,16 @@ export function useOnboardingState(): OnboardingState {
   const chooseRole = useCallback((choice: RoleChoice) => {
     window.localStorage.setItem(KEYS.roleChoice, choice);
     setRoleChoice(choice);
+    // The choice owns the sticky guest flag in both directions: declaring
+    // Guest suppresses the tutorial modal; declaring Facilitator (e.g. via
+    // the header role switcher) un-suppresses it.
+    if (choice === 'guest') {
+      window.localStorage.setItem(KEYS.tutorialGuest, '1');
+      setTutorialGuestSticky(true);
+    } else {
+      window.localStorage.removeItem(KEYS.tutorialGuest);
+      setTutorialGuestSticky(false);
+    }
     broadcastSync();
   }, []);
 

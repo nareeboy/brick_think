@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { SessionNavLink } from '@/components/app/SessionNavLink';
 import type { GlobalRole } from '@/lib/account/globalRole';
 import type { NavSession } from '@/lib/sessions/navSessions';
+import { useEffectiveRole } from '@/components/app/useEffectiveRole';
 
 const BASE_LINKS = [
   { href: '/app/my-designs', label: 'My Designs' },
@@ -28,6 +29,9 @@ interface Props {
 }
 
 export function HeaderNav({ role, showAdmin = false, sessions = [] }: Props) {
+  // The explicit role choice (first-run question / header switcher) overrides
+  // the server-derived role, so switching updates the nav immediately.
+  const effectiveRole = useEffectiveRole(role);
   const pathname = usePathname() ?? '';
 
   function renderLink(link: { href: string; label: string }) {
@@ -51,7 +55,7 @@ export function HeaderNav({ role, showAdmin = false, sessions = [] }: Props) {
 
   return (
     <nav aria-label="Primary" className="flex items-center gap-1">
-      {(role === 'guest' ? GUEST_LINKS : BASE_LINKS).map(renderLink)}
+      {(effectiveRole === 'guest' ? GUEST_LINKS : BASE_LINKS).map(renderLink)}
       <SessionNavLink sessions={sessions} />
       {showAdmin && ADMIN_LINKS.map(renderLink)}
     </nav>
