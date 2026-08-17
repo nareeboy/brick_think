@@ -138,23 +138,23 @@ describe('ScenarioPickerDialog', () => {
     expect(screen.queryByText('Your role today')).toBeNull();
     // "All" shows every stage's scenarios together (scoped to the stage
     // chip group — the source filter has its own "All" chip).
-    const stageGroup = within(screen.getByRole('radiogroup', { name: 'Filter by stage' }));
+    const stageGroup = within(screen.getByRole('radiogroup', { name: 'Filter scenarios' }));
     await userEvent.click(stageGroup.getByRole('radio', { name: 'All' }));
     screen.getByText('Tower of any height');
     screen.getByText('Your role today');
   });
 
-  test('source filter narrows to Custom or Library rows', async () => {
+  test('the Custom pill (a peer of the stage pills) narrows to caller-authored rows', async () => {
     renderPicker();
-    const sourceGroup = within(screen.getByRole('radiogroup', { name: 'Filter by source' }));
-    // Custom: only the caller-authored row survives.
-    await userEvent.click(sourceGroup.getByRole('radio', { name: 'Custom' }));
+    // Custom sits in the same single-select chip row as the stage options.
+    const group = within(screen.getByRole('radiogroup', { name: 'Filter scenarios' }));
+    await userEvent.click(group.getByRole('radio', { name: 'Custom' }));
     screen.getByText('Our quarterly ritual');
     expect(screen.queryByText('Your role today')).toBeNull();
-    // Library: templates only.
-    await userEvent.click(sourceGroup.getByRole('radio', { name: 'Library' }));
+    // Back to All: templates return.
+    await userEvent.click(group.getByRole('radio', { name: 'All' }));
     screen.getByText('Your role today');
-    expect(screen.queryByText('Our quarterly ritual')).toBeNull();
+    screen.getByText('Our quarterly ritual');
   });
 
   test('a scenario from another stage can be picked', async () => {
