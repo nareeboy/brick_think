@@ -11,7 +11,7 @@ import { getGlobalRole } from '@/lib/account/globalRole';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome';
-import { RoleChooser } from '@/components/onboarding/RoleChooser';
+import { RoleChooserRedirect } from '@/components/onboarding/RoleChooserRedirect';
 import { isTutorialGuest } from '@/lib/onboarding/guestGate';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
@@ -90,7 +90,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
             guests never see it; they still get the in-context spotlight
             tours (session page + canvas). */}
         <Suspense fallback={null}>
-          <RoleChooser guest={tutorialGuest} />
+          <RoleChooserRedirect guest={tutorialGuest} />
         </Suspense>
         <Suspense fallback={null}>
           <OnboardingWelcome guest={tutorialGuest} />

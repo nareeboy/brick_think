@@ -43,7 +43,7 @@ test.describe('onboarding walkthrough', () => {
     });
   });
 
-  test('role chooser asks once; Facilitator unlocks the tutorial modal', async ({
+  test('role chooser page asks once; Facilitator unlocks the tutorial modal', async ({
     signedInPage,
   }) => {
     // Strip the fixture's pre-seeded choice so this test sees a truly fresh
@@ -53,17 +53,18 @@ test.describe('onboarding walkthrough', () => {
     });
     await signedInPage.goto('/app/my-designs');
 
+    // The hub redirects an unanswered user to the dedicated page.
+    await expect(signedInPage).toHaveURL(/\/app\/choose-role/);
     const chooser = signedInPage.getByTestId('role-chooser');
     await expect(chooser).toBeVisible();
-    // The tutorial modal waits behind the unanswered question.
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
 
     await chooser.getByTestId('role-chooser-facilitator').click();
-    await expect(chooser).toHaveCount(0);
+    await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toBeVisible();
   });
 
-  test('role chooser: Guest suppresses the tutorial modal', async ({ signedInPage }) => {
+  test('role chooser page: Guest suppresses the tutorial modal', async ({ signedInPage }) => {
     await signedInPage.addInitScript(() => {
       // Fresh browser, but keep the guest answer once the test writes it —
       // only remove the fixture's seed on the FIRST document load.
@@ -74,16 +75,17 @@ test.describe('onboarding walkthrough', () => {
     });
     await signedInPage.goto('/app/my-designs');
 
+    await expect(signedInPage).toHaveURL(/\/app\/choose-role/);
     const chooser = signedInPage.getByTestId('role-chooser');
     await expect(chooser).toBeVisible();
     await chooser.getByTestId('role-chooser-guest').click();
     await signedInPage.evaluate(() => window.sessionStorage.setItem('__bt_role_answered', '1'));
-    await expect(chooser).toHaveCount(0);
+    await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
 
-    // Still gone after a reload — the answer is sticky.
+    // Still answered after a reload — no redirect back, no modal.
     await signedInPage.reload();
-    await expect(signedInPage.getByTestId('role-chooser')).toHaveCount(0);
+    await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
   });
 
@@ -255,6 +257,10 @@ test.describe('onboarding walkthrough', () => {
 
     await signedInPage.goto('/app/account');
     await signedInPage.getByTestId('replay-walkthrough-button').click();
+    // Replay clears the role answer too, so the walkthrough restarts at the
+    // role question; answering Facilitator brings the modal back.
+    await expect(signedInPage).toHaveURL(/\/app\/choose-role/);
+    await signedInPage.getByTestId('role-chooser-facilitator').click();
     await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toBeVisible();
   });
