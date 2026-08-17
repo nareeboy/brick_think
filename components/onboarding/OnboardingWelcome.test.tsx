@@ -33,6 +33,8 @@ const createDesignMock = vi.mocked(createDesignAction);
 beforeEach(() => {
   mockPathname = '/app/my-designs';
   mockSearch = '';
+  // The modal only exists downstream of an explicit Facilitator answer.
+  localStorage.setItem('bt_role_choice', 'facilitator');
 });
 
 afterEach(() => {
@@ -53,6 +55,18 @@ describe('OnboardingWelcome', () => {
 
   it('does not render once the welcome flag is set', async () => {
     localStorage.setItem('bt_welcome_seen', '1');
+    render(<OnboardingWelcome />);
+    await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
+  });
+
+  it('does not render before the role question has been answered', async () => {
+    localStorage.removeItem('bt_role_choice');
+    render(<OnboardingWelcome />);
+    await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
+  });
+
+  it('does not render when the role choice is guest', async () => {
+    localStorage.setItem('bt_role_choice', 'guest');
     render(<OnboardingWelcome />);
     await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
   });

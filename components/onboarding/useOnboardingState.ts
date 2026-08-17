@@ -38,6 +38,10 @@ const KEYS = {
   pathBuildDone: 'bt_path_build_done',
   pathWorkshopDone: 'bt_path_workshop_done',
   pathSessionDone: 'bt_path_session_done',
+  // Explicit first-run role choice ('facilitator' | 'guest') from the
+  // RoleChooser screen. Decides which tutorial experience this browser gets;
+  // cleared by replayAll() so account settings can re-ask.
+  roleChoice: 'bt_role_choice',
   // Sticky tutorial-guest marker. Set (client-side) the moment this browser
   // provably participates in someone else's session, so the tutorial modal
   // stays hidden even if that session — the only server-side evidence — is
@@ -47,6 +51,14 @@ const KEYS = {
 } as const;
 
 export type OnboardingPath = 'build' | 'workshop' | 'session';
+
+export type RoleChoice = 'facilitator' | 'guest';
+
+function readRoleChoice(): RoleChoice | null {
+  if (typeof window === 'undefined') return null;
+  const v = window.localStorage.getItem(KEYS.roleChoice);
+  return v === 'facilitator' || v === 'guest' ? v : null;
+}
 
 const PATH_KEYS: Record<OnboardingPath, string> = {
   build: KEYS.pathBuildDone,
@@ -120,6 +132,9 @@ export interface OnboardingState {
   /** True when this browser has been marked as an invited session guest. */
   tutorialGuestSticky: boolean;
   markTutorialGuest: () => void;
+  /** The explicit first-run role choice, or null while unanswered. */
+  roleChoice: RoleChoice | null;
+  chooseRole: (choice: RoleChoice) => void;
   replayAll: () => void;
 }
 
@@ -139,6 +154,7 @@ export function useOnboardingState(): OnboardingState {
   const [pathSessionDone, setPathSessionDone] = useState(false);
   const [walkthroughReplay, setWalkthroughReplay] = useState(false);
   const [tutorialGuestSticky, setTutorialGuestSticky] = useState(false);
+  const [roleChoice, setRoleChoice] = useState<RoleChoice | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -154,6 +170,7 @@ export function useOnboardingState(): OnboardingState {
       setPathSessionDone(readFlag(KEYS.pathSessionDone));
       setWalkthroughReplay(readFlag(KEYS.walkthroughReplay));
       setTutorialGuestSticky(readFlag(KEYS.tutorialGuest));
+      setRoleChoice(readRoleChoice());
     };
     sync();
     setHydrated(true);
@@ -217,9 +234,17 @@ export function useOnboardingState(): OnboardingState {
     broadcastSync();
   }, []);
 
+  const chooseRole = useCallback((choice: RoleChoice) => {
+    window.localStorage.setItem(KEYS.roleChoice, choice);
+    setRoleChoice(choice);
+    broadcastSync();
+  }, []);
+
   const replayAll = useCallback(() => {
     window.localStorage.removeItem(KEYS.tutorialGuest);
+    window.localStorage.removeItem(KEYS.roleChoice);
     setTutorialGuestSticky(false);
+    setRoleChoice(null);
     window.localStorage.removeItem(KEYS.welcomeSeen);
     window.localStorage.removeItem(KEYS.checklistComplete);
     window.localStorage.removeItem(KEYS.checklistDismissed);
@@ -267,6 +292,8 @@ export function useOnboardingState(): OnboardingState {
     markPathDone,
     tutorialGuestSticky,
     markTutorialGuest,
+    roleChoice,
+    chooseRole,
     replayAll,
   };
 }

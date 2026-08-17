@@ -43,6 +43,50 @@ test.describe('onboarding walkthrough', () => {
     });
   });
 
+  test('role chooser asks once; Facilitator unlocks the tutorial modal', async ({
+    signedInPage,
+  }) => {
+    // Strip the fixture's pre-seeded choice so this test sees a truly fresh
+    // browser (registration order: this init script runs after the fixture's).
+    await signedInPage.addInitScript(() => {
+      window.localStorage.removeItem('bt_role_choice');
+    });
+    await signedInPage.goto('/app/my-designs');
+
+    const chooser = signedInPage.getByTestId('role-chooser');
+    await expect(chooser).toBeVisible();
+    // The tutorial modal waits behind the unanswered question.
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
+
+    await chooser.getByTestId('role-chooser-facilitator').click();
+    await expect(chooser).toHaveCount(0);
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toBeVisible();
+  });
+
+  test('role chooser: Guest suppresses the tutorial modal', async ({ signedInPage }) => {
+    await signedInPage.addInitScript(() => {
+      // Fresh browser, but keep the guest answer once the test writes it —
+      // only remove the fixture's seed on the FIRST document load.
+      if (window.sessionStorage.getItem('__bt_role_answered') !== '1') {
+        window.localStorage.removeItem('bt_role_choice');
+        window.localStorage.removeItem('bt_tutorial_guest');
+      }
+    });
+    await signedInPage.goto('/app/my-designs');
+
+    const chooser = signedInPage.getByTestId('role-chooser');
+    await expect(chooser).toBeVisible();
+    await chooser.getByTestId('role-chooser-guest').click();
+    await signedInPage.evaluate(() => window.sessionStorage.setItem('__bt_role_answered', '1'));
+    await expect(chooser).toHaveCount(0);
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
+
+    // Still gone after a reload — the answer is sticky.
+    await signedInPage.reload();
+    await expect(signedInPage.getByTestId('role-chooser')).toHaveCount(0);
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
+  });
+
   test('facilitator sees the three-card welcome modal; skip confirms then persists', async ({
     signedInPage,
   }) => {
