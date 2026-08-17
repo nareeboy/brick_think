@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { PageBanner } from '@/components/app/PageBanner';
-import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
+import { CreateWorkshopSpotlight } from '@/components/onboarding/CreateWorkshopSpotlight';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 export const metadata: Metadata = { title: 'Workshops' };
@@ -16,7 +16,22 @@ interface OrgWithCount extends OrgSummary {
   member_count: number;
 }
 
-export default async function OrgsPage() {
+export default async function OrgsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ onboarding?: string; intent?: string }>;
+}) {
+  // When the create-workshop tour is running, the New workshop link carries
+  // the params to /app/workshops/new so the form spotlight continues there.
+  // `intent=session` marks a session-pathway detour (the user clicked "Start
+  // a session" with no workshop yet): skips then tick the session card, and
+  // after creation the chain goes straight to the create-session spotlight.
+  const { onboarding, intent } = await searchParams;
+  const intentSuffix = intent === 'session' ? '&intent=session' : '';
+  const newWorkshopHref =
+    onboarding === 'create-workshop'
+      ? `/app/workshops/new?onboarding=create-workshop${intentSuffix}`
+      : '/app/workshops/new';
   if (!isSupabaseConfigured()) {
     redirect('/sign-in?reason=unconfigured&next=%2Fapp%2Forgs');
   }
@@ -47,6 +62,21 @@ export default async function OrgsPage() {
     .filter((o): o is OrgSummary => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // The welcome modal's session card links here with ?onboarding=create-session
+  // (it has no server data of its own). Forward the param to the user's first
+  // workshop so the create-session spotlight fires there. With no workshop yet
+  // a session is impossible — hand the user to the create-workshop tour
+  // instead of silently stripping the param (which looped them back to the
+  // modal with nothing happening).
+  if (onboarding === 'create-session') {
+    const first = summaries[0];
+    redirect(
+      first
+        ? `/app/workshops/${first.id}?onboarding=create-session`
+        : '/app/workshops?onboarding=create-workshop&intent=session',
+    );
+  }
+
   const counts = await Promise.all(
     summaries.map(async (o) => {
       const { count } = await supabase
@@ -62,22 +92,18 @@ export default async function OrgsPage() {
     member_count: countByOrg.get(o.id) ?? 0,
   }));
 
-  // Onboarding walkthrough — the orgs list is where step 1 (create an org)
-  // happens. We already have the user's orgs, so pass them in to skip a
-  // duplicate membership query.
-  const onboardingProgress = await computeFacilitatorChecklistProgress(supabase, user.id, {
-    orgIds: summaries.map((o) => o.id),
-    firstOrgId: summaries[0]?.id ?? null,
-  });
-
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
+      <Suspense fallback={null}>
+        <CreateWorkshopSpotlight />
+      </Suspense>
       <PageBanner
         eyebrow="BrickThink"
         title="Workshops"
         actions={
           <Link
-            href="/app/workshops/new"
+            href={newWorkshopHref}
+            data-tour-id="new-workshop-button"
             className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
           >
             New workshop
@@ -85,8 +111,6 @@ export default async function OrgsPage() {
         }
       />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-        <FacilitatorChecklist progress={onboardingProgress} />
-
         {orgs.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center text-[13px] text-zinc-500">
             No workshops yet. Create one to share designs with teammates.

@@ -28,11 +28,9 @@ import type { SessionMode, SessionStatus, StageType } from '@/lib/sessions/types
 import type { StageRow as LiveStageRow, SessionRow } from '@/components/session/useSessionStages';
 import { ActiveStageBar } from '@/components/session/ActiveStageBar';
 import { SessionStagesProvider } from '@/components/session/SessionStagesProvider';
-import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
 import { StartModelSpotlight } from '@/components/onboarding/StartModelSpotlight';
-import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 
 export const dynamic = 'force-dynamic';
 
@@ -431,14 +429,6 @@ export default async function SessionDetailPage({
   const isFacilitator = session.facilitator_id === user.id;
   const facilitatorNotes = isFacilitator ? await getFacilitatorNotes(session.id) : null;
 
-  // Onboarding walkthrough — the same checklist shown on /app/my-designs follows
-  // the user here, where step 3 ("start your first model") actually happens.
-  // Point step 3's "next" link at the session they're already on.
-  const onboardingProgress = {
-    ...(await computeFacilitatorChecklistProgress(supabase, user.id)),
-    firstSessionId: session.id,
-  };
-
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <PageBanner
@@ -513,7 +503,6 @@ export default async function SessionDetailPage({
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <div className="flex min-w-0 flex-1 flex-col gap-6">
-              <FacilitatorChecklist progress={onboardingProgress} />
               <PreSessionChecklist
                 sessionId={session.id}
                 sessionStatus={session.status}

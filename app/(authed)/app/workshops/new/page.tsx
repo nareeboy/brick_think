@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 import { PageBanner } from '@/components/app/PageBanner';
+import { CreateWorkshopFormSpotlight } from '@/components/onboarding/CreateWorkshopFormSpotlight';
 
 import { CreateOrgForm } from './CreateOrgForm';
 
@@ -10,6 +12,9 @@ export const dynamic = 'force-dynamic';
 export default function NewOrgPage() {
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
+      <Suspense fallback={null}>
+        <CreateWorkshopFormSpotlight />
+      </Suspense>
       <PageBanner
         eyebrow="BrickThink"
         title="New workshop"

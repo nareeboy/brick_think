@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import { createOrgAction, type CreateOrgResult } from '@/app/(authed)/app/workshops/actions';
@@ -13,6 +13,13 @@ export function CreateOrgForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Mid-tour (the welcome modal's workshop pathway)? Then chain onwards after
+  // creation: normally into the workshop page tour; on a session-intent
+  // detour (the user clicked "Start a session" with no workshop yet),
+  // straight to the create-session spotlight instead.
+  const inWorkshopTour = searchParams.get('onboarding') === 'create-workshop';
+  const sessionIntent = searchParams.get('intent') === 'session';
 
   function onNameChange(value: string) {
     setName(value);
@@ -43,7 +50,13 @@ export function CreateOrgForm() {
     start(async () => {
       const result: CreateOrgResult = await createOrgAction(fd);
       if (result.ok) {
-        router.push(`/app/workshops/${result.data.orgId}`);
+        router.push(
+          inWorkshopTour
+            ? `/app/workshops/${result.data.orgId}?onboarding=${
+                sessionIntent ? 'create-session' : 'workshop-tour'
+              }`
+            : `/app/workshops/${result.data.orgId}`,
+        );
         return;
       }
       if (result.code === 'slug_taken') {
@@ -59,7 +72,7 @@ export function CreateOrgForm() {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1.5">
+      <label data-tour-id="workshop-name-field" className="flex flex-col gap-1.5">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Name
         </span>
@@ -73,7 +86,7 @@ export function CreateOrgForm() {
           className="h-10 rounded-xl border border-zinc-900/10 bg-white px-3 text-[14px] text-zinc-900 outline-none focus:border-[#a8482a]"
         />
       </label>
-      <label className="flex flex-col gap-1.5">
+      <label data-tour-id="workshop-slug-field" className="flex flex-col gap-1.5">
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
           Slug
         </span>
@@ -102,6 +115,7 @@ export function CreateOrgForm() {
       <button
         type="submit"
         disabled={pending}
+        data-tour-id="create-workshop-submit"
         className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47] disabled:opacity-60"
       >
         {pending ? 'Creating…' : 'Create workshop'}

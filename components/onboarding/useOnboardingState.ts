@@ -29,7 +29,24 @@ const KEYS = {
   // or skips the tutorial; cleared by replayAll() so "Replay walkthrough"
   // re-triggers it. Gated on this flag ALONE (not role) so participants see it.
   canvasTutorialSeen: 'bt_canvas_tutorial_seen',
+  // Welcome-modal pathway completion. The modal keeps reappearing on the hub
+  // pages (My Designs / Workshops / Scenarios) until the user skips it or all
+  // three pathways are done. Each flag is set at that pathway's genuine
+  // completion moment: build = finishing (not skipping) the canvas tutorial,
+  // workshop = clicking Create workshop through the form spotlight, session =
+  // clicking Create session through its spotlight. Cleared by replayAll().
+  pathBuildDone: 'bt_path_build_done',
+  pathWorkshopDone: 'bt_path_workshop_done',
+  pathSessionDone: 'bt_path_session_done',
 } as const;
+
+export type OnboardingPath = 'build' | 'workshop' | 'session';
+
+const PATH_KEYS: Record<OnboardingPath, string> = {
+  build: KEYS.pathBuildDone,
+  workshop: KEYS.pathWorkshopDone,
+  session: KEYS.pathSessionDone,
+};
 
 /** localStorage key holding the JSON array of confetti-celebrated checklist
  *  steps. Read/written by FacilitatorChecklist; cleared by replayAll(). */
@@ -40,6 +57,25 @@ export const CHECKLIST_CELEBRATED_KEY = KEYS.checklistCelebrated;
 export const CHECKLIST_BASELINE_KEY = KEYS.checklistBaseline;
 
 const STORAGE_KEYS = Object.values(KEYS);
+
+// The `storage` event only fires in OTHER tabs. Setters dispatch this custom
+// event so every useOnboardingState instance in the SAME tab (e.g. the
+// globally mounted welcome modal + the tour that just ticked a pathway) stays
+// in sync too.
+const SYNC_EVENT = 'bt-onboarding-sync';
+
+function broadcastSync(): void {
+  window.dispatchEvent(new Event(SYNC_EVENT));
+}
+
+/** Fired by tours at a confetti-worthy pathway completion. The welcome modal
+ *  listens and — after the confetti has had its moment — re-shows itself
+ *  wherever the user is, as long as pathways remain outstanding. */
+export const WELCOME_REPRISE_EVENT = 'bt-welcome-reprise';
+
+export function requestWelcomeReprise(): void {
+  window.dispatchEvent(new Event(WELCOME_REPRISE_EVENT));
+}
 
 function readRole(): OnboardingRole {
   if (typeof window === 'undefined') return 'facilitator';
@@ -61,6 +97,10 @@ export interface OnboardingState {
   sessionTourSeen: boolean;
   /** True once the canvas-builder tutorial has been finished or skipped. */
   canvasTutorialSeen: boolean;
+  /** Welcome-modal pathway completion (build / workshop / session). */
+  pathBuildDone: boolean;
+  pathWorkshopDone: boolean;
+  pathSessionDone: boolean;
   /** True after replayAll() until the checklist is dismissed — forces the
    *  checklist to re-show its steps regardless of server-derived progress. */
   walkthroughReplay: boolean;
@@ -70,6 +110,7 @@ export interface OnboardingState {
   dismissChecklist: () => void;
   markSessionTourSeen: () => void;
   markCanvasTutorialSeen: () => void;
+  markPathDone: (path: OnboardingPath) => void;
   replayAll: () => void;
 }
 
@@ -84,6 +125,9 @@ export function useOnboardingState(): OnboardingState {
   const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [sessionTourSeen, setSessionTourSeen] = useState(false);
   const [canvasTutorialSeen, setCanvasTutorialSeen] = useState(false);
+  const [pathBuildDone, setPathBuildDone] = useState(false);
+  const [pathWorkshopDone, setPathWorkshopDone] = useState(false);
+  const [pathSessionDone, setPathSessionDone] = useState(false);
   const [walkthroughReplay, setWalkthroughReplay] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -95,6 +139,9 @@ export function useOnboardingState(): OnboardingState {
       setChecklistDismissed(readFlag(KEYS.checklistDismissed));
       setSessionTourSeen(readFlag(KEYS.sessionTourSeen));
       setCanvasTutorialSeen(readFlag(KEYS.canvasTutorialSeen));
+      setPathBuildDone(readFlag(KEYS.pathBuildDone));
+      setPathWorkshopDone(readFlag(KEYS.pathWorkshopDone));
+      setPathSessionDone(readFlag(KEYS.pathSessionDone));
       setWalkthroughReplay(readFlag(KEYS.walkthroughReplay));
     };
     sync();
@@ -103,17 +150,23 @@ export function useOnboardingState(): OnboardingState {
       if (e.key === null || (STORAGE_KEYS as readonly string[]).includes(e.key)) sync();
     };
     window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+    window.addEventListener(SYNC_EVENT, sync);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener(SYNC_EVENT, sync);
+    };
   }, []);
 
   const markWelcomeSeen = useCallback(() => {
     window.localStorage.setItem(KEYS.welcomeSeen, '1');
     setWelcomeSeen(true);
+    broadcastSync();
   }, []);
 
   const markChecklistComplete = useCallback(() => {
     window.localStorage.setItem(KEYS.checklistComplete, '1');
     setChecklistComplete(true);
+    broadcastSync();
   }, []);
 
   const dismissChecklist = useCallback(() => {
@@ -124,16 +177,27 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.removeItem(KEYS.checklistBaseline);
     setChecklistDismissed(true);
     setWalkthroughReplay(false);
+    broadcastSync();
   }, []);
 
   const markSessionTourSeen = useCallback(() => {
     window.localStorage.setItem(KEYS.sessionTourSeen, '1');
     setSessionTourSeen(true);
+    broadcastSync();
   }, []);
 
   const markCanvasTutorialSeen = useCallback(() => {
     window.localStorage.setItem(KEYS.canvasTutorialSeen, '1');
     setCanvasTutorialSeen(true);
+    broadcastSync();
+  }, []);
+
+  const markPathDone = useCallback((path: OnboardingPath) => {
+    window.localStorage.setItem(PATH_KEYS[path], '1');
+    if (path === 'build') setPathBuildDone(true);
+    else if (path === 'workshop') setPathWorkshopDone(true);
+    else setPathSessionDone(true);
+    broadcastSync();
   }, []);
 
   const replayAll = useCallback(() => {
@@ -142,6 +206,9 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
     window.localStorage.removeItem(KEYS.canvasTutorialSeen);
+    window.localStorage.removeItem(KEYS.pathBuildDone);
+    window.localStorage.removeItem(KEYS.pathWorkshopDone);
+    window.localStorage.removeItem(KEYS.pathSessionDone);
     // Enter replay/preview so the checklist re-shows its steps even when the
     // user's real progress is all-done, and re-arm per-step confetti. Clearing
     // the baseline makes the checklist re-capture the current counts on its next
@@ -154,7 +221,11 @@ export function useOnboardingState(): OnboardingState {
     setChecklistDismissed(false);
     setSessionTourSeen(false);
     setCanvasTutorialSeen(false);
+    setPathBuildDone(false);
+    setPathWorkshopDone(false);
+    setPathSessionDone(false);
     setWalkthroughReplay(true);
+    broadcastSync();
   }, []);
 
   return {
@@ -164,6 +235,9 @@ export function useOnboardingState(): OnboardingState {
     checklistDismissed,
     sessionTourSeen,
     canvasTutorialSeen,
+    pathBuildDone,
+    pathWorkshopDone,
+    pathSessionDone,
     walkthroughReplay,
     hydrated,
     markWelcomeSeen,
@@ -171,6 +245,7 @@ export function useOnboardingState(): OnboardingState {
     dismissChecklist,
     markSessionTourSeen,
     markCanvasTutorialSeen,
+    markPathDone,
     replayAll,
   };
 }

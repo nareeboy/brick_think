@@ -3,6 +3,10 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useId, useLayoutEffect, useState } from 'react';
 
+import { celebrate } from '@/lib/onboarding/celebrate';
+
+import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+
 const TARGET_SELECTOR = '[data-tour-id="create-session-button"]';
 const ONBOARDING_PARAM = 'onboarding';
 const ONBOARDING_VALUE = 'create-session';
@@ -28,6 +32,7 @@ export function CreateSessionSpotlight() {
   const bodyId = useId();
   const maskId = useId();
 
+  const { markPathDone, markSessionTourSeen } = useOnboardingState();
   const requested = searchParams.get(ONBOARDING_PARAM) === ONBOARDING_VALUE;
   const [dismissed, setDismissed] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -68,9 +73,9 @@ export function CreateSessionSpotlight() {
     // element). The button lives in the page header so it's usually visible.
     el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
-    // Track the target every frame rather than only on scroll/resize: the
-    // FacilitatorChecklist mounts after hydration and pushes the header down,
-    // a layout shift that fires no scroll/resize event. The rAF loop keeps the
+    // Track the target every frame rather than only on scroll/resize: late-
+    // mounting siblings (e.g. banners) can push the header down after
+    // hydration, a layout shift that fires no scroll/resize event. The rAF loop keeps the
     // cut-out glued to the button through hydration, mount, and scroll. We only
     // setRect when the box actually moves, so it settles to a no-op quickly.
     let rafId = 0;
@@ -88,14 +93,19 @@ export function CreateSessionSpotlight() {
 
     // Clicking the highlighted button proceeds — hide the overlay so the
     // dialog is unobstructed. Don't strip the param here: a soft nav could
-    // race the button's own click handler that opens the dialog.
-    const onTargetClick = () => setDismissed(true);
+    // race the button's own click handler that opens the dialog. Following
+    // the guided step through is the session pathway's completion — tick the
+    // welcome modal's session card.
+    const onTargetClick = () => {
+      setDismissed(true);
+      markPathDone('session');
+    };
     el.addEventListener('click', onTargetClick);
     return () => {
       cancelAnimationFrame(rafId);
       el.removeEventListener('click', onTargetClick);
     };
-  }, [active, dismiss]);
+  }, [active, dismiss, markPathDone]);
 
   useEffect(() => {
     if (!active) return;
@@ -165,14 +175,25 @@ export function CreateSessionSpotlight() {
           Click <span className="font-semibold text-zinc-900">Create session</span> to set up a
           working meeting inside this workshop.
         </p>
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-start">
           <button
             type="button"
-            onClick={() => dismiss(true)}
+            onClick={() => {
+              // Warm exit: the session pathway ticks as done, confetti fires,
+              // and the welcome modal returns. Skipping here opts out of the
+              // session teaching entirely, so the session page's stage tour is
+              // marked seen too — it won't ambush them on a later visit.
+              // Esc stays quiet.
+              markPathDone('session');
+              markSessionTourSeen();
+              void celebrate();
+              requestWelcomeReprise();
+              dismiss(true);
+            }}
             data-testid="create-session-spotlight-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >
-            Skip
+            Skip tour
           </button>
         </div>
       </div>

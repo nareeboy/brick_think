@@ -4,11 +4,8 @@ import { redirect } from 'next/navigation';
 
 import { Avatar } from '@/components/app/Avatar';
 import { PageBanner } from '@/components/app/PageBanner';
-import { FacilitatorChecklist } from '@/components/onboarding/FacilitatorChecklist';
-import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { computeFacilitatorChecklistProgress } from '@/lib/onboarding/facilitatorProgress';
 import type {
   AggregateDesignRow,
   MyDesignsFilterValue,
@@ -122,14 +119,6 @@ export default async function MyDesignsPage({
     })
     .filter((o): o is OrgSummary => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
-
-  // Onboarding checklist state — shared with /app/sessions/[id] via the helper
-  // so the walkthrough stays in sync wherever the user lands. We already have
-  // the user's orgs, so pass them in to skip a duplicate membership query.
-  const onboardingProgress = await computeFacilitatorChecklistProgress(supabase, user.id, {
-    orgIds: orgs.map((o) => o.id),
-    firstOrgId: orgs[0]?.id ?? null,
-  });
 
   // If tag filters are active, first resolve which of the user's owned
   // models carry every requested tag (AND semantics) — keeps the subsequent
@@ -362,7 +351,6 @@ export default async function MyDesignsPage({
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <WelcomeModal />
       <PageBanner
         avatar={<Avatar url={profileAvatarUrl} name={profileName} size="md" />}
         eyebrow="BrickThink"
@@ -384,7 +372,6 @@ export default async function MyDesignsPage({
         }
       />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
-        <FacilitatorChecklist progress={onboardingProgress} />
         <header className="flex flex-col gap-5">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-3">

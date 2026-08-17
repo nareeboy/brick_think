@@ -35,6 +35,12 @@ interface Props {
    * panelClassName) for a side-drawer dialog.
    */
   containerClassName?: string;
+  /**
+   * Whether clicking the dimmed backdrop closes the dialog (default). Pass
+   * false for deliberate-choice dialogs (e.g. the onboarding welcome) where a
+   * stray click shouldn't dismiss; Escape and explicit buttons still close.
+   */
+  backdropCloses?: boolean;
   children: ReactNode;
 }
 
@@ -46,6 +52,7 @@ export function ModalBackdrop({
   dataTestid,
   panelClassName = 'w-full max-w-md',
   containerClassName = 'fixed inset-0 z-40 flex items-center justify-center px-4',
+  backdropCloses = true,
   children,
 }: Props) {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -78,13 +85,22 @@ export function ModalBackdrop({
       aria-describedby={descriptionId}
       className={containerClassName}
     >
-      <button
-        type="button"
-        aria-label="Close"
-        tabIndex={-1}
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-black/40"
-      />
+      {backdropCloses ? (
+        <button
+          type="button"
+          aria-label="Close"
+          tabIndex={-1}
+          onClick={onClose}
+          data-testid={dataTestid ? `${dataTestid}-backdrop` : undefined}
+          className="absolute inset-0 cursor-default bg-black/40"
+        />
+      ) : (
+        <div
+          aria-hidden="true"
+          data-testid={dataTestid ? `${dataTestid}-backdrop` : undefined}
+          className="absolute inset-0 bg-black/40"
+        />
+      )}
       <div className={`relative ${panelClassName}`}>{children}</div>
     </div>,
     document.body,
