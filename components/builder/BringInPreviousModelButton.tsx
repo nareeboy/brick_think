@@ -85,7 +85,7 @@ function useAffordanceEligible(): boolean {
 
 const FAILURE_COPY: Record<string, string> = {
   model_not_found: 'This model is no longer available.',
-  source_not_found_template: "You don't have a {sourceStageLabel} to bring in.",
+  source_not_found: "You don't have a previous model to bring from your last session.",
   destination_not_empty: 'Cancel out your current canvas first.',
   already_imported: "You've already brought in your previous model.",
   unsupported_target_stage: 'This stage cannot import from a previous one.',
@@ -108,13 +108,7 @@ export function BringInPreviousModelCard() {
     startTransition(async () => {
       const res = await bringInPreviousModel(modelId);
       if (!res.ok) {
-        const templateKey =
-          res.code === 'source_not_found' ? 'source_not_found_template' : res.code;
-        const message = (FAILURE_COPY[templateKey] ?? FAILURE_COPY.invalid_uuid!).replace(
-          '{sourceStageLabel}',
-          sourceStageLabel,
-        );
-        setError(message);
+        setError(FAILURE_COPY[res.code] ?? FAILURE_COPY.invalid_uuid!);
         return;
       }
       if (res.data.mode === 'server_copied') {

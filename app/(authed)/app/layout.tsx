@@ -7,6 +7,7 @@ import { fetchRecentNotifications } from '@/app/(authed)/app/notifications/actio
 import { GlobalHeader } from '@/components/app/GlobalHeader';
 import { HideOnAdminRoutes } from '@/components/app/HideOnAdminRoutes';
 import { PresenceHeartbeat } from '@/components/app/PresenceHeartbeat';
+import { getGlobalRole } from '@/lib/account/globalRole';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
 import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome';
@@ -57,7 +58,8 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const userAvatarUrl = profileRes.data?.avatar_url ?? null;
   const isSiteAdmin = profileRes.data?.is_site_admin === true;
-  const [navSessions, initialNotifications, tutorialGuest] = await Promise.all([
+  const [role, navSessions, initialNotifications, tutorialGuest] = await Promise.all([
+    getGlobalRole(supabase, user.id),
     getMyActiveSessionsForNav(supabase, user.id),
     fetchRecentNotifications(),
     isTutorialGuest(supabase, user.id),
@@ -71,6 +73,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
             userName={userName}
             userEmail={email}
             userAvatarUrl={userAvatarUrl}
+            role={role}
             isSiteAdmin={isSiteAdmin}
             sessions={navSessions}
           />
