@@ -37,8 +37,8 @@ function buildSteps(canManageSession: boolean): Step[] {
       body: canManageSession ? (
         <>
           Each card is one exercise. Press{' '}
-          <span className="font-semibold text-zinc-900">Start</span> to open the stage and run its
-          timer for the group, and use{' '}
+          <span className="font-semibold text-zinc-900">Start this session</span> to open the stage
+          and run its timer for the group, and use{' '}
           <span className="font-semibold text-zinc-900">Create Example Model</span> to build a
           reference model participants can compare their own builds against.
         </>

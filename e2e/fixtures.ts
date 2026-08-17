@@ -201,6 +201,24 @@ export async function seedStageRoom(
   return (await res.json()) as { modelId: string; roomId: string };
 }
 
+/**
+ * Facilitator starts a stage from the session page via the "Start this
+ * session" button in the stage's timer cluster. Participant "Start your
+ * model" buttons are disabled while a stage is pending, so specs that drive
+ * a participant's model creation must start the stage first.
+ */
+export async function startStage(
+  facilitatorPage: Page,
+  sessionId: string,
+  stageType: string,
+): Promise<void> {
+  await facilitatorPage.goto(`/app/sessions/${sessionId}`);
+  const card = facilitatorPage.getByTestId(`stage-card-${stageType}`);
+  await card.getByRole('button', { name: /^start this session$/i }).click();
+  // Pause appearing confirms the start landed server-side.
+  await expect(card.getByRole('button', { name: /^pause$/i })).toBeVisible({ timeout: 5000 });
+}
+
 // Canonical "drop the first piece onto the canvas" helper. Opens the pieces
 // drawer, drags piece-card[0] to (offsetX, offsetY) inside the canvas, then
 // Escape-closes the drawer and waits for it to hide. The close step matters:

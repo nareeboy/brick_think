@@ -1,6 +1,6 @@
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { expect, suppressFirstRunOverlays, test } from './fixtures';
+import { expect, startStage, suppressFirstRunOverlays, test } from './fixtures';
 
 // Deterministic fake SpeechRecognition — emits one FINAL result ~30ms after
 // start(), and fires onend on stop()/abort(). Mirrors model-narration.spec.ts.
@@ -80,8 +80,11 @@ test.describe('facilitator-driven narration', () => {
         timeout: 15_000,
       });
 
-      // Step 4: Participant clicks "start-model-individual_model" to create
-      // their own canvas, then waits for navigation to /app/designs/<id>.
+      // Step 4: Facilitator starts the stage (participant Start-your-model
+      // is disabled while pending), then the participant clicks
+      // "start-model-individual_model" to create their own canvas.
+      await startStage(facilitatorPage, seededSession.sessionId, 'individual_model');
+      await participant.page.goto(`/app/sessions/${seededSession.sessionId}`);
       await participant.page
         .getByTestId('stage-card-individual_model')
         .getByTestId('start-model-individual_model')
@@ -171,6 +174,8 @@ test.describe('facilitator-driven narration', () => {
       await participant.page.waitForURL(`**/app/sessions/${seededSession.sessionId}`, {
         timeout: 15_000,
       });
+      await startStage(facilitatorPage, seededSession.sessionId, 'individual_model');
+      await participant.page.goto(`/app/sessions/${seededSession.sessionId}`);
       await participant.page
         .getByTestId('stage-card-individual_model')
         .getByTestId('start-model-individual_model')

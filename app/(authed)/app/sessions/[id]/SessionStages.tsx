@@ -301,6 +301,7 @@ function StageRow({
               sessionId={sessionId}
               stageId={stage.id}
               stageType={stageType}
+              stageStatus={status}
               isFirst={isFirst}
               canManageSession={canManageSession}
             />
@@ -346,6 +347,7 @@ function StageRow({
                   sessionId={sessionId}
                   stageId={stage.id}
                   stageType={stageType}
+                  stageStatus={status}
                   isFirst={isFirst}
                   canManageSession={canManageSession}
                 />
@@ -561,6 +563,7 @@ function ModelAction({
   sessionId,
   stageId,
   stageType,
+  stageStatus,
   isFirst,
   canManageSession,
 }: {
@@ -568,6 +571,7 @@ function ModelAction({
   sessionId: string;
   stageId: string;
   stageType: StageType;
+  stageStatus: string;
   isFirst: boolean;
   canManageSession: boolean;
 }) {
@@ -589,6 +593,7 @@ function ModelAction({
           sessionId={sessionId}
           stageId={stageId}
           stageType={stageType}
+          stageStatus={stageStatus}
           isTourTarget={isFirst}
           canManage={canManageSession}
         />
@@ -670,7 +675,7 @@ function StageTimerControls({
               className={btn('primary')}
               {...(isFirst ? { 'data-tour-id': 'stage-timer-start' } : {})}
             >
-              Start
+              {status === 'pending' ? 'Start this session' : 'Start'}
             </button>
           )}
           {(status === 'active' || status === 'paused') && (

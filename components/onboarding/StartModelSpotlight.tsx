@@ -21,7 +21,7 @@ const STEPS: Step[] = [
   {
     selector: '[data-tour-id="stage-timer-start"]',
     title: 'Open the stage',
-    body: 'Click Start to open this stage and get its timer ready.',
+    body: 'Click Start this session to open this stage and get its timer ready.',
   },
   {
     selector: '[data-tour-id="start-model-button"]',
