@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
+import { resolvePostLoginDestination } from '@/lib/auth/postLoginDestination';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 
@@ -68,7 +69,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (user) redirect(next);
+    if (user) redirect(await resolvePostLoginDestination(supabase, next));
   }
 
   return (
