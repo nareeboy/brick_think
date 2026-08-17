@@ -9,3 +9,13 @@ test('admin panel is absent from the open-core build', async ({ siteAdminPage: p
   const res = await page.goto('/app/admin');
   expect(res?.status()).toBe(404);
 });
+
+// Post-login landing: site admins get routed to /app/admin only under the
+// premium overlay. On the open core the admin panel doesn't exist, so the
+// redirect must stay dead — a site admin still lands on My designs.
+test('site admins land on my-designs, not /app/admin, in the open-core build', async ({
+  siteAdminPage: page,
+}) => {
+  await page.goto('/sign-in');
+  await expect(page).toHaveURL(/\/app\/my-designs/);
+});
