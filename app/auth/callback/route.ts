@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { resolvePostLoginDestination } from '@/lib/auth/postLoginDestination';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 
@@ -27,7 +28,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
   const safeNext = next.startsWith('/') ? next : '/app/my-designs';
   const origin = publicOriginFromHeaders(request.headers);
-  const redirectUrl = new URL(safeNext, origin);
 
   if (errorDescription) {
     const failure = new URL('/sign-in', origin);
@@ -48,5 +48,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.redirect(failure);
   }
 
-  return NextResponse.redirect(redirectUrl);
+  const destination = await resolvePostLoginDestination(supabase, safeNext);
+  return NextResponse.redirect(new URL(destination, origin));
 }
