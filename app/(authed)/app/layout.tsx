@@ -11,6 +11,7 @@ import { NotificationToast } from '@/components/notifications/NotificationToast'
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { ChatWidgetSlot } from '@/lib/premium/server-slots';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +71,9 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
         </HideOnAdminRoutes>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{children}</div>
         <NotificationToast />
+        <HideOnAdminRoutes>
+          <ChatWidgetSlot profileId={user.id} />
+        </HideOnAdminRoutes>
         <PresenceHeartbeat />
       </div>
     </NotificationsProvider>

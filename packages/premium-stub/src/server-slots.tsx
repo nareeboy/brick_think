@@ -2,6 +2,7 @@ import type {
   AccountNavSlotProps,
   AdminNavSlotProps,
   BrandingSettingsSlotProps,
+  ChatWidgetSlotProps,
   ReportActionsSlotProps,
 } from './types';
 
@@ -33,5 +34,10 @@ export function AccountNavSlot(_props: AccountNavSlotProps): null {
 
 /** Stub: no billing-admin section on the open core. */
 export function AdminNavSlot(_props: AdminNavSlotProps): null {
+  return null;
+}
+
+/** Stub: no support chat on the open core. */
+export function ChatWidgetSlot(_props: ChatWidgetSlotProps): null {
   return null;
 }
