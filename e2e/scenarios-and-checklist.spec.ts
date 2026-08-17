@@ -89,6 +89,29 @@ test.describe('Per-stage picker + pre-session checklist', () => {
     await expect(signedInPage.getByText(/Ready to start/i)).toBeVisible();
   });
 
+  test('facilitator picks a scenario from another stage type', async ({
+    signedInPage,
+    seededSession,
+  }) => {
+    await signedInPage.goto(`/app/sessions/${seededSession.sessionId}`);
+
+    // Open the picker for the first stage (skill_building at position 0).
+    await signedInPage.getByRole('button', { name: /Pick a scenario for each stage/i }).click();
+    const stageId = Object.values(seededSession.stageIds)[0]!;
+    await signedInPage.locator(`[data-testid="scenario-pick-${stageId}"]`).click();
+
+    // The stage filter defaults to the stage's own type; widen it to another
+    // stage and pick one of its scenarios — cross-stage picks are allowed.
+    const dialog = signedInPage.getByRole('dialog');
+    await expect(dialog.getByTestId('scenario-picker-confirm').first()).toBeVisible();
+    await dialog.getByRole('radio', { name: 'Individual' }).click();
+    await dialog.getByTestId('scenario-picker-confirm').first().click();
+    await expect(signedInPage.locator(`[data-testid="scenario-pick-${stageId}"]`)).toHaveText(
+      /Change/,
+      { timeout: 5_000 },
+    );
+  });
+
   test('facilitator creates a custom scenario from inside the picker and picks it', async ({
     signedInPage,
     seededSession,
