@@ -8,11 +8,12 @@ import {
   type OrgOption,
 } from '@/app/(authed)/app/scenarios/ScenarioEditorDialog';
 import { setStageScenarioAction } from '@/app/(authed)/app/sessions/scenario-actions';
+import { ChipGroup } from '@/components/app/ChipGroup';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import { filterScenarios } from '@/lib/scenarios/filter';
 import { STAGE_CHIP_LABEL, stageChipClasses } from '@/lib/scenarios/stageChip';
 import type { Scenario } from '@/lib/scenarios/types';
-import type { StageType } from '@/lib/sessions/types';
+import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 
 const NEUTRAL_CHIP =
   'inline-flex items-center rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] bg-zinc-900/5 text-zinc-600';
@@ -28,6 +29,7 @@ const SECTION_HEADING =
 interface Props {
   stageId: string;
   stageType: StageType;
+  /** ALL caller-visible scenarios (every stage_type) — the picker filters. */
   scenarios: Scenario[];
   currentScenarioId: string | null;
   /** Workshops the caller can author into — threaded to the create dialog. */
@@ -49,12 +51,24 @@ export function ScenarioPickerDialog({
   const [pending, startTransition] = useTransition();
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
+  // Scenarios from any stage are pickable — the stage_type is a category
+  // label, not a restriction. The filter just defaults to this stage's own
+  // exercises so the common case needs no extra click.
+  // One pill row: All, the five stages, and Custom (the caller's own
+  // scenarios across every stage) as a peer option. Defaults to this stage's
+  // own exercises so the common case needs no extra click.
+  const [filterChip, setFilterChip] = useState<StageType | 'all' | 'custom'>(stageType);
 
-  // Same matcher the /app/scenarios library uses; the list is already
-  // stage_type-scoped by the caller, so only the search term varies.
+  // Same matcher the /app/scenarios library uses.
   const filtered = useMemo(
-    () => filterScenarios(scenarios, { stage: 'all', duration: 'any', search, scope: 'all' }),
-    [scenarios, search],
+    () =>
+      filterScenarios(scenarios, {
+        stage: filterChip === 'all' || filterChip === 'custom' ? 'all' : filterChip,
+        duration: 'any',
+        search,
+        scope: filterChip === 'custom' ? 'custom' : 'all',
+      }),
+    [scenarios, filterChip, search],
   );
   // Custom scenarios lead; the ready-made library sits below, mirroring the
   // section order on /app/scenarios.
@@ -164,12 +178,28 @@ export function ScenarioPickerDialog({
             </button>
           </div>
 
+          <div className="mt-3">
+            <ChipGroup<StageType | 'all' | 'custom'>
+              ariaLabel="Filter scenarios"
+              value={filterChip}
+              onChange={setFilterChip}
+              options={[
+                { value: 'all', label: 'All' },
+                ...CANONICAL_STAGE_TYPES.map((st) => ({
+                  value: st,
+                  label: STAGE_CHIP_LABEL[st],
+                })),
+                { value: 'custom', label: 'Custom' },
+              ]}
+            />
+          </div>
+
           <div className="mt-4 flex-1 overflow-y-auto pr-1" data-scroll-target="">
             {filtered.length === 0 ? (
               <p className="py-10 text-center text-[13px] text-zinc-500">
                 {scenarios.length === 0
-                  ? 'No scenarios available for this stage yet — create one with “New scenario”.'
-                  : 'No scenarios match your search.'}
+                  ? 'No scenarios available yet — create one with “New scenario”.'
+                  : 'No scenarios match your filters.'}
               </p>
             ) : customRows.length > 0 ? (
               <div className="flex flex-col gap-6">
@@ -214,7 +244,9 @@ export function ScenarioPickerDialog({
         <ScenarioEditorDialog
           mode="create"
           orgs={orgs}
-          initialStageType={stageType}
+          initialStageType={
+            filterChip === 'all' || filterChip === 'custom' ? stageType : filterChip
+          }
           // The picker's list comes from server props — refresh re-renders the
           // session page so the new scenario appears in the (still open) list.
           onSaved={() => router.refresh()}
@@ -229,8 +261,6 @@ function messageForCode(code: string): string {
   switch (code) {
     case 'not_facilitator':
       return 'Only the facilitator can pick a scenario.';
-    case 'scenario_stage_mismatch':
-      return 'That scenario is for a different stage type.';
     case 'scenario_not_found':
       return 'That scenario no longer exists. Refresh and try again.';
     default:

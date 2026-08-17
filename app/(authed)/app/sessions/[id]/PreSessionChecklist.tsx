@@ -29,7 +29,9 @@ interface Props {
   preSessionCheck: Record<string, unknown>;
   stages: StageSummary[];
   canManage: boolean;
-  /** All caller-visible scenarios grouped by stage_type. Powers the picker. */
+  /** All caller-visible scenarios grouped by stage_type. Powers the picker,
+   * which offers every stage's scenarios (its filter defaults to the stage's
+   * own type). */
   scenariosByStageType: Partial<Record<StageType, Scenario[]>>;
   /** Workshops the caller can author into — for the picker's create flow. */
   orgs: OrgOption[];
@@ -269,7 +271,7 @@ export function PreSessionChecklist({
         <ScenarioPickerDialog
           stageId={pickerStage.id}
           stageType={pickerStage.stage_type}
-          scenarios={scenariosByStageType[pickerStage.stage_type] ?? []}
+          scenarios={Object.values(scenariosByStageType).flat()}
           currentScenarioId={pickerStage.scenarioId}
           orgs={orgs}
           onClose={() => setPickerStageId(null)}
