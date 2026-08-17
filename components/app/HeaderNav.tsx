@@ -8,14 +8,16 @@ import type { GlobalRole } from '@/lib/account/globalRole';
 import type { NavSession } from '@/lib/sessions/navSessions';
 import { useEffectiveRole } from '@/components/app/useEffectiveRole';
 
+// Scenarios has no top-level entry: the library is reached through the
+// per-stage picker on session detail (which also hosts authoring), and
+// /app/scenarios stays reachable by URL.
 const BASE_LINKS = [
   { href: '/app/my-designs', label: 'My Designs' },
   { href: '/app/workshops', label: 'Workshops' },
-  { href: '/app/scenarios', label: 'Scenarios' },
 ] as const;
 
-// Guests (invited session participants) only get the home link; Workshops and
-// Scenarios are organiser-side surfaces. Their session shows via SessionNavLink.
+// Guests (invited session participants) only get the home link; Workshops is
+// an organiser-side surface. Their session shows via SessionNavLink.
 const GUEST_LINKS = BASE_LINKS.filter((link) => link.href === '/app/my-designs');
 
 // Admin-only links. The admin panel is premium-only: GlobalHeader only sets

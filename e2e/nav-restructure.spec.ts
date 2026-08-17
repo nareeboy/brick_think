@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 test.describe('nav restructure', () => {
   // seededSession makes the user an org owner + session facilitator — the
   // full nav is facilitator-only (guests get the reduced nav below).
-  test('facilitator header has three links in canonical order', async ({
+  test('facilitator header has two links in canonical order', async ({
     signedInPage,
     seededSession,
   }) => {
@@ -11,17 +11,19 @@ test.describe('nav restructure', () => {
     await signedInPage.goto('/app/my-designs');
     const nav = signedInPage.getByRole('navigation', { name: 'Primary' });
     await expect(nav.getByRole('link', { name: 'Workshops' })).toBeVisible();
-    await expect(nav.getByRole('link', { name: 'Scenarios' })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'My Designs' })).toBeVisible();
-    await expect(nav.locator('a')).toHaveCount(3);
-    // Order matters: My Designs · Workshops · Scenarios (BASE_LINKS in
+    // Scenarios left the top nav — the library is reached through the
+    // per-stage picker on session detail (see scenarios-and-checklist.spec).
+    await expect(nav.getByRole('link', { name: 'Scenarios' })).toHaveCount(0);
+    await expect(nav.locator('a')).toHaveCount(2);
+    // Order matters: My Designs · Workshops (BASE_LINKS in
     // components/app/HeaderNav.tsx).
     const labels = await nav.locator('a').allTextContents();
-    expect(labels).toEqual(['My Designs', 'Workshops', 'Scenarios']);
+    expect(labels).toEqual(['My Designs', 'Workshops']);
   });
 
   // A declared guest (role chooser / header switcher) gets the reduced nav:
-  // Workshops and Scenarios are hidden, leaving only My Designs. Their
+  // Workshops is hidden, leaving only My Designs. Their
   // session link (SessionNavLink) appears once they join a session. The
   // explicit choice overrides the fixture's pre-seeded facilitator answer.
   test('guest header shows only My Designs', async ({ signedInPage }) => {
@@ -33,7 +35,6 @@ test.describe('nav restructure', () => {
     const nav = signedInPage.getByRole('navigation', { name: 'Primary' });
     await expect(nav.getByRole('link', { name: 'My Designs' })).toBeVisible();
     await expect(nav.getByRole('link', { name: 'Workshops' })).toHaveCount(0);
-    await expect(nav.getByRole('link', { name: 'Scenarios' })).toHaveCount(0);
     await expect(nav.locator('a')).toHaveCount(1);
   });
 
