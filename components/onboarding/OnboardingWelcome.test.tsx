@@ -57,6 +57,12 @@ describe('OnboardingWelcome', () => {
     await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
   });
 
+  it('does not render when the sticky tutorial-guest flag is set (survives session deletion)', async () => {
+    localStorage.setItem('bt_tutorial_guest', '1');
+    render(<OnboardingWelcome />);
+    await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
+  });
+
   it('does not render for participants', async () => {
     localStorage.setItem('bt_onboarding_role', 'participant');
     render(<OnboardingWelcome />);

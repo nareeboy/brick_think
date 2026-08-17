@@ -47,6 +47,7 @@ export function OnboardingWelcome({ guest = false }: Props) {
     pathBuildDone,
     pathWorkshopDone,
     pathSessionDone,
+    tutorialGuestSticky,
   } = useOnboardingState();
   const router = useRouter();
   const pathname = usePathname();
@@ -99,6 +100,7 @@ export function OnboardingWelcome({ guest = false }: Props) {
   // single "Build together" CTA that dismisses it for good.
   if (
     guest ||
+    tutorialGuestSticky ||
     !hydrated ||
     role !== 'facilitator' ||
     welcomeSeen ||

@@ -30,6 +30,7 @@ import { ActiveStageBar } from '@/components/session/ActiveStageBar';
 import { SessionStagesProvider } from '@/components/session/SessionStagesProvider';
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
+import { MarkTutorialGuest } from '@/components/onboarding/MarkTutorialGuest';
 import { StartModelSpotlight } from '@/components/onboarding/StartModelSpotlight';
 
 export const dynamic = 'force-dynamic';
@@ -363,6 +364,14 @@ export default async function SessionDetailPage({
   if (sessionParticipantsRes.error) {
     throw new Error(`Failed to load session participants: ${sessionParticipantsRes.error.message}`);
   }
+  // The viewer's invited-guest moment: an active participant row of their own
+  // (readable under the self-read RLS policy) without manage rights. Mounting
+  // MarkTutorialGuest below persists it client-side so the tutorial modal
+  // stays hidden even if this session is later deleted.
+  const viewerIsParticipant = (sessionParticipantsRes.data ?? []).some(
+    (row) => row.profile_id === user.id,
+  );
+
   const memberById = new Map<string, OrgMemberSummary>();
   const addRow = (row: {
     profile_id: string;
@@ -534,6 +543,7 @@ export default async function SessionDetailPage({
                 <StartModelSpotlight />
               </Suspense>
               <ParticipantCoachMark />
+              {viewerIsParticipant && !canManageSession ? <MarkTutorialGuest /> : null}
             </div>
             {isFacilitator ? (
               <aside className="flex w-full shrink-0 flex-col gap-4 lg:sticky lg:top-4 lg:h-[calc(100dvh-5.5rem)] lg:w-[340px]">
