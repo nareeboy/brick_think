@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation';
 
 import { Avatar } from '@/components/app/Avatar';
 import { PageBanner } from '@/components/app/PageBanner';
-import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type {
@@ -352,7 +351,6 @@ export default async function MyDesignsPage({
 
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
-      <OnboardingWelcome firstOrgId={orgs[0]?.id ?? null} />
       <PageBanner
         avatar={<Avatar url={profileAvatarUrl} name={profileName} size="md" />}
         eyebrow="BrickThink"

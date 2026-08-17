@@ -1,15 +1,24 @@
 'use client';
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { useOnboardingState } from './useOnboardingState';
+import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
 
 interface Step {
   selector: string;
   title: string;
-  body: string;
+  body: ReactNode;
 }
 
 const STEPS: Step[] = [
@@ -21,7 +30,14 @@ const STEPS: Step[] = [
   {
     selector: '[data-tour-id="first-stage-card"]',
     title: 'Stages',
-    body: 'Click a stage to start your model for it.',
+    body: (
+      <>
+        Each card is one exercise. Press <span className="font-semibold text-zinc-900">Start</span>{' '}
+        to open the stage and run its timer for the group, and use{' '}
+        <span className="font-semibold text-zinc-900">Create Example Model</span> to build a
+        reference model participants can compare their own builds against.
+      </>
+    ),
   },
   {
     selector: '[data-tour-id="stage-meta-pencil"]',
@@ -39,7 +55,8 @@ interface Props {
 }
 
 export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
-  const { role, sessionTourSeen, hydrated, markSessionTourSeen } = useOnboardingState();
+  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathDone } =
+    useOnboardingState();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const titleId = useId();
@@ -74,6 +91,17 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
   const finish = useCallback(() => {
     markSessionTourSeen();
   }, [markSessionTourSeen]);
+
+  // Warm exit — completing the tour or clicking Skip tour. The session
+  // pathway ticks on the welcome modal, confetti fires, and the modal
+  // returns afterwards if pathways remain. Esc (and the silent missing-
+  // target advance) use the quiet finish() above instead.
+  const finishWarm = useCallback(() => {
+    markPathDone('session');
+    void celebrate();
+    requestWelcomeReprise();
+    finish();
+  }, [markPathDone, finish]);
 
   // Track the target every frame so the cut-out stays glued to it through
   // hydration and layout shifts — e.g. late-mounting siblings above the
@@ -205,21 +233,19 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
         <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
-            onClick={finish}
+            onClick={finishWarm}
             data-testid="onboarding-spotlight-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >
-            Skip
+            Skip tour
           </button>
           <button
             ref={ctaRef}
             type="button"
             onClick={() => {
               if (isLast) {
-                // Genuine completion — celebrate. (Skip/Esc also call finish()
-                // but deliberately get no confetti.)
-                void celebrate();
-                finish();
+                // Genuine completion — tick + confetti + modal reprise.
+                finishWarm();
                 return;
               }
               setRect(null);

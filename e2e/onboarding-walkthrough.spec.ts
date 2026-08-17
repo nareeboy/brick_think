@@ -43,7 +43,9 @@ test.describe('onboarding walkthrough', () => {
     });
   });
 
-  test('facilitator sees the three-card welcome modal on first visit', async ({ signedInPage }) => {
+  test('facilitator sees the three-card welcome modal; skip confirms then persists', async ({
+    signedInPage,
+  }) => {
     await signedInPage.goto('/app/my-designs');
 
     const modal = signedInPage.getByTestId('onboarding-welcome-modal');
@@ -52,24 +54,80 @@ test.describe('onboarding walkthrough', () => {
     await expect(modal).toContainText('Start your first workshop');
     await expect(modal).toContainText('Start a session');
 
+    // Skip asks for confirmation; Go back returns to the modal.
     await modal.getByTestId('onboarding-welcome-skip').click();
-    await expect(modal).toHaveCount(0);
+    const confirm = signedInPage.getByTestId('onboarding-skip-confirm');
+    await expect(confirm).toBeVisible();
+    await confirm.getByTestId('onboarding-skip-confirm-back').click();
+    await expect(modal).toBeVisible();
 
-    // Skipping persists — the modal does not re-fire on reload.
+    // Confirming closes the tutorial for good.
+    await modal.getByTestId('onboarding-welcome-skip').click();
+    await confirm.getByTestId('onboarding-skip-confirm-close').click();
+    await expect(modal).toHaveCount(0);
     await signedInPage.reload();
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
   });
 
-  test('workshop card navigates to the workshops page and dismisses for good', async ({
+  test('workshop card starts the guided create-workshop chain', async ({ signedInPage }) => {
+    await signedInPage.goto('/app/my-designs');
+    await signedInPage.getByTestId('onboarding-welcome-card-workshop').click();
+    await expect(signedInPage).toHaveURL(/\/app\/workshops\?onboarding=create-workshop/);
+
+    // The New workshop button is spotlit; the modal stays out of the way.
+    await expect(signedInPage.getByTestId('create-workshop-spotlight')).toBeVisible();
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
+
+    // Clicking the highlighted button continues the tour on the form page.
+    await signedInPage.locator('[data-tour-id="new-workshop-button"]').click();
+    await expect(signedInPage).toHaveURL(/\/app\/workshops\/new\?onboarding=create-workshop/);
+    const formSpotlight = signedInPage.getByTestId('create-workshop-form-spotlight');
+    await expect(formSpotlight).toBeVisible();
+
+    // Step 1 gates Next on the name being typed.
+    const next = formSpotlight.getByTestId('create-workshop-form-spotlight-next');
+    await expect(next).toBeDisabled();
+    // Unique name → unique auto-suggested slug (slugs are globally unique).
+    await signedInPage
+      .locator('[data-tour-id="workshop-name-field"] input')
+      .fill(`Tour Workshop ${Date.now().toString(36)}`);
+    await expect(next).toBeEnabled();
+    await next.click(); // → slug step
+    await next.click(); // → create step
+    await next.click(); // "Got it" submits the real Create workshop button
+    await expect(signedInPage).toHaveURL(/\/app\/workshops\/[0-9a-f-]+\?onboarding=workshop-tour/);
+
+    // The workshop page tour picks up; completing it ticks the pathway.
+    await expect(signedInPage.getByTestId('workshop-page-tour')).toBeVisible();
+  });
+
+  test('picking a card does not dismiss the modal — it returns on the next hub visit', async ({
     signedInPage,
   }) => {
     await signedInPage.goto('/app/my-designs');
     await signedInPage.getByTestId('onboarding-welcome-card-workshop').click();
-    await expect(signedInPage).toHaveURL(/\/app\/workshops$/);
-
-    // The choice marked the walkthrough seen — back on my-designs, no modal.
+    await expect(signedInPage).toHaveURL(/onboarding=create-workshop/);
     await signedInPage.goto('/app/my-designs');
-    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
+    await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toBeVisible();
+  });
+
+  test('session card with no workshop detours into workshop creation with session intent', async ({
+    signedInPage,
+  }) => {
+    await signedInPage.goto('/app/my-designs');
+    await signedInPage.getByTestId('onboarding-welcome-card-session').click();
+    await expect(signedInPage).toHaveURL(
+      /\/app\/workshops\?onboarding=create-workshop&intent=session/,
+    );
+    await expect(signedInPage.getByTestId('create-workshop-spotlight')).toBeVisible();
+
+    // Skipping on a session-intent detour ticks the SESSION card, not workshop.
+    await signedInPage.getByTestId('create-workshop-spotlight-skip').click();
+    await signedInPage.goto('/app/my-designs');
+    const modal = signedInPage.getByTestId('onboarding-welcome-modal');
+    await expect(modal).toBeVisible();
+    await expect(modal.getByTestId('onboarding-welcome-card-session-done')).toBeVisible();
+    await expect(modal.getByTestId('onboarding-welcome-card-workshop-done')).toHaveCount(0);
   });
 
   test('build card creates a personal design and opens its canvas', async ({ signedInPage }) => {
@@ -148,6 +206,7 @@ test.describe('onboarding walkthrough', () => {
   test('replay walkthrough re-fires the modal', async ({ signedInPage }) => {
     await signedInPage.goto('/app/my-designs');
     await signedInPage.getByTestId('onboarding-welcome-skip').click();
+    await signedInPage.getByTestId('onboarding-skip-confirm-close').click();
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toHaveCount(0);
 
     await signedInPage.goto('/app/account');

@@ -25,6 +25,11 @@ export function StartModelButton({
   return (
     <form
       action={(fd: FormData) => {
+        // Mark this canvas entry as session-originated (facilitator example
+        // model or participant model). The canvas tutorial still runs on a
+        // first visit, but in detached mode: it won't tick the welcome
+        // modal's build pathway or re-summon the modal afterwards.
+        window.sessionStorage.setItem('bt_canvas_entry_from_session', '1');
         startTransition(() => {
           void createModelInStage(fd);
         });

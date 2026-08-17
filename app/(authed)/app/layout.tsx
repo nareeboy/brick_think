@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 import { fetchRecentNotifications } from '@/app/(authed)/app/notifications/actions';
 import { GlobalHeader } from '@/components/app/GlobalHeader';
@@ -8,6 +9,7 @@ import { HideOnAdminRoutes } from '@/components/app/HideOnAdminRoutes';
 import { PresenceHeartbeat } from '@/components/app/PresenceHeartbeat';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
+import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -75,6 +77,11 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
           <ChatWidgetSlot profileId={user.id} />
         </HideOnAdminRoutes>
         <PresenceHeartbeat />
+        {/* Global welcome/tutorial modal — decides for itself when to show
+            (hub pages, or the reprise after a pathway completes). */}
+        <Suspense fallback={null}>
+          <OnboardingWelcome />
+        </Suspense>
       </div>
     </NotificationsProvider>
   );

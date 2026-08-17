@@ -18,6 +18,7 @@ export function AddMemberForm({ orgId }: Props) {
         type="button"
         onClick={() => setOpen(true)}
         data-testid="open-add-member-dialog"
+        data-tour-id="add-member-button"
         className="inline-flex h-9 w-fit cursor-pointer items-center justify-center gap-1.5 rounded-md bg-[#a8482a] px-3 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
       >
         <PlusIcon className="h-3.5 w-3.5" />

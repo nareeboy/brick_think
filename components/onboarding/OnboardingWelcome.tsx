@@ -1,46 +1,164 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useId, useState, useTransition, type ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react';
 
 import { createDesignAction } from '@/app/(authed)/app/my-designs/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
-import { useOnboardingState } from './useOnboardingState';
+import { useOnboardingState, WELCOME_REPRISE_EVENT } from './useOnboardingState';
 
-interface Props {
-  /** The user's first workshop id so the session card can deep-link into it
-   *  (and fire the create-session spotlight there); null when none exists. */
-  firstOrgId: string | null;
-}
+// The pages where the modal proactively reappears (until skipped / all done).
+const HUB_PATHS = ['/app/my-designs', '/app/workshops', '/app/scenarios'];
+
+// How long to let a completion's confetti play before the modal returns.
+const REPRISE_DELAY_MS = 1800;
 
 /**
- * First-run welcome overlay: three clickable pathway cards (build on your own,
- * set up a workshop, run a session). Replaces the old WelcomeModal +
- * FacilitatorChecklist pair as THE first-run experience. Gated on
- * `bt_welcome_seen`, so the account-page "Replay walkthrough" (which clears
- * that flag) re-shows it unchanged.
+ * The first-run welcome overlay: three clickable pathway cards (build on your
+ * own, set up a workshop, run a session). Mounted ONCE in the authed layout.
+ *
+ * Shows when either:
+ *  - the user is on a hub page (My Designs / Workshops / Scenarios), or
+ *  - a pathway was just completed with confetti anywhere in the app (the tour
+ *    fires WELCOME_REPRISE_EVENT; after the confetti beat the modal returns to
+ *    hand them the next pathway).
+ *
+ * …until the user presses Skip tutorial / X / Esc (`bt_welcome_seen`) or all
+ * three pathways are done (`bt_path_*_done`, ticked cards). While a spotlight
+ * tour is mid-flight (any `?onboarding=` param) it stays hidden so it never
+ * covers its own tours. "Replay walkthrough" clears all of it and starts over.
  */
-export function OnboardingWelcome({ firstOrgId }: Props) {
-  const { role, welcomeSeen, hydrated, markWelcomeSeen } = useOnboardingState();
+export function OnboardingWelcome() {
+  const {
+    role,
+    welcomeSeen,
+    hydrated,
+    markWelcomeSeen,
+    markPathDone,
+    canvasTutorialSeen,
+    pathBuildDone,
+    pathWorkshopDone,
+    pathSessionDone,
+  } = useOnboardingState();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const titleId = useId();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [reprise, setReprise] = useState(false);
+  const [confirmSkip, setConfirmSkip] = useState(false);
+  const confirmTitleId = useId();
+  const repriseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  if (!hydrated || role !== 'facilitator' || welcomeSeen) return null;
+  // A confetti-worthy completion happened somewhere — bring the modal back
+  // after the confetti beat, wherever the user is.
+  useEffect(() => {
+    const onReprise = () => {
+      if (repriseTimer.current !== null) clearTimeout(repriseTimer.current);
+      repriseTimer.current = setTimeout(() => setReprise(true), REPRISE_DELAY_MS);
+    };
+    window.addEventListener(WELCOME_REPRISE_EVENT, onReprise);
+    return () => {
+      window.removeEventListener(WELCOME_REPRISE_EVENT, onReprise);
+      if (repriseTimer.current !== null) clearTimeout(repriseTimer.current);
+    };
+  }, []);
 
-  const sessionHref = firstOrgId
-    ? `/app/workshops/${firstOrgId}?onboarding=create-session`
-    : '/app/workshops';
+  // Navigating resets the reprise — hub pages take over from there. Also
+  // cancel any PENDING reprise timer: it was scheduled on the page where the
+  // completion happened, and letting it fire after a navigation would pop the
+  // modal onto a page mid-flow (e.g. over the canvas tutorial).
+  useEffect(() => {
+    if (repriseTimer.current !== null) {
+      clearTimeout(repriseTimer.current);
+      repriseTimer.current = null;
+    }
+    setReprise(false);
+    setConfirmSkip(false);
+  }, [pathname]);
+
+  const allDone = pathBuildDone && pathWorkshopDone && pathSessionDone;
+  const tourInFlight = searchParams.get('onboarding') !== null;
+  const onHubPage = HUB_PATHS.includes(pathname);
+  // Never pop over an unfinished canvas tutorial: on a canvas page the modal
+  // waits until the tutorial has been finished or skipped (its completion sets
+  // the flag and fires its own reprise, so the modal still returns afterwards).
+  const canvasTutorialPending = pathname.startsWith('/app/designs/') && !canvasTutorialSeen;
+
+  // Note: allDone does NOT hide the modal — it shows one final time (via the
+  // last completion's reprise, or on hub pages) with all three ticks and a
+  // single "Build together" CTA that dismisses it for good.
+  if (
+    !hydrated ||
+    role !== 'facilitator' ||
+    welcomeSeen ||
+    tourInFlight ||
+    canvasTutorialPending ||
+    (!onHubPage && !reprise)
+  ) {
+    return null;
+  }
+
+  // The workshops list forwards this param to the user's first workshop (or
+  // strips it when none exists yet), so the create-session spotlight fires on
+  // the right page without this component needing server data.
+  const sessionHref = '/app/workshops?onboarding=create-session';
+
+  // Skip asks for confirmation in its own small dialog before dismissing for
+  // good — Esc / backdrop / Go back return to the tutorial modal.
+  if (confirmSkip) {
+    return (
+      <ModalBackdrop
+        dataTestid="onboarding-skip-confirm"
+        titleId={confirmTitleId}
+        onClose={() => setConfirmSkip(false)}
+      >
+        <div className="animate-modal-in rounded-2xl border border-zinc-200/70 bg-white p-7 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.32)]">
+          <h2
+            id={confirmTitleId}
+            className="font-display text-[24px] font-medium leading-tight tracking-[-0.015em] text-zinc-950"
+          >
+            Close the tutorial?
+          </h2>
+          <p className="mt-3 text-[13px] leading-relaxed text-zinc-600">
+            You can always come back to this from your settings to replay the tutorial.
+          </p>
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setConfirmSkip(false)}
+              data-testid="onboarding-skip-confirm-back"
+              className="cursor-pointer rounded-md px-3 py-2 text-[13px] font-medium text-zinc-600 transition-colors hover:bg-zinc-900/5"
+            >
+              Go back
+            </button>
+            <button
+              type="button"
+              onClick={markWelcomeSeen}
+              data-testid="onboarding-skip-confirm-close"
+              className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+            >
+              Close tutorial
+            </button>
+          </div>
+        </div>
+      </ModalBackdrop>
+    );
+  }
 
   function startBuilding() {
     setError(null);
     startTransition(async () => {
       try {
         const id = await createDesignAction({ orgId: null, sessionId: null });
-        markWelcomeSeen();
+        // The tutorial only fires on a canvas the first time. If it was
+        // already consumed elsewhere (e.g. a session's Create Example Model
+        // ran it in detached mode), it can't tick this pathway on the canvas
+        // — so going there counts as done right now.
+        if (canvasTutorialSeen) markPathDone('build');
         router.push(`/app/designs/${id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to create your design');
@@ -88,7 +206,9 @@ export function OnboardingWelcome({ firstOrgId }: Props) {
           Choose your first move
         </h2>
         <p className="mt-3 max-w-md text-[13px] leading-relaxed text-zinc-600">
-          Pick a path to get going — you can replay this walkthrough anytime from account settings.
+          {allDone
+            ? 'All three paths complete — you know your way around. You can replay this walkthrough anytime from account settings.'
+            : 'This guide comes back until all three paths are done (or you skip it) — and you can replay it anytime from account settings.'}
         </p>
 
         <div className="mt-7 grid gap-4 md:grid-cols-3">
@@ -96,6 +216,7 @@ export function OnboardingWelcome({ firstOrgId }: Props) {
             as="button"
             onClick={startBuilding}
             pending={pending}
+            done={pathBuildDone}
             testid="onboarding-welcome-card-build"
             title="Start building right away"
             body="Start a building session of your own and get to know the way the application works."
@@ -103,8 +224,8 @@ export function OnboardingWelcome({ firstOrgId }: Props) {
           />
           <PathwayCard
             as="link"
-            href="/app/workshops"
-            onClick={markWelcomeSeen}
+            href="/app/workshops?onboarding=create-workshop"
+            done={pathWorkshopDone}
             testid="onboarding-welcome-card-workshop"
             title="Start your first workshop"
             body="Get your workshop ready to facilitate for your remote team."
@@ -113,7 +234,7 @@ export function OnboardingWelcome({ firstOrgId }: Props) {
           <PathwayCard
             as="link"
             href={sessionHref}
-            onClick={markWelcomeSeen}
+            done={pathSessionDone}
             testid="onboarding-welcome-card-session"
             title="Start a session"
             body="Understand how to start a group session and the features for breakout rooms."
@@ -127,16 +248,29 @@ export function OnboardingWelcome({ firstOrgId }: Props) {
           </p>
         ) : null}
 
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={markWelcomeSeen}
-            data-testid="onboarding-welcome-skip"
-            className="cursor-pointer rounded-md px-3 py-2 text-[13px] font-medium text-zinc-600 transition-colors hover:bg-zinc-900/5"
-          >
-            Skip tutorial
-          </button>
-        </div>
+        {allDone ? (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={markWelcomeSeen}
+              data-testid="onboarding-welcome-build-together"
+              className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-6 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+            >
+              Build together
+            </button>
+          </div>
+        ) : (
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              onClick={() => setConfirmSkip(true)}
+              data-testid="onboarding-welcome-skip"
+              className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#cf6e47]"
+            >
+              Skip tutorial
+            </button>
+          </div>
+        )}
       </div>
     </ModalBackdrop>
   );
@@ -147,7 +281,8 @@ type CardProps = {
   title: string;
   body: string;
   art: ReactNode;
-  onClick: () => void;
+  done: boolean;
+  onClick?: () => void;
 } & (
   | { as: 'link'; href: string; pending?: never }
   | { as: 'button'; href?: never; pending: boolean }
@@ -167,12 +302,35 @@ function PathwayCard(props: CardProps) {
         <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-600">
           {props.as === 'button' && props.pending ? 'Setting up your canvas…' : props.body}
         </p>
-        <span
-          aria-hidden="true"
-          className="mt-auto inline-flex items-center gap-1 pt-4 text-[12px] font-semibold text-[#a8482a] transition-transform duration-200 group-hover:translate-x-0.5"
-        >
-          Go <span>&rarr;</span>
-        </span>
+        {props.done ? (
+          <span
+            data-testid={`${props.testid}-done`}
+            className="mt-auto flex justify-center pt-4"
+            aria-label="Completed"
+          >
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#5f7d72] text-white shadow-[0_10px_20px_-10px_rgba(95,125,114,0.7)]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+                aria-hidden="true"
+              >
+                <path d="M5 12l5 5L20 7" />
+              </svg>
+            </span>
+          </span>
+        ) : (
+          <span
+            aria-hidden="true"
+            className="mt-auto inline-flex items-center gap-1 pt-4 text-[12px] font-semibold text-[#a8482a] transition-transform duration-200 group-hover:translate-x-0.5"
+          >
+            Go <span>&rarr;</span>
+          </span>
+        )}
       </div>
     </>
   );

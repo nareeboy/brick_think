@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { useOnboardingState } from './useOnboardingState';
+import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
 import { useSpotlightRect } from './useSpotlightRect';
 
 interface Step {
@@ -65,13 +65,25 @@ const TOOLTIP_H_EST = 190; // used only to decide above-vs-below placement
  * via the account-page "Replay walkthrough" (replayAll clears the flag).
  */
 export function CanvasBuilderTutorial() {
-  const { hydrated, canvasTutorialSeen, markCanvasTutorialSeen } = useOnboardingState();
+  const { hydrated, canvasTutorialSeen, markCanvasTutorialSeen, markPathDone } =
+    useOnboardingState();
   const titleId = useId();
   const bodyId = useId();
   const maskId = useId();
 
   const [stepIndex, setStepIndex] = useState(0);
   const [done, setDone] = useState(false);
+  // Session-originated canvas entry (Create Example Model / Start your model
+  // in a session). The tutorial still runs, but detached from the welcome
+  // modal: no pathway tick, no modal reprise — a facilitator mid-session
+  // shouldn't be pulled back into the getting-started funnel. The flag is
+  // consumed on mount so it only applies to this visit.
+  const [detached] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const v = window.sessionStorage.getItem('bt_canvas_entry_from_session') === '1';
+    window.sessionStorage.removeItem('bt_canvas_entry_from_session');
+    return v;
+  });
 
   const active = hydrated && !canvasTutorialSeen && !done && stepIndex < STEPS.length;
   const step = active ? STEPS[stepIndex]! : null;
@@ -81,9 +93,19 @@ export function CanvasBuilderTutorial() {
     (withConfetti: boolean) => {
       setDone(true);
       markCanvasTutorialSeen();
-      if (withConfetti) void celebrate();
+      if (withConfetti) {
+        // Warm exit (finish or the Skip button) — celebrate; and unless this
+        // visit is detached (session-originated), tick the welcome modal's
+        // "Start building right away" pathway and let the modal return after
+        // the confetti if pathways remain.
+        void celebrate();
+        if (!detached) {
+          markPathDone('build');
+          requestWelcomeReprise();
+        }
+      }
     },
-    [markCanvasTutorialSeen],
+    [markCanvasTutorialSeen, markPathDone, detached],
   );
 
   const goNext = useCallback(() => {
@@ -189,7 +211,9 @@ export function CanvasBuilderTutorial() {
         <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => finish(false)}
+            // Skipping still counts as a warm exit — confetti + the welcome
+            // modal's build tick, same as finishing (Esc stays quiet).
+            onClick={() => finish(true)}
             data-testid="canvas-tutorial-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >
