@@ -34,13 +34,9 @@ test.describe('account avatar', () => {
       /\/storage\/v1\/object\/public\/avatars\/[a-f0-9-]+\/avatar\.png\?v=\d+$/,
     );
 
-    // Header avatar carries the same cache-buster after a navigation.
+    // The header no longer renders an avatar (the user block shows plan text
+    // instead); propagation is asserted via the My Designs heading avatar.
     await signedInPage.goto('/app/my-designs');
-    const headerImg = signedInPage.getByTestId('header-user-block').locator('img');
-    await expect(headerImg).toHaveAttribute(
-      'src',
-      /\/storage\/v1\/object\/public\/avatars\/[a-f0-9-]+\/avatar\.png\?v=\d+$/,
-    );
 
     // My Designs heading avatar: the page header is a PageBanner <section>
     // (not a <header>), so anchor on the avatars-bucket src instead — the only
@@ -60,9 +56,11 @@ test.describe('account avatar', () => {
 
     // Avatar control reverts to an initials <span> (not an <img>).
     await expect(signedInPage.locator('form img[alt]')).toHaveCount(0);
-    // Header reflects the removal after a refresh / navigation.
+    // My Designs heading reflects the removal after a navigation.
     await signedInPage.goto('/app/my-designs');
-    await expect(signedInPage.getByTestId('header-user-block').locator('img')).toHaveCount(0);
+    await expect(
+      signedInPage.locator('main img[src*="/storage/v1/object/public/avatars/"]'),
+    ).toHaveCount(0);
   });
 
   test('rejects oversize uploads inline', async ({ signedInPage }) => {
