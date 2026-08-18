@@ -64,6 +64,59 @@ describe('ImportDesignButton', () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith('/app/designs/new-id'));
   });
 
+  it('shows the drop zone until a file is picked, then a file chip', async () => {
+    render(<ImportDesignButton />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^import design$/i }));
+    });
+    expect(screen.getByTestId('import-drop-zone')).toBeTruthy();
+    expect(screen.queryByText(/no file chosen/i)).toBeNull();
+    const file = new File([JSON.stringify(validEnvelope)], 'my-design.brickthink.json', {
+      type: 'application/json',
+    });
+    const input = screen.getByLabelText(/design file/i) as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(screen.queryByTestId('import-drop-zone')).toBeNull();
+    expect(screen.getByText('my-design.brickthink.json')).toBeTruthy();
+  });
+
+  it('clears the selection via the remove button', async () => {
+    render(<ImportDesignButton />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^import design$/i }));
+    });
+    const file = new File([JSON.stringify(validEnvelope)], 'x.json', {
+      type: 'application/json',
+    });
+    const input = screen.getByLabelText(/design file/i) as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    const importButton = screen.getByRole('button', { name: /^import$/i }) as HTMLButtonElement;
+    expect(importButton.disabled).toBe(false);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /remove file/i }));
+    });
+    expect(screen.getByTestId('import-drop-zone')).toBeTruthy();
+    expect(importButton.disabled).toBe(true);
+  });
+
+  it('rejects a non-.json file with an inline error', async () => {
+    render(<ImportDesignButton />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^import design$/i }));
+    });
+    const file = new File(['not json'], 'photo.png', { type: 'image/png' });
+    const input = screen.getByLabelText(/design file/i) as HTMLInputElement;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [file] } });
+    });
+    expect(screen.getByRole('alert').textContent).toMatch(/\.json file exported from brickthink/i);
+    expect(screen.getByTestId('import-drop-zone')).toBeTruthy();
+  });
+
   it('shows the error from importDesignAction', async () => {
     importAction.mockRejectedValue(new Error('Unsupported file version: 99'));
     render(<ImportDesignButton />);
