@@ -65,11 +65,21 @@ test.describe('email invite flow with Mailpit', () => {
     // then back to "Send invites" when complete.
     await expect(sendButton).toContainText(/^Send invites$/, { timeout: 10_000 });
 
-    // Verify the status display shows "sent invite" for this email.
-    // The results section renders with <li> items showing "sent invite" status.
-    const inviteResultRow = facPage.locator('li').filter({ hasText: inviteeEmail });
+    // Verify the status display shows "sent invite" for this email. Scope to
+    // the send-results list — the pending-invites list below it now updates
+    // live via Realtime, so an unscoped `li` locator matches both rows.
+    const inviteResultRow = facPage
+      .getByTestId('invite-send-results')
+      .locator('li')
+      .filter({ hasText: inviteeEmail });
     await expect(inviteResultRow).toBeVisible();
     await expect(inviteResultRow.locator('text=sent invite')).toBeVisible();
+
+    // The Realtime INSERT delivery should also surface the row in the
+    // pending-invites list without a reload.
+    await expect(
+      facPage.getByTestId('roster-modal').getByText('Pending invites (1)'),
+    ).toBeVisible();
 
     // Poll Mailpit to verify the email arrived.
     const mailpitMessage = await getMailpitMessage(inviteeEmail, 10_000);
