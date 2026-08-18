@@ -240,7 +240,7 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
       {results && results.length > 0 && (
         <div className="flex flex-col gap-1">
           <p className="text-[12px] font-semibold text-zinc-700">Invite results</p>
-          <ul className="flex flex-col gap-1">
+          <ul data-testid="invite-send-results" className="flex flex-col gap-1">
             {results.map(({ email, status }) => (
               <li
                 key={email}
