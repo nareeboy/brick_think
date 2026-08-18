@@ -1,0 +1,51 @@
+name: Cleanup workflow runs
+
+# Housekeeping: deletes workflow runs that carry no useful history so the
+# Actions tab stays readable.
+#
+#   skipped   -> mostly "DB migrate" no-ops. db-migrate.yml fires on every CI
+#                completion for main/staging/test, and when its job-level `if`
+#                conditions don't match (PR-triggered CI, red CI, other
+#                branches) GitHub still records a run — as "skipped". These
+#                pile up fast and never contain logs.
+#   cancelled -> runs aborted by concurrency groups or by hand; they never
+#                finished, so their partial logs aren't worth keeping.
+#
+# Failed and successful runs are deliberately left alone — red runs are the
+# debugging trail, green runs are the deploy/migration audit trail.
+#
+# NOTE: GitHub only executes `schedule` triggers from the DEFAULT branch, so
+# the weekly cron is inert until this file reaches main. `workflow_dispatch`
+# allows manual runs in the meantime (and any time).
+#
+# Deleting runs needs `actions: write` on the GITHUB_TOKEN — declared below,
+# no PAT or extra secret required. `gh` is preinstalled on ubuntu-latest.
+
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Delete skipped and cancelled runs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for status in skipped cancelled; do
+            ids=$(gh run list --status "$status" --limit 200 --json databaseId --jq '.[].databaseId')
+            count=$(echo "$ids" | grep -c . || true)
+            echo "Deleting $count $status run(s)"
+            echo "$ids" | xargs -r -n1 gh run delete
+          done
