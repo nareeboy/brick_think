@@ -86,16 +86,24 @@ export function RosterPendingInvitesList({ sessionId }: Props) {
 
   const handleCancel = async (invitationId: string) => {
     const result = await cancelInvitationAction(invitationId);
-    // Realtime subscription will refresh the list automatically
-    if (!result.ok) {
-      console.error('Failed to cancel invitation:', result.code);
+    // Drop the row immediately — the Realtime DELETE event confirms it, and
+    // `invitation_not_found` means the row is already gone (stale list).
+    if (result.ok || result.code === 'invitation_not_found') {
+      setRows((prev) => prev.filter((row) => row.id !== invitationId));
+      return;
     }
+    console.error('Failed to cancel invitation:', result.code);
   };
 
   const handleResend = async (invitationId: string) => {
     const result = await resendInvitationAction(invitationId);
-    // Realtime subscription will refresh the list automatically
+    // Realtime subscription refreshes the list; a not-found row is already
+    // gone, so drop it rather than leaving a dead entry on screen.
     if (!result.ok) {
+      if (result.code === 'invitation_not_found') {
+        setRows((prev) => prev.filter((row) => row.id !== invitationId));
+        return;
+      }
       console.error('Failed to resend invitation:', result.code);
     }
   };
