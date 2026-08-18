@@ -1,9 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Fragment, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
 import { BetaListBadge } from '@/components/marketing/BetaListBadge';
+import { NavAuthCta } from '@/components/marketing/NavAuthCta';
 import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
 import { NickLaunchesBadge } from '@/components/marketing/NickLaunchesBadge';
 import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
@@ -31,11 +32,9 @@ export const PLAY_SERIOUS_ARTICLE_URL =
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
+  { href: '/#features', label: 'Features' },
   { href: '/facilitators', label: 'For facilitators' },
-  { href: '/articles', label: 'Articles' },
-  { href: '/about', label: 'About' },
-  { href: '/help', label: 'Help' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/#open-source', label: 'Open source' },
 ];
 
 export function MarketingShell({ children }: { children: ReactNode }) {
@@ -58,26 +57,19 @@ export function NavBar() {
         </Link>
         <div className="flex items-center gap-6">
           <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((l, i) => (
-              <Fragment key={l.href}>
-                <Link
-                  href={l.href}
-                  className="text-sm text-zinc-600 transition-colors hover:text-zinc-900"
-                >
-                  {l.label}
-                </Link>
-                {/* Pricing slot sits second — right after "What is LSP?" */}
-                {i === 0 && <PricingLinkSlot variant="nav" />}
-              </Fragment>
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="text-sm text-zinc-600 transition-colors hover:text-zinc-900"
+              >
+                {l.label}
+              </Link>
             ))}
+            {/* Pricing slot sits last — hosted overlay only */}
+            <PricingLinkSlot variant="nav" />
           </nav>
-          <Link
-            href="/sign-in"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-          >
-            Sign in
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <NavAuthCta />
         </div>
       </div>
     </header>
