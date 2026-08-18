@@ -370,7 +370,31 @@ export async function Footer() {
               endorse this product.
             </p>
           </div>
-          <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5">
+          <nav aria-label="Company & legal" className="flex flex-wrap items-center gap-x-5">
+            <Link
+              href="/about"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              About
+            </Link>
+            <Link
+              href="/careers"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              Careers
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              Contact
+            </Link>
+            <Link
+              href="/help"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              Help &amp; FAQ
+            </Link>
             <Link
               href="/terms"
               className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
