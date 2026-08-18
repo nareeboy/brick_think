@@ -1,6 +1,6 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import { RosterInviteBlock } from './RosterInviteBlock';
 import { RosterList } from './RosterList';
@@ -16,6 +16,10 @@ interface Props {
 
 export function RosterModal({ sessionId, joinCode, open, onClose }: Props) {
   const titleId = useId();
+  // Emails cancelled from the pending list while the modal is open — hides
+  // their rows in the invite-results section so a dead magic link isn't
+  // still advertised as sent.
+  const [cancelledEmails, setCancelledEmails] = useState<string[]>([]);
 
   if (!open) return null;
 
@@ -51,9 +55,16 @@ export function RosterModal({ sessionId, joinCode, open, onClose }: Props) {
         </div>
 
         <div className="mt-6 flex flex-col gap-6">
-          <RosterInviteBlock sessionId={sessionId} joinCode={joinCode} />
+          <RosterInviteBlock
+            sessionId={sessionId}
+            joinCode={joinCode}
+            hiddenResultEmails={cancelledEmails}
+          />
           <RosterList sessionId={sessionId} />
-          <RosterPendingInvitesList sessionId={sessionId} />
+          <RosterPendingInvitesList
+            sessionId={sessionId}
+            onCancelled={(email) => setCancelledEmails((prev) => [...prev, email])}
+          />
           <RosterRemovedList sessionId={sessionId} />
         </div>
       </div>

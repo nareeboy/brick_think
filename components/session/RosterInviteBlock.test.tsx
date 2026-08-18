@@ -72,4 +72,54 @@ describe('RosterInviteBlock', () => {
     fireEvent.change(input, { target: { value: '   ' } });
     expect(sendButton.disabled).toBe(true);
   });
+
+  it('hides a result row once its invitation is cancelled', async () => {
+    inviteMock.mockResolvedValue({
+      ok: true,
+      data: {
+        results: [
+          { email: 'keep@test.com', status: 'sent_invite' },
+          { email: 'Gone@Test.com', status: 'sent_magiclink' },
+        ],
+      },
+    });
+    const { rerender } = render(
+      <RosterInviteBlock sessionId="session-1" joinCode="ABC123" hiddenResultEmails={[]} />,
+    );
+    const input = screen.getByPlaceholderText('Enter email addresses...');
+    fireEvent.change(input, { target: { value: 'keep@test.com, Gone@Test.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send invites' }));
+    await waitFor(() => expect(screen.getByText('sent magic link')).toBeDefined());
+
+    // Cancelling the invite (matched case-insensitively — citext in the DB)
+    // drops that row but keeps the other result.
+    rerender(
+      <RosterInviteBlock
+        sessionId="session-1"
+        joinCode="ABC123"
+        hiddenResultEmails={['gone@test.com']}
+      />,
+    );
+    expect(screen.queryByText('sent magic link')).toBeNull();
+    expect(screen.getByText('sent invite')).toBeDefined();
+  });
+
+  it('hides the whole results section when every row is cancelled', async () => {
+    const { rerender } = render(
+      <RosterInviteBlock sessionId="session-1" joinCode="ABC123" hiddenResultEmails={[]} />,
+    );
+    const input = screen.getByPlaceholderText('Enter email addresses...');
+    fireEvent.change(input, { target: { value: 'test1@test.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send invites' }));
+    await waitFor(() => expect(screen.getByText('Invite results')).toBeDefined());
+
+    rerender(
+      <RosterInviteBlock
+        sessionId="session-1"
+        joinCode="ABC123"
+        hiddenResultEmails={['test1@test.com']}
+      />,
+    );
+    expect(screen.queryByText('Invite results')).toBeNull();
+  });
 });

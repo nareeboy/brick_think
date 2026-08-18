@@ -9,13 +9,20 @@ import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 interface Props {
   sessionId: string;
   joinCode: string;
+  /**
+   * Emails whose invitation has since been cancelled from the pending list —
+   * their send-result rows are hidden so the modal doesn't keep advertising
+   * a magic link that no longer leads anywhere. Matched case-insensitively
+   * (the column is citext).
+   */
+  hiddenResultEmails?: string[];
 }
 
 function getSiteUrl(): string {
   return typeof window !== 'undefined' ? window.location.origin : 'https://www.brickthink.io';
 }
 
-export function RosterInviteBlock({ sessionId, joinCode }: Props) {
+export function RosterInviteBlock({ sessionId, joinCode, hiddenResultEmails = [] }: Props) {
   const router = useRouter();
   const [emails, setEmails] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -112,6 +119,9 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
     };
     return labels[status] || status;
   }
+
+  const hiddenLower = hiddenResultEmails.map((e) => e.toLowerCase());
+  const visibleResults = results?.filter(({ email }) => !hiddenLower.includes(email.toLowerCase()));
 
   function statusColor(status: string): string {
     const colors: Record<string, string> = {
@@ -237,11 +247,11 @@ export function RosterInviteBlock({ sessionId, joinCode }: Props) {
       </div>
 
       {/* Results display */}
-      {results && results.length > 0 && (
+      {visibleResults && visibleResults.length > 0 && (
         <div className="flex flex-col gap-1">
           <p className="text-[12px] font-semibold text-zinc-700">Invite results</p>
           <ul data-testid="invite-send-results" className="flex flex-col gap-1">
-            {results.map(({ email, status }) => (
+            {visibleResults.map(({ email, status }) => (
               <li
                 key={email}
                 className="flex items-center justify-between text-[12px] text-zinc-700"
