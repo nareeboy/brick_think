@@ -35,7 +35,7 @@ const PHASES: Phase[] = [
     ],
   },
   {
-    status: 'Now',
+    status: 'Done',
     name: 'Phase 1 — Feedback',
     summary: 'Get it in front of real facilitators and run real sessions.',
     items: [
@@ -47,7 +47,7 @@ const PHASES: Phase[] = [
     ],
   },
   {
-    status: 'Next',
+    status: 'Done',
     name: 'Phase 2 — Capture & Export',
     summary: 'Take the whole session with you — no lock-in.',
     items: [
@@ -59,7 +59,7 @@ const PHASES: Phase[] = [
     ],
   },
   {
-    status: 'Later',
+    status: 'Now',
     name: 'Phase 3 — AI assist',
     summary: "A helper on the facilitator's side — never the participant's.",
     items: [
@@ -69,7 +69,7 @@ const PHASES: Phase[] = [
     ],
   },
   {
-    status: 'Later',
+    status: 'Next',
     name: 'Phase 4 — Self-host & scale',
     summary: 'Run your own copy. Your data, your rules.',
     items: [
@@ -113,8 +113,8 @@ function Hero() {
         <aside className="md:col-span-4">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-zinc-900/10 pt-6 md:border-l md:border-t-0 md:pl-8 md:pt-0">
             {[
-              ['Phase 1', 'Where we are'],
-              ['Feedback', 'What it is about'],
+              ['Phase 3', 'Where we are'],
+              ['AI assist', 'What it is about'],
               ['Apache 2.0', 'Code licence'],
               ['Free platform', 'What it costs'],
             ].map(([val, label]) => (
@@ -155,8 +155,8 @@ function Timeline() {
             </h2>
           </div>
           <p className="max-w-sm text-[14px] leading-relaxed text-zinc-600">
-            Phase 0 is built and shipped. We are in Phase 1 now. The rest is honest intent, not a
-            promise of dates.
+            Phases 0 to 2 are built and shipped. We are in Phase 3 now. The rest is honest intent,
+            not a promise of dates.
           </p>
         </div>
 
@@ -228,14 +228,14 @@ function CtaBand() {
           </div>
           <div className="relative max-w-xl">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-              We are in Phase 1
+              We are in Phase 3
             </p>
             <h2 className="mt-3 font-display text-[34px] font-medium leading-[1.0] tracking-[-0.02em] text-zinc-950 md:text-[48px]">
               Run a session. Tell us what breaks.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-zinc-700">
-              Phase 1 is about you. Real facilitators, real sessions, real feedback. What you tell
-              us now is what shapes Phase 2.
+              Phase 3 puts AI on the facilitator&apos;s side — opt-in, and never the
+              participant&apos;s. Real sessions and real feedback are what shape Phase 4.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <Link
