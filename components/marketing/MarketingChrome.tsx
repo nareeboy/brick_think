@@ -173,8 +173,8 @@ export async function Footer() {
             <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
           </Link>
           <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-zinc-600">
-            A remote-native platform for the five-stage LEGO® SERIOUS PLAY® methodology. Built on
-            Next.js, Supabase and Claude.
+            Remote-native software for the five-stage LEGO® SERIOUS PLAY® methodology. Free and open
+            source under Apache 2.0. Self-hosting costs nothing.
           </p>
           <div className="mt-5 flex items-center gap-2">
             <a
