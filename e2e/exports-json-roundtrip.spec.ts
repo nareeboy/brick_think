@@ -43,8 +43,11 @@ test('JSON export round-trips: imported design matches source bricks', async ({
       await page.getByRole('menuitem', { name: /json/i }).click();
     })(),
   ]);
-  const downloadPath = await download.path();
-  expect(downloadPath).toBeTruthy();
+  // Save under the suggested filename — the import dialog validates the
+  // picked file's name ends in .json, and Playwright's raw download.path()
+  // is an extension-less GUID temp file that would fail that check.
+  const downloadPath = test.info().outputPath(download.suggestedFilename());
+  await download.saveAs(downloadPath);
 
   // Import.
   await page.goto('/app/my-designs');
