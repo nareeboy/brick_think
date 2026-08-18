@@ -14,3 +14,5 @@ export { AdminNavSlot } from '@brickthink/premium/server-slots';
 export type { AdminNavSlotProps } from '@brickthink/premium';
 export { ChatWidgetSlot } from '@brickthink/premium/server-slots';
 export type { ChatWidgetSlotProps } from '@brickthink/premium';
+export { HeaderPlanSlot } from '@brickthink/premium/server-slots';
+export type { HeaderPlanSlotProps } from '@brickthink/premium';
