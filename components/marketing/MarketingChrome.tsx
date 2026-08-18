@@ -351,19 +351,8 @@ export async function Footer() {
         </div>
       </div>
       <div className="border-t border-zinc-900/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-4 px-6 py-5 text-[12px] text-zinc-500 md:flex-row md:items-center md:gap-10">
-          <div className="max-w-2xl space-y-1">
-            <p>
-              © BrickThink. The LEGO® SERIOUS PLAY® methodology is referenced under CC BY-SA 3.0.
-            </p>
-            <p>
-              LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob
-              configurations are trademarks of the LEGO Group,
-              <br className="hidden md:inline" />
-              {' which does not sponsor, authorize or endorse this product.'}
-            </p>
-          </div>
-          <nav aria-label="Company & legal" className="flex flex-wrap items-center gap-x-5">
+        <div className="mx-auto max-w-7xl space-y-4 px-6 py-5 text-[12px] text-zinc-500">
+          <nav aria-label="Company & legal" className="flex flex-wrap items-center gap-x-5 gap-y-1">
             <Link
               href="/about"
               className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
@@ -413,6 +402,16 @@ export async function Footer() {
               </span>
             ) : null}
           </nav>
+          <div className="space-y-1">
+            <p>
+              © BrickThink. The LEGO® SERIOUS PLAY® methodology is referenced under CC BY-SA 3.0.
+            </p>
+            <p>
+              LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob
+              configurations are trademarks of the LEGO Group, which does not sponsor, authorize or
+              endorse this product.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
