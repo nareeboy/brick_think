@@ -1,6 +1,5 @@
 import Link from 'next/link';
 
-import { Avatar } from '@/components/app/Avatar';
 import type { GlobalRole } from '@/lib/account/globalRole';
 import type { NavSession } from '@/lib/sessions/navSessions';
 import { BrickGlyph } from '@/components/app/BrickGlyph';
@@ -9,20 +8,21 @@ import { HeaderNav } from '@/components/app/HeaderNav';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { RoleSwitcher } from '@/components/app/RoleSwitcher';
 import { adminPanelEnabled } from '@/lib/premium/server';
+import { HeaderPlanSlot } from '@/lib/premium/server-slots';
 
 interface Props {
+  userId: string;
   userName: string;
   userEmail: string | null;
-  userAvatarUrl: string | null;
   role: GlobalRole;
   isSiteAdmin?: boolean;
   sessions?: NavSession[];
 }
 
 export function GlobalHeader({
+  userId,
   userName,
   userEmail,
-  userAvatarUrl,
   role,
   isSiteAdmin = false,
   sessions = [],
@@ -46,10 +46,7 @@ export function GlobalHeader({
 
         <div className="flex items-center gap-1">
           <div className="flex items-center gap-2 pr-2" data-testid="header-user-block">
-            <Avatar url={userAvatarUrl} name={userName} size="sm" />
-            <span className="hidden max-w-[140px] truncate text-[13px] text-zinc-800 sm:inline">
-              {userName}
-            </span>
+            <HeaderPlanSlot profileId={userId} />
             <RoleSwitcher serverRole={role} />
           </div>
           <div aria-hidden="true" className="h-6 w-px bg-zinc-900/10" />

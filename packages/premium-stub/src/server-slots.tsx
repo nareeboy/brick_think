@@ -3,6 +3,7 @@ import type {
   AdminNavSlotProps,
   BrandingSettingsSlotProps,
   ChatWidgetSlotProps,
+  HeaderPlanSlotProps,
   ReportActionsSlotProps,
 } from './types';
 
@@ -39,5 +40,10 @@ export function AdminNavSlot(_props: AdminNavSlotProps): null {
 
 /** Stub: no support chat on the open core. */
 export function ChatWidgetSlot(_props: ChatWidgetSlotProps): null {
+  return null;
+}
+
+/** Stub: no billing → no plan text in the header on the open core. */
+export function HeaderPlanSlot(_props: HeaderPlanSlotProps): null {
   return null;
 }

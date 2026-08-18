@@ -5,6 +5,7 @@ import {
   AdminNavSlot,
   BrandingSettingsSlot,
   ChatWidgetSlot,
+  HeaderPlanSlot,
   ReportActionsSlot,
 } from './server-slots';
 
@@ -23,5 +24,9 @@ describe('server-rendered slot stubs', () => {
 
   it('ChatWidgetSlot renders nothing on the open core', () => {
     expect(ChatWidgetSlot({ profileId: '00000000-0000-0000-0000-000000000000' })).toBeNull();
+  });
+
+  it('HeaderPlanSlot renders nothing on the open core', () => {
+    expect(HeaderPlanSlot({ profileId: '00000000-0000-0000-0000-000000000000' })).toBeNull();
   });
 });

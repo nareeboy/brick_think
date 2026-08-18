@@ -38,7 +38,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, avatar_url, is_site_admin')
+    .select('full_name, email, is_site_admin')
     .eq('id', user.id)
     .single();
 
@@ -57,7 +57,6 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
   const fullNameLooksLikeEmailPrefix =
     fullName !== null && emailLocalPart !== null && fullName.toLowerCase() === emailLocalPart;
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
-  const userAvatarUrl = profileRes.data?.avatar_url ?? null;
   const isSiteAdmin = profileRes.data?.is_site_admin === true;
   const [role, navSessions, initialNotifications, tutorialGuest] = await Promise.all([
     getGlobalRole(supabase, user.id),
@@ -71,9 +70,9 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
       <div className="flex h-[100dvh] flex-col bg-[#FAF7F1] text-zinc-900">
         <HideOnChromelessRoutes>
           <GlobalHeader
+            userId={user.id}
             userName={userName}
             userEmail={email}
-            userAvatarUrl={userAvatarUrl}
             role={role}
             isSiteAdmin={isSiteAdmin}
             sessions={navSessions}

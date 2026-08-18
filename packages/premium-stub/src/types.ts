@@ -56,3 +56,6 @@ export type PricingLinkSlotProps = { variant: 'nav' | 'footer' };
 
 /** Bottom-right support-chat widget. Stub renders nothing; premium renders the FAB + panel. */
 export type ChatWidgetSlotProps = { profileId: string };
+
+/** Header plan text (current subscription package). Stub renders nothing; premium renders a text link to billing. */
+export type HeaderPlanSlotProps = { profileId: string };
