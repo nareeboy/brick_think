@@ -16,6 +16,8 @@ interface Row {
 
 interface Props {
   sessionId: string;
+  /** Fired with the invitee's email once a cancel removes the invitation. */
+  onCancelled?: (email: string) => void;
 }
 
 function relativeTime(iso: string): string {
@@ -33,7 +35,7 @@ function relativeTime(iso: string): string {
   return `${days}d ago`;
 }
 
-export function RosterPendingInvitesList({ sessionId }: Props) {
+export function RosterPendingInvitesList({ sessionId, onCancelled }: Props) {
   const [rows, setRows] = useState<Row[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -84,12 +86,13 @@ export function RosterPendingInvitesList({ sessionId }: Props) {
     };
   }, [sessionId]);
 
-  const handleCancel = async (invitationId: string) => {
+  const handleCancel = async (invitationId: string, email: string) => {
     const result = await cancelInvitationAction(invitationId);
     // Drop the row immediately — the Realtime DELETE event confirms it, and
     // `invitation_not_found` means the row is already gone (stale list).
     if (result.ok || result.code === 'invitation_not_found') {
       setRows((prev) => prev.filter((row) => row.id !== invitationId));
+      onCancelled?.(email);
       return;
     }
     console.error('Failed to cancel invitation:', result.code);
@@ -153,7 +156,7 @@ export function RosterPendingInvitesList({ sessionId }: Props) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleCancel(row.id)}
+                  onClick={() => handleCancel(row.id, row.email)}
                   className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
                   title="Cancel this invitation"
                   aria-label={`Cancel invitation to ${row.email}`}

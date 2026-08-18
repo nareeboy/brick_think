@@ -84,6 +84,14 @@ test.describe('email invite flow with Mailpit', () => {
     // Poll Mailpit to verify the email arrived.
     const mailpitMessage = await getMailpitMessage(inviteeEmail, 10_000);
 
+    // Cancelling the invite clears the pending row AND its send-result row —
+    // the modal must not keep advertising a magic link that leads nowhere.
+    await facPage.getByRole('button', { name: `Cancel invitation to ${inviteeEmail}` }).click();
+    await expect(
+      facPage.getByTestId('roster-modal').getByText('Pending invites', { exact: false }),
+    ).toHaveCount(0);
+    await expect(inviteResultRow).toHaveCount(0);
+
     // Subject should indicate this is an invite from Supabase Auth.
     expect(mailpitMessage.subject.toLowerCase()).toContain('invit');
 
