@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { PageBanner } from '@/components/app/PageBanner';
+import { CreateTestWorkshopButton } from './CreateTestWorkshopButton';
 import { CreateWorkshopSpotlight } from '@/components/onboarding/CreateWorkshopSpotlight';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -40,6 +41,14 @@ export default async function OrgsPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in?next=%2Fapp%2Forgs');
+
+  // Site admins get the "Create test workshop" seeding button in the banner.
+  const { data: profileRow } = await supabase
+    .from('profiles')
+    .select('is_site_admin')
+    .eq('id', user.id)
+    .maybeSingle();
+  const isSiteAdmin = profileRow?.is_site_admin === true;
 
   const { data, error } = await supabase
     .from('org_memberships')
@@ -101,13 +110,16 @@ export default async function OrgsPage({
         eyebrow="BrickThink"
         title="Workshops"
         actions={
-          <Link
-            href={newWorkshopHref}
-            data-tour-id="new-workshop-button"
-            className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
-          >
-            New workshop
-          </Link>
+          <div className="flex items-start gap-2">
+            {isSiteAdmin ? <CreateTestWorkshopButton /> : null}
+            <Link
+              href={newWorkshopHref}
+              data-tour-id="new-workshop-button"
+              className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl bg-[#a8482a] px-4 text-[13px] font-semibold text-white shadow-[0_20px_30px_-15px_rgba(192,97,61,0.6)] transition-colors hover:bg-[#cf6e47]"
+            >
+              New workshop
+            </Link>
+          </div>
         }
       />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
