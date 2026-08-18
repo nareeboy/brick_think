@@ -166,8 +166,8 @@ export async function Footer() {
     <footer className="border-t border-zinc-900/10">
       <FeaturedOnBand />
       <LaunchedOnBand />
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-12 md:grid-cols-12">
-        <div className="md:col-span-5">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-8 gap-y-10 px-6 py-12 md:grid-cols-12">
+        <div className="col-span-2 md:col-span-3">
           <Link href="/" className="flex items-center gap-2 text-zinc-900">
             <BrickGlyph />
             <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
@@ -233,27 +233,14 @@ export async function Footer() {
             </a>
           </div>
         </div>
-        <div className="md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Product</p>
+        <div className="col-span-1 md:col-span-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            The method
+          </p>
           <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
             <li>
               <Link href="/what-is-lsp" className="hover:text-zinc-950">
                 What is LSP?
-              </Link>
-            </li>
-            <li>
-              <Link href="/facilitators" className="hover:text-zinc-950">
-                For facilitators
-              </Link>
-            </li>
-            <li>
-              <Link href="/self-host" className="hover:text-zinc-950">
-                Self-host
-              </Link>
-            </li>
-            <li>
-              <Link href="/compare/miro" className="hover:text-zinc-950">
-                BrickThink vs Miro
               </Link>
             </li>
             <li>
@@ -262,16 +249,15 @@ export async function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/#features" className="hover:text-zinc-950">
-                Features
+              <Link href="/facilitators" className="hover:text-zinc-950">
+                For facilitators
               </Link>
             </li>
             <li>
-              <Link href="/#open-source" className="hover:text-zinc-950">
-                Open source
+              <Link href="/articles" className="hover:text-zinc-950">
+                Articles
               </Link>
             </li>
-            <PricingLinkSlot variant="footer" />
             <li>
               <a
                 href={LEGO_SERIOUS_PLAY_URL}
@@ -284,22 +270,18 @@ export async function Footer() {
             </li>
           </ul>
         </div>
-        <div className="md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Company</p>
+        <div className="col-span-1 md:col-span-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Product</p>
           <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
             <li>
-              <Link href="/about" className="hover:text-zinc-950">
-                About
+              <Link href="/#features" className="hover:text-zinc-950">
+                Features
               </Link>
             </li>
+            <PricingLinkSlot variant="footer" />
             <li>
-              <Link href="/careers" className="hover:text-zinc-950">
-                Careers
-              </Link>
-            </li>
-            <li>
-              <Link href="/changelog" className="hover:text-zinc-950">
-                Changelog
+              <Link href="/compare/miro" className="hover:text-zinc-950">
+                BrickThink vs Miro
               </Link>
             </li>
             <li>
@@ -308,18 +290,60 @@ export async function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/help" className="hover:text-zinc-950">
-                Help &amp; FAQ
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" className="hover:text-zinc-950">
-                Contact
+              <Link href="/changelog" className="hover:text-zinc-950">
+                Changelog
               </Link>
             </li>
           </ul>
         </div>
-        <div className="md:col-span-3">
+        <div className="col-span-1 md:col-span-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Open source
+          </p>
+          <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
+            <li>
+              <Link href="/#open-source" className="hover:text-zinc-950">
+                Why open source
+              </Link>
+            </li>
+            <li>
+              <Link href="/self-host" className="hover:text-zinc-950">
+                Self-host
+              </Link>
+            </li>
+            <li>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-950"
+              >
+                GitHub
+              </a>
+            </li>
+            <li>
+              <a
+                href={`${GITHUB_URL}/blob/main/CONTRIBUTING.md`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-950"
+              >
+                Contributing
+              </a>
+            </li>
+            <li>
+              <a
+                href={`${GITHUB_URL}/blob/main/LICENSE`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-950"
+              >
+                Licence (Apache 2.0)
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div className="col-span-2 md:col-span-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Status</p>
           <Link
             href="/roadmap"
