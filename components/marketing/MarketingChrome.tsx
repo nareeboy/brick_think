@@ -1,9 +1,10 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { Fragment, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 
 import { ManageCookiesButton } from '@/components/consent/ManageCookiesButton';
 import { BetaListBadge } from '@/components/marketing/BetaListBadge';
+import { NavAuthCta } from '@/components/marketing/NavAuthCta';
 import { LaunchIgniterBadge } from '@/components/marketing/LaunchIgniterBadge';
 import { NickLaunchesBadge } from '@/components/marketing/NickLaunchesBadge';
 import { PeerlistBadge } from '@/components/marketing/PeerlistBadge';
@@ -31,11 +32,9 @@ export const PLAY_SERIOUS_ARTICLE_URL =
 
 const NAV_LINKS = [
   { href: '/what-is-lsp', label: 'What is LSP?' },
+  { href: '/#features', label: 'Features' },
   { href: '/facilitators', label: 'For facilitators' },
-  { href: '/articles', label: 'Articles' },
-  { href: '/about', label: 'About' },
-  { href: '/help', label: 'Help' },
-  { href: '/contact', label: 'Contact' },
+  { href: '/#open-source', label: 'Open source' },
 ];
 
 export function MarketingShell({ children }: { children: ReactNode }) {
@@ -58,26 +57,19 @@ export function NavBar() {
         </Link>
         <div className="flex items-center gap-6">
           <nav aria-label="Primary" className="hidden items-center gap-6 md:flex">
-            {NAV_LINKS.map((l, i) => (
-              <Fragment key={l.href}>
-                <Link
-                  href={l.href}
-                  className="text-sm text-zinc-600 transition-colors hover:text-zinc-900"
-                >
-                  {l.label}
-                </Link>
-                {/* Pricing slot sits second — right after "What is LSP?" */}
-                {i === 0 && <PricingLinkSlot variant="nav" />}
-              </Fragment>
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="text-sm text-zinc-600 transition-colors hover:text-zinc-900"
+              >
+                {l.label}
+              </Link>
             ))}
+            {/* Pricing slot sits last — hosted overlay only */}
+            <PricingLinkSlot variant="nav" />
           </nav>
-          <Link
-            href="/sign-in"
-            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-zinc-900 px-3.5 py-1.5 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-          >
-            Sign in
-            <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <NavAuthCta />
         </div>
       </div>
     </header>
@@ -166,15 +158,15 @@ export async function Footer() {
     <footer className="border-t border-zinc-900/10">
       <FeaturedOnBand />
       <LaunchedOnBand />
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-12 md:grid-cols-12">
-        <div className="md:col-span-5">
+      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-8 gap-y-10 px-6 py-12 md:grid-cols-12">
+        <div className="col-span-2 md:col-span-3">
           <Link href="/" className="flex items-center gap-2 text-zinc-900">
             <BrickGlyph />
             <span className="text-[15px] font-semibold tracking-tight">BrickThink</span>
           </Link>
           <p className="mt-4 max-w-sm text-[13px] leading-relaxed text-zinc-600">
-            A remote-native platform for the five-stage LEGO® SERIOUS PLAY® methodology. Built on
-            Next.js, Supabase and Claude.
+            Remote-native software for the five-stage LEGO® SERIOUS PLAY® methodology. Free and open
+            source under Apache 2.0. Self-hosting costs nothing.
           </p>
           <div className="mt-5 flex items-center gap-2">
             <a
@@ -233,27 +225,14 @@ export async function Footer() {
             </a>
           </div>
         </div>
-        <div className="md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Product</p>
+        <div className="col-span-1 md:col-span-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            The method
+          </p>
           <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
             <li>
               <Link href="/what-is-lsp" className="hover:text-zinc-950">
                 What is LSP?
-              </Link>
-            </li>
-            <li>
-              <Link href="/facilitators" className="hover:text-zinc-950">
-                For facilitators
-              </Link>
-            </li>
-            <li>
-              <Link href="/self-host" className="hover:text-zinc-950">
-                Self-host
-              </Link>
-            </li>
-            <li>
-              <Link href="/compare/miro" className="hover:text-zinc-950">
-                BrickThink vs Miro
               </Link>
             </li>
             <li>
@@ -262,16 +241,15 @@ export async function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/#features" className="hover:text-zinc-950">
-                Features
+              <Link href="/facilitators" className="hover:text-zinc-950">
+                For facilitators
               </Link>
             </li>
             <li>
-              <Link href="/#open-source" className="hover:text-zinc-950">
-                Open source
+              <Link href="/articles" className="hover:text-zinc-950">
+                Articles
               </Link>
             </li>
-            <PricingLinkSlot variant="footer" />
             <li>
               <a
                 href={LEGO_SERIOUS_PLAY_URL}
@@ -284,22 +262,18 @@ export async function Footer() {
             </li>
           </ul>
         </div>
-        <div className="md:col-span-2">
-          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Company</p>
+        <div className="col-span-1 md:col-span-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Product</p>
           <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
             <li>
-              <Link href="/about" className="hover:text-zinc-950">
-                About
+              <Link href="/#features" className="hover:text-zinc-950">
+                Features
               </Link>
             </li>
+            <PricingLinkSlot variant="footer" />
             <li>
-              <Link href="/careers" className="hover:text-zinc-950">
-                Careers
-              </Link>
-            </li>
-            <li>
-              <Link href="/changelog" className="hover:text-zinc-950">
-                Changelog
+              <Link href="/compare/miro" className="hover:text-zinc-950">
+                BrickThink vs Miro
               </Link>
             </li>
             <li>
@@ -308,25 +282,67 @@ export async function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/help" className="hover:text-zinc-950">
-                Help &amp; FAQ
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" className="hover:text-zinc-950">
-                Contact
+              <Link href="/changelog" className="hover:text-zinc-950">
+                Changelog
               </Link>
             </li>
           </ul>
         </div>
-        <div className="md:col-span-3">
+        <div className="col-span-1 md:col-span-2">
+          <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+            Open source
+          </p>
+          <ul className="mt-3 space-y-2 text-[13px] text-zinc-700">
+            <li>
+              <Link href="/#open-source" className="hover:text-zinc-950">
+                Why open source
+              </Link>
+            </li>
+            <li>
+              <Link href="/self-host" className="hover:text-zinc-950">
+                Self-host
+              </Link>
+            </li>
+            <li>
+              <a
+                href={GITHUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-950"
+              >
+                GitHub
+              </a>
+            </li>
+            <li>
+              <a
+                href={`${GITHUB_URL}/blob/main/CONTRIBUTING.md`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-950"
+              >
+                Contributing
+              </a>
+            </li>
+            <li>
+              <a
+                href={`${GITHUB_URL}/blob/main/LICENSE`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-zinc-950"
+              >
+                Licence (Apache 2.0)
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div className="col-span-2 md:col-span-3">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Status</p>
           <Link
             href="/roadmap"
             className="mt-3 inline-flex items-center gap-2 text-[13px] text-zinc-700 hover:text-zinc-950"
           >
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Phase 1 — Feedback
+            Phase 3 — AI assist
           </Link>
           <p className="mt-2 text-[13px] text-zinc-600">
             WCAG 2.2 AA. GDPR-aligned. EU data residency. Free to self-host.
@@ -335,18 +351,32 @@ export async function Footer() {
         </div>
       </div>
       <div className="border-t border-zinc-900/10">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-6 py-5 text-[12px] text-zinc-500 md:flex-row md:items-center">
-          <div className="max-w-3xl space-y-1">
-            <p>
-              © BrickThink. The LEGO® SERIOUS PLAY® methodology is referenced under CC BY-SA 3.0.
-            </p>
-            <p>
-              LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob
-              configurations are trademarks of the LEGO Group, which does not sponsor, authorize or
-              endorse this product.
-            </p>
-          </div>
-          <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-5">
+        <div className="mx-auto max-w-7xl space-y-4 px-6 py-5 text-[12px] text-zinc-500">
+          <nav aria-label="Company & legal" className="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <Link
+              href="/about"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              About
+            </Link>
+            <Link
+              href="/careers"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              Careers
+            </Link>
+            <Link
+              href="/contact"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              Contact
+            </Link>
+            <Link
+              href="/help"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              Help &amp; FAQ
+            </Link>
             <Link
               href="/terms"
               className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
@@ -372,6 +402,16 @@ export async function Footer() {
               </span>
             ) : null}
           </nav>
+          <div className="space-y-1">
+            <p>
+              © BrickThink. The LEGO® SERIOUS PLAY® methodology is referenced under CC BY-SA 3.0.
+            </p>
+            <p>
+              LEGO®, SERIOUS PLAY®, IMAGINOPEDIA, the Minifigure and the Brick and Knob
+              configurations are trademarks of the LEGO Group, which does not sponsor, authorize or
+              endorse this product.
+            </p>
+          </div>
         </div>
       </div>
     </footer>
