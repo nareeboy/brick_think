@@ -126,8 +126,8 @@ export function BringInPreviousModelCard() {
   };
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-      <div className="pointer-events-auto relative rounded-2xl border border-zinc-900/10 bg-white/95 px-6 py-5 text-center shadow-[0_20px_40px_-20px_rgba(0,0,0,0.25)] backdrop-blur">
+    <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center p-4">
+      <div className="pointer-events-auto relative w-full max-w-[340px] rounded-2xl border border-zinc-900/10 bg-white/95 px-6 py-5 text-center shadow-[0_20px_40px_-20px_rgba(0,0,0,0.25)] backdrop-blur">
         <button
           type="button"
           onClick={() => setDismissed(true)}
@@ -142,7 +142,7 @@ export function BringInPreviousModelCard() {
           Continue your work
         </p>
         <h2 className="mt-2 text-[18px] font-semibold text-zinc-900">Bring in my previous model</h2>
-        <p className="mt-1.5 max-w-[260px] text-[12px] text-zinc-600">
+        <p className="mx-auto mt-1.5 max-w-[260px] text-[12px] text-zinc-600">
           Copies bricks from your {sourceStageLabel}. One-shot.
         </p>
         <button
@@ -155,7 +155,7 @@ export function BringInPreviousModelCard() {
           {pending ? 'Bringing in…' : 'Bring in my previous model'}
         </button>
         {error ? (
-          <p role="alert" className="mt-3 text-[12px] text-[#a8482a]">
+          <p role="alert" className="mx-auto mt-3 max-w-[260px] text-[12px] text-[#a8482a]">
             {error}
           </p>
         ) : null}
