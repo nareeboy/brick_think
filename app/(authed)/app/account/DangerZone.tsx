@@ -74,7 +74,7 @@ export function DangerZone({ email }: Props) {
           type="button"
           onClick={() => setConfirming(true)}
           data-testid="account-delete-trigger"
-          className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-red-200 bg-white px-3 text-[12px] font-semibold text-red-700 transition-colors hover:bg-red-50"
+          className="inline-flex h-9 cursor-pointer items-center justify-center rounded-xl border border-red-700 bg-white px-3 text-[12px] font-semibold text-red-700 transition-colors hover:bg-red-50"
         >
           Delete account
         </button>
