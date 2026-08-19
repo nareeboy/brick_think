@@ -67,7 +67,7 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
         aria-label="Delete workshop"
         title="Delete workshop"
         data-tour-id="delete-workshop-button"
-        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors hover:bg-red-50"
+        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-700 text-red-700 transition-colors hover:bg-red-50"
       >
         <TrashIcon className="h-4 w-4" />
       </button>

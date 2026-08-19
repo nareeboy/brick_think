@@ -993,7 +993,7 @@ export function EndSessionButton({
           aria-label="End session"
           title="End session"
           data-testid="end-session-button"
-          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-200 text-red-700 transition-colors transition-transform duration-150 ease-out hover:bg-red-50 active:scale-[0.96] disabled:cursor-default disabled:opacity-50"
+          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md border border-red-700 text-red-700 transition-colors transition-transform duration-150 ease-out hover:bg-red-50 active:scale-[0.96] disabled:cursor-default disabled:opacity-50"
         >
           <StopIcon className="h-3.5 w-3.5" />
         </button>
@@ -1100,6 +1100,6 @@ function btn(variant: 'primary' | 'secondary' | 'warning' | 'destructive'): stri
   if (variant === 'warning')
     return `${base} border border-amber-300 bg-amber-50/50 text-amber-900 hover:bg-amber-50`;
   if (variant === 'destructive')
-    return `${base} border border-red-200 bg-white text-red-700 hover:bg-red-50`;
+    return `${base} border border-red-700 bg-white text-red-700 hover:bg-red-50`;
   return `${base} border border-zinc-900/15 bg-white text-zinc-800 hover:bg-zinc-900/5`;
 }
