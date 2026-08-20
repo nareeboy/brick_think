@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState, useTransition } from 'react';
 
 import { deleteOrgAction, type DeleteOrgResult } from '@/app/(authed)/app/workshops/actions';
+import { CopyConfirmToken } from '@/components/app/CopyConfirmToken';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 import { TrashIcon } from '@/components/icons';
 
@@ -88,9 +89,18 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
                 This action cannot be undone.
               </p>
             </div>
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-red-900/70">
-                Type <span className="text-red-900">{orgSlug}</span> to confirm
+            {/* Not a <label> wrapper: the copy chip is a <button>, and a labelable
+                element nested in a label is invalid HTML. The input carries its
+                own aria-label instead. */}
+            <div className="flex flex-col gap-1.5">
+              <span className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-red-900/70">
+                Type
+                <CopyConfirmToken
+                  value={orgSlug}
+                  tone="danger"
+                  dataTestid="delete-workshop-copy-slug"
+                />
+                to confirm
               </span>
               <input
                 ref={inputRef}
@@ -102,7 +112,7 @@ export function DeleteOrgButton({ orgId, orgName, orgSlug }: Props) {
                 aria-label={`Type ${orgSlug} to confirm deletion`}
                 className="h-10 rounded-xl border border-red-200 bg-white px-3 font-mono text-[13px] text-zinc-900 outline-none focus:border-red-500 disabled:opacity-60"
               />
-            </label>
+            </div>
             {error ? (
               <p role="alert" className="text-[12px] font-semibold text-red-700">
                 {error}
