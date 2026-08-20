@@ -12,6 +12,9 @@ import { createSession } from '@/app/(authed)/app/sessions/actions';
 
 type Destination = { kind: 'personal' } | { kind: 'org'; org: OrgSummary };
 
+/** Identifies the row whose create is in flight, so only that row spins. */
+type BusyRow = 'personal' | 'inline' | `session:${string}`;
+
 interface Props {
   orgs: OrgSummary[];
   onClose: () => void;
@@ -25,6 +28,11 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
   const [createInline, setCreateInline] = useState(false);
   const [newSessionTitle, setNewSessionTitle] = useState('');
   const [pending, start] = useTransition();
+  // Which row kicked off the in-flight create. Creating a design and then
+  // routing to it takes a beat, so the clicked row swaps its arrow for a
+  // spinner instead of looking like the click did nothing.
+  const [busyRow, setBusyRow] = useState<BusyRow | null>(null);
+  const busy = pending || busyRow !== null;
   const [error, setError] = useState<string | null>(null);
   const titleId = useId();
 
@@ -38,11 +46,16 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
   }, [destination]);
 
   function submitPersonal() {
+    setError(null);
+    setBusyRow('personal');
     start(async () => {
       try {
         const id = await createDesignAction({ orgId: null, sessionId: null });
+        // busyRow stays set on success: the route change is the slower half, so
+        // the spinner must keep running until this page is replaced.
         router.push(`/app/designs/${id}`);
       } catch (e) {
+        setBusyRow(null);
         setError(e instanceof Error ? e.message : 'Failed to create design');
       }
     });
@@ -51,11 +64,14 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
   function submitOrgSession(sessionId: string) {
     if (destination?.kind !== 'org') return;
     const orgId = destination.org.id;
+    setError(null);
+    setBusyRow(`session:${sessionId}`);
     start(async () => {
       try {
         const id = await createDesignAction({ orgId, sessionId });
         router.push(`/app/designs/${id}`);
       } catch (e) {
+        setBusyRow(null);
         setError(e instanceof Error ? e.message : 'Failed to create design');
       }
     });
@@ -68,6 +84,8 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
       return;
     }
     const orgId = destination.org.id;
+    setError(null);
+    setBusyRow('inline');
     start(async () => {
       try {
         try {
@@ -93,6 +111,7 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
         const id = await createDesignAction({ orgId, sessionId: newest.id });
         router.push(`/app/designs/${id}`);
       } catch (e) {
+        setBusyRow(null);
         setError(e instanceof Error ? e.message : 'Failed to create session');
       }
     });
@@ -116,11 +135,12 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
               type="button"
               data-testid="destination-personal"
               onClick={() => submitPersonal()}
-              disabled={pending}
-              className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1] disabled:opacity-60"
+              disabled={busy}
+              aria-busy={busyRow === 'personal'}
+              className={`flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1] ${busyRow === 'personal' ? '' : 'disabled:opacity-60'}`}
             >
               Personal
-              <span aria-hidden="true">→</span>
+              <RowIcon busy={busyRow === 'personal'} />
             </button>
             {orgs.length > 0 ? (
               <>
@@ -134,7 +154,8 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
                         type="button"
                         data-testid={`destination-org-${o.id}`}
                         onClick={() => setDestination({ kind: 'org', org: o })}
-                        className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1]"
+                        disabled={busy}
+                        className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1] disabled:opacity-60"
                       >
                         {o.name}
                         <span aria-hidden="true">→</span>
@@ -158,11 +179,12 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
                         type="button"
                         data-testid={`session-option-${s.id}`}
                         onClick={() => submitOrgSession(s.id)}
-                        disabled={pending}
-                        className="flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1] disabled:opacity-60"
+                        disabled={busy}
+                        aria-busy={busyRow === `session:${s.id}`}
+                        className={`flex w-full cursor-pointer items-center justify-between rounded-xl border border-zinc-900/10 px-4 py-3 text-left text-[14px] font-semibold text-zinc-900 transition-colors hover:bg-[#FAF7F1] ${busyRow === `session:${s.id}` ? '' : 'disabled:opacity-60'}`}
                       >
                         {s.title}
-                        <span aria-hidden="true">→</span>
+                        <RowIcon busy={busyRow === `session:${s.id}`} />
                       </button>
                     </li>
                   ))}
@@ -201,10 +223,12 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
                       type="button"
                       data-testid="new-session-submit"
                       onClick={submitInlineSession}
-                      disabled={pending}
-                      className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md bg-[#a8482a] px-3 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
+                      disabled={busy}
+                      aria-busy={busyRow === 'inline'}
+                      className="inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-md bg-[#a8482a] px-3 text-[13px] font-semibold text-white hover:bg-[#cf6e47] disabled:opacity-60"
                     >
-                      {pending ? 'Creating…' : 'Create and continue'}
+                      {busyRow === 'inline' ? <Spinner className="h-3.5 w-3.5" /> : null}
+                      {busyRow === 'inline' ? 'Creating…' : 'Create and continue'}
                     </button>
                   </div>
                 )}
@@ -241,5 +265,31 @@ export function NewDesignDialog({ orgs, onClose }: Props) {
         </div>
       </div>
     </ModalBackdrop>
+  );
+}
+
+/**
+ * Trailing affordance for a destination row: the arrow becomes a spinner while
+ * that row's design is being created.
+ */
+function RowIcon({ busy }: { busy: boolean }) {
+  return busy ? <Spinner className="h-4 w-4" /> : <span aria-hidden="true">→</span>;
+}
+
+function Spinner({ className = '' }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`animate-spin ${className}`}
+      data-testid="row-spinner"
+      aria-hidden="true"
+    >
+      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+    </svg>
   );
 }
