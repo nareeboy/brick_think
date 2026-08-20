@@ -75,6 +75,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Cache Next build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          # A run-unique key always writes a fresh entry; restore-keys falls
+          # back to the newest cache for this lockfile so compilation is warm.
+          key: next-build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            next-build-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+
       - name: Build
         run: pnpm build:e2e
 
@@ -106,9 +116,14 @@ jobs:
           version: 2.98.2
 
       - name: Start local Supabase stack
-        # Studio is a UI-only container — skip it; everything the suite needs
-        # (db, auth, storage, realtime, inbucket for GoTrue emails) stays on.
-        run: supabase start -x studio
+        # Only the containers the suite actually touches. Studio and
+        # postgres-meta are UI-only; imgproxy serves image transforms nothing in
+        # the app requests; edge-runtime hosts prod-only functions; logflare +
+        # vector are the log pipeline; supavisor is the pooler (both the app and
+        # the Yjs worker connect to Postgres direct). Everything the suites need
+        # — db, gotrue, postgrest, storage, realtime (brick comments/reactions,
+        # notifications) and mailpit (invite-email + magic-link specs) — stays.
+        run: supabase start -x studio,postgres-meta,imgproxy,edge-runtime,logflare,vector,supavisor
 
       - name: Integration tests
         run: pnpm test:integration
@@ -144,10 +159,34 @@ jobs:
           version: 2.98.2
 
       - name: Start local Supabase stack
-        run: supabase start -x studio
+        # Same trimmed container set as the integration job above.
+        run: supabase start -x studio,postgres-meta,imgproxy,edge-runtime,logflare,vector,supavisor
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          # The browser build is pinned by the @playwright/test version, so the
+          # lockfile hash is the whole key.
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright Chromium
-        run: pnpm exec playwright install --with-deps chromium
+        # No --with-deps: the apt pass was the whole cost of this step (28s with
+        # the browser cache already hot), and the ubuntu-latest image ships the
+        # shared libraries Chromium needs. If a future runner image drops one,
+        # the browser fails to launch and the suite fails loudly — put
+        # --with-deps back rather than papering over it.
+        run: pnpm exec playwright install chromium
+
+      - name: Cache Next build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          # A run-unique key always writes a fresh entry; restore-keys falls
+          # back to the newest cache for this lockfile so compilation is warm.
+          key: next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            next-e2e-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
         run: pnpm build:e2e
