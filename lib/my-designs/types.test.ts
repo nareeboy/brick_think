@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
+import type { AggregateDesignRow } from './types';
 import {
   MAX_PAGE_NUMBER,
+  groupDesigns,
   isValidTag,
   normaliseTag,
   parseFilter,
@@ -144,5 +146,68 @@ describe('parsePageNumber', () => {
     expect(parsePageNumber(String(MAX_PAGE_NUMBER))).toBe(MAX_PAGE_NUMBER);
     expect(parsePageNumber(String(MAX_PAGE_NUMBER + 1))).toBe(MAX_PAGE_NUMBER);
     expect(parsePageNumber('999999999')).toBe(MAX_PAGE_NUMBER);
+  });
+});
+
+describe('groupDesigns', () => {
+  function personal(id: string): AggregateDesignRow {
+    return {
+      id,
+      title: id,
+      updated_at: '2026-08-20T10:00:00.000Z',
+      thumbnail_url: null,
+      badge: { kind: 'personal' },
+      tags: [],
+    };
+  }
+
+  function workshop(id: string, orgName = 'Acme'): AggregateDesignRow {
+    return {
+      id,
+      title: id,
+      updated_at: '2026-08-20T10:00:00.000Z',
+      thumbnail_url: null,
+      badge: {
+        kind: 'org-session',
+        orgId: 'org-1',
+        orgName,
+        sessionId: 'session-1',
+        sessionTitle: 'Kickoff',
+      },
+      tags: [],
+    };
+  }
+
+  it('returns no groups for an empty page', () => {
+    expect(groupDesigns([])).toEqual([]);
+  });
+
+  it('puts personal designs before workshop designs', () => {
+    const groups = groupDesigns([workshop('w1'), personal('p1'), workshop('w2')]);
+    expect(groups.map((g) => g.kind)).toEqual(['personal', 'workshop']);
+  });
+
+  it('preserves the incoming sort order inside each group', () => {
+    const groups = groupDesigns([
+      workshop('w1'),
+      personal('p1'),
+      workshop('w2'),
+      personal('p2'),
+      workshop('w3'),
+    ]);
+    expect(groups[0]?.designs.map((d) => d.id)).toEqual(['p1', 'p2']);
+    expect(groups[1]?.designs.map((d) => d.id)).toEqual(['w1', 'w2', 'w3']);
+  });
+
+  it('omits a group with no designs so no bare heading renders', () => {
+    expect(groupDesigns([personal('p1')]).map((g) => g.kind)).toEqual(['personal']);
+    expect(groupDesigns([workshop('w1')]).map((g) => g.kind)).toEqual(['workshop']);
+  });
+
+  it('keeps every design — nothing is dropped between the groups', () => {
+    const page = [workshop('w1'), personal('p1'), workshop('w2')];
+    const flattened = groupDesigns(page).flatMap((g) => g.designs);
+    expect(flattened).toHaveLength(page.length);
+    expect(new Set(flattened.map((d) => d.id))).toEqual(new Set(['w1', 'p1', 'w2']));
   });
 });

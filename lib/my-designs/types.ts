@@ -115,3 +115,41 @@ export function parsePageNumber(raw: string | null): number {
   if (!Number.isFinite(parsed) || parsed < 1) return 1;
   return Math.min(parsed, MAX_PAGE_NUMBER);
 }
+
+// --- Grouping -------------------------------------------------------------
+
+/**
+ * The two scopes My Designs renders under separate headings. `workshop`
+ * covers every session-scoped design (badge kind `org-session`) — a session
+ * always belongs to a workshop, so the two are the same set from the grid's
+ * point of view.
+ */
+export type DesignGroupKind = 'personal' | 'workshop';
+
+export interface DesignGroup {
+  kind: DesignGroupKind;
+  designs: AggregateDesignRow[];
+}
+
+/**
+ * Split a page of designs into its personal and workshop halves.
+ *
+ * Order inside each group is preserved exactly as the query returned it, so
+ * the active Sort still reads correctly within a section — grouping is layered
+ * on top of the sort, not a replacement for it. Grouping is per page by
+ * design: paging happens in Postgres, so a section header can reappear on the
+ * next page, which reads the same way a printed index does.
+ *
+ * Personal comes first: those are the designs the owner can fully act on
+ * (trash, send into a session). Workshop designs follow, under a heading that
+ * spells out why the trash action is missing on them. Empty groups are
+ * omitted so a filtered view never renders a bare heading.
+ */
+export function groupDesigns(designs: AggregateDesignRow[]): DesignGroup[] {
+  const personal = designs.filter((d) => d.badge.kind === 'personal');
+  const workshop = designs.filter((d) => d.badge.kind === 'org-session');
+  const groups: DesignGroup[] = [];
+  if (personal.length > 0) groups.push({ kind: 'personal', designs: personal });
+  if (workshop.length > 0) groups.push({ kind: 'workshop', designs: workshop });
+  return groups;
+}
