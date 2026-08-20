@@ -7,6 +7,7 @@ import { initialsOf, TeamPortrait } from './TeamPortrait';
 // to a plain <img> so these tests cover the fallback logic, not the loader.
 vi.mock('next/image', () => ({
   default: ({ src, alt, onError }: { src: string; alt: string; onError?: () => void }) => (
+    // eslint-disable-next-line @next/next/no-img-element -- this stub IS the next/image replacement
     <img src={src} alt={alt} data-testid="portrait" onError={onError} />
   ),
 }));
