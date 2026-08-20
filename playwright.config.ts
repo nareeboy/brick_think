@@ -24,7 +24,9 @@ export default defineConfig({
   // seeds its own org/session, Mailpit is searched by `to:<addr>`, and
   // promote-site-admin flips one profile row — no spec asserts on a global
   // count. Measured on the CI runner, green every time: 236s at 1 worker, 195s
-  // at 2, 152s at 3. Three is the stopping point — the runner also carries the
+  // at 2, and 152s / 190s / 190s over three runs at 3 — the step swings ±25%
+  // between runs, so 2 vs 3 is inside the noise and only 1 vs many is a real
+  // difference. Three is the stopping point — the runner also carries the
   // Supabase containers, the Next server and the Yjs worker, and with
   // retries: 0 a contention flake is expensive. Locally (14 cores) the same
   // suite runs 144s / 87s / 54s at 1 / 2 / 4.
