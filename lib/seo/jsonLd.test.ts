@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { articleSchema, jobPostingSchema, siteGraph } from './jsonLd';
+import { articleSchema, jobPostingSchema, siteGraph, teamSchema } from './jsonLd';
 import { SITE_URL } from './site';
 
 describe('siteGraph', () => {
@@ -85,5 +85,42 @@ describe('jobPostingSchema', () => {
     const s = jobPostingSchema({ ...base, location: 'Remote (EU)' });
     expect(s.jobLocationType).toBe('TELECOMMUTE');
     expect(s.jobLocation).toBeUndefined();
+  });
+});
+
+describe('teamSchema', () => {
+  const members = [
+    { name: 'Dana Patrascoiu', role: 'Head of UX Research' },
+    { name: 'Simon Camp', role: 'Graphic & UX Designer' },
+  ];
+
+  it('builds an AboutPage pointing at the canonical /team url', () => {
+    const s = teamSchema(members);
+    expect(s['@type']).toBe('AboutPage');
+    expect(s.url).toBe(`${SITE_URL}/team`);
+  });
+
+  it('lists every member as a Person employed by the site Organization', () => {
+    const org = teamSchema(members).mainEntity as Record<string, unknown>;
+    expect(org['@id']).toBe(`${SITE_URL}/#organization`);
+    expect(org.employee).toEqual([
+      {
+        '@type': 'Person',
+        name: 'Dana Patrascoiu',
+        jobTitle: 'Head of UX Research',
+        worksFor: { '@id': `${SITE_URL}/#organization` },
+      },
+      {
+        '@type': 'Person',
+        name: 'Simon Camp',
+        jobTitle: 'Graphic & UX Designer',
+        worksFor: { '@id': `${SITE_URL}/#organization` },
+      },
+    ]);
+  });
+
+  it('emits an empty employee list rather than failing on no members', () => {
+    const org = teamSchema([]).mainEntity as Record<string, unknown>;
+    expect(org.employee).toEqual([]);
   });
 });

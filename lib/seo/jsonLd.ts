@@ -127,3 +127,32 @@ export function jobPostingSchema(role: JobPostingSchemaInput): JsonLd {
         }),
   };
 }
+
+export interface TeamMemberSchemaInput {
+  name: string;
+  role: string;
+}
+
+/**
+ * AboutPage structured data for /team, hanging the named people off the
+ * site-wide Organization node as `employee` Person entries.
+ */
+export function teamSchema(members: TeamMemberSchemaInput[]): JsonLd {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    url: absoluteUrl('/team'),
+    name: `Team · ${SITE_NAME}`,
+    isPartOf: { '@id': WEBSITE_ID },
+    mainEntity: {
+      '@type': 'Organization',
+      '@id': ORG_ID,
+      employee: members.map((m) => ({
+        '@type': 'Person',
+        name: m.name,
+        jobTitle: m.role,
+        worksFor: { '@id': ORG_ID },
+      })),
+    },
+  };
+}
