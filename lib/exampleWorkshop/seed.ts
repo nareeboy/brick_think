@@ -1,15 +1,22 @@
-// Seeds a complete, realistic workshop for site admins so paid post-session
-// flows (report generation, one-off purchase, white-label branding) can be
-// exercised without hand-driving a full live session: a fresh org, a
-// completed session with all five canonical stages, three minted
-// participants with brick-filled canvases, rooms on the collaborative
-// stages, and narration transcripts on every model.
+// Seeds a complete, realistic workshop so a user can see what a finished
+// workshop looks like without running one: a fresh org, a completed session
+// with all five canonical stages, three participants with brick-filled
+// canvases, rooms on the collaborative stages, and narration transcripts on
+// every model. It doubles as the site-admin fixture for exercising the paid
+// post-session flows (report generation, one-off purchase, white-label
+// branding) without hand-driving a live session.
 //
-// SECURITY: writes with the service-role client, so callers MUST verify the
-// caller is a site admin first (createTestWorkshopAction does). Minted
-// participants use @brick-think.test emails — the same disposable-user
-// convention as the e2e backdoors — and can never sign in (no password,
-// no known magic-link inbox).
+// SECURITY: writes with the service-role client, so callers MUST authenticate
+// the caller and enforce the one-per-user rule first
+// (createExampleWorkshopAction does) — this function itself is unguarded.
+//
+// The three demo participants are SHARED by every example workshop: they are
+// minted once against fixed @brick-think.test addresses — the same
+// disposable-user convention as the e2e backdoors — and can never sign in (no
+// password, no known magic-link inbox). Minting a fresh trio per workshop
+// would add three auth.users rows every time anyone clicks the button now
+// that the feature is open to all users. Deleting one of these profiles
+// orphans the models it owns across every seeded example, so leave them be.
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
 import { toJson } from '@/lib/db/json';
@@ -19,7 +26,7 @@ import { defaultModelTitle, STAGE_DEFAULT_DURATIONS_SECONDS } from '@/lib/sessio
 import { composeRoomCanvas } from '@/lib/sessions/stage-rooms';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 
-export interface SeedTestWorkshopResult {
+export interface SeedExampleWorkshopResult {
   orgId: string;
   sessionId: string;
   participantIds: string[];
@@ -27,13 +34,13 @@ export interface SeedTestWorkshopResult {
 
 interface ParticipantSeed {
   fullName: string;
-  emailSlug: string;
+  email: string;
 }
 
 const PARTICIPANT_SEEDS: readonly ParticipantSeed[] = [
-  { fullName: 'Aisha Rahman', emailSlug: 'test-participant-aisha' },
-  { fullName: 'Jonas Weber', emailSlug: 'test-participant-jonas' },
-  { fullName: 'Priya Nair', emailSlug: 'test-participant-priya' },
+  { fullName: 'Aisha Rahman', email: 'demo-participant-aisha@brick-think.test' },
+  { fullName: 'Jonas Weber', email: 'demo-participant-jonas@brick-think.test' },
+  { fullName: 'Priya Nair', email: 'demo-participant-priya@brick-think.test' },
 ];
 
 // One transcript per (stage, participant) — a coherent fictional workshop
@@ -67,12 +74,14 @@ const TRANSCRIPTS: Record<StageType, readonly string[]> = {
   ],
 };
 
-const SESSION_TITLE = 'Test workshop — How we collaborate';
+const ORG_NAME = 'Example workshop';
+const SESSION_TITLE = 'Example workshop — How we collaborate';
 const SESSION_BRIEF =
-  'Seeded test workshop: a fictional product team explores how work and ' +
-  'dependencies flow across functions, building from individual models to ' +
-  'shared guiding principles. Generated for exercising post-session ' +
-  'features (reports, purchases, branding).';
+  'An example workshop to explore: a fictional product team works out how ' +
+  'work and dependencies flow across functions, building from individual ' +
+  'models to a shared system model and guiding principles. Everything here ' +
+  'was generated for you — open any stage to see the models and what each ' +
+  'participant said about them.';
 
 // Deterministic-ish brick layout: a handful of canonical bricks arranged in
 // a small grid, offset per participant so the canvases look distinct.
@@ -101,13 +110,41 @@ function buildCanvas(paletteOffset: number, brickCount: number): CanvasState {
 }
 
 function fail(step: string, detail: string | undefined): never {
-  throw new Error(`seedTestWorkshop: ${step} failed: ${detail ?? 'unknown'}`);
+  throw new Error(`seedExampleWorkshop: ${step} failed: ${detail ?? 'unknown'}`);
 }
 
-export async function seedTestWorkshop(
+// Returns the shared demo participant's profile id, minting the account on
+// first use. profiles.email is a unique citext, so the lookup is exact.
+async function resolveDemoParticipant(
+  svc: ServiceSupabaseClient,
+  seed: ParticipantSeed,
+): Promise<string> {
+  const existing = await svc.from('profiles').select('id').eq('email', seed.email).maybeSingle();
+  if (existing.data) return existing.data.id;
+
+  const created = await svc.auth.admin.createUser({
+    email: seed.email,
+    email_confirm: true,
+    user_metadata: { full_name: seed.fullName },
+  });
+  if (created.data?.user) {
+    // The handle_new_user trigger copies full_name from the metadata; update
+    // as a belt-and-braces so report attribution never falls back to email.
+    await svc.from('profiles').update({ full_name: seed.fullName }).eq('id', created.data.user.id);
+    return created.data.user.id;
+  }
+
+  // Two users seeding their first example at the same moment: the loser of
+  // the unique-email race reads back the winner's row instead of failing.
+  const retry = await svc.from('profiles').select('id').eq('email', seed.email).maybeSingle();
+  if (retry.data) return retry.data.id;
+  fail('participant create', created.error?.message);
+}
+
+export async function seedExampleWorkshop(
   svc: ServiceSupabaseClient,
   { facilitatorId }: { facilitatorId: string },
-): Promise<SeedTestWorkshopResult> {
+): Promise<SeedExampleWorkshopResult> {
   const suffix = crypto.randomUUID().slice(0, 8);
 
   // 1. Fresh org — the handle_new_organisation trigger inserts the owner
@@ -115,9 +152,10 @@ export async function seedTestWorkshop(
   const orgRes = await svc
     .from('organisations')
     .insert({
-      name: `Test workshop ${suffix}`,
-      slug: `test-workshop-${suffix}`,
+      name: ORG_NAME,
+      slug: `example-workshop-${suffix}`,
       owner_id: facilitatorId,
+      is_example: true,
     })
     .select('id')
     .single();
@@ -172,23 +210,11 @@ export async function seedTestWorkshop(
     return id;
   };
 
-  // 4. Mint three disposable participants (auto-confirmed, no password) and
-  //    enrol them in the org + session roster.
+  // 4. Enrol the three shared demo participants in the org + session roster.
   const participantIds: string[] = [];
   for (const seed of PARTICIPANT_SEEDS) {
-    const email = `${seed.emailSlug}-${suffix}@brick-think.test`;
-    const created = await svc.auth.admin.createUser({
-      email,
-      email_confirm: true,
-      user_metadata: { full_name: seed.fullName },
-    });
-    if (created.error || !created.data.user) fail('participant create', created.error?.message);
-    const profileId = created.data.user.id;
+    const profileId = await resolveDemoParticipant(svc, seed);
     participantIds.push(profileId);
-
-    // The handle_new_user trigger copies full_name from the metadata; update
-    // as a belt-and-braces so report attribution never falls back to email.
-    await svc.from('profiles').update({ full_name: seed.fullName }).eq('id', profileId);
 
     const memberRes = await svc
       .from('org_memberships')

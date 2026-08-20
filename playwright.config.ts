@@ -18,7 +18,17 @@ export default defineConfig({
   // target-click completion, so no competing router navigation exists. Don't
   // reintroduce retries to paper over a deterministic failure.
   retries: 0,
-  workers: 1,
+  // File-level parallelism (fullyParallel stays false, so a worker always takes
+  // a whole spec file and within-file ordering assumptions still hold). Cross-
+  // file isolation is real: every test mints its own @brick-think.test user and
+  // seeds its own org/session, Mailpit is searched by `to:<addr>`, and
+  // promote-site-admin flips one profile row — no spec asserts on a global
+  // count. Measured on the CI runner, green every time: 236s at 1 worker, 195s
+  // at 2, 152s at 3. Three is the stopping point — the runner also carries the
+  // Supabase containers, the Next server and the Yjs worker, and with
+  // retries: 0 a contention flake is expensive. Locally (14 cores) the same
+  // suite runs 144s / 87s / 54s at 1 / 2 / 4.
+  workers: process.env.CI ? 3 : 4,
   reporter: 'list',
   use: {
     baseURL: BASE_URL,
