@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
 import { PageBanner } from '@/components/app/PageBanner';
-import { CreateTestWorkshopButton } from './CreateTestWorkshopButton';
+import { ExampleWorkshopButton } from './ExampleWorkshopButton';
+import { WorkshopsEmptyState } from './WorkshopsEmptyState';
 import { CreateWorkshopSpotlight } from '@/components/onboarding/CreateWorkshopSpotlight';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -13,7 +14,11 @@ import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 export const metadata: Metadata = { title: 'Workshops' };
 export const dynamic = 'force-dynamic';
 
-interface OrgWithCount extends OrgSummary {
+interface OrgWithExample extends OrgSummary {
+  is_example: boolean;
+}
+
+interface OrgWithCount extends OrgWithExample {
   member_count: number;
 }
 
@@ -42,34 +47,41 @@ export default async function OrgsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in?next=%2Fapp%2Forgs');
 
-  // Site admins get the "Create test workshop" seeding button in the banner.
-  const { data: profileRow } = await supabase
-    .from('profiles')
-    .select('is_site_admin')
-    .eq('id', user.id)
-    .maybeSingle();
-  const isSiteAdmin = profileRow?.is_site_admin === true;
-
   const { data, error } = await supabase
     .from('org_memberships')
-    .select('role, organisations:org_id ( id, name, slug )')
+    .select('role, organisations:org_id ( id, name, slug, is_example )')
     .eq('profile_id', user.id);
   if (error) throw new Error(`Failed to load workshops: ${error.message}`);
 
-  const summaries: OrgSummary[] = (data ?? [])
-    .map((row): OrgSummary | null => {
-      const org = (row as { organisations: { id: string; name: string; slug: string } | null })
-        .organisations;
+  const summaries: OrgWithExample[] = (data ?? [])
+    .map((row): OrgWithExample | null => {
+      const org = (
+        row as {
+          organisations: {
+            id: string;
+            name: string;
+            slug: string;
+            is_example: boolean;
+          } | null;
+        }
+      ).organisations;
       if (!org) return null;
       return {
         id: org.id,
         name: org.name,
         slug: org.slug,
+        is_example: org.is_example,
         role: (row as { role: OrgRole }).role,
       };
     })
-    .filter((o): o is OrgSummary => o !== null)
+    .filter((o): o is OrgWithExample => o !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Drives the seeding button's verb: with an example already seeded it
+  // reopens rather than creating a second one (site admins excepted — the
+  // action lets them seed freely, and the button reads "Open" for them once
+  // they have one, which is close enough for a testing fixture).
+  const hasExample = summaries.some((o) => o.is_example && o.role === 'owner');
 
   // The welcome modal's session card links here with ?onboarding=create-session
   // (it has no server data of its own). Forward the param to the user's first
@@ -111,7 +123,11 @@ export default async function OrgsPage({
         title="Workshops"
         actions={
           <div className="flex items-start gap-2">
-            {isSiteAdmin ? <CreateTestWorkshopButton /> : null}
+            {/* With nothing in the list the empty state carries this CTA —
+                showing it here too would put the same button on screen
+                twice. "New workshop" stays put either way: it is the
+                create-workshop tour's spotlight anchor. */}
+            {orgs.length > 0 ? <ExampleWorkshopButton hasExample={hasExample} /> : null}
             <Link
               href={newWorkshopHref}
               data-tour-id="new-workshop-button"
@@ -124,9 +140,7 @@ export default async function OrgsPage({
       />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
         {orgs.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-zinc-900/15 p-8 text-center text-[13px] text-zinc-500">
-            No workshops yet. Create one to share designs with teammates.
-          </p>
+          <WorkshopsEmptyState newWorkshopHref={newWorkshopHref} hasExample={hasExample} />
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {orgs.map((o) => (
@@ -160,6 +174,13 @@ export default async function OrgsPage({
                     >
                       {o.role}
                     </span>
+                    {/* Seeded demo workshop — badged so it is never mistaken
+                        for the team's real work. */}
+                    {o.is_example ? (
+                      <span className="inline-flex shrink-0 items-center rounded-md bg-zinc-100 px-1.5 py-0.5 font-mono text-[9px] tracking-[0.18em] text-zinc-700 uppercase">
+                        Example
+                      </span>
+                    ) : null}
                     <span className="truncate text-[12px] text-zinc-600">{o.name}</span>
                   </div>
                   <p className="mt-2 text-[12px] text-zinc-600">
