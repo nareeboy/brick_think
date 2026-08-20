@@ -388,6 +388,12 @@ export async function Footer() {
               Help &amp; FAQ
             </Link>
             <Link
+              href="/team"
+              className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
+            >
+              Team
+            </Link>
+            <Link
               href="/terms"
               className="inline-flex min-h-[24px] items-center hover:text-zinc-800"
             >
