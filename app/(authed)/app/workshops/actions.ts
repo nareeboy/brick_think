@@ -7,6 +7,8 @@ import { revalidatePath } from 'next/cache';
 import type { ActionResult } from '@/lib/actions/result';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import { buildOrgAddedEmail } from '@/lib/email/orgAdded';
+import { sendTransactionalEmail } from '@/lib/email/resend';
 import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 import { dispatchOrgAddedNotification, resolveActorDisplay } from '@/lib/notifications/dispatch';
 import { isValidSlug } from '@/lib/orgs/slug';
@@ -148,6 +150,22 @@ export async function addOrgMemberAction(orgId: string, email: string): Promise<
       orgName,
       actorProfileId: user.id,
       actorDisplay,
+    });
+
+    // Best-effort email alongside the bell notification — a send failure
+    // (or unset RESEND_API_KEY) must never fail the membership add.
+    // RESEND_WORKSHOP_FROM_ADDRESS gives workshop emails their own verified
+    // sender; unset, the shared RESEND_FROM_ADDRESS (then default) applies.
+    const origin = publicOriginFromHeaders(await headers());
+    await sendTransactionalEmail({
+      to: profile.email,
+      from: process.env.RESEND_WORKSHOP_FROM_ADDRESS || undefined,
+      ...buildOrgAddedEmail({
+        recipientName: profile.full_name,
+        actorDisplay,
+        orgName,
+        workshopUrl: `${origin}/app/workshops/${orgId}`,
+      }),
     });
 
     revalidatePath(`/app/workshops/${orgId}`);
