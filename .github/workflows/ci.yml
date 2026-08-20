@@ -171,9 +171,12 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
 
       - name: Install Playwright Chromium
-        # Kept unconditional: on a cache hit this only verifies the download and
-        # re-runs the (already satisfied) apt deps, which costs a second or two.
-        run: pnpm exec playwright install --with-deps chromium
+        # No --with-deps: the apt pass was the whole cost of this step (28s with
+        # the browser cache already hot), and the ubuntu-latest image ships the
+        # shared libraries Chromium needs. If a future runner image drops one,
+        # the browser fails to launch and the suite fails loudly — put
+        # --with-deps back rather than papering over it.
+        run: pnpm exec playwright install chromium
 
       - name: Cache Next build cache
         uses: actions/cache@v4
