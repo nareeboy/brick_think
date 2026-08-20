@@ -5,9 +5,10 @@ import { useRef, useState, useTransition } from 'react';
 
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
 import { ExportMenu } from '@/components/exports/ExportMenu';
-import { TrashIcon } from '@/components/icons';
+import { InfoIcon, TrashIcon } from '@/components/icons';
 import { deleteModelAction } from '@/app/(authed)/app/designs/actions';
-import type { AggregateDesignRow } from '@/lib/my-designs/types';
+import { groupDesigns } from '@/lib/my-designs/types';
+import type { AggregateDesignRow, DesignGroupKind } from '@/lib/my-designs/types';
 import type { OrgSummary } from '@/lib/orgs/types';
 
 import { SendToSessionDialog } from './SendToSessionDialog';
@@ -33,15 +34,71 @@ export function DesignList({ designs, orgs, allTags }: Props) {
     );
   }
 
+  const groups = groupDesigns(designs);
+
   return (
-    <ul
-      data-testid="my-designs-list"
-      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
-    >
-      {designs.map((d) => (
-        <DesignCard key={d.id} design={d} orgs={orgs} allTags={allTags} />
+    <div data-testid="my-designs-list" className="flex flex-col gap-9">
+      {groups.map((group) => (
+        <section
+          key={group.kind}
+          data-testid={`design-group-${group.kind}`}
+          aria-labelledby={`design-group-${group.kind}-heading`}
+        >
+          <GroupHeader kind={group.kind} count={group.designs.length} />
+          <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {group.designs.map((d) => (
+              <DesignCard key={d.id} design={d} orgs={orgs} allTags={allTags} />
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
+  );
+}
+
+// Section copy. The workshop note is the grid's only explanation for why those
+// cards carry no trash action: session-scoped models are hard-deleted by the FK
+// cascade from stages (20260514120000_session_designs.sql) and RLS refuses to
+// soft-delete them, so deleting the workshop or its session is the only lever.
+const GROUP_COPY: Record<DesignGroupKind, { heading: string; note: string | null }> = {
+  personal: { heading: 'Personal designs', note: null },
+  workshop: {
+    heading: 'From workshops',
+    note: 'Built inside a workshop — these can only be deleted when their workshop or session is deleted.',
+  },
+};
+
+function GroupHeader({ kind, count }: { kind: DesignGroupKind; count: number }) {
+  const { heading, note } = GROUP_COPY[kind];
+  return (
+    <header className="flex flex-col gap-2">
+      <div className="flex items-center gap-3">
+        <h2
+          id={`design-group-${kind}-heading`}
+          className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-zinc-700"
+        >
+          {heading}
+        </h2>
+        <span
+          data-testid={`design-group-${kind}-count`}
+          className="inline-flex items-center rounded-md bg-zinc-900/5 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-zinc-600"
+        >
+          {count}
+        </span>
+        {/* The divider itself: a hairline running from the label to the grid's
+            right edge, so the two scopes read as separate bands. */}
+        <span aria-hidden="true" className="h-px flex-1 bg-zinc-900/10" />
+      </div>
+      {note ? (
+        <p
+          data-testid={`design-group-${kind}-note`}
+          className="flex items-start gap-1.5 text-[12px] leading-relaxed text-zinc-600"
+        >
+          <InfoIcon className="mt-[3px] h-3.5 w-3.5 shrink-0 text-zinc-500" />
+          <span className="max-w-[78ch]">{note}</span>
+        </p>
+      ) : null}
+    </header>
   );
 }
 
@@ -236,16 +293,10 @@ function DesignCard({
 }
 
 function Badge({ badge }: { badge: AggregateDesignRow['badge'] }) {
-  if (badge.kind === 'personal') {
-    return (
-      <p
-        data-testid="design-badge"
-        className="mt-2 inline-flex items-center rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-sky-700"
-      >
-        Personal
-      </p>
-    );
-  }
+  // The section heading above the grid already reads "Personal designs", so a
+  // per-card Personal chip would only repeat it. Workshop cards keep theirs
+  // because it names *which* workshop — something the heading can't.
+  if (badge.kind === 'personal') return null;
   return (
     <p data-testid="design-badge" className="mt-2 flex max-w-full items-center gap-1.5">
       <span className="inline-block max-w-full shrink-0 truncate rounded-md bg-orange-100 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-orange-900">

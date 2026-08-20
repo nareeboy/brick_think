@@ -2,6 +2,7 @@
 
 import { useId, useState, useTransition } from 'react';
 
+import { CopyConfirmToken } from '@/components/app/CopyConfirmToken';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
 import { deleteAccountAction, type DeleteAccountResult } from './actions';
@@ -115,9 +116,18 @@ export function DangerZone({ email }: Props) {
               </div>
             ) : null}
 
-            <label className="flex flex-col gap-1.5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-red-900/70">
-                Type <span className="text-red-900">{email}</span> to confirm
+            {/* Not a <label> wrapper: the copy chip is a <button>, and a labelable
+                element nested in a label is invalid HTML. The input carries its
+                own aria-label instead. */}
+            <div className="flex flex-col gap-1.5">
+              <span className="flex flex-wrap items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-red-900/70">
+                Type
+                <CopyConfirmToken
+                  value={email}
+                  tone="danger"
+                  dataTestid="account-delete-copy-email"
+                />
+                to confirm
               </span>
               <input
                 type="email"
@@ -129,7 +139,7 @@ export function DangerZone({ email }: Props) {
                 data-testid="account-delete-confirm-input"
                 className="h-10 rounded-xl border border-red-200 bg-white px-3 font-mono text-[13px] text-zinc-900 outline-none focus:border-red-500 disabled:opacity-60"
               />
-            </label>
+            </div>
 
             {error ? (
               <p role="alert" className="text-[12px] font-semibold text-red-700">
