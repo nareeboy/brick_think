@@ -234,21 +234,21 @@ otp_expiry = 3600
 # /auth/confirm?next=..., never /auth/callback. See app/auth/confirm/route.ts.
 [auth.email.template.magic_link]
 subject = "Your BrickThink sign-in link"
-content_path = "./supabase/templates/magic_link.html"
+content_path = "./supabase/email-templates/supabase/magic_link.html"
 
 [auth.email.template.invite]
 subject = "You're invited to BrickThink"
-content_path = "./supabase/templates/invite.html"
+content_path = "./supabase/email-templates/supabase/invite.html"
 
 [auth.email.template.confirmation]
 subject = "Confirm your BrickThink email"
-content_path = "./supabase/templates/confirmation.html"
+content_path = "./supabase/email-templates/supabase/confirmation.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
 # subject = "Your password has been changed"
-# content_path = "./templates/password_changed_notification.html"
+# content_path = "./supabase/email-templates/supabase/password_changed_notification.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
