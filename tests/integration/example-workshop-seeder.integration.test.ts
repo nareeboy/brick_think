@@ -1,4 +1,4 @@
-// Integration tests for the admin-only test-workshop seeder.
+// Integration tests for the example-workshop seeder.
 //
 // Pattern follows stage-controller.integration.test.ts:
 //   - server-action mocks come from setup.ts (_helpers/action-mocks.ts);
@@ -6,10 +6,12 @@
 //   - getServiceSupabaseClient() is NOT mocked — works against the real local stack
 //   - getAdminClient() for post-action DB verification (bypasses RLS)
 //
-// Covers the site-admin gate (anonymous + non-admin refused) and the happy
-// path: one click seeds a completed session whose five stages all carry
-// brick-filled models and narration transcripts, with rooms wired on the
-// three collaborative stages.
+// Covers the auth gate (anonymous refused), the one-per-user rule for regular
+// users, the shared demo participants, the site-admin escape hatch (unlimited
+// seeding, so the report/billing test loop still works), and the happy path:
+// one click seeds a completed session whose five stages all carry brick-filled
+// models and narration transcripts, with rooms wired on the three
+// collaborative stages.
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { setActionClient } from './_helpers/action-mocks';
@@ -24,15 +26,40 @@ import {
 import { parseCanvasState } from '@/lib/models/canvasState';
 import { CANONICAL_STAGE_TYPES, type StageType } from '@/lib/sessions/types';
 
-import { createTestWorkshopAction } from '@/app/(authed)/app/workshops/test-workshop-actions';
+import { createExampleWorkshopAction } from '@/app/(authed)/app/workshops/example-workshop-actions';
 
 let adminUser: TestUser;
 let regularUser: TestUser;
+let otherUser: TestUser;
 const seededParticipantIds: string[] = [];
+
+// The action always finishes with redirect(), which the next/navigation mock
+// throws as a sentinel. Returns the session id it redirected to.
+async function seedAndFollowRedirect(): Promise<string> {
+  try {
+    await createExampleWorkshopAction();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : '';
+    if (!message.startsWith('__redirect__:')) throw err;
+    const url = message.slice('__redirect__:'.length);
+    expect(url).toMatch(/^\/app\/sessions\/[0-9a-f-]{36}$/);
+    return url.split('/').pop()!;
+  }
+  throw new Error('expected createExampleWorkshopAction to redirect');
+}
+
+async function rosterFor(sessionId: string): Promise<Set<string>> {
+  const { data } = await getAdminClient()
+    .from('session_participants')
+    .select('profile_id')
+    .eq('session_id', sessionId);
+  return new Set((data ?? []).map((r) => r.profile_id as string));
+}
 
 beforeAll(async () => {
   adminUser = await createTestUser();
   regularUser = await createTestUser();
+  otherUser = await createTestUser();
   const admin = getAdminClient();
   const { error } = await admin
     .from('profiles')
@@ -42,44 +69,90 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  // The facilitator owns the seeded org + session; deleting them first
-  // cascades stages, rooms, models, and narrations, so the minted
-  // participants can then be deleted without FK friction.
+  // Facilitators own the seeded orgs + sessions; deleting them first cascades
+  // stages, rooms, models, and narrations, so the shared demo participants can
+  // then be deleted without FK friction.
   await cleanupTestUser(adminUser.id).catch(() => {});
+  await cleanupTestUser(regularUser.id).catch(() => {});
+  await cleanupTestUser(otherUser.id).catch(() => {});
   for (const id of seededParticipantIds) {
     await cleanupTestUser(id).catch(() => {});
   }
-  await cleanupTestUser(regularUser.id).catch(() => {});
 });
 
-describe('createTestWorkshopAction — gate', () => {
+describe('createExampleWorkshopAction — gate', () => {
   test('refuses anonymous callers', async () => {
     setActionClient('anon');
-    const result = await createTestWorkshopAction();
+    const result = await createExampleWorkshopAction();
     expect(result).toEqual({ ok: false, code: 'unauthenticated' });
-  });
-
-  test('refuses signed-in non-admins', async () => {
-    setActionClient(await signInAs(regularUser));
-    const result = await createTestWorkshopAction();
-    expect(result).toEqual({ ok: false, code: 'not_site_admin' });
   });
 });
 
-describe('createTestWorkshopAction — seeding', () => {
+describe('createExampleWorkshopAction — regular users', () => {
+  test('seeds an example workshop for a signed-in non-admin', async () => {
+    setActionClient(await signInAs(regularUser));
+    const sessionId = await seedAndFollowRedirect();
+
+    const admin = getAdminClient();
+    const { data: session } = await admin
+      .from('sessions')
+      .select('status, facilitator_id, org_id')
+      .eq('id', sessionId)
+      .single();
+    expect(session?.status).toBe('completed');
+    expect(session?.facilitator_id).toBe(regularUser.id);
+
+    const { data: org } = await admin
+      .from('organisations')
+      .select('owner_id, is_example')
+      .eq('id', session!.org_id)
+      .single();
+    expect(org?.owner_id).toBe(regularUser.id);
+    expect(org?.is_example).toBe(true);
+  });
+
+  test('reopens the existing example instead of seeding a second one', async () => {
+    setActionClient(await signInAs(regularUser));
+    const first = await seedAndFollowRedirect();
+    const second = await seedAndFollowRedirect();
+    expect(second).toBe(first);
+
+    const { data: orgs } = await getAdminClient()
+      .from('organisations')
+      .select('id')
+      .eq('owner_id', regularUser.id)
+      .eq('is_example', true);
+    expect(orgs).toHaveLength(1);
+  });
+
+  test('shares the same demo participants across different users', async () => {
+    setActionClient(await signInAs(regularUser));
+    const mine = await seedAndFollowRedirect();
+    setActionClient(await signInAs(otherUser));
+    const theirs = await seedAndFollowRedirect();
+    expect(theirs).not.toBe(mine);
+
+    const mineRoster = await rosterFor(mine);
+    const theirsRoster = await rosterFor(theirs);
+    expect(mineRoster.size).toBe(3);
+    expect(theirsRoster).toEqual(mineRoster);
+  });
+});
+
+describe('createExampleWorkshopAction — site admins', () => {
+  test('seeds a fresh workshop on every click', async () => {
+    setActionClient(await signInAs(adminUser));
+    const first = await seedAndFollowRedirect();
+    const second = await seedAndFollowRedirect();
+    expect(second).not.toBe(first);
+  });
+});
+
+describe('createExampleWorkshopAction — seeding', () => {
   test('seeds a fully filled completed workshop and redirects to it', async () => {
     setActionClient(await signInAs(adminUser));
 
-    let redirectUrl: string | null = null;
-    try {
-      await createTestWorkshopAction();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      if (!message.startsWith('__redirect__:')) throw err;
-      redirectUrl = message.slice('__redirect__:'.length);
-    }
-    expect(redirectUrl).toMatch(/^\/app\/sessions\/[0-9a-f-]{36}$/);
-    const sessionId = redirectUrl!.split('/').pop()!;
+    const sessionId = await seedAndFollowRedirect();
 
     const admin = getAdminClient();
 
