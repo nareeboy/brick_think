@@ -6,18 +6,17 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { toJson } from '@/lib/db/json';
+import { UUID_RE } from '@/lib/db/uuid';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
-import { STAGE_DEFAULT_DURATIONS_SECONDS, defaultModelTitle } from '@/lib/sessions/stage-labels';
+import { defaultModelTitle } from '@/lib/sessions/stage-labels';
+import { createSessionWithStages } from '@/lib/sessions/service';
 import {
-  CANONICAL_STAGE_TYPES,
   SESSION_MODES,
   SESSION_STATUSES,
   type SessionMode,
   type SessionStatus,
   type StageType,
 } from '@/lib/sessions/types';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
@@ -51,43 +50,18 @@ export async function createSession(formData: FormData): Promise<void> {
 
   const { supabase, user } = await requireUser();
 
-  // Defence-in-depth: confirm the caller is a member of the target org.
-  // RLS on `sessions` insert would already reject non-members, but checking
-  // here surfaces a clearer error.
-  const memberRes = await supabase
-    .from('org_memberships')
-    .select('profile_id', { count: 'exact', head: true })
-    .eq('org_id', orgId)
-    .eq('profile_id', user.id);
-  if (memberRes.error) {
-    throw new Error(`Membership check failed: ${memberRes.error.message}`);
+  const res = await createSessionWithStages({ supabase, userId: user.id, orgId, title });
+  if (!res.ok) {
+    if (res.code === 'not_member') {
+      throw new Error('You are not a member of that workshop');
+    }
+    // invalid_title / invalid_org are already screened above; reaching here
+    // means the service tightened validation and the adapter must follow.
+    throw new Error(`Failed to create session: ${res.code}`);
   }
-  if ((memberRes.count ?? 0) === 0) {
-    throw new Error('You are not a member of that workshop');
-  }
-
-  // Atomic create: create_session_with_stages (SECURITY INVOKER plpgsql,
-  // 20260813171336) mints the join code, inserts the session and its stages
-  // in one transaction, so a mid-flight failure can never orphan a 0-stage
-  // session. RLS on sessions/stages still applies (invoker), and the stage
-  // catalog stays TS-owned — passed in as the jsonb payload.
-  const stageRows = CANONICAL_STAGE_TYPES.map((stage_type, position) => ({
-    stage_type,
-    position,
-    duration_seconds: STAGE_DEFAULT_DURATIONS_SECONDS[stage_type],
-  }));
-  const createRes = await supabase.rpc('create_session_with_stages', {
-    p_org_id: orgId,
-    p_title: title,
-    p_stages: stageRows,
-  });
-  if (createRes.error || !createRes.data) {
-    throw new Error(`Failed to create session: ${createRes.error?.message ?? 'unknown'}`);
-  }
-  const sessionId = createRes.data;
 
   revalidatePath(`/app/workshops/${orgId}`);
-  redirect(`/app/sessions/${sessionId}`);
+  redirect(`/app/sessions/${res.data.sessionId}`);
 }
 
 /**
