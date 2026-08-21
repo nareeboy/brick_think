@@ -56,3 +56,32 @@ export async function createSessionWithStages(input: {
 
   return ok({ sessionId: createRes.data as string });
 }
+
+export type RenameSessionFailure = 'invalid_session' | 'invalid_title' | 'not_found';
+
+/**
+ * Rename a session. RLS on `sessions` UPDATE grants facilitator + org admin
+ * write access; an unauthorised caller updates zero rows, which surfaces as
+ * `not_found` rather than a permission error (no existence leak).
+ */
+export async function renameSessionById(input: {
+  supabase: ServerSupabaseClient;
+  sessionId: string;
+  title: string;
+}): Promise<ActionResult<null, RenameSessionFailure>> {
+  if (!isUuid(input.sessionId)) return fail('invalid_session');
+  const trimmed = input.title.trim().slice(0, 200);
+  if (trimmed.length === 0) return fail('invalid_title');
+
+  const updateRes = await input.supabase
+    .from('sessions')
+    .update({ title: trimmed })
+    .eq('id', input.sessionId)
+    .select('id');
+  if (updateRes.error) {
+    throw new Error(`Failed to rename session: ${updateRes.error.message}`);
+  }
+  if (!updateRes.data || updateRes.data.length === 0) return fail('not_found');
+
+  return ok(null);
+}

@@ -9,7 +9,7 @@ import { toJson } from '@/lib/db/json';
 import { UUID_RE } from '@/lib/db/uuid';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
-import { createSessionWithStages } from '@/lib/sessions/service';
+import { createSessionWithStages, renameSessionById } from '@/lib/sessions/service';
 import {
   SESSION_MODES,
   SESSION_STATUSES,
@@ -70,25 +70,12 @@ export async function createSession(formData: FormData): Promise<void> {
  * updated) and we surface that as a clear error.
  */
 export async function renameSession(sessionId: string, title: string): Promise<void> {
-  if (!UUID_RE.test(sessionId)) {
-    throw new Error('Invalid sessionId');
-  }
-  const trimmed = title.trim().slice(0, 200);
-  if (trimmed.length === 0) {
-    throw new Error('Title is required');
-  }
-
   const { supabase } = await requireUser();
 
-  const updateRes = await supabase
-    .from('sessions')
-    .update({ title: trimmed })
-    .eq('id', sessionId)
-    .select('id');
-  if (updateRes.error) {
-    throw new Error(`Failed to rename session: ${updateRes.error.message}`);
-  }
-  if (!updateRes.data || updateRes.data.length === 0) {
+  const res = await renameSessionById({ supabase, sessionId, title });
+  if (!res.ok) {
+    if (res.code === 'invalid_session') throw new Error('Invalid sessionId');
+    if (res.code === 'invalid_title') throw new Error('Title is required');
     throw new Error('Session not found, or you do not have permission to rename it.');
   }
 

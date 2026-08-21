@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import { createSessionWithStages } from './service';
+import { createSessionWithStages, renameSessionById } from './service';
 import type { ServerSupabaseClient } from '@/lib/db/server';
 
 /** A client that fails the test if the service touches the database. */
@@ -54,5 +54,25 @@ describe('createSessionWithStages', () => {
       title: 'Discovery Day',
     });
     expect(result).toEqual({ ok: false, code: 'not_member' });
+  });
+});
+
+describe('renameSessionById', () => {
+  test('rejects a non-UUID sessionId', async () => {
+    const result = await renameSessionById({
+      supabase: unusedClient(),
+      sessionId: 'nope',
+      title: 'New title',
+    });
+    expect(result).toEqual({ ok: false, code: 'invalid_session' });
+  });
+
+  test('rejects a blank title', async () => {
+    const result = await renameSessionById({
+      supabase: unusedClient(),
+      sessionId: '33333333-3333-4333-8333-333333333333',
+      title: '   ',
+    });
+    expect(result).toEqual({ ok: false, code: 'invalid_title' });
   });
 });
