@@ -40,7 +40,7 @@ declare
   v_session_id uuid;
 begin
   -- The authorization boundary. Callers may only create workshops they own.
-  if p_owner_id is null or p_owner_id <> auth.uid() then
+  if p_owner_id is null or auth.uid() is null or p_owner_id is distinct from auth.uid() then
     raise exception 'create_workshop_with_session: owner must be the authenticated caller';
   end if;
 

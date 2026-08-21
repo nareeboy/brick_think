@@ -130,5 +130,5 @@ export async function createWorkshopWithSession(input: {
   const row = Array.isArray(res.data) ? res.data[0] : res.data;
   if (!row) throw new Error('Failed to create workshop with session: no row returned');
 
-  return ok({ orgId: row.org_id as string, sessionId: row.session_id as string });
+  return ok({ orgId: row.org_id, sessionId: row.session_id });
 }

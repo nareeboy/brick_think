@@ -37,3 +37,4 @@ grant all on all functions in schema public to anon, authenticated, service_role
 revoke execute on function public.touch_presence() from public, anon;
 revoke execute on function public.can_edit_rooms(uuid, uuid[]) from public, anon;
 revoke execute on function public.create_session_with_stages(uuid, text, jsonb) from public, anon;
+revoke execute on function public.create_workshop_with_session(text, text, uuid, text, jsonb) from public, anon;
