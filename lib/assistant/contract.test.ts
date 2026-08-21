@@ -6,6 +6,7 @@ import {
   ASSISTANT_TOOL_VERB_PREFIXES,
   GATED_ASSISTANT_TOOLS,
 } from './contract';
+import { MAX_SLUG_LENGTH, MIN_SLUG_LENGTH } from '@/lib/orgs/slug';
 
 describe('assistant tool contract', () => {
   test('every tool name has a schema', () => {
@@ -54,9 +55,14 @@ describe('assistant tool contract', () => {
     ).toEqual([]);
   });
 
-  test('every schema is strict-mode compatible', () => {
-    // strict: true on the Anthropic side requires both of these, or the API
-    // rejects the tool definition.
+  test('every schema declares what strict mode actually requires', () => {
+    // strict: true on the Anthropic side requires all three of these, or the
+    // API rejects the tool definition. This is also the full extent of what
+    // strict mode guarantees about a tool call's input — the property set
+    // and required-ness. It does NOT enforce minLength/maxLength/minItems/
+    // maxItems (the SDKs strip those before the request reaches the model),
+    // so those stay as advisory hints in the schemas above, not assertions
+    // this test can make about enforcement.
     for (const name of ASSISTANT_TOOL_NAMES) {
       const schema = ASSISTANT_TOOL_SCHEMAS[name];
       expect(schema.type).toBe('object');
@@ -85,5 +91,29 @@ describe('assistant tool contract', () => {
     for (const name of GATED_ASSISTANT_TOOLS) {
       expect(ASSISTANT_TOOL_NAMES).toContain(name);
     }
+  });
+
+  describe('constants drift', () => {
+    // These bounds are hand-copied into the schemas above (see the header
+    // comment on why the contract cannot import the services it mirrors).
+    // Without this test, the three numbers below can drift silently the
+    // moment the real constant changes; with it, drift is one CI failure.
+
+    test('create_workshop.slug bounds track lib/orgs/slug (isValidSlug)', () => {
+      const { slug } = ASSISTANT_TOOL_SCHEMAS.create_workshop.properties;
+      expect(slug.minLength).toBe(MIN_SLUG_LENGTH);
+      expect(slug.maxLength).toBe(MAX_SLUG_LENGTH);
+    });
+
+    test('invite_participants.emails.maxItems tracks INVITE_CAP', () => {
+      // INVITE_CAP lives in app/(authed)/app/sessions/roster-actions.ts, a
+      // 'use server' action module, and is not exported — importing it here
+      // would drag a server-action module into a unit test for no benefit.
+      // Asserted against the literal instead; keep this constant (currently
+      // 25) in sync with INVITE_CAP by hand if that module ever changes.
+      const INVITE_CAP = 25;
+      const { emails } = ASSISTANT_TOOL_SCHEMAS.invite_participants.properties;
+      expect(emails.maxItems).toBe(INVITE_CAP);
+    });
   });
 });

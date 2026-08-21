@@ -63,6 +63,9 @@ describe('createSessionWithStages', () => {
   });
 });
 
+const SESSION_ID = '33333333-3333-4333-8333-333333333333';
+const STAGE_ID = '44444444-4444-4444-8444-444444444444';
+
 describe('renameSessionById', () => {
   test('rejects a non-UUID sessionId', async () => {
     const result = await renameSessionById({
@@ -76,10 +79,51 @@ describe('renameSessionById', () => {
   test('rejects a blank title', async () => {
     const result = await renameSessionById({
       supabase: unusedClient(),
-      sessionId: '33333333-3333-4333-8333-333333333333',
+      sessionId: SESSION_ID,
       title: '   ',
     });
     expect(result).toEqual({ ok: false, code: 'invalid_title' });
+  });
+
+  test('reports not_found when the update matches zero rows', async () => {
+    // Partial mock: the service only touches the sessions update chain.
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = {
+      from: () => ({
+        update: () => ({
+          eq: () => ({
+            select: async () => ({ data: [], error: null }),
+          }),
+        }),
+      }),
+    } as unknown as ServerSupabaseClient;
+
+    const result = await renameSessionById({
+      supabase,
+      sessionId: SESSION_ID,
+      title: 'Renamed',
+    });
+    expect(result).toEqual({ ok: false, code: 'not_found' });
+  });
+
+  test('returns ok when the update succeeds', async () => {
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = {
+      from: () => ({
+        update: () => ({
+          eq: () => ({
+            select: async () => ({ data: [{ id: SESSION_ID }], error: null }),
+          }),
+        }),
+      }),
+    } as unknown as ServerSupabaseClient;
+
+    const result = await renameSessionById({
+      supabase,
+      sessionId: SESSION_ID,
+      title: 'Renamed',
+    });
+    expect(result).toEqual({ ok: true, data: null });
   });
 });
 
@@ -93,13 +137,65 @@ describe('updateStageMetaById', () => {
     });
     expect(result).toEqual({ ok: false, code: 'invalid_stage' });
   });
+
+  test('reports not_found when the update matches zero rows', async () => {
+    // Partial mock: the service only touches the stages update chain, which
+    // ends in .maybeSingle() rather than the array-returning .select() the
+    // sessions-table services use.
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = {
+      from: () => ({
+        update: () => ({
+          eq: () => ({
+            select: () => ({
+              maybeSingle: async () => ({ data: null, error: null }),
+            }),
+          }),
+        }),
+      }),
+    } as unknown as ServerSupabaseClient;
+
+    const result = await updateStageMetaById({
+      supabase,
+      stageId: STAGE_ID,
+      title: 'Build',
+      description: null,
+    });
+    expect(result).toEqual({ ok: false, code: 'not_found' });
+  });
+
+  test('returns the owning sessionId when the update succeeds', async () => {
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = {
+      from: () => ({
+        update: () => ({
+          eq: () => ({
+            select: () => ({
+              maybeSingle: async () => ({
+                data: { id: STAGE_ID, session_id: SESSION_ID },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
+    } as unknown as ServerSupabaseClient;
+
+    const result = await updateStageMetaById({
+      supabase,
+      stageId: STAGE_ID,
+      title: 'Build',
+      description: null,
+    });
+    expect(result).toEqual({ ok: true, data: { sessionId: SESSION_ID } });
+  });
 });
 
 describe('updateSessionMetaById', () => {
   test('rejects an unknown status', async () => {
     const result = await updateSessionMetaById({
       supabase: unusedClient(),
-      sessionId: '33333333-3333-4333-8333-333333333333',
+      sessionId: SESSION_ID,
       status: 'wat' as never,
       mode: 'in_person' as never,
       scheduledFor: null,
@@ -110,11 +206,56 @@ describe('updateSessionMetaById', () => {
   test('rejects an unparseable scheduledFor', async () => {
     const result = await updateSessionMetaById({
       supabase: unusedClient(),
-      sessionId: '33333333-3333-4333-8333-333333333333',
+      sessionId: SESSION_ID,
       status: SESSION_STATUSES[0]!,
       mode: SESSION_MODES[0]!,
       scheduledFor: 'not a date',
     });
     expect(result).toEqual({ ok: false, code: 'invalid_scheduled_for' });
+  });
+
+  test('reports not_found when the update matches zero rows', async () => {
+    // Partial mock: the service only touches the sessions update chain.
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = {
+      from: () => ({
+        update: () => ({
+          eq: () => ({
+            select: async () => ({ data: [], error: null }),
+          }),
+        }),
+      }),
+    } as unknown as ServerSupabaseClient;
+
+    const result = await updateSessionMetaById({
+      supabase,
+      sessionId: SESSION_ID,
+      status: SESSION_STATUSES[0]!,
+      mode: SESSION_MODES[0]!,
+      scheduledFor: null,
+    });
+    expect(result).toEqual({ ok: false, code: 'not_found' });
+  });
+
+  test('returns ok when the update succeeds', async () => {
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = {
+      from: () => ({
+        update: () => ({
+          eq: () => ({
+            select: async () => ({ data: [{ id: SESSION_ID }], error: null }),
+          }),
+        }),
+      }),
+    } as unknown as ServerSupabaseClient;
+
+    const result = await updateSessionMetaById({
+      supabase,
+      sessionId: SESSION_ID,
+      status: SESSION_STATUSES[0]!,
+      mode: SESSION_MODES[0]!,
+      scheduledFor: null,
+    });
+    expect(result).toEqual({ ok: true, data: null });
   });
 });

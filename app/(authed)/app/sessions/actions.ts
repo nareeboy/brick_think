@@ -34,6 +34,13 @@ async function requireUser() {
  * - Caller must pass the target `orgId` in form data and be a member of it.
  * - RLS on `sessions` insert allows the caller because `facilitator_id = me`.
  */
+// Deliberately validates title/orgId before requireUser() — unlike
+// renameSession/updateStageMeta/updateSessionMeta below, which authenticate
+// first. Do not unify the orderings: this function's tests
+// (tests/integration/createSession.integration.test.ts) are this branch's
+// only integration coverage of createSession and are left unmodified by
+// this branch as proof the refactor didn't change behaviour; reordering the
+// checks would mean editing that proof rather than merely preserving it.
 export async function createSession(formData: FormData): Promise<void> {
   const rawTitle = formData.get('title');
   const title = typeof rawTitle === 'string' ? rawTitle.trim().slice(0, 200) : '';

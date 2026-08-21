@@ -8,14 +8,25 @@
  * testable and reviewable in the open repository.
  *
  * It lives beside the services it mirrors (lib/workshops/service.ts,
- * lib/sessions/service.ts) so that changing a service signature breaks this
- * file in the same repo and the same CI run.
+ * lib/sessions/service.ts) by convention, not by import — this file imports
+ * nothing from them, and nothing but its own test imports this file, so
+ * renaming or reshaping a mirrored service does not fail the build here.
+ * `contract.test.ts` carries a constants-drift test (slug bounds, invite cap)
+ * as the real protection against the numbers below going stale; Phase 2's
+ * binding layer is where a compile-time link to the services will live.
  *
  * Shapes are JSON Schema because that is exactly what the Anthropic tool API
  * takes as `input_schema`. `additionalProperties: false` plus an explicit
- * `required` array are mandatory for `strict: true`, which is what guarantees
- * tool inputs match these shapes at all.
+ * `required` array are mandatory for `strict: true` — and they are also *all*
+ * that strict mode actually guarantees: the property set and required-ness
+ * of a tool call's input. Under `strict: true` the API does not honour
+ * length keywords (`minLength`/`maxLength`/`minItems`/`maxItems`) — the SDKs
+ * strip them before the request reaches the model — so those are advisory
+ * hints for a human reader here, not enforcement. The real length checks
+ * happen in the services themselves.
  */
+
+import { MAX_SLUG_LENGTH, MIN_SLUG_LENGTH } from '@/lib/orgs/slug';
 
 export interface AssistantToolSchema {
   type: 'object';
@@ -34,8 +45,14 @@ export interface AssistantToolSchema {
 const UUID_PATTERN =
   '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$';
 
+// `format: 'uuid'` is the mechanism `strict: true` actually honours for
+// constraining an id; `pattern` is not. Keep both: format is enforced by the
+// API, and pattern stays as a human-readable statement of intent (see the
+// comment on UUID_PATTERN above — it is deliberately not derived from
+// UUID_RE.source).
 const uuidProp = (description: string) => ({
   type: 'string' as const,
+  format: 'uuid' as const,
   pattern: UUID_PATTERN,
   description,
 });
@@ -48,8 +65,8 @@ export const ASSISTANT_TOOL_SCHEMAS = {
       name: { type: 'string', minLength: 1, maxLength: 80, description: 'Workshop name.' },
       slug: {
         type: 'string',
-        minLength: 1,
-        maxLength: 80,
+        minLength: MIN_SLUG_LENGTH,
+        maxLength: MAX_SLUG_LENGTH,
         description: 'URL slug: lowercase letters, digits and hyphens.',
       },
       sessionTitle: {
@@ -116,19 +133,33 @@ export const ASSISTANT_TOOL_SCHEMAS = {
     type: 'object',
     properties: {
       stageId: uuidProp('The stage to attach a scenario to.'),
-      scenarioId: { type: 'string', minLength: 1, description: 'Id from list_scenarios.' },
+      scenarioId: uuidProp('Id from list_scenarios.'),
     },
     required: ['stageId', 'scenarioId'],
     additionalProperties: false,
   },
-  /** Read-only: the scenario catalogue the agent may choose from. */
+  /**
+   * Read-only: the scenario catalogue the agent may choose from.
+   *
+   * No Phase 1 implementation anywhere in this branch or any existing
+   * action — Phase 2 must supply the query. `scenarios` is an org-scoped
+   * table, so the implementation must filter to the caller's org, not
+   * return every scenario in the database.
+   */
   list_scenarios: {
     type: 'object',
     properties: {},
     required: [],
     additionalProperties: false,
   },
-  /** Read-only: current workshop shape, so the agent stays grounded in reality. */
+  /**
+   * Read-only: current workshop shape, so the agent stays grounded in
+   * reality after each tool call (the design depends on this to re-derive
+   * the live build preview).
+   *
+   * No Phase 1 implementation anywhere in this branch or any existing
+   * action — Phase 2 must supply the query.
+   */
   get_workshop_state: {
     type: 'object',
     properties: { orgId: uuidProp('Workshop to describe.') },
@@ -143,7 +174,11 @@ export const ASSISTANT_TOOL_SCHEMAS = {
         type: 'array',
         items: { type: 'string', format: 'email' },
         minItems: 1,
-        maxItems: 50,
+        // Must track INVITE_CAP in
+        // app/(authed)/app/sessions/roster-actions.ts (currently 25). Not
+        // exported, so not importable here — see the drift test in
+        // contract.test.ts, which asserts against the same literal.
+        maxItems: 25,
       },
     },
     required: ['sessionId', 'emails'],
@@ -162,8 +197,8 @@ export const ASSISTANT_TOOL_SCHEMAS = {
 
 export type AssistantToolName = keyof typeof ASSISTANT_TOOL_SCHEMAS;
 
-export const ASSISTANT_TOOL_NAMES = Object.keys(
-  ASSISTANT_TOOL_SCHEMAS,
+export const ASSISTANT_TOOL_NAMES = Object.freeze(
+  Object.keys(ASSISTANT_TOOL_SCHEMAS),
 ) as readonly AssistantToolName[];
 
 /**
