@@ -176,3 +176,29 @@ export const GATED_ASSISTANT_TOOLS: ReadonlySet<AssistantToolName> = new Set<Ass
   'invite_participants',
   'add_workshop_member',
 ]);
+
+/**
+ * Verb-family prefixes every tool name in this contract is allowed to start
+ * with. This is the source of truth for "what class of action can a tool
+ * declare" — safety here is structural (there is no delete/remove/destroy/
+ * archive tool anywhere in this file), not a confirmation dialog bolted onto
+ * a dangerous one, so the set of verbs a tool name may open with is itself
+ * part of the contract, not merely a test-time convention.
+ *
+ * `contract.test.ts` enforces this as an ALLOWLIST: every tool name must
+ * start with one of these prefixes, so an unrecognised (and potentially
+ * destructive) verb fails loudly instead of merely dodging a handful of
+ * banned words. When a future tool needs a genuinely new and genuinely safe
+ * verb, add it here deliberately and re-justify why it cannot reach anything
+ * destructive — that friction is the point.
+ */
+export const ASSISTANT_TOOL_VERB_PREFIXES = [
+  'create_',
+  'rename_',
+  'set_',
+  'update_',
+  'list_',
+  'get_',
+  'invite_',
+  'add_',
+] as const;

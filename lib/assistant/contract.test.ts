@@ -1,6 +1,11 @@
 import { describe, expect, test } from 'vitest';
 
-import { ASSISTANT_TOOL_NAMES, ASSISTANT_TOOL_SCHEMAS, GATED_ASSISTANT_TOOLS } from './contract';
+import {
+  ASSISTANT_TOOL_NAMES,
+  ASSISTANT_TOOL_SCHEMAS,
+  ASSISTANT_TOOL_VERB_PREFIXES,
+  GATED_ASSISTANT_TOOLS,
+} from './contract';
 
 describe('assistant tool contract', () => {
   test('every tool name has a schema', () => {
@@ -10,14 +15,43 @@ describe('assistant tool contract', () => {
     }
   });
 
-  test('no delete or remove tool exists', () => {
-    // Structural safety guarantee from the design: the agent has no reachable
-    // path to destroying a workshop, session, model or membership. Safety is
-    // by absence, not by confirmation dialog. If someone adds such a tool
-    // later, this test is the tripwire.
-    for (const name of ASSISTANT_TOOL_NAMES) {
-      expect(name).not.toMatch(/delete|remove|destroy|archive/);
-    }
+  test('every tool name declares a known-safe verb prefix', () => {
+    // Primary safety guarantee, structural rather than a confirmation
+    // dialog: this is an ALLOWLIST, not a blacklist. Every tool name must
+    // start with one of ASSISTANT_TOOL_VERB_PREFIXES — verbs already vetted
+    // as non-destructive. A blacklist of banned substrings alone only
+    // rejects a handful of specific words and passes everything else; a
+    // future tool named e.g. `clear_workshop`, `revoke_membership`,
+    // `kick_participant`, `wipe_session` or `reset_stage` would sail
+    // through a substring check while doing exactly what this contract
+    // forbids. If a new tool genuinely needs a new, genuinely safe verb,
+    // add it to ASSISTANT_TOOL_VERB_PREFIXES in contract.ts deliberately —
+    // that added friction, and the re-justification it forces, is the
+    // point of this test.
+    const unrecognizedVerb = ASSISTANT_TOOL_NAMES.filter(
+      (name) => !ASSISTANT_TOOL_VERB_PREFIXES.some((prefix) => name.startsWith(prefix)),
+    );
+    expect(
+      unrecognizedVerb,
+      `these tool names do not start with any prefix in ASSISTANT_TOOL_VERB_PREFIXES: ` +
+        `${JSON.stringify(unrecognizedVerb)}. Either add the new, vetted-safe verb to ` +
+        `ASSISTANT_TOOL_VERB_PREFIXES in contract.ts, or this tool should not exist.`,
+    ).toEqual([]);
+  });
+
+  test('no tool name contains a destructive-sounding substring', () => {
+    // Second line of defence, not the primary guarantee (see the prefix
+    // allowlist test above). Catches a name that satisfies the prefix rule
+    // but still signals destructive intent elsewhere in the name, e.g.
+    // `create_deletion_request`.
+    const destructiveSounding = ASSISTANT_TOOL_NAMES.filter((name) =>
+      /delete|remove|destroy|archive/.test(name),
+    );
+    expect(
+      destructiveSounding,
+      `these tool names contain a destructive-sounding substring even though they start with ` +
+        `an approved verb: ${JSON.stringify(destructiveSounding)}. Rename them.`,
+    ).toEqual([]);
   });
 
   test('every schema is strict-mode compatible', () => {
