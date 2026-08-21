@@ -47,4 +47,25 @@ test('a new user can open an example workshop from the empty state', async ({ si
 
   await page.goto('/app/workshops');
   await expect(page.locator('li[data-scroll-target]')).toHaveCount(1);
+
+  // My designs lists the four room models the user owns. Nothing ever opens
+  // these canvases in the builder, so the seeder is the only thing that can
+  // give them a thumbnail — without one every card falls back to the empty
+  // dot-grid placeholder.
+  await page.goto('/app/my-designs');
+  const thumbs = page.getByTestId('design-thumb');
+  await expect(thumbs).toHaveCount(4);
+  const images = thumbs.locator('img');
+  await expect(images).toHaveCount(4);
+  for (let i = 0; i < 4; i += 1) {
+    const img = images.nth(i);
+    await img.scrollIntoViewIfNeeded();
+    await expect(img).toHaveAttribute('src', /model-thumbnails/);
+    // A real, decoded image — an empty or 404 src leaves naturalWidth at 0.
+    await expect
+      .poll(async () => img.evaluate((el) => (el as HTMLImageElement).naturalWidth), {
+        timeout: 15_000,
+      })
+      .toBeGreaterThan(0);
+  }
 });

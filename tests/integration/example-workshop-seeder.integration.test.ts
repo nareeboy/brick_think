@@ -206,7 +206,9 @@ describe('createExampleWorkshopAction — seeding', () => {
     // canvases on the three collaborative stages — all with bricks placed.
     const { data: models } = await admin
       .from('models')
-      .select('id, stage_id, room_id, owner_profile_id, canvas_state')
+      .select(
+        'id, stage_id, room_id, owner_profile_id, canvas_state, thumbnail_path, thumbnail_updated_at',
+      )
       .eq('session_id', sessionId);
     const modelsByType = new Map<StageType, NonNullable<typeof models>>();
     for (const model of models!) {
@@ -291,6 +293,23 @@ describe('createExampleWorkshopAction — seeding', () => {
     for (const narration of narrations!) {
       expect((narration.transcript as string).length).toBeGreaterThan(80);
       expect(narration.transcript_raw).toBe(narration.transcript);
+    }
+
+    // Thumbnails: seeded canvases never pass through the builder, so the
+    // seeder renders their design-card image server-side. Without this every
+    // seeded design shows the empty dot-grid placeholder on /app/my-designs.
+    for (const model of models!) {
+      expect(model.thumbnail_path).toBe(`${model.owner_profile_id}/${model.id}.png`);
+      expect(model.thumbnail_updated_at).toBeTruthy();
+
+      const download = await admin.storage
+        .from('model-thumbnails')
+        .download(model.thumbnail_path as string);
+      expect(download.error).toBeNull();
+      const bytes = new Uint8Array(await download.data!.arrayBuffer());
+      expect(bytes.byteLength).toBeGreaterThan(1_000);
+      // PNG magic number.
+      expect(Array.from(bytes.slice(0, 4))).toEqual([0x89, 0x50, 0x4e, 0x47]);
     }
   });
 });

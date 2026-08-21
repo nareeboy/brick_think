@@ -19,6 +19,10 @@
 // orphans the models it owns across every seeded example, so leave them be.
 
 import { CANONICAL_BRICKS } from '@/lib/bricks/canonical';
+import {
+  createPublicBrickImageResolver,
+  renderCanvasThumbnailPng,
+} from '@/lib/canvas/serverThumbnail';
 import { toJson } from '@/lib/db/json';
 import type { ServiceSupabaseClient } from '@/lib/db/service';
 import type { CanvasState } from '@/lib/models/types';
@@ -227,6 +231,42 @@ export async function seedExampleWorkshop(
     if (rosterRes.error) fail('roster insert', rosterRes.error.message);
   }
 
+  // Design-card thumbnails are normally captured client-side from the live
+  // Konva layer when someone edits a model (see useThumbnailCapture.ts). These
+  // canvases are written straight to the database and never opened in the
+  // builder, so without this every seeded design would show the empty dot-grid
+  // placeholder on /app/my-designs and in the session views.
+  //
+  // Best-effort: a failed render or upload leaves the card on its placeholder,
+  // which is strictly better than losing the whole example workshop. One shared
+  // resolver across all ten models so each brick PNG is read and encoded once.
+  const resolveBrickImage = createPublicBrickImageResolver();
+  const attachThumbnail = async (
+    modelId: string,
+    ownerProfileId: string,
+    canvas: CanvasState,
+  ): Promise<void> => {
+    try {
+      const png = await renderCanvasThumbnailPng({ canvasState: canvas, resolveBrickImage });
+      if (!png) return;
+      // Path convention from 20260513100000_model_thumbnails.sql:
+      // '<owner auth uid>/<model id>.png'. profiles.id is the auth uid.
+      const objectPath = `${ownerProfileId}/${modelId}.png`;
+      const upload = await svc.storage
+        .from('model-thumbnails')
+        .upload(objectPath, png, { contentType: 'image/png', upsert: true, cacheControl: '3600' });
+      if (upload.error) throw new Error(`upload: ${upload.error.message}`);
+
+      const updated = await svc
+        .from('models')
+        .update({ thumbnail_path: objectPath, thumbnail_updated_at: new Date().toISOString() })
+        .eq('id', modelId);
+      if (updated.error) throw new Error(`row update: ${updated.error.message}`);
+    } catch (err) {
+      console.error('seedExampleWorkshop: thumbnail failed for model', modelId, err);
+    }
+  };
+
   const insertNarration = async (
     modelId: string,
     profileId: string,
@@ -265,6 +305,7 @@ export async function seedExampleWorkshop(
         .select('id')
         .single();
       if (modelRes.error || !modelRes.data) fail('model insert', modelRes.error?.message);
+      await attachThumbnail(modelRes.data.id, participantIds[i]!, canvas);
       await insertNarration(
         modelRes.data.id,
         participantIds[i]!,
@@ -306,6 +347,7 @@ export async function seedExampleWorkshop(
       .select('id')
       .single();
     if (modelRes.error || !modelRes.data) fail('room model insert', modelRes.error?.message);
+    await attachThumbnail(modelRes.data.id, facilitatorId, canvas);
 
     if (memberIndexes.length > 0) {
       const memberRes = await svc.from('stage_room_members').insert(

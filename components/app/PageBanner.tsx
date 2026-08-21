@@ -6,7 +6,7 @@ interface PageBannerProps {
   title: ReactNode;
   /** data-testid forwarded to the default <h1> (only used when `title` is a string). */
   titleTestId?: string;
-  /** Small uppercase line above the title — a label ("BrickThink") or a breadcrumb. */
+  /** Small uppercase line above the title — a label (<BrandEyebrow />) or a breadcrumb. */
   eyebrow?: ReactNode;
   /** Supporting copy rendered under the title. */
   subtitle?: ReactNode;
@@ -65,7 +65,13 @@ export function PageBanner({
           <div className="min-w-0">
             {leading ? <div className="mb-3">{leading}</div> : null}
             {eyebrow ? (
-              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
+              // break-words: the eyebrow carries an email address whenever a
+              // user has no display name set, and an address has no break
+              // opportunity of its own on a narrow viewport.
+              <div
+                data-testid="page-banner-eyebrow"
+                className="break-words font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500"
+              >
                 {eyebrow}
               </div>
             ) : null}
