@@ -51,11 +51,11 @@ const PHASES: Phase[] = [
     name: 'Phase 2 — Capture & Export',
     summary: 'Take the whole session with you — no lock-in.',
     items: [
-      'Text, voice & video capture on the canvas',
+      'Text & voice capture on the canvas',
       'Auto transcription, searchable by person & stage',
-      'PDF session report',
+      'PDF session report & white-labelling',
       'Per-stage images',
-      'Narration video export',
+      'Narration export',
     ],
   },
   {
@@ -63,8 +63,10 @@ const PHASES: Phase[] = [
     name: 'Phase 3 — AI assist',
     summary: "A helper on the facilitator's side — never the participant's.",
     items: [
-      'Stage-prompt suggestions',
-      'Narration clustering into themes',
+      'Set up workshops & sessions by chat',
+      'Scenarios & invites, drafted for you',
+      'Every action confirmed before it runs',
+      'Cannot delete anything, by design',
       'Facilitator-only, opt-in',
     ],
   },
@@ -135,7 +137,7 @@ function Hero() {
 }
 
 const STATUS_STYLES: Record<PhaseStatus, string> = {
-  Done: 'border-zinc-900/15 bg-white text-zinc-600',
+  Done: 'border-emerald-600/30 bg-emerald-50 text-emerald-800',
   Now: 'border-transparent bg-[#a8482a] text-white',
   Next: 'border-zinc-900/15 bg-white text-zinc-700',
   Later: 'border-zinc-900/10 bg-white/60 text-zinc-500',
