@@ -1,5 +1,7 @@
 import { type ActionResult, fail, ok } from '@/lib/actions/result';
+import type { ServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
+import { isUuid } from '@/lib/db/uuid';
 import { isValidSlug } from '@/lib/orgs/slug';
 
 export type CreateWorkshopFailure = 'slug_taken';
@@ -44,4 +46,43 @@ export async function createWorkshop(input: {
   if (!data) throw new Error('Failed to create workshop: no id returned');
 
   return ok({ orgId: data.id });
+}
+
+export type RenameWorkshopFailure = 'invalid_input' | 'forbidden' | 'not_found';
+
+/**
+ * Rename a workshop.
+ *
+ * RLS restricts UPDATE to admins/owners. A row only comes back from
+ * `.select()` if the policy passed AND the row existed, so zero rows is
+ * ambiguous — a follow-up existence probe separates "you may not" from
+ * "there is no such workshop" and lets the UI show the right message.
+ */
+export async function renameWorkshop(input: {
+  supabase: ServerSupabaseClient;
+  orgId: string;
+  name: string;
+}): Promise<ActionResult<null, RenameWorkshopFailure>> {
+  const trimmed = input.name.trim();
+  if (trimmed.length < 1 || trimmed.length > 80) return fail('invalid_input');
+  if (!isUuid(input.orgId)) return fail('invalid_input');
+
+  const { data, error } = await input.supabase
+    .from('organisations')
+    .update({ name: trimmed })
+    .eq('id', input.orgId)
+    .select('id');
+  if (error) {
+    if (error.code === '42501') return fail('forbidden');
+    throw new Error(`Rename failed: ${error.message}`);
+  }
+  if (!data || data.length === 0) {
+    const { count } = await input.supabase
+      .from('organisations')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', input.orgId);
+    return (count ?? 0) === 0 ? fail('not_found') : fail('forbidden');
+  }
+
+  return ok(null);
 }

@@ -11,7 +11,12 @@ import { buildOrgAddedEmail } from '@/lib/email/orgAdded';
 import { sendTransactionalEmail } from '@/lib/email/resend';
 import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 import { dispatchOrgAddedNotification, resolveActorDisplay } from '@/lib/notifications/dispatch';
-import { createWorkshop, type CreateWorkshopResult } from '@/lib/workshops/service';
+import {
+  createWorkshop,
+  type CreateWorkshopResult,
+  renameWorkshop,
+  type RenameWorkshopFailure,
+} from '@/lib/workshops/service';
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
@@ -204,39 +209,18 @@ export async function removeOrgMemberAction(orgId: string, profileId: string): P
   revalidatePath('/app/my-designs');
 }
 
-export type RenameOrgResult = ActionResult<null, 'invalid_input' | 'forbidden' | 'not_found'>;
+export type RenameOrgResult = ActionResult<null, RenameWorkshopFailure>;
 
 export async function renameOrgAction(orgId: string, name: string): Promise<RenameOrgResult> {
   const { supabase } = await requireUser();
-  const trimmed = name.trim();
-  if (trimmed.length < 1 || trimmed.length > 80) {
-    return { ok: false, code: 'invalid_input' };
-  }
 
-  // RLS restricts UPDATE to admins/owners. A row only comes back from
-  // `.select()` if the policy passed AND the row existed — distinguish via a
-  // follow-up existence probe so the UI can show the right message.
-  const { data, error } = await supabase
-    .from('organisations')
-    .update({ name: trimmed })
-    .eq('id', orgId)
-    .select('id');
-  if (error) {
-    if (error.code === '42501') return { ok: false, code: 'forbidden' };
-    throw new Error(`Rename failed: ${error.message}`);
-  }
-  if (!data || data.length === 0) {
-    const { count } = await supabase
-      .from('organisations')
-      .select('id', { count: 'exact', head: true })
-      .eq('id', orgId);
-    return (count ?? 0) === 0 ? { ok: false, code: 'not_found' } : { ok: false, code: 'forbidden' };
-  }
+  const res = await renameWorkshop({ supabase, orgId, name });
+  if (!res.ok) return res;
 
   revalidatePath('/app/workshops');
   revalidatePath(`/app/workshops/${orgId}`);
   revalidatePath('/app/my-designs');
-  return { ok: true, data: null };
+  return res;
 }
 
 export type DeleteOrgResult = ActionResult<null, 'forbidden' | 'not_found'>;
