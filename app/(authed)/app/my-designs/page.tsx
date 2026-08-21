@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 
 import { Avatar } from '@/components/app/Avatar';
+import { BrandEyebrow } from '@/components/app/BrandEyebrow';
 import { PageBanner } from '@/components/app/PageBanner';
+import { resolveDisplayName } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type {
@@ -94,8 +96,10 @@ export default async function MyDesignsPage({
   if (profileRes.error) {
     throw new Error(`Failed to load profile: ${profileRes.error.message}`);
   }
-  const profileName =
-    profileRes.data?.full_name?.trim() || profileRes.data?.email || user.email || 'You';
+  // Null when nothing identifies the account: the eyebrow then drops the name
+  // rather than reading "BrickThink - You", while the avatar keeps its initial.
+  const displayName = resolveDisplayName(profileRes.data, user.email);
+  const profileName = displayName ?? 'You';
   const profileAvatarUrl = profileRes.data?.avatar_url ?? null;
 
   const membershipsRes = await supabase
@@ -353,7 +357,7 @@ export default async function MyDesignsPage({
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <PageBanner
         avatar={<Avatar url={profileAvatarUrl} name={profileName} size="md" />}
-        eyebrow="BrickThink"
+        eyebrow={<BrandEyebrow name={displayName} />}
         title="My Designs"
         titleTestId="my-designs-heading"
         actions={

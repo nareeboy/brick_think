@@ -3,10 +3,12 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { BrandEyebrow } from '@/components/app/BrandEyebrow';
 import { PageBanner } from '@/components/app/PageBanner';
 import { ExampleWorkshopButton } from './ExampleWorkshopButton';
 import { WorkshopsEmptyState } from './WorkshopsEmptyState';
 import { CreateWorkshopSpotlight } from '@/components/onboarding/CreateWorkshopSpotlight';
+import { loadDisplayName } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
@@ -46,6 +48,8 @@ export default async function OrgsPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in?next=%2Fapp%2Forgs');
+
+  const displayName = await loadDisplayName(supabase, user);
 
   const { data, error } = await supabase
     .from('org_memberships')
@@ -119,7 +123,7 @@ export default async function OrgsPage({
         <CreateWorkshopSpotlight />
       </Suspense>
       <PageBanner
-        eyebrow="BrickThink"
+        eyebrow={<BrandEyebrow name={displayName} />}
         title="Workshops"
         actions={
           <div className="flex items-start gap-2">
