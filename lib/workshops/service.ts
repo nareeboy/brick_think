@@ -1,7 +1,6 @@
 import { type ActionResult, fail, ok } from '@/lib/actions/result';
 import type { ServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
-import { isUuid } from '@/lib/db/uuid';
 import { isValidSlug } from '@/lib/orgs/slug';
 
 export type CreateWorkshopFailure = 'slug_taken';
@@ -65,7 +64,6 @@ export async function renameWorkshop(input: {
 }): Promise<ActionResult<null, RenameWorkshopFailure>> {
   const trimmed = input.name.trim();
   if (trimmed.length < 1 || trimmed.length > 80) return fail('invalid_input');
-  if (!isUuid(input.orgId)) return fail('invalid_input');
 
   const { data, error } = await input.supabase
     .from('organisations')

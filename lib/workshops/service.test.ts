@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { createWorkshop, renameWorkshop } from './service';
 import type { ServerSupabaseClient } from '@/lib/db/server';
@@ -77,5 +77,81 @@ describe('renameWorkshop', () => {
       name: 'Renamed',
     });
     expect(result).toEqual({ ok: false, code: 'forbidden' });
+  });
+
+  test('reports not_found when the update matches zero rows and the org does not exist', async () => {
+    // Partial mock: the service calls `.from('organisations')` twice here —
+    // once for the update, once for the follow-up existence probe — so
+    // `from` returns a different chain on each call.
+    const from = vi.fn();
+    from.mockReturnValueOnce({
+      update: () => ({
+        eq: () => ({
+          select: async () => ({ data: [], error: null }),
+        }),
+      }),
+    });
+    from.mockReturnValueOnce({
+      select: () => ({
+        eq: async () => ({ count: 0 }),
+      }),
+    });
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = { from } as unknown as ServerSupabaseClient;
+
+    const result = await renameWorkshop({
+      supabase,
+      orgId: '22222222-2222-4222-8222-222222222222',
+      name: 'Renamed',
+    });
+    expect(result).toEqual({ ok: false, code: 'not_found' });
+  });
+
+  test('reports forbidden when the update matches zero rows but the org exists (RLS filtered)', async () => {
+    const from = vi.fn();
+    from.mockReturnValueOnce({
+      update: () => ({
+        eq: () => ({
+          select: async () => ({ data: [], error: null }),
+        }),
+      }),
+    });
+    from.mockReturnValueOnce({
+      select: () => ({
+        eq: async () => ({ count: 1 }),
+      }),
+    });
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = { from } as unknown as ServerSupabaseClient;
+
+    const result = await renameWorkshop({
+      supabase,
+      orgId: '22222222-2222-4222-8222-222222222222',
+      name: 'Renamed',
+    });
+    expect(result).toEqual({ ok: false, code: 'forbidden' });
+  });
+
+  test('returns ok when the update succeeds', async () => {
+    // eslint-disable-next-line no-restricted-syntax
+    const supabase = {
+      from: () => ({
+        update: () => ({
+          eq: () => ({
+            select: async () => ({
+              data: [{ id: '22222222-2222-4222-8222-222222222222' }],
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    } as unknown as ServerSupabaseClient;
+
+    const result = await renameWorkshop({
+      supabase,
+      orgId: '22222222-2222-4222-8222-222222222222',
+      name: 'Renamed',
+    });
+    expect(result).toEqual({ ok: true, data: null });
   });
 });
