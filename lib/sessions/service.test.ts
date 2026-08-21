@@ -1,7 +1,13 @@
 import { describe, expect, test, vi } from 'vitest';
 
-import { createSessionWithStages, renameSessionById } from './service';
+import {
+  createSessionWithStages,
+  renameSessionById,
+  updateSessionMetaById,
+  updateStageMetaById,
+} from './service';
 import type { ServerSupabaseClient } from '@/lib/db/server';
+import { SESSION_MODES, SESSION_STATUSES } from '@/lib/sessions/types';
 
 /** A client that fails the test if the service touches the database. */
 function unusedClient(): ServerSupabaseClient {
@@ -74,5 +80,41 @@ describe('renameSessionById', () => {
       title: '   ',
     });
     expect(result).toEqual({ ok: false, code: 'invalid_title' });
+  });
+});
+
+describe('updateStageMetaById', () => {
+  test('rejects a non-UUID stageId', async () => {
+    const result = await updateStageMetaById({
+      supabase: unusedClient(),
+      stageId: 'nope',
+      title: 'Build',
+      description: null,
+    });
+    expect(result).toEqual({ ok: false, code: 'invalid_stage' });
+  });
+});
+
+describe('updateSessionMetaById', () => {
+  test('rejects an unknown status', async () => {
+    const result = await updateSessionMetaById({
+      supabase: unusedClient(),
+      sessionId: '33333333-3333-4333-8333-333333333333',
+      status: 'wat' as never,
+      mode: 'in_person' as never,
+      scheduledFor: null,
+    });
+    expect(result).toEqual({ ok: false, code: 'invalid_status' });
+  });
+
+  test('rejects an unparseable scheduledFor', async () => {
+    const result = await updateSessionMetaById({
+      supabase: unusedClient(),
+      sessionId: '33333333-3333-4333-8333-333333333333',
+      status: SESSION_STATUSES[0]!,
+      mode: SESSION_MODES[0]!,
+      scheduledFor: 'not a date',
+    });
+    expect(result).toEqual({ ok: false, code: 'invalid_scheduled_for' });
   });
 });

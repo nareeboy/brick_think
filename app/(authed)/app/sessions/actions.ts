@@ -9,14 +9,13 @@ import { toJson } from '@/lib/db/json';
 import { UUID_RE } from '@/lib/db/uuid';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
 import { defaultModelTitle } from '@/lib/sessions/stage-labels';
-import { createSessionWithStages, renameSessionById } from '@/lib/sessions/service';
 import {
-  SESSION_MODES,
-  SESSION_STATUSES,
-  type SessionMode,
-  type SessionStatus,
-  type StageType,
-} from '@/lib/sessions/types';
+  createSessionWithStages,
+  renameSessionById,
+  updateSessionMetaById,
+  updateStageMetaById,
+} from '@/lib/sessions/service';
+import { type SessionMode, type SessionStatus, type StageType } from '@/lib/sessions/types';
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
@@ -277,29 +276,15 @@ export async function updateStageMeta(input: {
   title: string | null;
   description: string | null;
 }): Promise<void> {
-  if (!UUID_RE.test(input.stageId)) {
-    throw new Error('Invalid stageId');
-  }
-  const title = input.title === null ? null : input.title.trim().slice(0, 200) || null;
-  const description =
-    input.description === null ? null : input.description.trim().slice(0, 500) || null;
-
   const { supabase } = await requireUser();
 
-  const updateRes = await supabase
-    .from('stages')
-    .update({ title, description })
-    .eq('id', input.stageId)
-    .select('id, session_id')
-    .maybeSingle();
-  if (updateRes.error) {
-    throw new Error(`Failed to update stage: ${updateRes.error.message}`);
-  }
-  if (!updateRes.data) {
+  const res = await updateStageMetaById({ supabase, ...input });
+  if (!res.ok) {
+    if (res.code === 'invalid_stage') throw new Error('Invalid stageId');
     throw new Error('Stage not found, or you do not have permission to edit it.');
   }
 
-  revalidatePath(`/app/sessions/${updateRes.data.session_id}`);
+  revalidatePath(`/app/sessions/${res.data.sessionId}`);
 }
 
 /**
@@ -318,38 +303,14 @@ export async function updateSessionMeta(input: {
   mode: SessionMode;
   scheduledFor: string | null;
 }): Promise<void> {
-  if (!UUID_RE.test(input.sessionId)) {
-    throw new Error('Invalid sessionId');
-  }
-  if (!SESSION_STATUSES.includes(input.status)) {
-    throw new Error(`Invalid status: ${input.status}`);
-  }
-  if (!SESSION_MODES.includes(input.mode)) {
-    throw new Error(`Invalid mode: ${input.mode}`);
-  }
-  let scheduledForIso: string | null = null;
-  if (input.scheduledFor !== null && input.scheduledFor !== '') {
-    const parsed = new Date(input.scheduledFor);
-    if (Number.isNaN(parsed.getTime())) {
-      throw new Error('Invalid scheduledFor');
-    }
-    scheduledForIso = parsed.toISOString();
-  }
-
   const { supabase } = await requireUser();
-  const updateRes = await supabase
-    .from('sessions')
-    .update({
-      status: input.status,
-      mode: input.mode,
-      scheduled_for: scheduledForIso,
-    })
-    .eq('id', input.sessionId)
-    .select('id');
-  if (updateRes.error) {
-    throw new Error(`Failed to update session: ${updateRes.error.message}`);
-  }
-  if (!updateRes.data || updateRes.data.length === 0) {
+
+  const res = await updateSessionMetaById({ supabase, ...input });
+  if (!res.ok) {
+    if (res.code === 'invalid_session') throw new Error('Invalid sessionId');
+    if (res.code === 'invalid_status') throw new Error(`Invalid status: ${input.status}`);
+    if (res.code === 'invalid_mode') throw new Error(`Invalid mode: ${input.mode}`);
+    if (res.code === 'invalid_scheduled_for') throw new Error('Invalid scheduledFor');
     throw new Error('Session not found, or you do not have permission to edit it.');
   }
 
