@@ -11,7 +11,7 @@ import { buildOrgAddedEmail } from '@/lib/email/orgAdded';
 import { sendTransactionalEmail } from '@/lib/email/resend';
 import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 import { dispatchOrgAddedNotification, resolveActorDisplay } from '@/lib/notifications/dispatch';
-import { isValidSlug } from '@/lib/orgs/slug';
+import { createWorkshop, type CreateWorkshopResult } from '@/lib/workshops/service';
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
@@ -22,43 +22,19 @@ async function requireUser() {
   return { supabase, user };
 }
 
-export type CreateOrgResult =
-  | ActionResult<{ orgId: string }, 'slug_taken'>
-  | { ok: false; code: 'invalid_input'; field: 'name' | 'slug' };
+export type CreateOrgResult = CreateWorkshopResult;
 
 export async function createOrgAction(formData: FormData): Promise<CreateOrgResult> {
   const { user } = await requireUser();
   const name = String(formData.get('name') ?? '').trim();
   const slug = String(formData.get('slug') ?? '').trim();
 
-  if (name.length < 1 || name.length > 80) {
-    return { ok: false, code: 'invalid_input', field: 'name' };
-  }
-  if (!isValidSlug(slug)) {
-    return { ok: false, code: 'invalid_input', field: 'slug' };
-  }
-
-  // Service-role insert: the application-level invariant (owner_id = user.id) is
-  // enforced by this action (the owner is always the authenticated caller).
-  // We use service-role here because the user-scoped client hits an RLS check
-  // that fails inconsistently on freshly-created profiles in some Supabase
-  // setups, even when owner_id matches auth.uid(). The owner-membership trigger
-  // on organisations runs in either case.
-  const service = getServiceSupabaseClient();
-  const { data, error } = await service
-    .from('organisations')
-    .insert({ name, slug, owner_id: user.id })
-    .select('id')
-    .single();
-  if (error) {
-    if (error.code === '23505') return { ok: false, code: 'slug_taken' };
-    throw new Error(`Failed to create workshop: ${error.message}`);
-  }
-  if (!data) throw new Error('Failed to create workshop: no id returned');
+  const res = await createWorkshop({ name, slug, ownerId: user.id });
+  if (!res.ok) return res;
 
   revalidatePath('/app/workshops');
   revalidatePath('/app/my-designs');
-  return { ok: true, data: { orgId: data.id } };
+  return res;
 }
 
 /**
