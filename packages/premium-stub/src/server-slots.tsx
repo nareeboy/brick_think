@@ -1,6 +1,7 @@
 import type {
   AccountNavSlotProps,
   AdminNavSlotProps,
+  AssistantEntrySlotProps,
   BrandingSettingsSlotProps,
   ChatWidgetSlotProps,
   HeaderPlanSlotProps,
@@ -45,5 +46,10 @@ export function ChatWidgetSlot(_props: ChatWidgetSlotProps): null {
 
 /** Stub: no billing → no plan text in the header on the open core. */
 export function HeaderPlanSlot(_props: HeaderPlanSlotProps): null {
+  return null;
+}
+
+/** Stub: no AI setup assistant on the open core. */
+export function AssistantEntrySlot(_props: AssistantEntrySlotProps): null {
   return null;
 }
