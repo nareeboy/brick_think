@@ -59,3 +59,10 @@ export type ChatWidgetSlotProps = { profileId: string };
 
 /** Header plan text (current subscription package). Stub renders nothing; premium renders a text link to billing. */
 export type HeaderPlanSlotProps = { profileId: string };
+
+/**
+ * Entry point to the premium AI setup assistant (a link/button into
+ * /app/assistant, which exists only in the overlay). Stub renders nothing, so
+ * open core shows no dead link to a route it does not have.
+ */
+export type AssistantEntrySlotProps = { profileId: string };
