@@ -235,7 +235,8 @@ export async function seedExampleWorkshop(
   // Konva layer when someone edits a model (see useThumbnailCapture.ts). These
   // canvases are written straight to the database and never opened in the
   // builder, so without this every seeded design would show the empty dot-grid
-  // placeholder on /app/my-designs and in the session views.
+  // placeholder on /app/my-designs — the only surface that renders stored
+  // thumbnails — and the report pipeline would rasterise each canvas itself.
   //
   // Best-effort: a failed render or upload leaves the card on its placeholder,
   // which is strictly better than losing the whole example workshop. One shared
