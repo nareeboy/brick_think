@@ -6,18 +6,16 @@ import { revalidatePath } from 'next/cache';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
 import { toJson } from '@/lib/db/json';
+import { UUID_RE } from '@/lib/db/uuid';
 import { EMPTY_CANVAS_STATE } from '@/lib/models/types';
-import { STAGE_DEFAULT_DURATIONS_SECONDS, defaultModelTitle } from '@/lib/sessions/stage-labels';
+import { defaultModelTitle } from '@/lib/sessions/stage-labels';
 import {
-  CANONICAL_STAGE_TYPES,
-  SESSION_MODES,
-  SESSION_STATUSES,
-  type SessionMode,
-  type SessionStatus,
-  type StageType,
-} from '@/lib/sessions/types';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  createSessionWithStages,
+  renameSessionById,
+  updateSessionMetaById,
+  updateStageMetaById,
+} from '@/lib/sessions/service';
+import { type SessionMode, type SessionStatus, type StageType } from '@/lib/sessions/types';
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
@@ -36,6 +34,13 @@ async function requireUser() {
  * - Caller must pass the target `orgId` in form data and be a member of it.
  * - RLS on `sessions` insert allows the caller because `facilitator_id = me`.
  */
+// Deliberately validates title/orgId before requireUser() — unlike
+// renameSession/updateStageMeta/updateSessionMeta below, which authenticate
+// first. Do not unify the orderings: this function's tests
+// (tests/integration/createSession.integration.test.ts) are this branch's
+// only integration coverage of createSession and are left unmodified by
+// this branch as proof the refactor didn't change behaviour; reordering the
+// checks would mean editing that proof rather than merely preserving it.
 export async function createSession(formData: FormData): Promise<void> {
   const rawTitle = formData.get('title');
   const title = typeof rawTitle === 'string' ? rawTitle.trim().slice(0, 200) : '';
@@ -51,43 +56,18 @@ export async function createSession(formData: FormData): Promise<void> {
 
   const { supabase, user } = await requireUser();
 
-  // Defence-in-depth: confirm the caller is a member of the target org.
-  // RLS on `sessions` insert would already reject non-members, but checking
-  // here surfaces a clearer error.
-  const memberRes = await supabase
-    .from('org_memberships')
-    .select('profile_id', { count: 'exact', head: true })
-    .eq('org_id', orgId)
-    .eq('profile_id', user.id);
-  if (memberRes.error) {
-    throw new Error(`Membership check failed: ${memberRes.error.message}`);
+  const res = await createSessionWithStages({ supabase, userId: user.id, orgId, title });
+  if (!res.ok) {
+    if (res.code === 'not_member') {
+      throw new Error('You are not a member of that workshop');
+    }
+    // invalid_title / invalid_org are already screened above; reaching here
+    // means the service tightened validation and the adapter must follow.
+    throw new Error(`Failed to create session: ${res.code}`);
   }
-  if ((memberRes.count ?? 0) === 0) {
-    throw new Error('You are not a member of that workshop');
-  }
-
-  // Atomic create: create_session_with_stages (SECURITY INVOKER plpgsql,
-  // 20260813171336) mints the join code, inserts the session and its stages
-  // in one transaction, so a mid-flight failure can never orphan a 0-stage
-  // session. RLS on sessions/stages still applies (invoker), and the stage
-  // catalog stays TS-owned — passed in as the jsonb payload.
-  const stageRows = CANONICAL_STAGE_TYPES.map((stage_type, position) => ({
-    stage_type,
-    position,
-    duration_seconds: STAGE_DEFAULT_DURATIONS_SECONDS[stage_type],
-  }));
-  const createRes = await supabase.rpc('create_session_with_stages', {
-    p_org_id: orgId,
-    p_title: title,
-    p_stages: stageRows,
-  });
-  if (createRes.error || !createRes.data) {
-    throw new Error(`Failed to create session: ${createRes.error?.message ?? 'unknown'}`);
-  }
-  const sessionId = createRes.data;
 
   revalidatePath(`/app/workshops/${orgId}`);
-  redirect(`/app/sessions/${sessionId}`);
+  redirect(`/app/sessions/${res.data.sessionId}`);
 }
 
 /**
@@ -96,25 +76,12 @@ export async function createSession(formData: FormData): Promise<void> {
  * updated) and we surface that as a clear error.
  */
 export async function renameSession(sessionId: string, title: string): Promise<void> {
-  if (!UUID_RE.test(sessionId)) {
-    throw new Error('Invalid sessionId');
-  }
-  const trimmed = title.trim().slice(0, 200);
-  if (trimmed.length === 0) {
-    throw new Error('Title is required');
-  }
-
   const { supabase } = await requireUser();
 
-  const updateRes = await supabase
-    .from('sessions')
-    .update({ title: trimmed })
-    .eq('id', sessionId)
-    .select('id');
-  if (updateRes.error) {
-    throw new Error(`Failed to rename session: ${updateRes.error.message}`);
-  }
-  if (!updateRes.data || updateRes.data.length === 0) {
+  const res = await renameSessionById({ supabase, sessionId, title });
+  if (!res.ok) {
+    if (res.code === 'invalid_session') throw new Error('Invalid sessionId');
+    if (res.code === 'invalid_title') throw new Error('Title is required');
     throw new Error('Session not found, or you do not have permission to rename it.');
   }
 
@@ -316,29 +283,15 @@ export async function updateStageMeta(input: {
   title: string | null;
   description: string | null;
 }): Promise<void> {
-  if (!UUID_RE.test(input.stageId)) {
-    throw new Error('Invalid stageId');
-  }
-  const title = input.title === null ? null : input.title.trim().slice(0, 200) || null;
-  const description =
-    input.description === null ? null : input.description.trim().slice(0, 500) || null;
-
   const { supabase } = await requireUser();
 
-  const updateRes = await supabase
-    .from('stages')
-    .update({ title, description })
-    .eq('id', input.stageId)
-    .select('id, session_id')
-    .maybeSingle();
-  if (updateRes.error) {
-    throw new Error(`Failed to update stage: ${updateRes.error.message}`);
-  }
-  if (!updateRes.data) {
+  const res = await updateStageMetaById({ supabase, ...input });
+  if (!res.ok) {
+    if (res.code === 'invalid_stage') throw new Error('Invalid stageId');
     throw new Error('Stage not found, or you do not have permission to edit it.');
   }
 
-  revalidatePath(`/app/sessions/${updateRes.data.session_id}`);
+  revalidatePath(`/app/sessions/${res.data.sessionId}`);
 }
 
 /**
@@ -357,38 +310,14 @@ export async function updateSessionMeta(input: {
   mode: SessionMode;
   scheduledFor: string | null;
 }): Promise<void> {
-  if (!UUID_RE.test(input.sessionId)) {
-    throw new Error('Invalid sessionId');
-  }
-  if (!SESSION_STATUSES.includes(input.status)) {
-    throw new Error(`Invalid status: ${input.status}`);
-  }
-  if (!SESSION_MODES.includes(input.mode)) {
-    throw new Error(`Invalid mode: ${input.mode}`);
-  }
-  let scheduledForIso: string | null = null;
-  if (input.scheduledFor !== null && input.scheduledFor !== '') {
-    const parsed = new Date(input.scheduledFor);
-    if (Number.isNaN(parsed.getTime())) {
-      throw new Error('Invalid scheduledFor');
-    }
-    scheduledForIso = parsed.toISOString();
-  }
-
   const { supabase } = await requireUser();
-  const updateRes = await supabase
-    .from('sessions')
-    .update({
-      status: input.status,
-      mode: input.mode,
-      scheduled_for: scheduledForIso,
-    })
-    .eq('id', input.sessionId)
-    .select('id');
-  if (updateRes.error) {
-    throw new Error(`Failed to update session: ${updateRes.error.message}`);
-  }
-  if (!updateRes.data || updateRes.data.length === 0) {
+
+  const res = await updateSessionMetaById({ supabase, ...input });
+  if (!res.ok) {
+    if (res.code === 'invalid_session') throw new Error('Invalid sessionId');
+    if (res.code === 'invalid_status') throw new Error(`Invalid status: ${input.status}`);
+    if (res.code === 'invalid_mode') throw new Error(`Invalid mode: ${input.mode}`);
+    if (res.code === 'invalid_scheduled_for') throw new Error('Invalid scheduledFor');
     throw new Error('Session not found, or you do not have permission to edit it.');
   }
 
