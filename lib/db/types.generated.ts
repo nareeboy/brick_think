@@ -1440,6 +1440,19 @@ export type Database = {
         Args: { p_org_id: string; p_stages: Json; p_title: string }
         Returns: string
       }
+      create_workshop_with_session: {
+        Args: {
+          p_name: string
+          p_owner_id: string
+          p_session_title: string
+          p_slug: string
+          p_stages: Json
+        }
+        Returns: {
+          org_id: string
+          session_id: string
+        }[]
+      }
       generate_join_code: { Args: never; Returns: string }
       is_org_admin: { Args: { p_org_id: string }; Returns: boolean }
       is_org_member: { Args: { p_org_id: string }; Returns: boolean }

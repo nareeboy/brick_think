@@ -11,7 +11,12 @@ import { buildOrgAddedEmail } from '@/lib/email/orgAdded';
 import { sendTransactionalEmail } from '@/lib/email/resend';
 import { publicOriginFromHeaders } from '@/lib/http/publicOrigin';
 import { dispatchOrgAddedNotification, resolveActorDisplay } from '@/lib/notifications/dispatch';
-import { isValidSlug } from '@/lib/orgs/slug';
+import {
+  createWorkshop,
+  type CreateWorkshopResult,
+  renameWorkshop,
+  type RenameWorkshopFailure,
+} from '@/lib/workshops/service';
 
 async function requireUser() {
   const supabase = await createServerSupabaseClient();
@@ -22,43 +27,19 @@ async function requireUser() {
   return { supabase, user };
 }
 
-export type CreateOrgResult =
-  | ActionResult<{ orgId: string }, 'slug_taken'>
-  | { ok: false; code: 'invalid_input'; field: 'name' | 'slug' };
+export type CreateOrgResult = CreateWorkshopResult;
 
 export async function createOrgAction(formData: FormData): Promise<CreateOrgResult> {
   const { user } = await requireUser();
   const name = String(formData.get('name') ?? '').trim();
   const slug = String(formData.get('slug') ?? '').trim();
 
-  if (name.length < 1 || name.length > 80) {
-    return { ok: false, code: 'invalid_input', field: 'name' };
-  }
-  if (!isValidSlug(slug)) {
-    return { ok: false, code: 'invalid_input', field: 'slug' };
-  }
-
-  // Service-role insert: the application-level invariant (owner_id = user.id) is
-  // enforced by this action (the owner is always the authenticated caller).
-  // We use service-role here because the user-scoped client hits an RLS check
-  // that fails inconsistently on freshly-created profiles in some Supabase
-  // setups, even when owner_id matches auth.uid(). The owner-membership trigger
-  // on organisations runs in either case.
-  const service = getServiceSupabaseClient();
-  const { data, error } = await service
-    .from('organisations')
-    .insert({ name, slug, owner_id: user.id })
-    .select('id')
-    .single();
-  if (error) {
-    if (error.code === '23505') return { ok: false, code: 'slug_taken' };
-    throw new Error(`Failed to create workshop: ${error.message}`);
-  }
-  if (!data) throw new Error('Failed to create workshop: no id returned');
+  const res = await createWorkshop({ name, slug, ownerId: user.id });
+  if (!res.ok) return res;
 
   revalidatePath('/app/workshops');
   revalidatePath('/app/my-designs');
-  return { ok: true, data: { orgId: data.id } };
+  return res;
 }
 
 /**
@@ -228,39 +209,18 @@ export async function removeOrgMemberAction(orgId: string, profileId: string): P
   revalidatePath('/app/my-designs');
 }
 
-export type RenameOrgResult = ActionResult<null, 'invalid_input' | 'forbidden' | 'not_found'>;
+export type RenameOrgResult = ActionResult<null, RenameWorkshopFailure>;
 
 export async function renameOrgAction(orgId: string, name: string): Promise<RenameOrgResult> {
   const { supabase } = await requireUser();
-  const trimmed = name.trim();
-  if (trimmed.length < 1 || trimmed.length > 80) {
-    return { ok: false, code: 'invalid_input' };
-  }
 
-  // RLS restricts UPDATE to admins/owners. A row only comes back from
-  // `.select()` if the policy passed AND the row existed — distinguish via a
-  // follow-up existence probe so the UI can show the right message.
-  const { data, error } = await supabase
-    .from('organisations')
-    .update({ name: trimmed })
-    .eq('id', orgId)
-    .select('id');
-  if (error) {
-    if (error.code === '42501') return { ok: false, code: 'forbidden' };
-    throw new Error(`Rename failed: ${error.message}`);
-  }
-  if (!data || data.length === 0) {
-    const { count } = await supabase
-      .from('organisations')
-      .select('id', { count: 'exact', head: true })
-      .eq('id', orgId);
-    return (count ?? 0) === 0 ? { ok: false, code: 'not_found' } : { ok: false, code: 'forbidden' };
-  }
+  const res = await renameWorkshop({ supabase, orgId, name });
+  if (!res.ok) return res;
 
   revalidatePath('/app/workshops');
   revalidatePath(`/app/workshops/${orgId}`);
   revalidatePath('/app/my-designs');
-  return { ok: true, data: null };
+  return res;
 }
 
 export type DeleteOrgResult = ActionResult<null, 'forbidden' | 'not_found'>;
