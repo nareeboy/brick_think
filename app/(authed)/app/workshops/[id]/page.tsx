@@ -9,6 +9,7 @@ import { WorkshopPageTour } from '@/components/onboarding/WorkshopPageTour';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { OrgMember, OrgRole } from '@/lib/orgs/types';
+import { AssistantEntrySlot } from '@/lib/premium/server-slots';
 
 import { AddMemberForm } from './AddMemberForm';
 import { DeleteOrgButton } from './DeleteOrgButton';
@@ -138,7 +139,10 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
             {isOwner ? (
               <DeleteOrgButton orgId={id} orgName={orgRes.data.name} orgSlug={orgRes.data.slug} />
             ) : null}
-            <CreateSessionButton orgId={id} />
+            <CreateSessionButton
+              orgId={id}
+              assistantEntry={<AssistantEntrySlot profileId={user.id} />}
+            />
           </>
         }
       />

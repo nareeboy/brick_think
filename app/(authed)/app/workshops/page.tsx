@@ -11,6 +11,7 @@ import { CreateWorkshopSpotlight } from '@/components/onboarding/CreateWorkshopS
 import { loadDisplayName } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { AssistantEntrySlot } from '@/lib/premium/server-slots';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 export const metadata: Metadata = { title: 'Workshops' };
@@ -144,7 +145,11 @@ export default async function OrgsPage({
       />
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 px-5 py-10">
         {orgs.length === 0 ? (
-          <WorkshopsEmptyState newWorkshopHref={newWorkshopHref} hasExample={hasExample} />
+          <WorkshopsEmptyState
+            newWorkshopHref={newWorkshopHref}
+            hasExample={hasExample}
+            assistantEntry={<AssistantEntrySlot profileId={user.id} />}
+          />
         ) : (
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {orgs.map((o) => (
