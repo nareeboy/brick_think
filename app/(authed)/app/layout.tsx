@@ -16,7 +16,7 @@ import { isTutorialGuest } from '@/lib/onboarding/guestGate';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { ChatWidgetSlot } from '@/lib/premium/server-slots';
+import { AssistantEntrySlot, ChatWidgetSlot } from '@/lib/premium/server-slots';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,7 +92,10 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
           <RoleChooserRedirect guest={tutorialGuest} />
         </Suspense>
         <Suspense fallback={null}>
-          <OnboardingWelcome guest={tutorialGuest} />
+          <OnboardingWelcome
+            guest={tutorialGuest}
+            assistantEntry={<AssistantEntrySlot profileId={user.id} />}
+          />
         </Suspense>
       </div>
     </NotificationsProvider>
