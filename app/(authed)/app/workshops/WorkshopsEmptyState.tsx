@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { ExampleWorkshopButton } from './ExampleWorkshopButton';
 
@@ -10,9 +11,11 @@ import { ExampleWorkshopButton } from './ExampleWorkshopButton';
 export function WorkshopsEmptyState({
   newWorkshopHref,
   hasExample,
+  assistantEntry,
 }: {
   newWorkshopHref: string;
   hasExample: boolean;
+  assistantEntry?: ReactNode;
 }) {
   return (
     <div className="rounded-2xl border border-dashed border-zinc-900/15 bg-white/60 px-6 py-10 text-center sm:px-10">
@@ -30,6 +33,12 @@ export function WorkshopsEmptyState({
           New workshop
         </Link>
         <ExampleWorkshopButton hasExample={hasExample} />
+      </div>
+      {/* Premium entry point (AssistantEntrySlot, resolved by the page). The
+          slot renders nothing in open core / when not entitled — `empty:hidden`
+          collapses this wrapper so the layout stays identical either way. */}
+      <div data-testid="assistant-entry-slot" className="mt-5 flex justify-center empty:hidden">
+        {assistantEntry}
       </div>
       <p className="mx-auto mt-6 max-w-[52ch] text-[12px] leading-relaxed text-zinc-500">
         The example is a complete workshop — five stages of models, the rooms the group worked in,

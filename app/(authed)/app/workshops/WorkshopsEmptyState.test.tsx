@@ -33,4 +33,25 @@ describe('WorkshopsEmptyState', () => {
     const link = screen.getByRole('link', { name: /new workshop/i }) as HTMLAnchorElement;
     expect(link.getAttribute('href')).toBe('/app/workshops/new?onboarding=create-workshop');
   });
+
+  it('renders the assistant entry between the CTAs and the example blurb when given', () => {
+    render(
+      <WorkshopsEmptyState
+        newWorkshopHref="/app/workshops/new"
+        hasExample={false}
+        assistantEntry={<a href="/app/assistant">Set up with AI</a>}
+      />,
+    );
+    expect(screen.getByRole('link', { name: /set up with ai/i })).toBeTruthy();
+  });
+
+  it('leaves no assistant container when the slot renders nothing (open core)', () => {
+    const { container } = render(
+      <WorkshopsEmptyState newWorkshopHref="/app/workshops/new" hasExample={false} />,
+    );
+    const wrapper = container.querySelector('[data-testid="assistant-entry-slot"]');
+    // The wrapper exists but is empty and hidden via Tailwind `empty:hidden`.
+    expect(wrapper?.childElementCount ?? 0).toBe(0);
+    expect(wrapper?.className).toContain('empty:hidden');
+  });
 });
