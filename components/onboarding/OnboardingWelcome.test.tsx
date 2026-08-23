@@ -53,6 +53,13 @@ describe('OnboardingWelcome', () => {
     expect(screen.getByText('Start a session')).toBeTruthy();
   });
 
+  it('renders the assistant entry under the pathway cards when given', async () => {
+    render(<OnboardingWelcome assistantEntry={<a href="/app/assistant">Set up with AI</a>} />);
+    expect(await screen.findByRole('link', { name: /set up with ai/i })).toBeTruthy();
+    // Still three pathway cards — the entry is an addition, not a fourth path.
+    expect(screen.getByTestId('onboarding-welcome-card-workshop')).toBeTruthy();
+  });
+
   it('does not render once the welcome flag is set', async () => {
     localStorage.setItem('bt_welcome_seen', '1');
     render(<OnboardingWelcome />);

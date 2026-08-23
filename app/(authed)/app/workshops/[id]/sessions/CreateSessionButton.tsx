@@ -1,11 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import { NewSessionDialog } from './NewSessionDialog';
 import { PlusIcon } from '@/components/icons';
 
-export function CreateSessionButton({ orgId }: { orgId: string }) {
+export function CreateSessionButton({
+  orgId,
+  assistantEntry,
+}: {
+  orgId: string;
+  assistantEntry?: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -20,7 +26,13 @@ export function CreateSessionButton({ orgId }: { orgId: string }) {
         <PlusIcon className="h-3.5 w-3.5" />
         Create session
       </button>
-      {open ? <NewSessionDialog orgId={orgId} onClose={() => setOpen(false)} /> : null}
+      {open ? (
+        <NewSessionDialog
+          orgId={orgId}
+          onClose={() => setOpen(false)}
+          assistantEntry={assistantEntry}
+        />
+      ) : null}
     </>
   );
 }
