@@ -352,7 +352,7 @@ export async function Footer() {
             className="mt-3 inline-flex items-center gap-2 text-[13px] text-zinc-700 hover:text-zinc-950"
           >
             <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Phase 3 — AI assist
+            Phase 4 — Self-host & scale
           </Link>
           <p className="mt-2 text-[13px] text-zinc-600">
             WCAG 2.2 AA. GDPR-aligned. EU data residency. Free to self-host.
