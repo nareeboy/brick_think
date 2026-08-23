@@ -116,14 +116,19 @@ jobs:
           version: 2.98.2
 
       - name: Start local Supabase stack
-        # Only the containers the suite actually touches. Studio and
-        # postgres-meta are UI-only; imgproxy serves image transforms nothing in
-        # the app requests; edge-runtime hosts prod-only functions; logflare +
-        # vector are the log pipeline; supavisor is the pooler (both the app and
-        # the Yjs worker connect to Postgres direct). Everything the suites need
-        # — db, gotrue, postgrest, storage, realtime (brick comments/reactions,
+        # scripts/ci/start-supabase.sh runs `supabase start -x …` with only the
+        # containers the suite actually touches. Studio and postgres-meta are
+        # UI-only; imgproxy serves image transforms nothing in the app requests;
+        # edge-runtime hosts prod-only functions; logflare + vector are the log
+        # pipeline; supavisor is the pooler (both the app and the Yjs worker
+        # connect to Postgres direct). Everything the suites need — db, gotrue,
+        # postgrest, storage, realtime (brick comments/reactions,
         # notifications) and mailpit (invite-email + magic-link specs) — stays.
-        run: supabase start -x studio,postgres-meta,imgproxy,edge-runtime,logflare,vector,supavisor
+        # The script also retries (up to 3×, after `supabase stop`) the one
+        # failure we know to be environmental — the hosted runner intermittently
+        # already holds :54322 — and prints who holds the port before each
+        # attempt. Any other failure surfaces immediately.
+        run: scripts/ci/start-supabase.sh
 
       - name: Integration tests
         run: pnpm test:integration
@@ -171,9 +176,13 @@ jobs:
         # build never connects. Booting in the background overlaps ~70s of image
         # pulls with the Chromium install and the Next build. The wait step
         # below is where a failed boot surfaces, exit code and log included.
-        # Same trimmed container set as the integration job above.
+        # Same trimmed container set as the integration job above, via the same
+        # scripts/ci/start-supabase.sh — which retries the runner's intermittent
+        # :54322 bind collision (up to 3×) and logs who holds the port before
+        # each attempt; the retries run inside this background process, so the
+        # overlap is unchanged.
         run: |
-          nohup bash -c 'supabase start -x studio,postgres-meta,imgproxy,edge-runtime,logflare,vector,supavisor > /tmp/supabase-start.log 2>&1; echo $? > /tmp/supabase-start.rc' > /dev/null 2>&1 &
+          nohup bash -c 'scripts/ci/start-supabase.sh > /tmp/supabase-start.log 2>&1; echo $? > /tmp/supabase-start.rc' > /dev/null 2>&1 &
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -207,16 +216,19 @@ jobs:
       - name: Wait for the Supabase stack
         # The background boot writes its exit code to /tmp/supabase-start.rc
         # when it finishes, successfully or not — so this reports the real
-        # failure instead of timing out on a stack that already gave up.
+        # failure instead of timing out on a stack that already gave up. The
+        # ceiling covers the worst case of three boot attempts (~100s each on a
+        # slow runner) plus the 10s + 20s backoffs, minus the ~70s of build
+        # this step already overlapped — 8 minutes, never unbounded.
         run: |
-          for _ in $(seq 1 60); do
+          for _ in $(seq 1 96); do
             if [ -f /tmp/supabase-start.rc ]; then
               cat /tmp/supabase-start.log
               exit "$(cat /tmp/supabase-start.rc)"
             fi
             sleep 5
           done
-          echo "::error::Supabase stack did not finish starting within 5 minutes"
+          echo "::error::Supabase stack did not finish starting within 8 minutes"
           cat /tmp/supabase-start.log
           exit 1
 
