@@ -34,9 +34,13 @@ interface Props {
   /** Invited session guests never see the modal — its three pathways are
    *  facilitator work. They keep the in-context spotlight tours instead. */
   guest?: boolean;
+  /** Premium `AssistantEntrySlot` (resolved by the authed layout); null in
+   *  open core / when not entitled. Pure presentation — it does not touch
+   *  any onboarding flag, path-done state or URL param. */
+  assistantEntry?: ReactNode;
 }
 
-export function OnboardingWelcome({ guest = false }: Props) {
+export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
   const {
     role,
     welcomeSeen,
@@ -253,6 +257,10 @@ export function OnboardingWelcome({ guest = false }: Props) {
             body="Understand how to start a group session and the features for breakout rooms."
             art={<SessionArt />}
           />
+        </div>
+
+        <div data-testid="assistant-entry-slot" className="mt-5 flex justify-center empty:hidden">
+          {assistantEntry}
         </div>
 
         {error ? (
