@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AccountNavSlot,
   AdminNavSlot,
+  AssistantEntrySlot,
   BrandingSettingsSlot,
   ChatWidgetSlot,
   HeaderPlanSlot,
@@ -28,5 +29,9 @@ describe('server-rendered slot stubs', () => {
 
   it('HeaderPlanSlot renders nothing on the open core', () => {
     expect(HeaderPlanSlot({ profileId: '00000000-0000-0000-0000-000000000000' })).toBeNull();
+  });
+
+  it('AssistantEntrySlot renders nothing on the open core', () => {
+    expect(AssistantEntrySlot({ profileId: '00000000-0000-0000-0000-000000000000' })).toBeNull();
   });
 });
