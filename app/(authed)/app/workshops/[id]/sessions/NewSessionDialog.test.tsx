@@ -22,7 +22,7 @@ describe('NewSessionDialog', () => {
 
   it('renders an empty, collapsible footer when there is no entry', () => {
     render(<NewSessionDialog orgId="00000000-0000-0000-0000-000000000000" onClose={() => {}} />);
-    const footer = screen.getByTestId('assistant-entry-slot');
+    const footer = screen.getByTestId('assistant-entry-slot-new-session');
     expect(footer.childElementCount).toBe(0);
     expect(footer.className).toContain('empty:hidden');
   });

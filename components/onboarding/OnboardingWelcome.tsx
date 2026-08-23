@@ -259,7 +259,10 @@ export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
           />
         </div>
 
-        <div data-testid="assistant-entry-slot" className="mt-5 flex justify-center empty:hidden">
+        <div
+          data-testid="assistant-entry-slot-onboarding"
+          className="mt-5 flex justify-center empty:hidden"
+        >
           {assistantEntry}
         </div>
 

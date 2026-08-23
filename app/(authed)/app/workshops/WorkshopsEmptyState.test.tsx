@@ -49,7 +49,7 @@ describe('WorkshopsEmptyState', () => {
     const { container } = render(
       <WorkshopsEmptyState newWorkshopHref="/app/workshops/new" hasExample={false} />,
     );
-    const wrapper = container.querySelector('[data-testid="assistant-entry-slot"]');
+    const wrapper = container.querySelector('[data-testid="assistant-entry-slot-workshops"]');
     // The wrapper exists but is empty and hidden via Tailwind `empty:hidden`.
     expect(wrapper?.childElementCount ?? 0).toBe(0);
     expect(wrapper?.className).toContain('empty:hidden');

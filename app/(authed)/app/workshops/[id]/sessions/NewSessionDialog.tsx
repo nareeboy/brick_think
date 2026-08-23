@@ -103,7 +103,7 @@ export function NewSessionDialog({ orgId, onClose, assistantEntry }: Props) {
             The assistant builds a NEW workshop (v1), so this is a way out of
             the form, not a generator for this field. Hidden when empty. */}
         <div
-          data-testid="assistant-entry-slot"
+          data-testid="assistant-entry-slot-new-session"
           className="mt-5 border-t border-zinc-900/10 pt-4 empty:hidden"
         >
           {assistantEntry}

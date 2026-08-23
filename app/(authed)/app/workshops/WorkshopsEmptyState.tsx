@@ -37,7 +37,10 @@ export function WorkshopsEmptyState({
       {/* Premium entry point (AssistantEntrySlot, resolved by the page). The
           slot renders nothing in open core / when not entitled — `empty:hidden`
           collapses this wrapper so the layout stays identical either way. */}
-      <div data-testid="assistant-entry-slot" className="mt-5 flex justify-center empty:hidden">
+      <div
+        data-testid="assistant-entry-slot-workshops"
+        className="mt-5 flex justify-center empty:hidden"
+      >
         {assistantEntry}
       </div>
       <p className="mx-auto mt-6 max-w-[52ch] text-[12px] leading-relaxed text-zinc-500">
