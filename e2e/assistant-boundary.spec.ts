@@ -32,7 +32,10 @@ test.describe('assistant boundary (open core)', () => {
     await expect(signedInPage.getByTestId('assistant-entry')).toHaveCount(0);
   });
 
-  test('no entry points render in open core', async ({ signedInPage, seededSession }) => {
+  test('no entry point renders in the New Session dialog in open core', async ({
+    signedInPage,
+    seededSession,
+  }) => {
     // Fresh user with one seeded workshop: the New Session dialog is the
     // other always-reachable placement.
     await signedInPage.goto(`/app/workshops/${seededSession.orgId}`);
