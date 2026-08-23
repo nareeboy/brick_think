@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, useTransition } from 'react';
+import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react';
 
 import { createSession } from '@/app/(authed)/app/sessions/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
@@ -8,9 +8,10 @@ import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 interface Props {
   orgId: string;
   onClose: () => void;
+  assistantEntry?: ReactNode;
 }
 
-export function NewSessionDialog({ orgId, onClose }: Props) {
+export function NewSessionDialog({ orgId, onClose, assistantEntry }: Props) {
   const [title, setTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -96,6 +97,16 @@ export function NewSessionDialog({ orgId, onClose }: Props) {
           >
             {pending ? 'Creating…' : 'Create session'}
           </button>
+        </div>
+
+        {/* "Set up with AI" — premium AssistantEntrySlot resolved by the page.
+            The assistant builds a NEW workshop (v1), so this is a way out of
+            the form, not a generator for this field. Hidden when empty. */}
+        <div
+          data-testid="assistant-entry-slot-new-session"
+          className="mt-5 border-t border-zinc-900/10 pt-4 empty:hidden"
+        >
+          {assistantEntry}
         </div>
       </form>
     </ModalBackdrop>
