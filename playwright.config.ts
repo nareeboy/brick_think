@@ -53,6 +53,10 @@ export default defineConfig({
       env: {
         E2E_AUTH_ENABLED: '1',
         E2E_SESSIONS_ENABLED: '1',
+        // Premium overlay E2E: route the assistant's model calls to the
+        // scripted stub. Inert in open core (the route 404s); never set on
+        // Railway. Spec §9: the live API is never called in CI.
+        ASSISTANT_MODEL_STUB: '1',
         NEXT_PUBLIC_YJS_COLLAB_ENABLED: '1',
         NEXT_PUBLIC_YJS_WS_URL: 'ws://localhost:1234/yjs',
         YJS_JWT_SECRET: 'a'.repeat(64),
