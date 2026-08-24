@@ -59,15 +59,31 @@ describe('assistant tool contract', () => {
     // strict: true on the Anthropic side requires all three of these, or the
     // API rejects the tool definition. This is also the full extent of what
     // strict mode guarantees about a tool call's input — the property set
-    // and required-ness. It does NOT enforce minLength/maxLength/minItems/
-    // maxItems (the SDKs strip those before the request reaches the model),
-    // so those stay as advisory hints in the schemas above, not assertions
-    // this test can make about enforcement.
+    // and required-ness. String minLength/maxLength are accepted by the API
+    // but not enforced, so those stay as advisory hints in the schemas
+    // above, not assertions this test can make about enforcement.
     for (const name of ASSISTANT_TOOL_NAMES) {
       const schema = ASSISTANT_TOOL_SCHEMAS[name];
       expect(schema.type).toBe('object');
       expect(schema.additionalProperties).toBe(false);
       expect(Array.isArray(schema.required)).toBe(true);
+    }
+  });
+
+  test('no array property carries minItems/maxItems', () => {
+    // The live API rejects the whole request with a 400
+    // ("For 'array' type, property 'maxItems' is not supported") when a
+    // strict tool schema bounds an array — which broke every real assistant
+    // turn while the stubbed model kept tests green. Caps belong in the
+    // property description and in the service that enforces them.
+    for (const name of ASSISTANT_TOOL_NAMES) {
+      const schema = ASSISTANT_TOOL_SCHEMAS[name];
+      for (const [key, prop] of Object.entries<Record<string, unknown>>(schema.properties)) {
+        if (prop.type === 'array') {
+          expect(prop.minItems, `${name}.${key}.minItems`).toBeUndefined();
+          expect(prop.maxItems, `${name}.${key}.maxItems`).toBeUndefined();
+        }
+      }
     }
   });
 
@@ -105,15 +121,18 @@ describe('assistant tool contract', () => {
       expect(slug.maxLength).toBe(MAX_SLUG_LENGTH);
     });
 
-    test('invite_participants.emails.maxItems tracks INVITE_CAP', () => {
+    test('invite_participants.emails description tracks INVITE_CAP', () => {
       // INVITE_CAP lives in app/(authed)/app/sessions/roster-actions.ts, a
       // 'use server' action module, and is not exported — importing it here
       // would drag a server-action module into a unit test for no benefit.
       // Asserted against the literal instead; keep this constant (currently
       // 25) in sync with INVITE_CAP by hand if that module ever changes.
+      // The cap rides in the property description (not minItems/maxItems —
+      // see the array-bounds test above): the model reads it as guidance,
+      // the service enforces it.
       const INVITE_CAP = 25;
       const { emails } = ASSISTANT_TOOL_SCHEMAS.invite_participants.properties;
-      expect(emails.maxItems).toBe(INVITE_CAP);
+      expect(emails.description).toContain(String(INVITE_CAP));
     });
   });
 });
