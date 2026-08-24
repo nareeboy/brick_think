@@ -19,11 +19,12 @@
  * takes as `input_schema`. `additionalProperties: false` plus an explicit
  * `required` array are mandatory for `strict: true` — and they are also *all*
  * that strict mode actually guarantees: the property set and required-ness
- * of a tool call's input. Under `strict: true` the API does not honour
- * length keywords (`minLength`/`maxLength`/`minItems`/`maxItems`) — the SDKs
- * strip them before the request reaches the model — so those are advisory
- * hints for a human reader here, not enforcement. The real length checks
- * happen in the services themselves.
+ * of a tool call's input. String `minLength`/`maxLength` are accepted by the
+ * API but not enforced — advisory hints for a human reader, not enforcement.
+ * Array bounds (`minItems`/`maxItems`) are REJECTED outright: the live API
+ * 400s the whole request ("For 'array' type, property 'maxItems' is not
+ * supported"), so item caps ride in property descriptions instead. The real
+ * length checks happen in the services themselves.
  */
 
 import { MAX_SLUG_LENGTH, MIN_SLUG_LENGTH } from '@/lib/orgs/slug';
@@ -173,12 +174,13 @@ export const ASSISTANT_TOOL_SCHEMAS = {
       emails: {
         type: 'array',
         items: { type: 'string', format: 'email' },
-        minItems: 1,
-        // Must track INVITE_CAP in
-        // app/(authed)/app/sessions/roster-actions.ts (currently 25). Not
-        // exported, so not importable here — see the drift test in
-        // contract.test.ts, which asserts against the same literal.
-        maxItems: 25,
+        // No minItems/maxItems: the live API 400s on array bounds in strict
+        // tool schemas (see the header comment). The cap must track
+        // INVITE_CAP in app/(authed)/app/sessions/roster-actions.ts
+        // (currently 25). Not exported, so not importable here — see the
+        // drift test in contract.test.ts, which asserts against the same
+        // literal.
+        description: 'Email addresses to invite: at least 1, at most 25 per call.',
       },
     },
     required: ['sessionId', 'emails'],
