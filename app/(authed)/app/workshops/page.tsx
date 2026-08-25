@@ -3,12 +3,13 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { Avatar } from '@/components/app/Avatar';
 import { BrandEyebrow } from '@/components/app/BrandEyebrow';
 import { PageBanner } from '@/components/app/PageBanner';
 import { ExampleWorkshopButton } from './ExampleWorkshopButton';
 import { WorkshopsEmptyState } from './WorkshopsEmptyState';
 import { CreateWorkshopSpotlight } from '@/components/onboarding/CreateWorkshopSpotlight';
-import { loadDisplayName } from '@/lib/account/displayName';
+import { loadBannerProfile } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { AssistantEntrySlot } from '@/lib/premium/server-slots';
@@ -50,7 +51,9 @@ export default async function OrgsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in?next=%2Fapp%2Forgs');
 
-  const displayName = await loadDisplayName(supabase, user);
+  // Null when nothing identifies the account: the eyebrow then drops the name
+  // rather than reading "BrickThink - You", while the avatar keeps its initial.
+  const { displayName, avatarUrl } = await loadBannerProfile(supabase, user);
 
   const { data, error } = await supabase
     .from('org_memberships')
@@ -124,6 +127,7 @@ export default async function OrgsPage({
         <CreateWorkshopSpotlight />
       </Suspense>
       <PageBanner
+        avatar={<Avatar url={avatarUrl} name={displayName ?? 'You'} size="md" />}
         eyebrow={<BrandEyebrow name={displayName} />}
         title="Workshops"
         actions={
