@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
+import { Avatar } from '@/components/app/Avatar';
 import { PageBanner } from '@/components/app/PageBanner';
 import { CreateSessionSpotlight } from '@/components/onboarding/CreateSessionSpotlight';
 import { WorkshopPageTour } from '@/components/onboarding/WorkshopPageTour';
+import { loadBannerProfile } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type { OrgMember, OrgRole } from '@/lib/orgs/types';
@@ -44,7 +46,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
   } = await supabase.auth.getUser();
   if (!user) redirect(`/sign-in?next=%2Fapp%2Forgs%2F${id}`);
 
-  const [orgRes, viewerRoleRes, membersRes, sessionsRes] = await Promise.all([
+  const [orgRes, viewerRoleRes, membersRes, sessionsRes, bannerProfile] = await Promise.all([
     supabase.from('organisations').select('id, name, slug').eq('id', id).single(),
     supabase
       .from('org_memberships')
@@ -61,6 +63,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
       .select('id, title, status, updated_at')
       .eq('org_id', id)
       .order('updated_at', { ascending: false }),
+    loadBannerProfile(supabase, user),
   ]);
 
   if (orgRes.error || !orgRes.data) notFound();
@@ -112,6 +115,13 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
         <WorkshopPageTour />
       </Suspense>
       <PageBanner
+        avatar={
+          <Avatar
+            url={bannerProfile.avatarUrl}
+            name={bannerProfile.displayName ?? 'You'}
+            size="md"
+          />
+        }
         eyebrow={
           <>
             <Link href="/app/workshops" className="underline-offset-2 hover:underline">

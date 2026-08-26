@@ -19,19 +19,29 @@ export function resolveDisplayName(
   return profile?.full_name?.trim() || profile?.email?.trim() || fallbackEmail?.trim() || null;
 }
 
+/** What the page banner renders for the signed-in user: eyebrow name + avatar photo. */
+export interface BannerProfile {
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
 /**
- * Loads the display name for pages that only need it for the banner eyebrow.
- * A failed read degrades to the auth user's email (and then to no name at all)
- * instead of throwing — a decorative label is never worth a 500.
+ * Loads the identity bits the page banner shows — display name for the eyebrow
+ * and the avatar photo. A failed read degrades to the auth user's email (and
+ * then to no name / initials-only avatar) instead of throwing — a decorative
+ * header is never worth a 500.
  */
-export async function loadDisplayName(
+export async function loadBannerProfile(
   supabase: ServerSupabaseClient,
   user: { id: string; email?: string | null },
-): Promise<string | null> {
+): Promise<BannerProfile> {
   const { data } = await supabase
     .from('profiles')
-    .select('full_name, email')
+    .select('full_name, email, avatar_url')
     .eq('id', user.id)
     .maybeSingle();
-  return resolveDisplayName(data, user.email);
+  return {
+    displayName: resolveDisplayName(data, user.email),
+    avatarUrl: data?.avatar_url ?? null,
+  };
 }
