@@ -3,7 +3,9 @@ import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
+import { Avatar } from '@/components/app/Avatar';
 import { PageBanner } from '@/components/app/PageBanner';
+import { loadBannerProfile } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { getServiceSupabaseClient } from '@/lib/db/service';
@@ -67,13 +69,16 @@ export default async function SessionDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect(`/sign-in?next=%2Fapp%2Fsessions%2F${id}`);
 
-  const sessionRes = await supabase
-    .from('sessions')
-    .select(
-      'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, organisations:org_id ( id, name )',
-    )
-    .eq('id', id)
-    .maybeSingle();
+  const [bannerProfile, sessionRes] = await Promise.all([
+    loadBannerProfile(supabase, user),
+    supabase
+      .from('sessions')
+      .select(
+        'id, title, org_id, facilitator_id, status, mode, scheduled_for, current_stage_id, brief_text, pre_session_check, join_code, organisations:org_id ( id, name )',
+      )
+      .eq('id', id)
+      .maybeSingle(),
+  ]);
   if (sessionRes.error || !sessionRes.data) notFound();
   const session = sessionRes.data as {
     id: string;
@@ -463,6 +468,13 @@ export default async function SessionDetailPage({
       <PageBanner
         dataTourId="session-header"
         maxWidthClassName="max-w-[1200px]"
+        avatar={
+          <Avatar
+            url={bannerProfile.avatarUrl}
+            name={bannerProfile.displayName ?? 'You'}
+            size="md"
+          />
+        }
         leading={<SessionRoleChip isFacilitator={session.facilitator_id === user.id} />}
         eyebrow={
           <>

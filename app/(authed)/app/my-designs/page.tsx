@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { Avatar } from '@/components/app/Avatar';
 import { BrandEyebrow } from '@/components/app/BrandEyebrow';
 import { PageBanner } from '@/components/app/PageBanner';
-import { resolveDisplayName } from '@/lib/account/displayName';
+import { loadBannerProfile } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import type {
@@ -88,19 +88,10 @@ export default async function MyDesignsPage({
   const activeTags = parseTagList(firstParam(sp.tag));
   const page = parsePageNumber(firstParam(sp.page));
 
-  const profileRes = await supabase
-    .from('profiles')
-    .select('full_name, email, avatar_url')
-    .eq('id', user.id)
-    .single();
-  if (profileRes.error) {
-    throw new Error(`Failed to load profile: ${profileRes.error.message}`);
-  }
   // Null when nothing identifies the account: the eyebrow then drops the name
   // rather than reading "BrickThink - You", while the avatar keeps its initial.
-  const displayName = resolveDisplayName(profileRes.data, user.email);
+  const { displayName, avatarUrl: profileAvatarUrl } = await loadBannerProfile(supabase, user);
   const profileName = displayName ?? 'You';
-  const profileAvatarUrl = profileRes.data?.avatar_url ?? null;
 
   const membershipsRes = await supabase
     .from('org_memberships')
