@@ -151,11 +151,14 @@ test.describe('onboarding walkthrough', () => {
     await expect(signedInPage).toHaveURL(/\/app\/designs\//);
   });
 
-  test('configuration answers survive a device with no local state', async ({ signedInPage }) => {
+  test('configuration answers survive a device with no local state; instruction re-arms', async ({
+    signedInPage,
+  }) => {
     // The fixture user's server config is already completed (sign-in seed).
-    // Simulate a brand-new device by wiping every bt_ cache on each load —
-    // hydration from profiles.onboarding must refill them, so the user is
-    // neither bounced into the wizard nor stripped of their facilitator role.
+    // Simulate a brand-new device (or a devtools localStorage clear) by
+    // wiping every bt_ cache on each load: the ANSWERS hydrate back (no
+    // wizard, facilitator role intact) while the INSTRUCTION layer is
+    // deliberately per-device — the modal and tours re-arm.
     await signedInPage.addInitScript(() => {
       for (const k of Object.keys(window.localStorage)) {
         if (k.startsWith('bt_')) window.localStorage.removeItem(k);
@@ -165,7 +168,8 @@ test.describe('onboarding walkthrough', () => {
 
     await expect(signedInPage).toHaveURL(/\/app\/my-designs/);
     await expect(signedInPage.getByTestId('welcome-flow')).toHaveCount(0);
-    // The modal appearing proves the server role hydrated to facilitator.
+    // The modal appearing proves both halves: role hydrated to facilitator,
+    // and the cleared bt_welcome_seen was NOT refilled from the server.
     await expect(signedInPage.getByTestId('onboarding-welcome-modal')).toBeVisible();
   });
 

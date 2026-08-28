@@ -146,7 +146,7 @@ describe('hydrateOnboardingFromServer', () => {
     expect(localStorage.getItem('bt_fluency')).toBeNull();
   });
 
-  it('writes server truths into the caches — server wins on conflict', () => {
+  it('writes the configuration answers — server wins on conflict', () => {
     localStorage.setItem('bt_role_choice', 'guest');
     hydrateOnboardingFromServer({
       ...EMPTY_ONBOARDING,
@@ -156,10 +156,19 @@ describe('hydrateOnboardingFromServer', () => {
     });
     expect(localStorage.getItem('bt_role_choice')).toBe('facilitator');
     expect(localStorage.getItem('bt_fluency')).toBe('run_before');
-    expect(localStorage.getItem('bt_path_build_done')).toBe('1');
-    expect(localStorage.getItem('bt_path_workshop_done')).toBe('skipped');
+  });
+
+  it('never hydrates the instruction layer — clearing storage re-arms modal and tours', () => {
+    hydrateOnboardingFromServer({
+      ...EMPTY_ONBOARDING,
+      config: { ...EMPTY_ONBOARDING.config, role: 'facilitator' },
+      pathways: { build: 'completed', workshop: 'skipped', session: 'completed' },
+      welcomeDismissedAt: '2026-08-28T10:00:00.000Z',
+    });
+    expect(localStorage.getItem('bt_path_build_done')).toBeNull();
+    expect(localStorage.getItem('bt_path_workshop_done')).toBeNull();
     expect(localStorage.getItem('bt_path_session_done')).toBeNull();
-    expect(localStorage.getItem('bt_welcome_seen')).toBe('1');
+    expect(localStorage.getItem('bt_welcome_seen')).toBeNull();
   });
 
   it('maps a participant role to the guest cache with the sticky flag', () => {
