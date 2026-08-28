@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { inviteParticipantsByEmailAction } from '@/app/(authed)/app/sessions/roster-actions';
 import { rotateJoinCodeAction } from '@/app/(authed)/app/sessions/join-actions';
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
+import { EmailChipInput, splitEmailDraft } from '@/components/session/EmailChipInput';
 
 interface Props {
   sessionId: string;
@@ -31,7 +32,6 @@ export function RosterInviteBlock({ sessionId, joinCode, hiddenResultEmails = []
   const [pending, startTransition] = useTransition();
   const [rotateConfirming, setRotateConfirming] = useState(false);
   const [rotatePending, setRotatePending] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const inviteUrl = `${getSiteUrl()}/app/join/${joinCode}`;
 
@@ -55,47 +55,11 @@ export function RosterInviteBlock({ sessionId, joinCode, hiddenResultEmails = []
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (
-      e.key === 'Enter' ||
-      e.key === ',' ||
-      e.key === ' ' ||
-      (e.key === 'Enter' && e.ctrlKey) ||
-      (e.key === 'Enter' && e.metaKey)
-    ) {
-      e.preventDefault();
-      const value = inputValue.trim();
-      if (value) {
-        // Split by comma or newline if pasted
-        const candidates = value.split(/[,\n]/).map((s) => s.trim());
-        const newEmails = candidates.filter((c) => c && !emails.includes(c));
-        if (newEmails.length > 0) {
-          setEmails([...emails, ...newEmails]);
-          setInputValue('');
-        }
-      }
-    } else if (e.key === 'Backspace' && inputValue === '' && emails.length > 0) {
-      e.preventDefault();
-      setEmails(emails.slice(0, -1));
-    }
-  }
-
-  function removeEmail(email: string) {
-    setEmails(emails.filter((e) => e !== email));
-  }
-
-  // A typed-but-uncommitted address (no Enter/comma yet) still counts:
-  // clicking Send flushes the draft into the list, so the button must not
-  // stay disabled while valid text sits in the input.
-  function draftEmails(): string[] {
-    return inputValue
-      .split(/[,\n]/)
-      .map((s) => s.trim())
-      .filter((c) => c && !emails.includes(c));
-  }
-
   function handleSendInvites() {
-    const toSend = [...emails, ...draftEmails()];
+    // A typed-but-uncommitted address (no Enter/comma yet) still counts:
+    // clicking Send flushes the draft into the list, so the button must not
+    // stay disabled while valid text sits in the input.
+    const toSend = [...emails, ...splitEmailDraft(inputValue, emails)];
     if (toSend.length === 0) return;
 
     startTransition(async () => {
@@ -205,35 +169,13 @@ export function RosterInviteBlock({ sessionId, joinCode, hiddenResultEmails = []
           Anyone with the code can join. Or send a magic-link invite to specific emails.
         </p>
 
-        {/* Chip list + input */}
-        <div className="flex min-h-9 flex-wrap gap-2 rounded-lg border border-zinc-900/10 bg-white p-2">
-          {emails.map((email) => (
-            <div
-              key={email}
-              className="inline-flex items-center gap-1 rounded-md bg-zinc-900/5 px-2 py-1 font-mono text-[11px] text-zinc-700"
-            >
-              <span>{email}</span>
-              <button
-                type="button"
-                onClick={() => removeEmail(email)}
-                aria-label={`Remove ${email}`}
-                className="ml-1 inline-flex h-4 w-4 cursor-pointer items-center justify-center rounded hover:bg-zinc-900/10"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          <input
-            ref={inputRef}
-            type="email"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleInputKeyDown}
-            placeholder={emails.length === 0 ? 'Enter email addresses...' : ''}
-            className="flex-1 bg-white px-2 py-1 font-mono text-[12px] text-zinc-900 placeholder:text-zinc-500 focus:outline-none"
-            autoComplete="off"
-          />
-        </div>
+        {/* Chip list + input (shared with the onboarding configuration flow) */}
+        <EmailChipInput
+          emails={emails}
+          onEmailsChange={setEmails}
+          inputValue={inputValue}
+          onInputValueChange={setInputValue}
+        />
 
         {/* Send button */}
         <button
