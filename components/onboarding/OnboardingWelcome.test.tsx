@@ -26,6 +26,13 @@ vi.mock('@/app/(authed)/app/my-designs/actions', () => ({
   createDesignAction: vi.fn(),
 }));
 
+// markWelcomeSeen / markPathway persist server-side via a fire-and-forget
+// dynamic import; resolve it to mocks so nothing lands after jsdom teardown.
+vi.mock('@/lib/onboarding/actions', () => ({
+  setPathwayOutcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
+  dismissWelcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
+}));
+
 import { OnboardingWelcome } from './OnboardingWelcome';
 
 const createDesignMock = vi.mocked(createDesignAction);

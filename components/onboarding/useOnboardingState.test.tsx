@@ -1,10 +1,21 @@
-import { renderHook, act } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { renderHook, act, cleanup } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+// markPathway / markWelcomeSeen persist server-side via a fire-and-forget
+// dynamic import; resolve it to mocks so nothing lands after jsdom teardown.
+vi.mock('@/lib/onboarding/actions', () => ({
+  setPathwayOutcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
+  dismissWelcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
+}));
 
 import { useOnboardingState, hydrateOnboardingFromServer } from './useOnboardingState';
 import { EMPTY_ONBOARDING } from '@/lib/onboarding/config';
 
 afterEach(() => {
+  // Unmount every hook before the next test: hydrateOnboardingFromServer
+  // broadcasts a sync event, and a still-mounted hook from an earlier test
+  // would schedule a React render that lands after environment teardown.
+  cleanup();
   localStorage.clear();
 });
 
