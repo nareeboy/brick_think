@@ -2,55 +2,47 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useId, useState, useTransition, type ReactNode } from 'react';
 
 import { createDesignAction } from '@/app/(authed)/app/my-designs/actions';
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
 
-import { useOnboardingState, WELCOME_REPRISE_EVENT } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 
 // The pages where the modal proactively reappears (until skipped / all done).
 const HUB_PATHS = ['/app/my-designs', '/app/workshops', '/app/scenarios'];
-
-// How long to let a completion's confetti play before the modal returns.
-const REPRISE_DELAY_MS = 1800;
 
 /**
  * The first-run welcome overlay: three clickable pathway cards (build on your
  * own, set up a workshop, run a session). Mounted ONCE in the authed layout.
  *
- * Shows when either:
- *  - the user is on a hub page (My Designs / Workshops / Scenarios), or
- *  - a pathway was just completed with confetti anywhere in the app (the tour
- *    fires WELCOME_REPRISE_EVENT; after the confetti beat the modal returns to
- *    hand them the next pathway).
+ * Shows on hub pages (My Designs / Workshops / Scenarios) — completions
+ * celebrate in place; the modal returns only on the next hub-page visit.
  *
- * …until the user presses Skip tutorial / X / Esc (`bt_welcome_seen`) or all
- * three pathways are done (`bt_path_*_done`, ticked cards). While a spotlight
- * tour is mid-flight (any `?onboarding=` param) it stays hidden so it never
- * covers its own tours. "Replay walkthrough" clears all of it and starts over.
+ * …until the user presses Skip tutorial / X / Esc (`bt_welcome_seen`), all
+ * three pathways are genuinely completed (the finale, with ticks and a single
+ * "Build together" CTA), or every pathway is terminal (completed or skipped)
+ * without three completions — a skipped pathway never renders as a tick and
+ * never counts toward the finale; the modal then simply stops returning.
+ * While a spotlight tour is mid-flight (any `?onboarding=` param) it stays
+ * hidden so it never covers its own tours. "Replay walkthrough" clears all of
+ * it and starts over.
  */
 interface Props {
   /** Invited session guests never see the modal — its three pathways are
    *  facilitator work. They keep the in-context spotlight tours instead. */
   guest?: boolean;
-  /** Premium `AssistantEntrySlot` (resolved by the authed layout); null in
-   *  open core / when not entitled. Pure presentation — it does not touch
-   *  any onboarding flag, path-done state or URL param. */
-  assistantEntry?: ReactNode;
 }
 
-export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
+export function OnboardingWelcome({ guest = false }: Props) {
   const {
     role,
     welcomeSeen,
     hydrated,
     markWelcomeSeen,
-    markPathDone,
+    markPathway,
     canvasTutorialSeen,
-    pathBuildDone,
-    pathWorkshopDone,
-    pathSessionDone,
+    pathways,
     tutorialGuestSticky,
     roleChoice,
   } = useOnboardingState();
@@ -60,61 +52,45 @@ export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
   const titleId = useId();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const [reprise, setReprise] = useState(false);
   const [confirmSkip, setConfirmSkip] = useState(false);
   const confirmTitleId = useId();
-  const repriseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // A confetti-worthy completion happened somewhere — bring the modal back
-  // after the confetti beat, wherever the user is.
+  // Leave the skip-confirm dialog behind on navigation.
   useEffect(() => {
-    const onReprise = () => {
-      if (repriseTimer.current !== null) clearTimeout(repriseTimer.current);
-      repriseTimer.current = setTimeout(() => setReprise(true), REPRISE_DELAY_MS);
-    };
-    window.addEventListener(WELCOME_REPRISE_EVENT, onReprise);
-    return () => {
-      window.removeEventListener(WELCOME_REPRISE_EVENT, onReprise);
-      if (repriseTimer.current !== null) clearTimeout(repriseTimer.current);
-    };
-  }, []);
-
-  // Navigating resets the reprise — hub pages take over from there. Also
-  // cancel any PENDING reprise timer: it was scheduled on the page where the
-  // completion happened, and letting it fire after a navigation would pop the
-  // modal onto a page mid-flow (e.g. over the canvas tutorial).
-  useEffect(() => {
-    if (repriseTimer.current !== null) {
-      clearTimeout(repriseTimer.current);
-      repriseTimer.current = null;
-    }
-    setReprise(false);
     setConfirmSkip(false);
   }, [pathname]);
 
-  const allDone = pathBuildDone && pathWorkshopDone && pathSessionDone;
+  const allDone =
+    pathways.build === 'completed' &&
+    pathways.workshop === 'completed' &&
+    pathways.session === 'completed';
+  const allTerminal =
+    pathways.build !== 'not_started' &&
+    pathways.workshop !== 'not_started' &&
+    pathways.session !== 'not_started';
   const tourInFlight = searchParams.get('onboarding') !== null;
   const onHubPage = HUB_PATHS.includes(pathname);
   // Never pop over an unfinished canvas tutorial: on a canvas page the modal
-  // waits until the tutorial has been finished or skipped (its completion sets
-  // the flag and fires its own reprise, so the modal still returns afterwards).
+  // waits until the tutorial has been finished or skipped.
   const canvasTutorialPending = pathname.startsWith('/app/designs/') && !canvasTutorialSeen;
 
-  // Note: allDone does NOT hide the modal — it shows one final time (via the
-  // last completion's reprise, or on hub pages) with all three ticks and a
-  // single "Build together" CTA that dismisses it for good.
+  // Note: allDone does NOT hide the modal — it shows one final time on a hub
+  // page with all three ticks and a single "Build together" CTA that
+  // dismisses it for good. Every pathway terminal WITHOUT three genuine
+  // completions is no finale: the modal just stops returning.
   if (
     guest ||
     tutorialGuestSticky ||
     // The tutorial modal is for self-declared facilitators only — until the
-    // RoleChooser has been answered, nothing shows.
+    // role question has been answered, nothing shows.
     roleChoice !== 'facilitator' ||
     !hydrated ||
     role !== 'facilitator' ||
     welcomeSeen ||
+    (allTerminal && !allDone) ||
     tourInFlight ||
     canvasTutorialPending ||
-    (!onHubPage && !reprise)
+    !onHubPage
   ) {
     return null;
   }
@@ -175,7 +151,7 @@ export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
         // already consumed elsewhere (e.g. a session's Create Example Model
         // ran it in detached mode), it can't tick this pathway on the canvas
         // — so going there counts as done right now.
-        if (canvasTutorialSeen) markPathDone('build');
+        if (canvasTutorialSeen) markPathway('build', 'completed');
         router.push(`/app/designs/${id}`);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to create your design');
@@ -233,7 +209,7 @@ export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
             as="button"
             onClick={startBuilding}
             pending={pending}
-            done={pathBuildDone}
+            state={pathways.build}
             testid="onboarding-welcome-card-build"
             title="Start building right away"
             body="Start a building session of your own and get to know the way the application works."
@@ -242,7 +218,7 @@ export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
           <PathwayCard
             as="link"
             href="/app/workshops?onboarding=create-workshop"
-            done={pathWorkshopDone}
+            state={pathways.workshop}
             testid="onboarding-welcome-card-workshop"
             title="Start your first workshop"
             body="Get your workshop ready to facilitate for your remote team."
@@ -251,19 +227,12 @@ export function OnboardingWelcome({ guest = false, assistantEntry }: Props) {
           <PathwayCard
             as="link"
             href={sessionHref}
-            done={pathSessionDone}
+            state={pathways.session}
             testid="onboarding-welcome-card-session"
             title="Start a session"
             body="Understand how to start a group session and the features for breakout rooms."
             art={<SessionArt />}
           />
-        </div>
-
-        <div
-          data-testid="assistant-entry-slot-onboarding"
-          className="mt-5 flex justify-center empty:hidden"
-        >
-          {assistantEntry}
         </div>
 
         {error ? (
@@ -305,7 +274,7 @@ type CardProps = {
   title: string;
   body: string;
   art: ReactNode;
-  done: boolean;
+  state: 'not_started' | 'completed' | 'skipped';
   onClick?: () => void;
 } & (
   | { as: 'link'; href: string; pending?: never }
@@ -326,7 +295,7 @@ function PathwayCard(props: CardProps) {
         <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-600">
           {props.as === 'button' && props.pending ? 'Setting up your canvas…' : props.body}
         </p>
-        {props.done ? (
+        {props.state === 'completed' ? (
           <span
             data-testid={`${props.testid}-done`}
             className="mt-auto flex justify-center pt-4"
@@ -345,6 +314,23 @@ function PathwayCard(props: CardProps) {
               >
                 <path d="M5 12l5 5L20 7" />
               </svg>
+            </span>
+          </span>
+        ) : props.state === 'skipped' ? (
+          // An honest skipped state: visibly registered, deliberately NOT a
+          // tick (a skip never counts toward the finale), still redoable.
+          <span className="mt-auto flex items-center justify-between pt-4">
+            <span
+              data-testid={`${props.testid}-skipped`}
+              className="inline-flex items-center rounded-full border border-zinc-900/10 bg-zinc-900/5 px-2.5 py-1 text-[11px] font-medium text-zinc-500"
+            >
+              Skipped
+            </span>
+            <span
+              aria-hidden="true"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#a8482a] transition-transform duration-200 group-hover:translate-x-0.5"
+            >
+              Go again <span>&rarr;</span>
             </span>
           </span>
         ) : (

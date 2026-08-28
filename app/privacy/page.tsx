@@ -416,6 +416,54 @@ export default function PrivacyPage() {
                 </li>
               </UL>
 
+              <SubHeading>AI processing &mdash; Anthropic (Claude)</SubHeading>
+              <UL>
+                <li>
+                  <Em>Provider:</Em> Anthropic, PBC, 548 Market Street, San Francisco, California
+                  94104, USA (&ldquo;Anthropic&rdquo;).
+                </li>
+                <li>
+                  <Em>Purpose:</Em> Powering the AI features of the hosted Service &mdash;
+                  AI-assisted workshop setup, narration transcript polishing, and AI-generated
+                  session reports. Requests are sent under Brick Think&apos;s own Anthropic account;
+                  you do not need an Anthropic account and no key of yours is involved.
+                </li>
+                <li>
+                  <Em>Data processed:</Em> Only the content needed for the specific feature you
+                  invoke &mdash; for example your assistant messages and the workshop, session and
+                  scenario text they refer to, or a narration transcript being polished. Audio is
+                  never sent or stored; transcription happens in your browser. We do not send your
+                  account credentials or payment details.
+                </li>
+                <li>
+                  <Em>Not used for training:</Em> Requests are made through Anthropic&apos;s
+                  commercial API, whose terms provide that customer content is not used to train
+                  Anthropic&apos;s models.
+                </li>
+                <li>
+                  <Em>Retention:</Em> We store the feature&apos;s output (for example the assistant
+                  conversation or the polished transcript) with your account data. Anthropic retains
+                  API inputs and outputs only for the limited period its commercial terms allow for
+                  abuse prevention, after which they are deleted.
+                </li>
+                <li>
+                  <Em>International transfer:</Em> Anthropic processes this data in the United
+                  States under its standard data protection terms.
+                </li>
+                <li>
+                  <Em>Anthropic&apos;s own privacy policy:</Em>{' '}
+                  <a
+                    href="https://www.anthropic.com/legal/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline-offset-2 hover:underline"
+                  >
+                    anthropic.com/legal/privacy
+                  </a>
+                  .
+                </li>
+              </UL>
+
               <SubHeading>Other third-party services</SubHeading>
               <P>
                 You acknowledge and agree that Brick Think shall not be responsible for any

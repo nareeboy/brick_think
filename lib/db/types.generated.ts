@@ -854,6 +854,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_site_admin: boolean
+          onboarding: Json
           updated_at: string
         }
         Insert: {
@@ -864,6 +865,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_site_admin?: boolean
+          onboarding?: Json
           updated_at?: string
         }
         Update: {
@@ -874,6 +876,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_site_admin?: boolean
+          onboarding?: Json
           updated_at?: string
         }
         Relationships: []
