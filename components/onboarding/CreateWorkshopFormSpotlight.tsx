@@ -3,9 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
 
-import { celebrate } from '@/lib/onboarding/celebrate';
-
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 import { useSpotlightRect } from './useSpotlightRect';
 
 const ONBOARDING_PARAM = 'onboarding';
@@ -50,7 +48,7 @@ const STEPS: Step[] = [
  * up. Clicking the highlighted Create button finishes the tour by stripping
  * the param with a synchronous history.replaceState: the form's own submit is
  * about to router.push to the new workshop, and a router.replace here would
- * race it (the replace-vs-push race the start-model spotlight hit).
+ * race it (a replace-vs-push race between param-strip and navigation).
  */
 export function CreateWorkshopFormSpotlight() {
   const searchParams = useSearchParams();
@@ -60,7 +58,7 @@ export function CreateWorkshopFormSpotlight() {
   const bodyId = useId();
   const maskId = useId();
 
-  const { markPathDone, markSessionTourSeen } = useOnboardingState();
+  const { markPathway, markSessionTourSeen } = useOnboardingState();
   const requested = searchParams.get(ONBOARDING_PARAM) === ONBOARDING_VALUE;
   // Session-pathway detour (see CreateWorkshopSpotlight) — skips tick the
   // session card instead of the workshop card.
@@ -108,20 +106,18 @@ export function CreateWorkshopFormSpotlight() {
     router.replace(strippedUrl(), { scroll: false });
   }, [router, strippedUrl]);
 
-  // The Skip button is a warm exit: the pathway this tour runs FOR ticks as
-  // done (session card on a session-intent detour, workshop card otherwise),
-  // confetti fires, and the welcome modal returns. Esc stays quiet.
+  // The Skip button records an honest skip: it stops the prompting for the
+  // pathway this tour runs FOR (session on a session-intent detour, workshop
+  // otherwise) but never ticks it and never celebrates. Esc stays quiet.
   const skip = useCallback(() => {
     if (sessionIntent) {
-      markPathDone('session');
+      markPathway('session', 'skipped');
       markSessionTourSeen();
     } else {
-      markPathDone('workshop');
+      markPathway('workshop', 'skipped');
     }
-    void celebrate();
-    requestWelcomeReprise();
     finish();
-  }, [sessionIntent, markPathDone, markSessionTourSeen, finish]);
+  }, [sessionIntent, markPathway, markSessionTourSeen, finish]);
 
   // Finish triggered by clicking the highlighted Create button: strip the
   // param synchronously so no competing router navigation exists (see the

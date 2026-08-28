@@ -13,9 +13,11 @@ import {
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 
 interface Step {
+  /** Teaching stop — suppressed for fluent facilitators (certified / run before). */
+  explanatory?: boolean;
   selector: string;
   title: string;
   body: ReactNode;
@@ -28,6 +30,7 @@ function buildSteps(canManageSession: boolean): Step[] {
   return [
     {
       selector: '[data-tour-id="session-header"]',
+      explanatory: true,
       title: 'This is a session',
       body: 'The cards below are stages — different exercises you move through together.',
     },
@@ -67,7 +70,7 @@ interface Props {
 }
 
 export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
-  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathDone } =
+  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathway, fluency } =
     useOnboardingState();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -82,15 +85,20 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
   // mark instead) but this keeps the filter honest if reused later.
   // Memoized on canManageSession to avoid a new array reference every render,
   // which would cause the useLayoutEffect to re-fire needlessly.
+  // Fluency-driven density: certified / run-before facilitators skip the
+  // explanatory stops and keep only the non-obvious controls (timer verbs,
+  // stage renaming). Guidance volume only — nothing is gated.
+  const fluent = fluency === 'certified' || fluency === 'run_before';
   const visibleSteps = useMemo(
     () =>
       buildSteps(canManageSession).filter((step) => {
         if (step.selector === '[data-tour-id="stage-meta-pencil"]' && !canManageSession) {
           return false;
         }
+        if (fluent && step.explanatory) return false;
         return true;
       }),
-    [canManageSession],
+    [canManageSession, fluent],
   );
 
   const active =
@@ -104,16 +112,22 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
     markSessionTourSeen();
   }, [markSessionTourSeen]);
 
-  // Warm exit — completing the tour or clicking Skip tour. The session
-  // pathway ticks on the welcome modal, confetti fires, and the modal
-  // returns afterwards if pathways remain. Esc (and the silent missing-
-  // target advance) use the quiet finish() above instead.
-  const finishWarm = useCallback(() => {
-    markPathDone('session');
+  // Genuine completion — the last step's "Got it". The session pathway ticks
+  // on the welcome modal and confetti fires in place (the modal returns on
+  // the next hub visit). Esc (and the silent missing-target advance) use the
+  // quiet finish() above instead.
+  const finishComplete = useCallback(() => {
+    markPathway('session', 'completed');
     void celebrate();
-    requestWelcomeReprise();
     finish();
-  }, [markPathDone, finish]);
+  }, [markPathway, finish]);
+
+  // The Skip button records an honest skip: it stops the prompting for the
+  // session pathway but never ticks it and never celebrates.
+  const finishSkip = useCallback(() => {
+    markPathway('session', 'skipped');
+    finish();
+  }, [markPathway, finish]);
 
   // Track the target every frame so the cut-out stays glued to it through
   // hydration and layout shifts — e.g. late-mounting siblings above the
@@ -245,7 +259,7 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
         <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
-            onClick={finishWarm}
+            onClick={finishSkip}
             data-testid="onboarding-spotlight-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >
@@ -256,8 +270,8 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
             type="button"
             onClick={() => {
               if (isLast) {
-                // Genuine completion — tick + confetti + modal reprise.
-                finishWarm();
+                // Genuine completion — tick + confetti in place.
+                finishComplete();
                 return;
               }
               setRect(null);

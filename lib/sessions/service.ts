@@ -1,6 +1,7 @@
 import { type ActionResult, fail, ok } from '@/lib/actions/result';
 import type { ServerSupabaseClient } from '@/lib/db/server';
 import { isUuid } from '@/lib/db/uuid';
+import { applyOnboardingToFirstSession } from '@/lib/onboarding/firstSession';
 import { STAGE_DEFAULT_DURATIONS_SECONDS } from '@/lib/sessions/stage-labels';
 import {
   CANONICAL_STAGE_TYPES,
@@ -60,7 +61,19 @@ export async function createSessionWithStages(input: {
     throw new Error(`Failed to create session: ${createRes.error?.message ?? 'unknown'}`);
   }
 
-  return ok({ sessionId: createRes.data as string });
+  const sessionId = createRes.data as string;
+
+  // First-session sugar from the configuration flow: purpose-mapped scenario
+  // pre-assignment + brief pre-fill, and dispatch of queued invites. One-shot
+  // (self-marking flags), a no-op for everyone else, and never allowed to
+  // fail the creation.
+  await applyOnboardingToFirstSession({
+    supabase: input.supabase,
+    userId: input.userId,
+    sessionId,
+  });
+
+  return ok({ sessionId });
 }
 
 export type RenameSessionFailure = 'invalid_session' | 'invalid_title' | 'not_found';

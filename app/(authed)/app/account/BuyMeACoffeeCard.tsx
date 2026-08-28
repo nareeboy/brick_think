@@ -7,7 +7,7 @@ export function BuyMeACoffeeCard() {
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Tip jar</p>
         <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">Buy me a coffee</h2>
         <p className="text-[12px] text-zinc-500">
-          BrickThink is free and always will be. If it&rsquo;s saved you time, a coffee keeps the
+          The platform is free and open source. If it&rsquo;s saved you time, a coffee keeps the
           lights on and is genuinely appreciated.
         </p>
       </div>
