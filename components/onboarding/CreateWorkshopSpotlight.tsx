@@ -3,9 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useId, useState } from 'react';
 
-import { celebrate } from '@/lib/onboarding/celebrate';
-
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 import { useSpotlightRect } from './useSpotlightRect';
 
 const TARGET_SELECTOR = '[data-tour-id="new-workshop-button"]';
@@ -27,7 +25,7 @@ export function CreateWorkshopSpotlight() {
   const bodyId = useId();
   const maskId = useId();
 
-  const { markPathDone, markSessionTourSeen } = useOnboardingState();
+  const { markPathway, markSessionTourSeen } = useOnboardingState();
   const requested = searchParams.get(ONBOARDING_PARAM) === ONBOARDING_VALUE;
   // Session-pathway detour: the user clicked "Start a session" with no
   // workshop yet, so this tour is running on the session card's behalf.
@@ -51,23 +49,21 @@ export function CreateWorkshopSpotlight() {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
 
-  // The Skip button is a warm exit: the pathway this tour is running FOR
-  // ticks as done (the session card on a session-intent detour, otherwise
-  // the workshop card), confetti fires, and the welcome modal returns.
-  // Esc stays quiet.
+  // The Skip button records an honest skip: it stops the prompting for the
+  // pathway this tour is running FOR (the session pathway on a session-intent
+  // detour, otherwise the workshop pathway) but never ticks it as done and
+  // never celebrates. Esc stays quiet (no state at all).
   const skip = useCallback(() => {
     if (sessionIntent) {
-      markPathDone('session');
+      markPathway('session', 'skipped');
       // Opting out of the session teaching — the session page's stage tour
       // shouldn't ambush them later either.
       markSessionTourSeen();
     } else {
-      markPathDone('workshop');
+      markPathway('workshop', 'skipped');
     }
-    void celebrate();
-    requestWelcomeReprise();
     quietExit();
-  }, [sessionIntent, markPathDone, markSessionTourSeen, quietExit]);
+  }, [sessionIntent, markPathway, markSessionTourSeen, quietExit]);
 
   useEffect(() => {
     if (!active) return;

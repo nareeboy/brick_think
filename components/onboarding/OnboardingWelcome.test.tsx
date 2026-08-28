@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 
 import { createDesignAction } from '@/app/(authed)/app/my-designs/actions';
 
@@ -24,6 +24,14 @@ vi.mock('next/navigation', () => ({
 // The server action hits Supabase — always mocked in component tests.
 vi.mock('@/app/(authed)/app/my-designs/actions', () => ({
   createDesignAction: vi.fn(),
+}));
+
+// markWelcomeSeen / markPathway persist server-side via a fire-and-forget
+// dynamic import; resolve it to mocks so nothing lands after jsdom teardown.
+vi.mock('@/lib/onboarding/actions', () => ({
+  setPathwayOutcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
+  dismissWelcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
+  saveOnboardingConfig: vi.fn().mockResolvedValue({ ok: true, data: null }),
 }));
 
 import { OnboardingWelcome } from './OnboardingWelcome';
@@ -53,11 +61,10 @@ describe('OnboardingWelcome', () => {
     expect(screen.getByText('Start a session')).toBeTruthy();
   });
 
-  it('renders the assistant entry under the pathway cards when given', async () => {
-    render(<OnboardingWelcome assistantEntry={<a href="/app/assistant">Set up with AI</a>} />);
-    expect(await screen.findByRole('link', { name: /set up with ai/i })).toBeTruthy();
-    // Still three pathway cards — the entry is an addition, not a fourth path.
-    expect(screen.getByTestId('onboarding-welcome-card-workshop')).toBeTruthy();
+  it('offers no AI entry — onboarding surfaces never offer AI setup', async () => {
+    render(<OnboardingWelcome />);
+    await screen.findByTestId('onboarding-welcome-modal');
+    expect(screen.queryByTestId('assistant-entry-slot-onboarding')).toBeNull();
   });
 
   it('does not render once the welcome flag is set', async () => {
@@ -105,28 +112,24 @@ describe('OnboardingWelcome', () => {
   it('stays hidden on a canvas page until the canvas tutorial has been seen', async () => {
     mockPathname = '/app/designs/design-1';
     render(<OnboardingWelcome />);
-    // Reprise fires, but the canvas tutorial has not been seen — stay hidden.
-    vi.useFakeTimers();
-    act(() => {
-      window.dispatchEvent(new Event('bt-welcome-reprise'));
-      vi.advanceTimersByTime(2000);
-    });
-    vi.useRealTimers();
     await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
   });
 
-  it('reprises off-hub after a completion event once the confetti beat passes', async () => {
-    mockPathname = '/app/sessions/session-1';
-    localStorage.setItem('bt_canvas_tutorial_seen', '1');
+  it('a skipped pathway never renders as a tick', async () => {
+    localStorage.setItem('bt_path_build_done', 'skipped');
+    render(<OnboardingWelcome />);
+    await screen.findByTestId('onboarding-welcome-modal');
+    expect(screen.queryByTestId('onboarding-welcome-card-build-done')).toBeNull();
+  });
+
+  it('stops returning once every pathway is terminal without three completions (no finale)', async () => {
+    localStorage.setItem('bt_path_build_done', '1');
+    localStorage.setItem('bt_path_workshop_done', 'skipped');
+    localStorage.setItem('bt_path_session_done', '1');
     render(<OnboardingWelcome />);
     await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
-    vi.useFakeTimers();
-    act(() => {
-      window.dispatchEvent(new Event('bt-welcome-reprise'));
-      vi.advanceTimersByTime(2000);
-    });
-    vi.useRealTimers();
-    expect(await screen.findByTestId('onboarding-welcome-modal')).toBeTruthy();
+    // No finale either — the Build together CTA is part of the modal.
+    expect(screen.queryByTestId('onboarding-welcome-build-together')).toBeNull();
   });
 
   it('pathway cards link to their tours and do NOT dismiss the modal', async () => {

@@ -5,13 +5,15 @@ import { useCallback, useEffect, useId, useState } from 'react';
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 import { useSpotlightRect } from './useSpotlightRect';
 
 const ONBOARDING_PARAM = 'onboarding';
 const ONBOARDING_VALUE = 'workshop-tour';
 
 interface Step {
+  /** Teaching stop — suppressed for fluent facilitators (certified / run before). */
+  explanatory?: boolean;
   selector: string;
   title: string;
   body: string;
@@ -27,16 +29,19 @@ const STEPS: Step[] = [
   },
   {
     selector: '[data-tour-id="sessions-container"]',
+    explanatory: true,
     title: 'Your sessions live here',
     body: 'Every session in this workshop is listed here. Open one to run its stages, follow the timers, and see everyone’s models.',
   },
   {
     selector: '[data-tour-id="add-member-button"]',
+    explanatory: true,
     title: 'Invite your team',
     body: 'Add members by email so they can join your sessions and see the workshop’s shared designs.',
   },
   {
     selector: '[data-tour-id="members-container"]',
+    explanatory: true,
     title: 'Who’s in this workshop',
     body: 'Everyone with access appears here with their role. Admins can add or remove people at any time.',
   },
@@ -55,16 +60,27 @@ const GAP = 16;
 const TOOLTIP_H_EST = 190;
 
 /**
- * Guided tour of the workshop page, chained from the create-workshop form
- * spotlight (`?onboarding=workshop-tour` on the redirect after creation).
+ * Guided tour of the workshop page. Fires on the first visit to any workshop
+ * page (own seen-flag, like the session tour) and via the chained
+ * `?onboarding=workshop-tour` param (redirect after creation).
  * Completing the last step fires confetti and ticks the welcome modal's
- * workshop pathway; Skip/Esc dismiss without either.
+ * workshop pathway; Skip records an honest skip (no tick, no confetti); Esc
+ * dismisses without any state change.
  */
 export function WorkshopPageTour() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { markPathDone } = useOnboardingState();
+  const {
+    markPathway,
+    hydrated,
+    role,
+    roleChoice,
+    tutorialGuestSticky,
+    workshopTourSeen,
+    markWorkshopTourSeen,
+    fluency,
+  } = useOnboardingState();
   const titleId = useId();
   const bodyId = useId();
   const maskId = useId();
@@ -73,8 +89,27 @@ export function WorkshopPageTour() {
   const [dismissed, setDismissed] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
-  const active = requested && !dismissed && stepIndex < STEPS.length;
-  const step = active ? STEPS[stepIndex]! : null;
+  // First visit to any workshop page re-arms the tour (own seen-flag, like
+  // the session tour); the ?onboarding=workshop-tour param still forces it.
+  // Guests never get it auto-fired, and it stays out of the way while a
+  // DIFFERENT chained tour owns the page (e.g. ?onboarding=create-session).
+  const otherTourInFlight = searchParams.get(ONBOARDING_PARAM) !== null && !requested;
+  const firstVisit =
+    hydrated &&
+    !workshopTourSeen &&
+    !otherTourInFlight &&
+    role === 'facilitator' &&
+    roleChoice !== 'guest' &&
+    !tutorialGuestSticky;
+
+  // Fluency-driven density: certified / run-before facilitators skip the
+  // explanatory stops and keep only the non-obvious controls. Guidance
+  // volume only — nothing is gated.
+  const fluent = fluency === 'certified' || fluency === 'run_before';
+  const steps = fluent ? STEPS.filter((s) => !s.explanatory) : STEPS;
+
+  const active = (requested || firstVisit) && !dismissed && stepIndex < steps.length;
+  const step = active ? steps[stepIndex]! : null;
   const rect = useSpotlightRect(step ? step.selector : null, active);
 
   useEffect(() => {
@@ -93,24 +128,31 @@ export function WorkshopPageTour() {
 
   const complete = useCallback(() => {
     setDismissed(true);
-    // Warm exit (finishing or the Skip button): tick the welcome modal's
-    // workshop card, celebrate, and let the modal return after the confetti
-    // if pathways remain. Esc stays quiet (see the keydown handler).
-    markPathDone('workshop');
+    markWorkshopTourSeen();
+    // Genuine completion: tick the welcome modal's workshop card and
+    // celebrate in place (the modal returns on the next hub visit).
+    markPathway('workshop', 'completed');
     void celebrate();
-    requestWelcomeReprise();
     stripParam();
-  }, [markPathDone, stripParam]);
+  }, [markPathway, markWorkshopTourSeen, stripParam]);
 
-  const skip = complete;
+  // The Skip button records an honest skip: it stops the prompting but never
+  // ticks the pathway and never celebrates. Esc stays quiet (no state).
+  const skip = useCallback(() => {
+    setDismissed(true);
+    markWorkshopTourSeen();
+    markPathway('workshop', 'skipped');
+    stripParam();
+  }, [markPathway, markWorkshopTourSeen, stripParam]);
 
   const quietExit = useCallback(() => {
     setDismissed(true);
+    markWorkshopTourSeen();
     stripParam();
-  }, [stripParam]);
+  }, [markWorkshopTourSeen, stripParam]);
 
   const goNext = useCallback(() => {
-    if (stepIndex + 1 >= STEPS.length) complete();
+    if (stepIndex + 1 >= steps.length) complete();
     else setStepIndex((i) => i + 1);
   }, [stepIndex, complete]);
 
@@ -118,16 +160,17 @@ export function WorkshopPageTour() {
     setStepIndex((i) => Math.max(0, i - 1));
   }, []);
 
-  // Silent-skip a step whose target never renders (finishing past the end
-  // still counts as completion — the user saw every step that exists).
+  // Silent-skip a step whose target never renders. Skipping past the end is
+  // a quiet exit — a missing target is not the user finishing the tour, so
+  // it never ticks the pathway or celebrates.
   useEffect(() => {
     if (!active || rect) return;
     const t = setTimeout(() => {
-      if (stepIndex + 1 >= STEPS.length) complete();
+      if (stepIndex + 1 >= steps.length) quietExit();
       else setStepIndex((i) => i + 1);
     }, SKIP_AFTER_MS);
     return () => clearTimeout(t);
-  }, [active, rect, stepIndex, complete]);
+  }, [active, rect, stepIndex, quietExit]);
 
   useEffect(() => {
     if (!active) return;
@@ -168,7 +211,7 @@ export function WorkshopPageTour() {
   }
 
   const isFirst = stepIndex === 0;
-  const isLast = stepIndex === STEPS.length - 1;
+  const isLast = stepIndex === steps.length - 1;
 
   return (
     <div data-testid="workshop-page-tour" className="pointer-events-none fixed inset-0 z-30">
@@ -201,7 +244,7 @@ export function WorkshopPageTour() {
         className="pointer-events-auto absolute rounded-2xl bg-white p-5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]"
       >
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Step {stepIndex + 1} of {STEPS.length}
+          Step {stepIndex + 1} of {steps.length}
         </p>
         <h2 id={titleId} className="mt-1 text-[16px] font-semibold tracking-tight text-zinc-950">
           {step.title}

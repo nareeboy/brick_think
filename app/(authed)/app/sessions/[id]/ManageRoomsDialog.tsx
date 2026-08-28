@@ -4,6 +4,8 @@ import { useEffect, useId, useMemo, useRef, useState, useTransition } from 'reac
 import { useRouter } from 'next/navigation';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
+import { readGroupSizeChoice } from '@/components/onboarding/useOnboardingState';
+import { suggestedRoomCount } from '@/lib/sessions/limits';
 
 import { setSharedModelRooms, type StageRoomError } from '../stage-room-actions';
 
@@ -56,9 +58,18 @@ function errorMessage(code: StageRoomError): string {
 }
 
 export function ManageRoomsDialog({ stageId, orgMembers, initialRooms, onClose }: Props) {
-  const [rooms, setRooms] = useState<RoomDraft[]>(() =>
-    initialRooms.length > 0 ? initialRooms : [{ id: null, title: '', memberIds: [] }],
-  );
+  const [rooms, setRooms] = useState<RoomDraft[]>(() => {
+    if (initialRooms.length > 0) return initialRooms;
+    // First-time partition: seed the configuration flow's suggested room
+    // count as empty rows (a suggestion only — saving is still the
+    // facilitator's explicit act, and rows can be removed).
+    const suggested = suggestedRoomCount(readGroupSizeChoice());
+    return Array.from({ length: Math.max(1, suggested) }, () => ({
+      id: null,
+      title: '',
+      memberIds: [],
+    }));
+  });
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
