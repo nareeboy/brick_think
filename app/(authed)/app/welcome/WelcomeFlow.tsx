@@ -440,10 +440,35 @@ function ChipGroup<T extends string>({
   );
 }
 
+// Gentle, functional motion only: the floating brick settles toward the
+// stack (a placement hint) and the loose bricks drift slightly, all on slow
+// ease-in-out loops. Neutralised wholesale for prefers-reduced-motion by the
+// global reset in globals.css.
+const ILLUSTRATION_CSS = `
+@keyframes bt-welcome-brick-settle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
+@keyframes bt-welcome-brick-drift {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes bt-welcome-dash-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+.bt-welcome-settle { animation: bt-welcome-brick-settle 4.5s ease-in-out infinite; }
+.bt-welcome-dash { animation: bt-welcome-dash-pulse 4.5s ease-in-out infinite; }
+.bt-welcome-drift { animation: bt-welcome-brick-drift 7s ease-in-out infinite; }
+.bt-welcome-drift-2 { animation-delay: -2.3s; }
+.bt-welcome-drift-3 { animation-delay: -4.6s; }
+`;
+
 /** Abstract brick-and-canvas illustration in the original asset style. */
 function WelcomeIllustration() {
   return (
     <svg viewBox="0 0 360 300" className="h-auto w-[70%] max-w-[420px]" aria-hidden="true">
+      <style>{ILLUSTRATION_CSS}</style>
       {/* canvas frame */}
       <rect x="60" y="30" width="240" height="160" rx="14" fill="white" opacity="0.85" />
       <rect
@@ -473,28 +498,35 @@ function WelcomeIllustration() {
         <rect x="186" y="138" width="16" height="8" rx="3" fill="#d8d3cd" />
       </g>
       {/* floating brick being placed */}
-      <g>
+      <g className="bt-welcome-settle">
         <rect x="216" y="46" width="56" height="22" rx="5" fill="#a8482a" />
         <rect x="224" y="39" width="14" height="7" rx="3" fill="#a8482a" />
         <rect x="246" y="39" width="14" height="7" rx="3" fill="#a8482a" />
-        <path
-          d="M244 74v12"
-          stroke="#9a4a2c"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeDasharray="3 6"
-        />
       </g>
+      <path
+        className="bt-welcome-dash"
+        d="M244 74v12"
+        stroke="#9a4a2c"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray="3 6"
+      />
       {/* loose bricks below the canvas */}
-      <rect x="70" y="228" width="64" height="24" rx="5" fill="#5f7d72" />
-      <rect x="78" y="220" width="15" height="8" rx="3" fill="#5f7d72" />
-      <rect x="102" y="220" width="15" height="8" rx="3" fill="#5f7d72" />
-      <rect x="160" y="244" width="80" height="24" rx="5" fill="#cbb9ad" />
-      <rect x="168" y="236" width="15" height="8" rx="3" fill="#cbb9ad" />
-      <rect x="192" y="236" width="15" height="8" rx="3" fill="#cbb9ad" />
-      <rect x="250" y="222" width="52" height="24" rx="5" fill="#a8482a" />
-      <rect x="258" y="214" width="14" height="8" rx="3" fill="#a8482a" />
-      <rect x="280" y="214" width="14" height="8" rx="3" fill="#a8482a" />
+      <g className="bt-welcome-drift">
+        <rect x="70" y="228" width="64" height="24" rx="5" fill="#5f7d72" />
+        <rect x="78" y="220" width="15" height="8" rx="3" fill="#5f7d72" />
+        <rect x="102" y="220" width="15" height="8" rx="3" fill="#5f7d72" />
+      </g>
+      <g className="bt-welcome-drift bt-welcome-drift-2">
+        <rect x="160" y="244" width="80" height="24" rx="5" fill="#cbb9ad" />
+        <rect x="168" y="236" width="15" height="8" rx="3" fill="#cbb9ad" />
+        <rect x="192" y="236" width="15" height="8" rx="3" fill="#cbb9ad" />
+      </g>
+      <g className="bt-welcome-drift bt-welcome-drift-3">
+        <rect x="250" y="222" width="52" height="24" rx="5" fill="#a8482a" />
+        <rect x="258" y="214" width="14" height="8" rx="3" fill="#a8482a" />
+        <rect x="280" y="214" width="14" height="8" rx="3" fill="#a8482a" />
+      </g>
     </svg>
   );
 }
