@@ -3,9 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useId, useLayoutEffect, useState } from 'react';
 
-import { celebrate } from '@/lib/onboarding/celebrate';
-
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 
 const TARGET_SELECTOR = '[data-tour-id="create-session-button"]';
 const ONBOARDING_PARAM = 'onboarding';
@@ -32,7 +30,7 @@ export function CreateSessionSpotlight() {
   const bodyId = useId();
   const maskId = useId();
 
-  const { markPathDone, markSessionTourSeen } = useOnboardingState();
+  const { markPathway, markSessionTourSeen } = useOnboardingState();
   const requested = searchParams.get(ONBOARDING_PARAM) === ONBOARDING_VALUE;
   const [dismissed, setDismissed] = useState(false);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -98,14 +96,14 @@ export function CreateSessionSpotlight() {
     // welcome modal's session card.
     const onTargetClick = () => {
       setDismissed(true);
-      markPathDone('session');
+      markPathway('session', 'completed');
     };
     el.addEventListener('click', onTargetClick);
     return () => {
       cancelAnimationFrame(rafId);
       el.removeEventListener('click', onTargetClick);
     };
-  }, [active, dismiss, markPathDone]);
+  }, [active, dismiss, markPathway]);
 
   useEffect(() => {
     if (!active) return;
@@ -179,15 +177,13 @@ export function CreateSessionSpotlight() {
           <button
             type="button"
             onClick={() => {
-              // Warm exit: the session pathway ticks as done, confetti fires,
-              // and the welcome modal returns. Skipping here opts out of the
-              // session teaching entirely, so the session page's stage tour is
-              // marked seen too — it won't ambush them on a later visit.
-              // Esc stays quiet.
-              markPathDone('session');
+              // Honest skip: stops the prompting for the session pathway but
+              // never ticks it and never celebrates. Opting out of the session
+              // teaching entirely, so the session page's stage tour is marked
+              // seen too — it won't ambush them on a later visit. Esc stays
+              // quiet (no state at all).
+              markPathway('session', 'skipped');
               markSessionTourSeen();
-              void celebrate();
-              requestWelcomeReprise();
               dismiss(true);
             }}
             data-testid="create-session-spotlight-skip"

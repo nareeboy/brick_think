@@ -11,6 +11,7 @@ import type { CombinedNarration } from '@/lib/sessions/modelNarration';
 import { TranscriptViewModal } from '@/components/session/TranscriptViewModal';
 import { StageExpiryBanner } from '@/components/session/StageExpiryBanner';
 import { useSessionStagesContext } from '@/components/session/SessionStagesProvider';
+import { useOnboardingState } from '@/components/onboarding/useOnboardingState';
 import type { StageRow as LiveStageRow } from '@/components/session/useSessionStages';
 import { useSessionModelsRealtime } from '@/components/session/useSessionModelsRealtime';
 import { useNarrationSavedRefresh } from '@/components/session/narrationRealtime';
@@ -167,6 +168,10 @@ export function SessionStages({
 }: SessionStagesProps) {
   const { stages, session } = useSessionStagesContext();
   const nowMs = useNowMs();
+  // Method explainer for facilitators still learning LSP (read-about / new
+  // fluency): a quiet link on each stage card. Guidance volume only.
+  const { fluency, hydrated: onboardingHydrated } = useOnboardingState();
+  const showMethodLink = onboardingHydrated && (fluency === 'read_about' || fluency === 'new');
   const { lastUpdatedAt } = useSessionModelsRealtime(sessionId);
   // Live-refresh a participant's room assignment so the "Open my room" button
   // appears the moment the facilitator partitions rooms — no manual refresh.
@@ -198,6 +203,7 @@ export function SessionStages({
               lastUpdatedAt={lastUpdatedAt}
               orgMembers={orgMembers}
               currentUserId={currentUserId}
+              showMethodLink={showMethodLink}
               vm={viewModelByStageId.get(stage.id) ?? { stageId: stage.id, ...EMPTY_VIEW_MODEL }}
             />
           ))}
@@ -220,6 +226,7 @@ function StageRow({
   lastUpdatedAt,
   orgMembers,
   currentUserId,
+  showMethodLink,
   vm,
 }: {
   stage: LiveStageRow;
@@ -234,6 +241,7 @@ function StageRow({
   lastUpdatedAt: Map<string, number>;
   orgMembers: OrgMemberSummary[];
   currentUserId: string;
+  showMethodLink: boolean;
   vm: StageViewModel;
 }) {
   const { participants, rooms, upstreamRooms, upstreamStageType, myRoomId, pickedScenario } = vm;
@@ -276,6 +284,17 @@ function StageRow({
               Stage {stage.position + 1}
             </span>
             <StatusPill status={status} />
+            {showMethodLink ? (
+              <a
+                href="/what-is-lsp"
+                target="_blank"
+                rel="noreferrer"
+                data-testid="stage-method-link"
+                className="text-[11px] font-medium text-[#a8482a] underline-offset-4 hover:underline"
+              >
+                About the method
+              </a>
+            ) : null}
           </div>
           <div className="mt-1.5">
             <StageMetaEditor

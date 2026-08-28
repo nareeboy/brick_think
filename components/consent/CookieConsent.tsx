@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Script from 'next/script';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import { ModalBackdrop } from '@/components/app/ModalBackdrop';
@@ -16,10 +17,19 @@ import {
 
 type Mode = 'hidden' | 'banner' | 'preferences';
 
+// The first-run configuration flow renders with no chrome at all — the
+// consent banner waits for the next page rather than covering it (an
+// explicitly opened preferences dialog still shows).
+const BANNER_SUPPRESSED_PREFIXES = ['/app/welcome', '/app/choose-role'];
+
 export function CookieConsent() {
   const [mounted, setMounted] = useState(false);
   const [decision, setDecision] = useState<ConsentDecision | null>(null);
   const [mode, setMode] = useState<Mode>('hidden');
+  const pathname = usePathname() ?? '';
+  const bannerSuppressed = BANNER_SUPPRESSED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -49,7 +59,7 @@ export function CookieConsent() {
 
   return (
     <>
-      {mode !== 'hidden' && (
+      {mode !== 'hidden' && !(mode === 'banner' && bannerSuppressed) && (
         <ConsentCard
           mode={mode}
           currentAnalytics={decision?.analytics ?? false}

@@ -47,9 +47,9 @@ function notFound(): NextResponse {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!isEnabled(request)) return notFound();
 
-  let body: { email?: unknown };
+  let body: { email?: unknown; onboarding?: unknown };
   try {
-    body = (await request.json()) as { email?: unknown };
+    body = (await request.json()) as { email?: unknown; onboarding?: unknown };
   } catch {
     return NextResponse.json({ error: 'invalid_json' }, { status: 400 });
   }
@@ -105,9 +105,44 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // Server-side onboarding state for the test user. Default: a completed
+  // configuration (facilitator, no purpose, no pending invites) so every
+  // spec sees a returning user and the /app/welcome wizard never appears —
+  // the server-side twin of suppressFirstRunOverlays(). Pass
+  // `onboarding: 'fresh'` to get a virgin config for wizard specs.
+  const userId = verifyRes.data.user?.id ?? null;
+  if (userId) {
+    const onboarding =
+      body.onboarding === 'fresh'
+        ? {}
+        : {
+            v: 1,
+            config: {
+              completed_at: new Date().toISOString(),
+              role: 'facilitator',
+              fluency: null,
+              purpose: 'not_sure',
+              group_size: null,
+              pending_invites: [],
+              purpose_applied: false,
+              invites_dispatched: false,
+            },
+            pathways: { build: 'not_started', workshop: 'not_started', session: 'not_started' },
+            welcome_dismissed_at: null,
+            events: [],
+          };
+    const upd = await admin.from('profiles').update({ onboarding }).eq('id', userId);
+    if (upd.error) {
+      return NextResponse.json(
+        { error: 'onboarding_seed_failed', detail: upd.error.message },
+        { status: 500 },
+      );
+    }
+  }
+
   return NextResponse.json({
     ok: true,
-    userId: verifyRes.data.user?.id ?? null,
+    userId,
     email,
   });
 }

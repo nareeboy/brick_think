@@ -16,9 +16,9 @@ interface Props {
 }
 
 /**
- * Renders nothing. Sends first-run users from a hub page to /app/choose-role
+ * Renders nothing. Sends first-run users from a hub page to /app/welcome
  * until the role question (`bt_role_choice`) has been answered. The page
- * itself hosts the two-card choice (RoleChooserCards).
+ * itself hosts the five-step configuration flow (WelcomeFlow).
  */
 export function RoleChooserRedirect({ guest = false }: Props) {
   const { role, hydrated, welcomeSeen, roleChoice, tutorialGuestSticky } = useOnboardingState();
@@ -40,7 +40,7 @@ export function RoleChooserRedirect({ guest = false }: Props) {
     HUB_PATHS.includes(pathname);
 
   useEffect(() => {
-    if (needsChoice) router.replace('/app/choose-role');
+    if (needsChoice) router.replace('/app/welcome');
   }, [needsChoice, router]);
 
   return null;

@@ -10,13 +10,15 @@ import { PresenceHeartbeat } from '@/components/app/PresenceHeartbeat';
 import { getGlobalRole } from '@/lib/account/globalRole';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
+import { OnboardingHydrator } from '@/components/onboarding/OnboardingHydrator';
 import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome';
 import { RoleChooserRedirect } from '@/components/onboarding/RoleChooserRedirect';
 import { isTutorialGuest } from '@/lib/onboarding/guestGate';
+import { normaliseOnboarding } from '@/lib/onboarding/config';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { AssistantEntrySlot, ChatWidgetSlot } from '@/lib/premium/server-slots';
+import { ChatWidgetSlot } from '@/lib/premium/server-slots';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +40,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, is_site_admin')
+    .select('full_name, email, is_site_admin, onboarding')
     .eq('id', user.id)
     .single();
 
@@ -58,6 +60,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
     fullName !== null && emailLocalPart !== null && fullName.toLowerCase() === emailLocalPart;
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const isSiteAdmin = profileRes.data?.is_site_admin === true;
+  const onboarding = normaliseOnboarding(profileRes.data?.onboarding);
   const [role, navSessions, initialNotifications, tutorialGuest] = await Promise.all([
     getGlobalRole(supabase, user.id),
     getMyActiveSessionsForNav(supabase, user.id),
@@ -85,17 +88,16 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
         </HideOnChromelessRoutes>
         <PresenceHeartbeat />
         {/* Global welcome/tutorial modal — decides for itself when to show
-            (hub pages, or the reprise after a pathway completes). Invited
-            guests never see it; they still get the in-context spotlight
-            tours (session page + canvas). */}
+            (hub pages only; completions celebrate in place). Invited guests
+            never see it; they still get the in-context spotlight tours
+            (session page + canvas). No AI entry here: onboarding surfaces
+            never offer AI setup. */}
+        <OnboardingHydrator state={onboarding} />
         <Suspense fallback={null}>
           <RoleChooserRedirect guest={tutorialGuest} />
         </Suspense>
         <Suspense fallback={null}>
-          <OnboardingWelcome
-            guest={tutorialGuest}
-            assistantEntry={<AssistantEntrySlot profileId={user.id} />}
-          />
+          <OnboardingWelcome guest={tutorialGuest} />
         </Suspense>
       </div>
     </NotificationsProvider>

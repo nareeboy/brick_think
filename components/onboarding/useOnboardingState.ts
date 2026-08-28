@@ -2,46 +2,46 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import type { OnboardingServerState } from '@/lib/onboarding/config';
+
 export type OnboardingRole = 'facilitator' | 'participant';
 
 const KEYS = {
   role: 'bt_onboarding_role',
   welcomeSeen: 'bt_welcome_seen',
-  checklistComplete: 'bt_checklist_complete',
-  checklistDismissed: 'bt_checklist_dismissed',
   sessionTourSeen: 'bt_session_tour_seen',
-  // Set by replayAll(). While present, the FacilitatorChecklist re-shows its
-  // three steps (driven by real progress) even for a user who has already
-  // completed the funnel — so "Replay walkthrough" shows the steps instead of
-  // bouncing straight to the "complete" card.
-  walkthroughReplay: 'bt_walkthrough_replay',
-  // JSON array of the checklist steps ('org' | 'session' | 'model') that have
-  // already had their per-step confetti. Owned by FacilitatorChecklist, but
-  // registered here so it participates in cross-tab sync and is cleared by
-  // replayAll() (which re-arms every step for a replayed walkthrough).
-  checklistCelebrated: 'bt_checklist_celebrated',
-  // JSON snapshot of the user's entity counts captured at replay start, so a
-  // replayed checklist shows empty and only ticks a step once a NEW workshop /
-  // session / model is created beyond that baseline. Owned by
-  // FacilitatorChecklist; cleared by replayAll() (re-capture) and on dismiss.
-  checklistBaseline: 'bt_checklist_baseline',
   // First-visit canvas-builder spotlight tutorial. Set when the user finishes
   // or skips the tutorial; cleared by replayAll() so "Replay walkthrough"
   // re-triggers it. Gated on this flag ALONE (not role) so participants see it.
   canvasTutorialSeen: 'bt_canvas_tutorial_seen',
-  // Welcome-modal pathway completion. The modal keeps reappearing on the hub
-  // pages (My Designs / Workshops / Scenarios) until the user skips it or all
-  // three pathways are done. Each flag is set at that pathway's genuine
-  // completion moment: build = finishing (not skipping) the canvas tutorial,
-  // workshop = clicking Create workshop through the form spotlight, session =
-  // clicking Create session through its spotlight. Cleared by replayAll().
+  // First-visit workshop page tour (5 stops). Set when the tour exits any
+  // way (complete / skip / quiet), so it fires once per device like the
+  // session tour; ?onboarding=workshop-tour still forces a replay. Cleared
+  // by replayAll().
+  workshopTourSeen: 'bt_workshop_tour_seen',
+  // Welcome-modal pathway state: '1' = genuinely completed, 'skipped' = the
+  // user skipped that tour (stops the prompting, never renders as a tick,
+  // never counts toward the finale), absent = not started. Completion is the
+  // pathway's genuine moment: build = finishing the canvas tutorial, workshop
+  // = completing the workshop page tour, session = clicking Create session
+  // through its spotlight. Local mirror of profiles.onboarding pathways
+  // (server wins via OnboardingHydrator). Cleared by replayAll().
   pathBuildDone: 'bt_path_build_done',
   pathWorkshopDone: 'bt_path_workshop_done',
   pathSessionDone: 'bt_path_session_done',
-  // Explicit first-run role choice ('facilitator' | 'guest') from the
-  // RoleChooser screen. Decides which tutorial experience this browser gets;
-  // cleared by replayAll() so account settings can re-ask.
+  // Explicit first-run role choice ('facilitator' | 'guest' | 'explorer')
+  // from the configuration flow (or the header role switcher). Decides which
+  // tutorial experience this browser gets; cleared by replayAll() so account
+  // settings can re-ask. Local cache of profiles.onboarding config.role —
+  // the server value wins on conflict (OnboardingHydrator).
   roleChoice: 'bt_role_choice',
+  // LSP fluency from the configuration flow — drives spotlight-tour density.
+  // Local cache of profiles.onboarding config.fluency; server wins.
+  fluency: 'bt_fluency',
+  // Group-size bracket from the configuration flow — seeds the suggested
+  // room count when partitioning the shared model stage. Local cache of
+  // profiles.onboarding config.group_size; server wins.
+  groupSize: 'bt_group_size',
   // Sticky tutorial-guest marker. Set (client-side) the moment this browser
   // provably participates in someone else's session, so the tutorial modal
   // stays hidden even if that session — the only server-side evidence — is
@@ -52,12 +52,44 @@ const KEYS = {
 
 export type OnboardingPath = 'build' | 'workshop' | 'session';
 
-export type RoleChoice = 'facilitator' | 'guest';
+/** Local pathway progress. `completed` is terminal — a later skip never downgrades it. */
+export type PathwayLocalState = 'not_started' | 'completed' | 'skipped';
+
+function readPathway(key: string): PathwayLocalState {
+  if (typeof window === 'undefined') return 'not_started';
+  const v = window.localStorage.getItem(key);
+  return v === '1' ? 'completed' : v === 'skipped' ? 'skipped' : 'not_started';
+}
+
+export type RoleChoice = 'facilitator' | 'guest' | 'explorer';
 
 function readRoleChoice(): RoleChoice | null {
   if (typeof window === 'undefined') return null;
   const v = window.localStorage.getItem(KEYS.roleChoice);
-  return v === 'facilitator' || v === 'guest' ? v : null;
+  return v === 'facilitator' || v === 'guest' || v === 'explorer' ? v : null;
+}
+
+export type FluencyChoice = 'certified' | 'run_before' | 'read_about' | 'new';
+
+export type GroupSizeChoice = 'solo' | '2_4' | '5_8' | '9_plus';
+
+/** Reads the cached group-size bracket (safe anywhere client-side). */
+export function readGroupSizeChoice(): GroupSizeChoice | null {
+  if (typeof window === 'undefined') return null;
+  const v = window.localStorage.getItem(KEYS.groupSize);
+  return v === 'solo' || v === '2_4' || v === '5_8' || v === '9_plus' ? v : null;
+}
+
+/** Caches the group-size answer locally (the flow also persists it server-side). */
+export function cacheGroupSizeChoice(choice: GroupSizeChoice): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(KEYS.groupSize, choice);
+}
+
+function readFluency(): FluencyChoice | null {
+  if (typeof window === 'undefined') return null;
+  const v = window.localStorage.getItem(KEYS.fluency);
+  return v === 'certified' || v === 'run_before' || v === 'read_about' || v === 'new' ? v : null;
 }
 
 const PATH_KEYS: Record<OnboardingPath, string> = {
@@ -65,14 +97,6 @@ const PATH_KEYS: Record<OnboardingPath, string> = {
   workshop: KEYS.pathWorkshopDone,
   session: KEYS.pathSessionDone,
 };
-
-/** localStorage key holding the JSON array of confetti-celebrated checklist
- *  steps. Read/written by FacilitatorChecklist; cleared by replayAll(). */
-export const CHECKLIST_CELEBRATED_KEY = KEYS.checklistCelebrated;
-
-/** localStorage key holding the replay-start entity-count baseline. Read/written
- *  by FacilitatorChecklist; cleared by replayAll() and dismissChecklist(). */
-export const CHECKLIST_BASELINE_KEY = KEYS.checklistBaseline;
 
 const STORAGE_KEYS = Object.values(KEYS);
 
@@ -86,13 +110,41 @@ function broadcastSync(): void {
   window.dispatchEvent(new Event(SYNC_EVENT));
 }
 
-/** Fired by tours at a confetti-worthy pathway completion. The welcome modal
- *  listens and — after the confetti has had its moment — re-shows itself
- *  wherever the user is, as long as pathways remain outstanding. */
-export const WELCOME_REPRISE_EVENT = 'bt-welcome-reprise';
+/**
+ * Writes the server's CONFIGURATION answers into the local `bt_` caches
+ * (server wins on conflict): role, fluency, group size — a returning user
+ * on a new device never re-answers the wizard. Deliberately only SETS values
+ * the server actually holds, so pre-migration users keep their local state.
+ *
+ * The INSTRUCTION layer (welcome modal seen, pathway ticks, tour flags) is
+ * just as deliberately per-device and is NEVER hydrated: clearing
+ * localStorage — or arriving on a new device — re-arms the modal and every
+ * tour without touching the answers. The server still RECORDS pathway
+ * outcomes and the modal dismissal (setPathwayOutcome / dismissWelcome) so
+ * drop-off stays measurable; it just never replays them onto a device.
+ * Called by OnboardingHydrator on every authed layout mount.
+ */
+export function hydrateOnboardingFromServer(server: OnboardingServerState): void {
+  if (typeof window === 'undefined') return;
+  let changed = false;
+  const setIfDiffers = (key: string, value: string) => {
+    if (window.localStorage.getItem(key) !== value) {
+      window.localStorage.setItem(key, value);
+      changed = true;
+    }
+  };
 
-export function requestWelcomeReprise(): void {
-  window.dispatchEvent(new Event(WELCOME_REPRISE_EVENT));
+  const role = server.config.role;
+  if (role !== null) {
+    const choice: RoleChoice =
+      role === 'participant' ? 'guest' : role === 'explorer' ? 'explorer' : 'facilitator';
+    setIfDiffers(KEYS.roleChoice, choice);
+    if (choice === 'guest') setIfDiffers(KEYS.tutorialGuest, '1');
+  }
+  if (server.config.fluency !== null) setIfDiffers(KEYS.fluency, server.config.fluency);
+  if (server.config.groupSize !== null) setIfDiffers(KEYS.groupSize, server.config.groupSize);
+
+  if (changed) broadcastSync();
 }
 
 function readRole(): OnboardingRole {
@@ -109,32 +161,30 @@ function readFlag(key: string): boolean {
 export interface OnboardingState {
   role: OnboardingRole;
   welcomeSeen: boolean;
-  /** True once the user has seen the complete card at least once. */
-  checklistComplete: boolean;
-  checklistDismissed: boolean;
   sessionTourSeen: boolean;
+  /** True once the workshop page tour has run (any exit) on this device. */
+  workshopTourSeen: boolean;
   /** True once the canvas-builder tutorial has been finished or skipped. */
   canvasTutorialSeen: boolean;
-  /** Welcome-modal pathway completion (build / workshop / session). */
-  pathBuildDone: boolean;
-  pathWorkshopDone: boolean;
-  pathSessionDone: boolean;
-  /** True after replayAll() until the checklist is dismissed — forces the
-   *  checklist to re-show its steps regardless of server-derived progress. */
-  walkthroughReplay: boolean;
+  /** Welcome-modal pathway progress (build / workshop / session). */
+  pathways: Record<OnboardingPath, PathwayLocalState>;
   hydrated: boolean;
   markWelcomeSeen: () => void;
-  markChecklistComplete: () => void;
-  dismissChecklist: () => void;
   markSessionTourSeen: () => void;
+  markWorkshopTourSeen: () => void;
   markCanvasTutorialSeen: () => void;
-  markPathDone: (path: OnboardingPath) => void;
+  /** Record a pathway outcome locally + server-side. Completed is terminal. */
+  markPathway: (path: OnboardingPath, outcome: 'completed' | 'skipped') => void;
   /** True when this browser has been marked as an invited session guest. */
   tutorialGuestSticky: boolean;
   markTutorialGuest: () => void;
   /** The explicit first-run role choice, or null while unanswered. */
   roleChoice: RoleChoice | null;
   chooseRole: (choice: RoleChoice) => void;
+  /** LSP fluency from the configuration flow, or null while unanswered. */
+  fluency: FluencyChoice | null;
+  /** Cache the fluency answer locally (the flow also persists it server-side). */
+  chooseFluency: (choice: FluencyChoice) => void;
   replayAll: () => void;
 }
 
@@ -145,32 +195,34 @@ export interface OnboardingState {
 export function useOnboardingState(): OnboardingState {
   const [role, setRole] = useState<OnboardingRole>('facilitator');
   const [welcomeSeen, setWelcomeSeen] = useState(false);
-  const [checklistComplete, setChecklistComplete] = useState(false);
-  const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [sessionTourSeen, setSessionTourSeen] = useState(false);
+  const [workshopTourSeen, setWorkshopTourSeen] = useState(false);
   const [canvasTutorialSeen, setCanvasTutorialSeen] = useState(false);
-  const [pathBuildDone, setPathBuildDone] = useState(false);
-  const [pathWorkshopDone, setPathWorkshopDone] = useState(false);
-  const [pathSessionDone, setPathSessionDone] = useState(false);
-  const [walkthroughReplay, setWalkthroughReplay] = useState(false);
+  const [pathways, setPathways] = useState<Record<OnboardingPath, PathwayLocalState>>({
+    build: 'not_started',
+    workshop: 'not_started',
+    session: 'not_started',
+  });
   const [tutorialGuestSticky, setTutorialGuestSticky] = useState(false);
   const [roleChoice, setRoleChoice] = useState<RoleChoice | null>(null);
+  const [fluency, setFluency] = useState<FluencyChoice | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const sync = () => {
       setRole(readRole());
       setWelcomeSeen(readFlag(KEYS.welcomeSeen));
-      setChecklistComplete(readFlag(KEYS.checklistComplete));
-      setChecklistDismissed(readFlag(KEYS.checklistDismissed));
       setSessionTourSeen(readFlag(KEYS.sessionTourSeen));
+      setWorkshopTourSeen(readFlag(KEYS.workshopTourSeen));
       setCanvasTutorialSeen(readFlag(KEYS.canvasTutorialSeen));
-      setPathBuildDone(readFlag(KEYS.pathBuildDone));
-      setPathWorkshopDone(readFlag(KEYS.pathWorkshopDone));
-      setPathSessionDone(readFlag(KEYS.pathSessionDone));
-      setWalkthroughReplay(readFlag(KEYS.walkthroughReplay));
+      setPathways({
+        build: readPathway(KEYS.pathBuildDone),
+        workshop: readPathway(KEYS.pathWorkshopDone),
+        session: readPathway(KEYS.pathSessionDone),
+      });
       setTutorialGuestSticky(readFlag(KEYS.tutorialGuest));
       setRoleChoice(readRoleChoice());
+      setFluency(readFluency());
     };
     sync();
     setHydrated(true);
@@ -188,23 +240,9 @@ export function useOnboardingState(): OnboardingState {
   const markWelcomeSeen = useCallback(() => {
     window.localStorage.setItem(KEYS.welcomeSeen, '1');
     setWelcomeSeen(true);
-    broadcastSync();
-  }, []);
-
-  const markChecklistComplete = useCallback(() => {
-    window.localStorage.setItem(KEYS.checklistComplete, '1');
-    setChecklistComplete(true);
-    broadcastSync();
-  }, []);
-
-  const dismissChecklist = useCallback(() => {
-    window.localStorage.setItem(KEYS.checklistDismissed, '1');
-    // Dismissing also ends any replay/preview — drop the replay flag and the
-    // captured baseline so the checklist reverts to its normal behaviour.
-    window.localStorage.removeItem(KEYS.walkthroughReplay);
-    window.localStorage.removeItem(KEYS.checklistBaseline);
-    setChecklistDismissed(true);
-    setWalkthroughReplay(false);
+    // Record the dismissal server-side (drop-off telemetry + cross-device).
+    // Fire-and-forget: local state is already correct if this fails.
+    void import('@/lib/onboarding/actions').then((m) => m.dismissWelcome()).catch(() => {});
     broadcastSync();
   }, []);
 
@@ -214,17 +252,28 @@ export function useOnboardingState(): OnboardingState {
     broadcastSync();
   }, []);
 
+  const markWorkshopTourSeen = useCallback(() => {
+    window.localStorage.setItem(KEYS.workshopTourSeen, '1');
+    setWorkshopTourSeen(true);
+    broadcastSync();
+  }, []);
+
   const markCanvasTutorialSeen = useCallback(() => {
     window.localStorage.setItem(KEYS.canvasTutorialSeen, '1');
     setCanvasTutorialSeen(true);
     broadcastSync();
   }, []);
 
-  const markPathDone = useCallback((path: OnboardingPath) => {
-    window.localStorage.setItem(PATH_KEYS[path], '1');
-    if (path === 'build') setPathBuildDone(true);
-    else if (path === 'workshop') setPathWorkshopDone(true);
-    else setPathSessionDone(true);
+  const markPathway = useCallback((path: OnboardingPath, outcome: 'completed' | 'skipped') => {
+    // Completed is terminal — a later skip never downgrades it (mirrors the
+    // server rule in applyPathwayOutcome).
+    if (readPathway(PATH_KEYS[path]) === 'completed') return;
+    window.localStorage.setItem(PATH_KEYS[path], outcome === 'completed' ? '1' : 'skipped');
+    setPathways((prev) => ({ ...prev, [path]: outcome }));
+    // Persist + record the drop-off event server-side, fire-and-forget.
+    void import('@/lib/onboarding/actions')
+      .then((m) => m.setPathwayOutcome(path, outcome))
+      .catch(() => {});
     broadcastSync();
   }, []);
 
@@ -238,8 +287,8 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.setItem(KEYS.roleChoice, choice);
     setRoleChoice(choice);
     // The choice owns the sticky guest flag in both directions: declaring
-    // Guest suppresses the tutorial modal; declaring Facilitator (e.g. via
-    // the header role switcher) un-suppresses it.
+    // Guest suppresses the tutorial modal; declaring Facilitator or Explorer
+    // (e.g. via the header role switcher) un-suppresses it.
     if (choice === 'guest') {
       window.localStorage.setItem(KEYS.tutorialGuest, '1');
       setTutorialGuestSticky(true);
@@ -247,63 +296,71 @@ export function useOnboardingState(): OnboardingState {
       window.localStorage.removeItem(KEYS.tutorialGuest);
       setTutorialGuestSticky(false);
     }
+    // Keep the server column in step (server wins on conflict, so a purely
+    // local choice would otherwise be flipped back by hydration on the next
+    // load). Fire-and-forget; local state is already correct if this fails.
+    const role = choice === 'guest' ? 'participant' : choice;
+    void import('@/lib/onboarding/actions')
+      .then((m) => m.saveOnboardingConfig({ role }))
+      .catch(() => {});
+    broadcastSync();
+  }, []);
+
+  const chooseFluency = useCallback((choice: FluencyChoice) => {
+    window.localStorage.setItem(KEYS.fluency, choice);
+    setFluency(choice);
     broadcastSync();
   }, []);
 
   const replayAll = useCallback(() => {
     window.localStorage.removeItem(KEYS.tutorialGuest);
     window.localStorage.removeItem(KEYS.roleChoice);
+    window.localStorage.removeItem(KEYS.fluency);
+    window.localStorage.removeItem(KEYS.groupSize);
     setTutorialGuestSticky(false);
     setRoleChoice(null);
+    setFluency(null);
     window.localStorage.removeItem(KEYS.welcomeSeen);
-    window.localStorage.removeItem(KEYS.checklistComplete);
-    window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
+    window.localStorage.removeItem(KEYS.workshopTourSeen);
     window.localStorage.removeItem(KEYS.canvasTutorialSeen);
     window.localStorage.removeItem(KEYS.pathBuildDone);
     window.localStorage.removeItem(KEYS.pathWorkshopDone);
     window.localStorage.removeItem(KEYS.pathSessionDone);
-    // Enter replay/preview so the checklist re-shows its steps even when the
-    // user's real progress is all-done, and re-arm per-step confetti. Clearing
-    // the baseline makes the checklist re-capture the current counts on its next
-    // render, so the steps start empty and only tick on genuinely new entities.
-    window.localStorage.setItem(KEYS.walkthroughReplay, '1');
-    window.localStorage.removeItem(KEYS.checklistCelebrated);
-    window.localStorage.removeItem(KEYS.checklistBaseline);
+    // One-time hygiene for browsers that still carry checklist-era keys
+    // (the FacilitatorChecklist and its replay/baseline state are long gone).
+    window.localStorage.removeItem('bt_checklist_complete');
+    window.localStorage.removeItem('bt_checklist_dismissed');
+    window.localStorage.removeItem('bt_checklist_celebrated');
+    window.localStorage.removeItem('bt_checklist_baseline');
+    window.localStorage.removeItem('bt_walkthrough_replay');
     setWelcomeSeen(false);
-    setChecklistComplete(false);
-    setChecklistDismissed(false);
     setSessionTourSeen(false);
+    setWorkshopTourSeen(false);
     setCanvasTutorialSeen(false);
-    setPathBuildDone(false);
-    setPathWorkshopDone(false);
-    setPathSessionDone(false);
-    setWalkthroughReplay(true);
+    setPathways({ build: 'not_started', workshop: 'not_started', session: 'not_started' });
     broadcastSync();
   }, []);
 
   return {
     role,
     welcomeSeen,
-    checklistComplete,
-    checklistDismissed,
     sessionTourSeen,
+    workshopTourSeen,
     canvasTutorialSeen,
-    pathBuildDone,
-    pathWorkshopDone,
-    pathSessionDone,
-    walkthroughReplay,
+    pathways,
     hydrated,
     markWelcomeSeen,
-    markChecklistComplete,
-    dismissChecklist,
     markSessionTourSeen,
+    markWorkshopTourSeen,
     markCanvasTutorialSeen,
-    markPathDone,
+    markPathway,
     tutorialGuestSticky,
     markTutorialGuest,
     roleChoice,
     chooseRole,
+    fluency,
+    chooseFluency,
     replayAll,
   };
 }

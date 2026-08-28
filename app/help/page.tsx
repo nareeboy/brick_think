@@ -71,11 +71,11 @@ const GROUPS: FaqGroup[] = [
     items: [
       {
         q: 'How much does BrickThink cost?',
-        a: 'The BrickThink app is free and open source (Apache 2.0) and you can self-host it. A few report and branding services — PDF session reports, transcript polishing, white-label and full-findings reports — are not part of the open-source core; they run only on the hosted site at www.brickthink.io, where a subscription covers the per-use cost (PDF rendering and AI tokens).',
+        a: 'The BrickThink app is free and open source (Apache 2.0) and you can self-host it. A few hosted services — PDF session reports, transcript polishing, white-label and full-findings reports, and AI-assisted workshop setup — are not part of the open-source core; they run only on the hosted site at www.brickthink.io, where a subscription covers the per-use cost (PDF rendering and AI tokens).',
       },
       {
         q: 'Is there a Pro plan?',
-        a: 'No. There is no Pro plan gating the core product — the open-source app is complete on its own. The hosted site offers the report and branding services as paid add-ons purely to cover what they cost us to run, not to upsell you.',
+        a: 'No. There is no Pro plan gating the core product — the open-source app is complete on its own. The hosted site offers the report, branding and AI-assist services as paid add-ons because they consume API credits and rendering time we pay for, not to upsell you.',
       },
       {
         q: 'How can I support the project?',

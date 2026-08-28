@@ -26,6 +26,7 @@ const SECTIONS = [
   'Modifications to our website',
   'Updates to our website',
   'Third-party services',
+  'AI features',
   'Term and termination',
   'Copyright infringement notice',
   'Indemnification',
@@ -321,6 +322,25 @@ export default function TermsPage() {
                 Third-Party Services and links thereto are provided solely as a convenience to you
                 and you access and use them entirely at your own risk and subject to such third
                 parties&apos; terms and conditions.
+              </P>
+            </Section>
+
+            <Section heading="AI features">
+              <P>
+                Parts of the hosted Service use artificial intelligence provided by Anthropic, PBC
+                (&ldquo;Anthropic&rdquo;) &mdash; for example AI-assisted workshop setup, narration
+                transcript polishing, and AI-generated session reports. When you use one of these
+                features, the content needed for it (such as your assistant messages and the
+                workshop, session and scenario text they refer to) is sent to Anthropic&apos;s
+                commercial API under Brick Think&apos;s own account. Under Anthropic&apos;s
+                commercial terms this content is not used to train Anthropic&apos;s models, and is
+                retained by Anthropic only for the limited period those terms allow. Outputs
+                produced this way are labelled as AI-generated in the Service, and our Privacy
+                Policy describes the processing in detail.
+              </P>
+              <P>
+                AI-generated output can be inaccurate or incomplete. You are responsible for
+                reviewing it before relying on it, and it does not constitute professional advice.
               </P>
             </Section>
 

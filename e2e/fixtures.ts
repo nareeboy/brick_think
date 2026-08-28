@@ -89,7 +89,7 @@ export async function getMailpitMessage(addr: string, timeoutMs = 10_000): Promi
 }
 
 // Suppress every first-run overlay so specs see a "returning user" UI: the
-// welcome modal / checklist / session tour, the canvas builder tutorial, and
+// welcome modal / session and workshop tours, the canvas builder tutorial, and
 // the cookie-consent card (which otherwise overlays the sidebar-bottom
 // "Save version" button and intercepts clicks). This is THE canonical list —
 // specs that hand-roll extra browser contexts (facilitator-live-readonly,
@@ -103,8 +103,8 @@ export async function suppressFirstRunOverlays(page: Page | BrowserContext): Pro
   await page.addInitScript(() => {
     window.localStorage.setItem('bt_role_choice', 'facilitator');
     window.localStorage.setItem('bt_welcome_seen', '1');
-    window.localStorage.setItem('bt_checklist_dismissed', '1');
     window.localStorage.setItem('bt_session_tour_seen', '1');
+    window.localStorage.setItem('bt_workshop_tour_seen', '1');
     window.localStorage.setItem('bt_canvas_tutorial_seen', '1');
     // Shape must match lib/consent/state.ts isDecision().
     window.localStorage.setItem(
