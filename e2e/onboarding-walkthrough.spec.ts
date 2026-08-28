@@ -267,12 +267,14 @@ test.describe('onboarding walkthrough', () => {
     await expect(signedInPage.getByTestId('create-workshop-spotlight')).toBeVisible();
 
     // Skipping stops the prompting for the session pathway but NEVER renders
-    // as a tick and never counts toward the finale.
+    // as a tick and never counts toward the finale — it shows the muted
+    // Skipped chip instead, and the card stays redoable.
     await signedInPage.getByTestId('create-workshop-spotlight-skip').click();
     await signedInPage.goto('/app/my-designs');
     const modal = signedInPage.getByTestId('onboarding-welcome-modal');
     await expect(modal).toBeVisible();
     await expect(modal.getByTestId('onboarding-welcome-card-session-done')).toHaveCount(0);
+    await expect(modal.getByTestId('onboarding-welcome-card-session-skipped')).toBeVisible();
     await expect(modal.getByTestId('onboarding-welcome-card-workshop-done')).toHaveCount(0);
   });
 

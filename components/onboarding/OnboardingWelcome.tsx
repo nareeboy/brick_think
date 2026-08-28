@@ -209,7 +209,7 @@ export function OnboardingWelcome({ guest = false }: Props) {
             as="button"
             onClick={startBuilding}
             pending={pending}
-            done={pathways.build === 'completed'}
+            state={pathways.build}
             testid="onboarding-welcome-card-build"
             title="Start building right away"
             body="Start a building session of your own and get to know the way the application works."
@@ -218,7 +218,7 @@ export function OnboardingWelcome({ guest = false }: Props) {
           <PathwayCard
             as="link"
             href="/app/workshops?onboarding=create-workshop"
-            done={pathways.workshop === 'completed'}
+            state={pathways.workshop}
             testid="onboarding-welcome-card-workshop"
             title="Start your first workshop"
             body="Get your workshop ready to facilitate for your remote team."
@@ -227,7 +227,7 @@ export function OnboardingWelcome({ guest = false }: Props) {
           <PathwayCard
             as="link"
             href={sessionHref}
-            done={pathways.session === 'completed'}
+            state={pathways.session}
             testid="onboarding-welcome-card-session"
             title="Start a session"
             body="Understand how to start a group session and the features for breakout rooms."
@@ -274,7 +274,7 @@ type CardProps = {
   title: string;
   body: string;
   art: ReactNode;
-  done: boolean;
+  state: 'not_started' | 'completed' | 'skipped';
   onClick?: () => void;
 } & (
   | { as: 'link'; href: string; pending?: never }
@@ -295,7 +295,7 @@ function PathwayCard(props: CardProps) {
         <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-600">
           {props.as === 'button' && props.pending ? 'Setting up your canvas…' : props.body}
         </p>
-        {props.done ? (
+        {props.state === 'completed' ? (
           <span
             data-testid={`${props.testid}-done`}
             className="mt-auto flex justify-center pt-4"
@@ -314,6 +314,23 @@ function PathwayCard(props: CardProps) {
               >
                 <path d="M5 12l5 5L20 7" />
               </svg>
+            </span>
+          </span>
+        ) : props.state === 'skipped' ? (
+          // An honest skipped state: visibly registered, deliberately NOT a
+          // tick (a skip never counts toward the finale), still redoable.
+          <span className="mt-auto flex items-center justify-between pt-4">
+            <span
+              data-testid={`${props.testid}-skipped`}
+              className="inline-flex items-center rounded-full border border-zinc-900/10 bg-zinc-900/5 px-2.5 py-1 text-[11px] font-medium text-zinc-500"
+            >
+              Skipped
+            </span>
+            <span
+              aria-hidden="true"
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-[#a8482a] transition-transform duration-200 group-hover:translate-x-0.5"
+            >
+              Go again <span>&rarr;</span>
             </span>
           </span>
         ) : (
