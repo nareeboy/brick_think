@@ -5,7 +5,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 import { useSpotlightRect } from './useSpotlightRect';
 
 const ONBOARDING_PARAM = 'onboarding';
@@ -58,13 +58,14 @@ const TOOLTIP_H_EST = 190;
  * Guided tour of the workshop page, chained from the create-workshop form
  * spotlight (`?onboarding=workshop-tour` on the redirect after creation).
  * Completing the last step fires confetti and ticks the welcome modal's
- * workshop pathway; Skip/Esc dismiss without either.
+ * workshop pathway; Skip records an honest skip (no tick, no confetti); Esc
+ * dismisses without any state change.
  */
 export function WorkshopPageTour() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { markPathDone } = useOnboardingState();
+  const { markPathway } = useOnboardingState();
   const titleId = useId();
   const bodyId = useId();
   const maskId = useId();
@@ -93,16 +94,20 @@ export function WorkshopPageTour() {
 
   const complete = useCallback(() => {
     setDismissed(true);
-    // Warm exit (finishing or the Skip button): tick the welcome modal's
-    // workshop card, celebrate, and let the modal return after the confetti
-    // if pathways remain. Esc stays quiet (see the keydown handler).
-    markPathDone('workshop');
+    // Genuine completion: tick the welcome modal's workshop card and
+    // celebrate in place (the modal returns on the next hub visit).
+    markPathway('workshop', 'completed');
     void celebrate();
-    requestWelcomeReprise();
     stripParam();
-  }, [markPathDone, stripParam]);
+  }, [markPathway, stripParam]);
 
-  const skip = complete;
+  // The Skip button records an honest skip: it stops the prompting but never
+  // ticks the pathway and never celebrates. Esc stays quiet (no state).
+  const skip = useCallback(() => {
+    setDismissed(true);
+    markPathway('workshop', 'skipped');
+    stripParam();
+  }, [markPathway, stripParam]);
 
   const quietExit = useCallback(() => {
     setDismissed(true);
@@ -118,16 +123,17 @@ export function WorkshopPageTour() {
     setStepIndex((i) => Math.max(0, i - 1));
   }, []);
 
-  // Silent-skip a step whose target never renders (finishing past the end
-  // still counts as completion — the user saw every step that exists).
+  // Silent-skip a step whose target never renders. Skipping past the end is
+  // a quiet exit — a missing target is not the user finishing the tour, so
+  // it never ticks the pathway or celebrates.
   useEffect(() => {
     if (!active || rect) return;
     const t = setTimeout(() => {
-      if (stepIndex + 1 >= STEPS.length) complete();
+      if (stepIndex + 1 >= STEPS.length) quietExit();
       else setStepIndex((i) => i + 1);
     }, SKIP_AFTER_MS);
     return () => clearTimeout(t);
-  }, [active, rect, stepIndex, complete]);
+  }, [active, rect, stepIndex, quietExit]);
 
   useEffect(() => {
     if (!active) return;

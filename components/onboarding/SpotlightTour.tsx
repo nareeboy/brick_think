@@ -13,7 +13,7 @@ import {
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 
 interface Step {
   selector: string;
@@ -67,7 +67,7 @@ interface Props {
 }
 
 export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
-  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathDone } =
+  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathway } =
     useOnboardingState();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -104,16 +104,22 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
     markSessionTourSeen();
   }, [markSessionTourSeen]);
 
-  // Warm exit — completing the tour or clicking Skip tour. The session
-  // pathway ticks on the welcome modal, confetti fires, and the modal
-  // returns afterwards if pathways remain. Esc (and the silent missing-
-  // target advance) use the quiet finish() above instead.
-  const finishWarm = useCallback(() => {
-    markPathDone('session');
+  // Genuine completion — the last step's "Got it". The session pathway ticks
+  // on the welcome modal and confetti fires in place (the modal returns on
+  // the next hub visit). Esc (and the silent missing-target advance) use the
+  // quiet finish() above instead.
+  const finishComplete = useCallback(() => {
+    markPathway('session', 'completed');
     void celebrate();
-    requestWelcomeReprise();
     finish();
-  }, [markPathDone, finish]);
+  }, [markPathway, finish]);
+
+  // The Skip button records an honest skip: it stops the prompting for the
+  // session pathway but never ticks it and never celebrates.
+  const finishSkip = useCallback(() => {
+    markPathway('session', 'skipped');
+    finish();
+  }, [markPathway, finish]);
 
   // Track the target every frame so the cut-out stays glued to it through
   // hydration and layout shifts — e.g. late-mounting siblings above the
@@ -245,7 +251,7 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
         <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
-            onClick={finishWarm}
+            onClick={finishSkip}
             data-testid="onboarding-spotlight-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >
@@ -256,8 +262,8 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
             type="button"
             onClick={() => {
               if (isLast) {
-                // Genuine completion — tick + confetti + modal reprise.
-                finishWarm();
+                // Genuine completion — tick + confetti in place.
+                finishComplete();
                 return;
               }
               setRect(null);

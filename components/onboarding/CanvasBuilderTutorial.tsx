@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 
 import { celebrate } from '@/lib/onboarding/celebrate';
 
-import { requestWelcomeReprise, useOnboardingState } from './useOnboardingState';
+import { useOnboardingState } from './useOnboardingState';
 import { useSpotlightRect } from './useSpotlightRect';
 
 interface Step {
@@ -65,7 +65,7 @@ const TOOLTIP_H_EST = 190; // used only to decide above-vs-below placement
  * via the account-page "Replay walkthrough" (replayAll clears the flag).
  */
 export function CanvasBuilderTutorial() {
-  const { hydrated, canvasTutorialSeen, markCanvasTutorialSeen, markPathDone } =
+  const { hydrated, canvasTutorialSeen, markCanvasTutorialSeen, markPathway } =
     useOnboardingState();
   const titleId = useId();
   const bodyId = useId();
@@ -90,26 +90,28 @@ export function CanvasBuilderTutorial() {
   const rect = useSpotlightRect(step ? step.selector : null, active);
 
   const finish = useCallback(
-    (withConfetti: boolean) => {
+    (outcome: 'completed' | 'skipped' | 'quiet') => {
       setDone(true);
       markCanvasTutorialSeen();
-      if (withConfetti) {
-        // Warm exit (finish or the Skip button) — celebrate; and unless this
-        // visit is detached (session-originated), tick the welcome modal's
-        // "Start building right away" pathway and let the modal return after
-        // the confetti if pathways remain.
+      if (outcome === 'completed') {
+        // Genuine completion — celebrate in place; and unless this visit is
+        // detached (session-originated), tick the welcome modal's "Start
+        // building right away" pathway (the modal returns on the next hub
+        // visit).
         void celebrate();
-        if (!detached) {
-          markPathDone('build');
-          requestWelcomeReprise();
-        }
+        if (!detached) markPathway('build', 'completed');
+      } else if (outcome === 'skipped' && !detached) {
+        // Honest skip — stops the prompting but never ticks and never
+        // celebrates ('quiet' — Esc / silent missing-target — records
+        // nothing at all).
+        markPathway('build', 'skipped');
       }
     },
-    [markCanvasTutorialSeen, markPathDone, detached],
+    [markCanvasTutorialSeen, markPathway, detached],
   );
 
   const goNext = useCallback(() => {
-    if (stepIndex + 1 >= STEPS.length) finish(true);
+    if (stepIndex + 1 >= STEPS.length) finish('completed');
     else setStepIndex((i) => i + 1);
   }, [stepIndex, finish]);
 
@@ -124,7 +126,7 @@ export function CanvasBuilderTutorial() {
   useEffect(() => {
     if (!active || rect) return;
     const t = setTimeout(() => {
-      if (stepIndex + 1 >= STEPS.length) finish(false);
+      if (stepIndex + 1 >= STEPS.length) finish('quiet');
       else setStepIndex((i) => i + 1);
     }, SKIP_AFTER_MS);
     return () => clearTimeout(t);
@@ -134,7 +136,7 @@ export function CanvasBuilderTutorial() {
   useEffect(() => {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') finish(false);
+      if (e.key === 'Escape') finish('quiet');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -211,9 +213,7 @@ export function CanvasBuilderTutorial() {
         <div className="mt-4 flex items-center justify-between">
           <button
             type="button"
-            // Skipping still counts as a warm exit — confetti + the welcome
-            // modal's build tick, same as finishing (Esc stays quiet).
-            onClick={() => finish(true)}
+            onClick={() => finish('skipped')}
             data-testid="canvas-tutorial-skip"
             className="cursor-pointer text-[12px] font-medium text-zinc-500 hover:text-zinc-700"
           >

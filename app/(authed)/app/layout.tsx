@@ -18,7 +18,7 @@ import { normaliseOnboarding } from '@/lib/onboarding/config';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
-import { AssistantEntrySlot, ChatWidgetSlot } from '@/lib/premium/server-slots';
+import { ChatWidgetSlot } from '@/lib/premium/server-slots';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,18 +88,16 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
         </HideOnChromelessRoutes>
         <PresenceHeartbeat />
         {/* Global welcome/tutorial modal — decides for itself when to show
-            (hub pages, or the reprise after a pathway completes). Invited
-            guests never see it; they still get the in-context spotlight
-            tours (session page + canvas). */}
+            (hub pages only; completions celebrate in place). Invited guests
+            never see it; they still get the in-context spotlight tours
+            (session page + canvas). No AI entry here: onboarding surfaces
+            never offer AI setup. */}
         <OnboardingHydrator state={onboarding} />
         <Suspense fallback={null}>
           <RoleChooserRedirect guest={tutorialGuest} />
         </Suspense>
         <Suspense fallback={null}>
-          <OnboardingWelcome
-            guest={tutorialGuest}
-            assistantEntry={<AssistantEntrySlot profileId={user.id} />}
-          />
+          <OnboardingWelcome guest={tutorialGuest} />
         </Suspense>
       </div>
     </NotificationsProvider>
