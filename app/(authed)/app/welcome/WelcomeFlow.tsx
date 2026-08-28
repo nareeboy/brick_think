@@ -5,7 +5,10 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 
 import { createDesignAction } from '@/app/(authed)/app/my-designs/actions';
 import { EmailChipInput, splitEmailDraft } from '@/components/session/EmailChipInput';
-import { useOnboardingState } from '@/components/onboarding/useOnboardingState';
+import {
+  cacheGroupSizeChoice,
+  useOnboardingState,
+} from '@/components/onboarding/useOnboardingState';
 import { saveOnboardingConfig } from '@/lib/onboarding/actions';
 import type {
   OnboardingConfigRole,
@@ -132,6 +135,7 @@ export function WelcomeFlow() {
         if (!res.ok) return fail('Could not save your answers. Please try again.');
         chooseRole('facilitator');
         if (fluency !== null) chooseFluency(fluency);
+        if (groupSize !== null) cacheGroupSizeChoice(groupSize);
         router.replace('/app/my-designs');
       } catch {
         fail('Could not save your answers. Please try again.');

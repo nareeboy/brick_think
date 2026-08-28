@@ -16,6 +16,8 @@ import { celebrate } from '@/lib/onboarding/celebrate';
 import { useOnboardingState } from './useOnboardingState';
 
 interface Step {
+  /** Teaching stop — suppressed for fluent facilitators (certified / run before). */
+  explanatory?: boolean;
   selector: string;
   title: string;
   body: ReactNode;
@@ -28,6 +30,7 @@ function buildSteps(canManageSession: boolean): Step[] {
   return [
     {
       selector: '[data-tour-id="session-header"]',
+      explanatory: true,
       title: 'This is a session',
       body: 'The cards below are stages — different exercises you move through together.',
     },
@@ -67,7 +70,7 @@ interface Props {
 }
 
 export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
-  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathway } =
+  const { role, sessionTourSeen, hydrated, markSessionTourSeen, markPathway, fluency } =
     useOnboardingState();
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -82,15 +85,20 @@ export function SpotlightTour({ canManageSession, suppressed = false }: Props) {
   // mark instead) but this keeps the filter honest if reused later.
   // Memoized on canManageSession to avoid a new array reference every render,
   // which would cause the useLayoutEffect to re-fire needlessly.
+  // Fluency-driven density: certified / run-before facilitators skip the
+  // explanatory stops and keep only the non-obvious controls (timer verbs,
+  // stage renaming). Guidance volume only — nothing is gated.
+  const fluent = fluency === 'certified' || fluency === 'run_before';
   const visibleSteps = useMemo(
     () =>
       buildSteps(canManageSession).filter((step) => {
         if (step.selector === '[data-tour-id="stage-meta-pencil"]' && !canManageSession) {
           return false;
         }
+        if (fluent && step.explanatory) return false;
         return true;
       }),
-    [canManageSession],
+    [canManageSession, fluent],
   );
 
   const active =

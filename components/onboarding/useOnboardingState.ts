@@ -38,6 +38,10 @@ const KEYS = {
   // LSP fluency from the configuration flow — drives spotlight-tour density.
   // Local cache of profiles.onboarding config.fluency; server wins.
   fluency: 'bt_fluency',
+  // Group-size bracket from the configuration flow — seeds the suggested
+  // room count when partitioning the shared model stage. Local cache of
+  // profiles.onboarding config.group_size; server wins.
+  groupSize: 'bt_group_size',
   // Sticky tutorial-guest marker. Set (client-side) the moment this browser
   // provably participates in someone else's session, so the tutorial modal
   // stays hidden even if that session — the only server-side evidence — is
@@ -66,6 +70,21 @@ function readRoleChoice(): RoleChoice | null {
 }
 
 export type FluencyChoice = 'certified' | 'run_before' | 'read_about' | 'new';
+
+export type GroupSizeChoice = 'solo' | '2_4' | '5_8' | '9_plus';
+
+/** Reads the cached group-size bracket (safe anywhere client-side). */
+export function readGroupSizeChoice(): GroupSizeChoice | null {
+  if (typeof window === 'undefined') return null;
+  const v = window.localStorage.getItem(KEYS.groupSize);
+  return v === 'solo' || v === '2_4' || v === '5_8' || v === '9_plus' ? v : null;
+}
+
+/** Caches the group-size answer locally (the flow also persists it server-side). */
+export function cacheGroupSizeChoice(choice: GroupSizeChoice): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(KEYS.groupSize, choice);
+}
 
 function readFluency(): FluencyChoice | null {
   if (typeof window === 'undefined') return null;
@@ -116,6 +135,7 @@ export function hydrateOnboardingFromServer(server: OnboardingServerState): void
     if (choice === 'guest') setIfDiffers(KEYS.tutorialGuest, '1');
   }
   if (server.config.fluency !== null) setIfDiffers(KEYS.fluency, server.config.fluency);
+  if (server.config.groupSize !== null) setIfDiffers(KEYS.groupSize, server.config.groupSize);
   for (const [path, key] of Object.entries(PATH_KEYS) as [OnboardingPath, string][]) {
     const state = server.pathways[path];
     if (state !== 'not_started') setIfDiffers(key, state === 'completed' ? '1' : 'skipped');
@@ -287,6 +307,7 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.removeItem(KEYS.tutorialGuest);
     window.localStorage.removeItem(KEYS.roleChoice);
     window.localStorage.removeItem(KEYS.fluency);
+    window.localStorage.removeItem(KEYS.groupSize);
     setTutorialGuestSticky(false);
     setRoleChoice(null);
     setFluency(null);

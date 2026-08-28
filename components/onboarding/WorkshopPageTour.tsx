@@ -12,6 +12,8 @@ const ONBOARDING_PARAM = 'onboarding';
 const ONBOARDING_VALUE = 'workshop-tour';
 
 interface Step {
+  /** Teaching stop — suppressed for fluent facilitators (certified / run before). */
+  explanatory?: boolean;
   selector: string;
   title: string;
   body: string;
@@ -27,16 +29,19 @@ const STEPS: Step[] = [
   },
   {
     selector: '[data-tour-id="sessions-container"]',
+    explanatory: true,
     title: 'Your sessions live here',
     body: 'Every session in this workshop is listed here. Open one to run its stages, follow the timers, and see everyone’s models.',
   },
   {
     selector: '[data-tour-id="add-member-button"]',
+    explanatory: true,
     title: 'Invite your team',
     body: 'Add members by email so they can join your sessions and see the workshop’s shared designs.',
   },
   {
     selector: '[data-tour-id="members-container"]',
+    explanatory: true,
     title: 'Who’s in this workshop',
     body: 'Everyone with access appears here with their role. Admins can add or remove people at any time.',
   },
@@ -74,6 +79,7 @@ export function WorkshopPageTour() {
     tutorialGuestSticky,
     workshopTourSeen,
     markWorkshopTourSeen,
+    fluency,
   } = useOnboardingState();
   const titleId = useId();
   const bodyId = useId();
@@ -93,8 +99,14 @@ export function WorkshopPageTour() {
     roleChoice !== 'guest' &&
     !tutorialGuestSticky;
 
-  const active = (requested || firstVisit) && !dismissed && stepIndex < STEPS.length;
-  const step = active ? STEPS[stepIndex]! : null;
+  // Fluency-driven density: certified / run-before facilitators skip the
+  // explanatory stops and keep only the non-obvious controls. Guidance
+  // volume only — nothing is gated.
+  const fluent = fluency === 'certified' || fluency === 'run_before';
+  const steps = fluent ? STEPS.filter((s) => !s.explanatory) : STEPS;
+
+  const active = (requested || firstVisit) && !dismissed && stepIndex < steps.length;
+  const step = active ? steps[stepIndex]! : null;
   const rect = useSpotlightRect(step ? step.selector : null, active);
 
   useEffect(() => {
@@ -137,7 +149,7 @@ export function WorkshopPageTour() {
   }, [markWorkshopTourSeen, stripParam]);
 
   const goNext = useCallback(() => {
-    if (stepIndex + 1 >= STEPS.length) complete();
+    if (stepIndex + 1 >= steps.length) complete();
     else setStepIndex((i) => i + 1);
   }, [stepIndex, complete]);
 
@@ -151,7 +163,7 @@ export function WorkshopPageTour() {
   useEffect(() => {
     if (!active || rect) return;
     const t = setTimeout(() => {
-      if (stepIndex + 1 >= STEPS.length) quietExit();
+      if (stepIndex + 1 >= steps.length) quietExit();
       else setStepIndex((i) => i + 1);
     }, SKIP_AFTER_MS);
     return () => clearTimeout(t);
@@ -196,7 +208,7 @@ export function WorkshopPageTour() {
   }
 
   const isFirst = stepIndex === 0;
-  const isLast = stepIndex === STEPS.length - 1;
+  const isLast = stepIndex === steps.length - 1;
 
   return (
     <div data-testid="workshop-page-tour" className="pointer-events-none fixed inset-0 z-30">
@@ -229,7 +241,7 @@ export function WorkshopPageTour() {
         className="pointer-events-auto absolute rounded-2xl bg-white p-5 shadow-[0_30px_60px_-20px_rgba(0,0,0,0.45)]"
       >
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">
-          Step {stepIndex + 1} of {STEPS.length}
+          Step {stepIndex + 1} of {steps.length}
         </p>
         <h2 id={titleId} className="mt-1 text-[16px] font-semibold tracking-tight text-zinc-950">
           {step.title}
