@@ -115,11 +115,12 @@ describe('OnboardingWelcome', () => {
     await waitFor(() => expect(screen.queryByTestId('onboarding-welcome-modal')).toBeNull());
   });
 
-  it('a skipped pathway never renders as a tick', async () => {
+  it('a skipped pathway shows the muted Skipped chip, never a tick', async () => {
     localStorage.setItem('bt_path_build_done', 'skipped');
     render(<OnboardingWelcome />);
     await screen.findByTestId('onboarding-welcome-modal');
     expect(screen.queryByTestId('onboarding-welcome-card-build-done')).toBeNull();
+    expect(screen.getByTestId('onboarding-welcome-card-build-skipped')).toBeTruthy();
   });
 
   it('stops returning once every pathway is terminal without three completions (no finale)', async () => {
