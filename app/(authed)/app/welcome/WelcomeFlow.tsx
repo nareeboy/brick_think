@@ -172,7 +172,11 @@ export function WelcomeFlow() {
         aria-hidden="true"
         className="hidden items-center justify-center bg-gradient-to-br from-[#f8efe9] via-[#f3e2d7] to-[#ecd2c2] md:flex"
       >
-        <WelcomeIllustration />
+        {/* Keyed on step so the illustration crossfades with the question
+            (same animate-modal-in as the right panel; reduced-motion safe). */}
+        <div key={step} className="animate-modal-in flex w-full items-center justify-center">
+          <WelcomeIllustration step={step} />
+        </div>
       </aside>
 
       {step > 1 ? (
@@ -464,12 +468,66 @@ const ILLUSTRATION_CSS = `
 .bt-welcome-drift-3 { animation-delay: -4.6s; }
 `;
 
-/** Abstract brick-and-canvas illustration in the original asset style. */
-function WelcomeIllustration() {
+/**
+ * One abstract brick illustration per question, all in the original asset
+ * style (flat bricks, brand palette, no humans — people are plain circles).
+ * Shared motion vocabulary: settle (placement hint), drift (idle bricks),
+ * dash-pulse (connections). The aside crossfades them on step change.
+ */
+function WelcomeIllustration({ step }: { step: StepId }) {
+  switch (step) {
+    case 1:
+      return <RoleArt />;
+    case 2:
+      return <FluencyArt />;
+    case 3:
+      return <PurposeArt />;
+    case 4:
+      return <GroupArt />;
+    case 5:
+      return <InviteArt />;
+  }
+}
+
+function ArtFrame({ children }: { children: React.ReactNode }) {
   return (
     <svg viewBox="0 0 360 300" className="h-auto w-[70%] max-w-[420px]" aria-hidden="true">
       <style>{ILLUSTRATION_CSS}</style>
-      {/* canvas frame */}
+      {children}
+    </svg>
+  );
+}
+
+/** A flat brick with two studs. */
+function Brick({
+  x,
+  y,
+  w = 64,
+  h = 24,
+  fill,
+  className,
+}: {
+  x: number;
+  y: number;
+  w?: number;
+  h?: number;
+  fill: string;
+  className?: string;
+}) {
+  const studW = Math.round(w * 0.22);
+  return (
+    <g className={className}>
+      <rect x={x} y={y} width={w} height={h} rx={5} fill={fill} />
+      <rect x={x + Math.round(w * 0.12)} y={y - 8} width={studW} height={8} rx={3} fill={fill} />
+      <rect x={x + Math.round(w * 0.52)} y={y - 8} width={studW} height={8} rx={3} fill={fill} />
+    </g>
+  );
+}
+
+/** Step 1 — a brick being placed on a canvas: using BrickThink. */
+function RoleArt() {
+  return (
+    <ArtFrame>
       <rect x="60" y="30" width="240" height="160" rx="14" fill="white" opacity="0.85" />
       <rect
         x="60"
@@ -482,27 +540,11 @@ function WelcomeIllustration() {
         strokeOpacity="0.25"
         strokeWidth="2"
       />
-      {/* bricks on the canvas */}
-      <g>
-        <rect x="92" y="120" width="70" height="26" rx="5" fill="#5f7d72" />
-        <rect x="100" y="112" width="16" height="8" rx="3" fill="#5f7d72" />
-        <rect x="126" y="112" width="16" height="8" rx="3" fill="#5f7d72" />
-        <rect x="122" y="92" width="70" height="26" rx="5" fill="#a8482a" />
-        <rect x="130" y="84" width="16" height="8" rx="3" fill="#a8482a" />
-        <rect x="156" y="84" width="16" height="8" rx="3" fill="#a8482a" />
-        <rect x="186" y="120" width="54" height="26" rx="5" fill="#cbb9ad" />
-        <rect x="194" y="112" width="14" height="8" rx="3" fill="#cbb9ad" />
-        <rect x="216" y="112" width="14" height="8" rx="3" fill="#cbb9ad" />
-        <rect x="152" y="146" width="96" height="26" rx="5" fill="#d8d3cd" />
-        <rect x="160" y="138" width="16" height="8" rx="3" fill="#d8d3cd" />
-        <rect x="186" y="138" width="16" height="8" rx="3" fill="#d8d3cd" />
-      </g>
-      {/* floating brick being placed */}
-      <g className="bt-welcome-settle">
-        <rect x="216" y="46" width="56" height="22" rx="5" fill="#a8482a" />
-        <rect x="224" y="39" width="14" height="7" rx="3" fill="#a8482a" />
-        <rect x="246" y="39" width="14" height="7" rx="3" fill="#a8482a" />
-      </g>
+      <Brick x={92} y={120} w={70} h={26} fill="#5f7d72" />
+      <Brick x={122} y={92} w={70} h={26} fill="#a8482a" />
+      <Brick x={186} y={120} w={54} h={26} fill="#cbb9ad" />
+      <Brick x={152} y={146} w={96} h={26} fill="#d8d3cd" />
+      <Brick x={216} y={46} w={56} h={22} fill="#a8482a" className="bt-welcome-settle" />
       <path
         className="bt-welcome-dash"
         d="M244 74v12"
@@ -511,22 +553,220 @@ function WelcomeIllustration() {
         strokeLinecap="round"
         strokeDasharray="3 6"
       />
-      {/* loose bricks below the canvas */}
+      <Brick x={70} y={228} fill="#5f7d72" className="bt-welcome-drift" />
+      <Brick
+        x={160}
+        y={244}
+        w={80}
+        fill="#cbb9ad"
+        className="bt-welcome-drift bt-welcome-drift-2"
+      />
+      <Brick
+        x={250}
+        y={222}
+        w={52}
+        fill="#a8482a"
+        className="bt-welcome-drift bt-welcome-drift-3"
+      />
+    </ArtFrame>
+  );
+}
+
+/** Step 2 — an ascending staircase of bricks: familiarity with the method. */
+function FluencyArt() {
+  return (
+    <ArtFrame>
+      <Brick x={36} y={238} w={72} h={26} fill="#d8d3cd" />
+      <Brick x={112} y={198} w={72} h={26} fill="#cbb9ad" className="bt-welcome-drift" />
+      <Brick
+        x={188}
+        y={158}
+        w={72}
+        h={26}
+        fill="#5f7d72"
+        className="bt-welcome-drift bt-welcome-drift-2"
+      />
+      <Brick
+        x={264}
+        y={118}
+        w={72}
+        h={26}
+        fill="#a8482a"
+        className="bt-welcome-drift bt-welcome-drift-3"
+      />
+      {/* the next step, still settling into place */}
+      <Brick x={286} y={54} w={56} h={22} fill="#a8482a" className="bt-welcome-settle" />
+      <path
+        className="bt-welcome-dash"
+        d="M314 82v14"
+        stroke="#9a4a2c"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray="3 6"
+      />
+      {/* rising dashes along the staircase */}
+      <path
+        className="bt-welcome-dash"
+        d="M84 224l52 -28M160 184l52 -28M236 144l52 -28"
+        stroke="#9a4a2c"
+        strokeOpacity="0.5"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray="2 7"
+        fill="none"
+      />
+    </ArtFrame>
+  );
+}
+
+/** Step 3 — brick clusters joined into one landscape: the workshop's purpose. */
+function PurposeArt() {
+  return (
+    <ArtFrame>
+      <rect x="40" y="40" width="280" height="200" rx="14" fill="white" opacity="0.85" />
+      <rect
+        x="40"
+        y="40"
+        width="280"
+        height="200"
+        rx="14"
+        fill="none"
+        stroke="#a8482a"
+        strokeOpacity="0.25"
+        strokeWidth="2"
+      />
+      {/* three clusters */}
       <g className="bt-welcome-drift">
-        <rect x="70" y="228" width="64" height="24" rx="5" fill="#5f7d72" />
-        <rect x="78" y="220" width="15" height="8" rx="3" fill="#5f7d72" />
-        <rect x="102" y="220" width="15" height="8" rx="3" fill="#5f7d72" />
+        <Brick x={66} y={100} w={56} h={22} fill="#a8482a" />
+        <Brick x={82} y={124} w={56} h={22} fill="#cbb9ad" />
       </g>
       <g className="bt-welcome-drift bt-welcome-drift-2">
-        <rect x="160" y="244" width="80" height="24" rx="5" fill="#cbb9ad" />
-        <rect x="168" y="236" width="15" height="8" rx="3" fill="#cbb9ad" />
-        <rect x="192" y="236" width="15" height="8" rx="3" fill="#cbb9ad" />
+        <Brick x={226} y={84} w={56} h={22} fill="#5f7d72" />
+        <Brick x={242} y={108} w={48} h={22} fill="#d8d3cd" />
       </g>
       <g className="bt-welcome-drift bt-welcome-drift-3">
-        <rect x="250" y="222" width="52" height="24" rx="5" fill="#a8482a" />
-        <rect x="258" y="214" width="14" height="8" rx="3" fill="#a8482a" />
-        <rect x="280" y="214" width="14" height="8" rx="3" fill="#a8482a" />
+        <Brick x={150} y={178} w={60} h={22} fill="#cbb9ad" />
+        <Brick x={166} y={202} w={52} h={22} fill="#5f7d72" />
       </g>
-    </svg>
+      {/* connections between the clusters */}
+      <path
+        className="bt-welcome-dash"
+        d="M140 112l80 -8M120 140l44 40M234 122l-40 60"
+        stroke="#9a4a2c"
+        strokeOpacity="0.55"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray="2 7"
+        fill="none"
+      />
+    </ArtFrame>
+  );
+}
+
+/** Step 4 — two rooms with builders (circles) around shared bricks: group size. */
+function GroupArt() {
+  return (
+    <ArtFrame>
+      {/* room one */}
+      <rect x="34" y="70" width="140" height="118" rx="12" fill="white" opacity="0.9" />
+      <rect
+        x="34"
+        y="70"
+        width="140"
+        height="118"
+        rx="12"
+        fill="none"
+        stroke="#5f7d72"
+        strokeWidth="2"
+      />
+      <Brick x={72} y={118} w={64} h={24} fill="#5f7d72" />
+      <g className="bt-welcome-drift">
+        <circle cx="66" cy="166" r="9" fill="#a8482a" />
+        <circle cx="104" cy="172" r="9" fill="#cbb9ad" />
+        <circle cx="142" cy="166" r="9" fill="#d8d3cd" />
+      </g>
+      {/* room two */}
+      <rect x="188" y="70" width="140" height="118" rx="12" fill="white" opacity="0.9" />
+      <rect
+        x="188"
+        y="70"
+        width="140"
+        height="118"
+        rx="12"
+        fill="none"
+        stroke="#a8482a"
+        strokeOpacity="0.6"
+        strokeWidth="2"
+      />
+      <Brick x={226} y={118} w={64} h={24} fill="#a8482a" />
+      <g className="bt-welcome-drift bt-welcome-drift-2">
+        <circle cx="222" cy="166" r="9" fill="#5f7d72" />
+        <circle cx="260" cy="172" r="9" fill="#d8d3cd" />
+        <circle cx="298" cy="166" r="9" fill="#cbb9ad" />
+      </g>
+      {/* one more builder joining */}
+      <g className="bt-welcome-settle">
+        <circle cx="181" cy="232" r="10" fill="#a8482a" />
+      </g>
+      <path
+        className="bt-welcome-dash"
+        d="M181 218v-24"
+        stroke="#9a4a2c"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray="3 6"
+      />
+    </ArtFrame>
+  );
+}
+
+/** Step 5 — an invite on its way from the envelope to a builder. */
+function InviteArt() {
+  return (
+    <ArtFrame>
+      {/* envelope */}
+      <g className="bt-welcome-drift">
+        <rect x="52" y="110" width="150" height="104" rx="12" fill="white" opacity="0.9" />
+        <rect
+          x="52"
+          y="110"
+          width="150"
+          height="104"
+          rx="12"
+          fill="none"
+          stroke="#a8482a"
+          strokeOpacity="0.35"
+          strokeWidth="2"
+        />
+        <path
+          d="M56 116l71 52 71 -52"
+          fill="none"
+          stroke="#a8482a"
+          strokeOpacity="0.35"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* brick seal */}
+        <Brick x={103} y={186} w={48} h={20} fill="#a8482a" />
+      </g>
+      {/* the magic link arcs to a builder */}
+      <path
+        className="bt-welcome-dash"
+        d="M210 128c34 -36 74 -36 96 4"
+        stroke="#9a4a2c"
+        strokeOpacity="0.6"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeDasharray="3 7"
+        fill="none"
+      />
+      <g className="bt-welcome-settle">
+        <circle cx="308" cy="158" r="12" fill="#5f7d72" />
+      </g>
+      <g className="bt-welcome-drift bt-welcome-drift-3">
+        <Brick x={276} y={214} w={64} h={24} fill="#cbb9ad" />
+      </g>
+    </ArtFrame>
   );
 }
