@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyConfigPatch,
+  applyPathwayOutcome,
+  applyWelcomeDismissed,
   EMPTY_ONBOARDING,
   MAX_ONBOARDING_EVENTS,
   MAX_PENDING_INVITES,
@@ -94,5 +97,55 @@ describe('normaliseOnboarding', () => {
     const state = normaliseOnboarding(raw);
     expect(state.config.purposeApplied).toBe(true);
     expect(state.config.invitesDispatched).toBe(true);
+  });
+});
+
+describe('applyConfigPatch', () => {
+  it('merges only the given fields and leaves the rest untouched', () => {
+    const base = normaliseOnboarding({ v: 1, config: { role: 'facilitator' } });
+    const next = applyConfigPatch(base, { fluency: 'certified', groupSize: '2_4' });
+    expect(next.config.role).toBe('facilitator');
+    expect(next.config.fluency).toBe('certified');
+    expect(next.config.groupSize).toBe('2_4');
+    expect(base.config.fluency).toBeNull();
+  });
+});
+
+describe('applyPathwayOutcome', () => {
+  const NOW = '2026-08-28T12:00:00.000Z';
+
+  it('records completion with an event', () => {
+    const next = applyPathwayOutcome(EMPTY_ONBOARDING, 'workshop', 'completed', NOW);
+    expect(next.pathways.workshop).toBe('completed');
+    expect(next.events.at(-1)).toEqual({ t: NOW, k: 'pathway_complete', p: 'workshop' });
+  });
+
+  it('records a skip with an event', () => {
+    const next = applyPathwayOutcome(EMPTY_ONBOARDING, 'build', 'skipped', NOW);
+    expect(next.pathways.build).toBe('skipped');
+    expect(next.events.at(-1)).toEqual({ t: NOW, k: 'pathway_skip', p: 'build' });
+  });
+
+  it('never downgrades completed to skipped, but upgrades skipped to completed', () => {
+    const done = applyPathwayOutcome(EMPTY_ONBOARDING, 'session', 'completed', NOW);
+    const attempted = applyPathwayOutcome(done, 'session', 'skipped', NOW);
+    expect(attempted.pathways.session).toBe('completed');
+    expect(attempted.events).toHaveLength(done.events.length);
+
+    const skipped = applyPathwayOutcome(EMPTY_ONBOARDING, 'session', 'skipped', NOW);
+    const upgraded = applyPathwayOutcome(skipped, 'session', 'completed', NOW);
+    expect(upgraded.pathways.session).toBe('completed');
+  });
+});
+
+describe('applyWelcomeDismissed', () => {
+  it('stamps dismissal once with an event and is idempotent', () => {
+    const NOW = '2026-08-28T12:00:00.000Z';
+    const once = applyWelcomeDismissed(EMPTY_ONBOARDING, NOW);
+    expect(once.welcomeDismissedAt).toBe(NOW);
+    expect(once.events.at(-1)).toEqual({ t: NOW, k: 'modal_dismiss' });
+    const twice = applyWelcomeDismissed(once, '2026-08-28T13:00:00.000Z');
+    expect(twice.welcomeDismissedAt).toBe(NOW);
+    expect(twice.events).toHaveLength(once.events.length);
   });
 });

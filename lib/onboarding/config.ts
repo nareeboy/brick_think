@@ -7,6 +7,8 @@
  * degrades to defaults, never throws.
  */
 
+import type { Json } from '@/lib/db/types.generated';
+
 export type OnboardingConfigRole = 'facilitator' | 'participant' | 'explorer';
 export type OnboardingFluency = 'certified' | 'run_before' | 'read_about' | 'new';
 export type OnboardingPurpose =
@@ -164,8 +166,57 @@ export function normaliseOnboarding(raw: unknown): OnboardingServerState {
   };
 }
 
+/** Pure merge of configuration-flow answers onto a state (no mutation). */
+export function applyConfigPatch(
+  state: OnboardingServerState,
+  patch: Partial<OnboardingConfig>,
+): OnboardingServerState {
+  return { ...state, config: { ...state.config, ...patch } };
+}
+
+/**
+ * Records a pathway outcome plus its drop-off event. `completed` is terminal:
+ * a later skip never downgrades it (and appends no event); a skip can be
+ * upgraded to completed later.
+ */
+export function applyPathwayOutcome(
+  state: OnboardingServerState,
+  path: OnboardingPathwayKey,
+  outcome: 'completed' | 'skipped',
+  now: string,
+): OnboardingServerState {
+  const current = state.pathways[path];
+  if (current === 'completed') return state;
+  if (current === outcome) return state;
+  const event: OnboardingEvent = {
+    t: now,
+    k: outcome === 'completed' ? 'pathway_complete' : 'pathway_skip',
+    p: path,
+  };
+  return {
+    ...state,
+    pathways: { ...state.pathways, [path]: outcome },
+    events: [...state.events, event].slice(-MAX_ONBOARDING_EVENTS),
+  };
+}
+
+/** Stamps the pathway modal's dismissal once (idempotent) with its event. */
+export function applyWelcomeDismissed(
+  state: OnboardingServerState,
+  now: string,
+): OnboardingServerState {
+  if (state.welcomeDismissedAt !== null) return state;
+  return {
+    ...state,
+    welcomeDismissedAt: now,
+    events: [...state.events, { t: now, k: 'modal_dismiss' as const }].slice(
+      -MAX_ONBOARDING_EVENTS,
+    ),
+  };
+}
+
 /** Serialises a state object back into the snake_case JSON stored in the column. */
-export function serialiseOnboarding(state: OnboardingServerState): Record<string, unknown> {
+export function serialiseOnboarding(state: OnboardingServerState): Json {
   return {
     v: 1,
     config: {

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import type { OnboardingServerState } from '@/lib/onboarding/config';
+
 export type OnboardingRole = 'facilitator' | 'participant';
 
 const KEYS = {
@@ -38,10 +40,15 @@ const KEYS = {
   pathBuildDone: 'bt_path_build_done',
   pathWorkshopDone: 'bt_path_workshop_done',
   pathSessionDone: 'bt_path_session_done',
-  // Explicit first-run role choice ('facilitator' | 'guest') from the
-  // RoleChooser screen. Decides which tutorial experience this browser gets;
-  // cleared by replayAll() so account settings can re-ask.
+  // Explicit first-run role choice ('facilitator' | 'guest' | 'explorer')
+  // from the configuration flow (or the header role switcher). Decides which
+  // tutorial experience this browser gets; cleared by replayAll() so account
+  // settings can re-ask. Local cache of profiles.onboarding config.role —
+  // the server value wins on conflict (OnboardingHydrator).
   roleChoice: 'bt_role_choice',
+  // LSP fluency from the configuration flow — drives spotlight-tour density.
+  // Local cache of profiles.onboarding config.fluency; server wins.
+  fluency: 'bt_fluency',
   // Sticky tutorial-guest marker. Set (client-side) the moment this browser
   // provably participates in someone else's session, so the tutorial modal
   // stays hidden even if that session — the only server-side evidence — is
@@ -52,12 +59,20 @@ const KEYS = {
 
 export type OnboardingPath = 'build' | 'workshop' | 'session';
 
-export type RoleChoice = 'facilitator' | 'guest';
+export type RoleChoice = 'facilitator' | 'guest' | 'explorer';
 
 function readRoleChoice(): RoleChoice | null {
   if (typeof window === 'undefined') return null;
   const v = window.localStorage.getItem(KEYS.roleChoice);
-  return v === 'facilitator' || v === 'guest' ? v : null;
+  return v === 'facilitator' || v === 'guest' || v === 'explorer' ? v : null;
+}
+
+export type FluencyChoice = 'certified' | 'run_before' | 'read_about' | 'new';
+
+function readFluency(): FluencyChoice | null {
+  if (typeof window === 'undefined') return null;
+  const v = window.localStorage.getItem(KEYS.fluency);
+  return v === 'certified' || v === 'run_before' || v === 'read_about' || v === 'new' ? v : null;
 }
 
 const PATH_KEYS: Record<OnboardingPath, string> = {
@@ -93,6 +108,40 @@ export const WELCOME_REPRISE_EVENT = 'bt-welcome-reprise';
 
 export function requestWelcomeReprise(): void {
   window.dispatchEvent(new Event(WELCOME_REPRISE_EVENT));
+}
+
+/**
+ * Writes the server's `profiles.onboarding` truths into the local `bt_` caches
+ * (server wins on conflict). Deliberately only SETS values the server actually
+ * holds — server defaults (null role, not_started pathways) never clear local
+ * flags, so pre-migration users keep their local progress untouched. Called by
+ * OnboardingHydrator on every authed layout mount.
+ */
+export function hydrateOnboardingFromServer(server: OnboardingServerState): void {
+  if (typeof window === 'undefined') return;
+  let changed = false;
+  const setIfDiffers = (key: string, value: string) => {
+    if (window.localStorage.getItem(key) !== value) {
+      window.localStorage.setItem(key, value);
+      changed = true;
+    }
+  };
+
+  const role = server.config.role;
+  if (role !== null) {
+    const choice: RoleChoice =
+      role === 'participant' ? 'guest' : role === 'explorer' ? 'explorer' : 'facilitator';
+    setIfDiffers(KEYS.roleChoice, choice);
+    if (choice === 'guest') setIfDiffers(KEYS.tutorialGuest, '1');
+  }
+  if (server.config.fluency !== null) setIfDiffers(KEYS.fluency, server.config.fluency);
+  for (const [path, key] of Object.entries(PATH_KEYS) as [OnboardingPath, string][]) {
+    const state = server.pathways[path];
+    if (state !== 'not_started') setIfDiffers(key, state === 'completed' ? '1' : 'skipped');
+  }
+  if (server.welcomeDismissedAt !== null) setIfDiffers(KEYS.welcomeSeen, '1');
+
+  if (changed) broadcastSync();
 }
 
 function readRole(): OnboardingRole {
@@ -135,6 +184,8 @@ export interface OnboardingState {
   /** The explicit first-run role choice, or null while unanswered. */
   roleChoice: RoleChoice | null;
   chooseRole: (choice: RoleChoice) => void;
+  /** LSP fluency from the configuration flow, or null while unanswered. */
+  fluency: FluencyChoice | null;
   replayAll: () => void;
 }
 
@@ -155,6 +206,7 @@ export function useOnboardingState(): OnboardingState {
   const [walkthroughReplay, setWalkthroughReplay] = useState(false);
   const [tutorialGuestSticky, setTutorialGuestSticky] = useState(false);
   const [roleChoice, setRoleChoice] = useState<RoleChoice | null>(null);
+  const [fluency, setFluency] = useState<FluencyChoice | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -171,6 +223,7 @@ export function useOnboardingState(): OnboardingState {
       setWalkthroughReplay(readFlag(KEYS.walkthroughReplay));
       setTutorialGuestSticky(readFlag(KEYS.tutorialGuest));
       setRoleChoice(readRoleChoice());
+      setFluency(readFluency());
     };
     sync();
     setHydrated(true);
@@ -238,8 +291,8 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.setItem(KEYS.roleChoice, choice);
     setRoleChoice(choice);
     // The choice owns the sticky guest flag in both directions: declaring
-    // Guest suppresses the tutorial modal; declaring Facilitator (e.g. via
-    // the header role switcher) un-suppresses it.
+    // Guest suppresses the tutorial modal; declaring Facilitator or Explorer
+    // (e.g. via the header role switcher) un-suppresses it.
     if (choice === 'guest') {
       window.localStorage.setItem(KEYS.tutorialGuest, '1');
       setTutorialGuestSticky(true);
@@ -253,8 +306,10 @@ export function useOnboardingState(): OnboardingState {
   const replayAll = useCallback(() => {
     window.localStorage.removeItem(KEYS.tutorialGuest);
     window.localStorage.removeItem(KEYS.roleChoice);
+    window.localStorage.removeItem(KEYS.fluency);
     setTutorialGuestSticky(false);
     setRoleChoice(null);
+    setFluency(null);
     window.localStorage.removeItem(KEYS.welcomeSeen);
     window.localStorage.removeItem(KEYS.checklistComplete);
     window.localStorage.removeItem(KEYS.checklistDismissed);
@@ -304,6 +359,7 @@ export function useOnboardingState(): OnboardingState {
     markTutorialGuest,
     roleChoice,
     chooseRole,
+    fluency,
     replayAll,
   };
 }

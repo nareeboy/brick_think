@@ -10,9 +10,11 @@ import { PresenceHeartbeat } from '@/components/app/PresenceHeartbeat';
 import { getGlobalRole } from '@/lib/account/globalRole';
 import { getMyActiveSessionsForNav } from '@/lib/sessions/navSessions';
 import { NotificationToast } from '@/components/notifications/NotificationToast';
+import { OnboardingHydrator } from '@/components/onboarding/OnboardingHydrator';
 import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome';
 import { RoleChooserRedirect } from '@/components/onboarding/RoleChooserRedirect';
 import { isTutorialGuest } from '@/lib/onboarding/guestGate';
+import { normaliseOnboarding } from '@/lib/onboarding/config';
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
@@ -38,7 +40,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
 
   const profileRes = await supabase
     .from('profiles')
-    .select('full_name, email, is_site_admin')
+    .select('full_name, email, is_site_admin, onboarding')
     .eq('id', user.id)
     .single();
 
@@ -58,6 +60,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
     fullName !== null && emailLocalPart !== null && fullName.toLowerCase() === emailLocalPart;
   const userName = (fullNameLooksLikeEmailPrefix ? null : fullName) || email || 'You';
   const isSiteAdmin = profileRes.data?.is_site_admin === true;
+  const onboarding = normaliseOnboarding(profileRes.data?.onboarding);
   const [role, navSessions, initialNotifications, tutorialGuest] = await Promise.all([
     getGlobalRole(supabase, user.id),
     getMyActiveSessionsForNav(supabase, user.id),
@@ -88,6 +91,7 @@ export default async function AuthedAppLayout({ children }: { children: ReactNod
             (hub pages, or the reprise after a pathway completes). Invited
             guests never see it; they still get the in-context spotlight
             tours (session page + canvas). */}
+        <OnboardingHydrator state={onboarding} />
         <Suspense fallback={null}>
           <RoleChooserRedirect guest={tutorialGuest} />
         </Suspense>
