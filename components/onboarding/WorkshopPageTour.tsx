@@ -91,10 +91,13 @@ export function WorkshopPageTour() {
 
   // First visit to any workshop page re-arms the tour (own seen-flag, like
   // the session tour); the ?onboarding=workshop-tour param still forces it.
-  // Guests never get it auto-fired.
+  // Guests never get it auto-fired, and it stays out of the way while a
+  // DIFFERENT chained tour owns the page (e.g. ?onboarding=create-session).
+  const otherTourInFlight = searchParams.get(ONBOARDING_PARAM) !== null && !requested;
   const firstVisit =
     hydrated &&
     !workshopTourSeen &&
+    !otherTourInFlight &&
     role === 'facilitator' &&
     roleChoice !== 'guest' &&
     !tutorialGuestSticky;

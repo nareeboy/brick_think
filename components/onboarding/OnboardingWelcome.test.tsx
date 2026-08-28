@@ -31,6 +31,7 @@ vi.mock('@/app/(authed)/app/my-designs/actions', () => ({
 vi.mock('@/lib/onboarding/actions', () => ({
   setPathwayOutcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
   dismissWelcome: vi.fn().mockResolvedValue({ ok: true, data: null }),
+  saveOnboardingConfig: vi.fn().mockResolvedValue({ ok: true, data: null }),
 }));
 
 import { OnboardingWelcome } from './OnboardingWelcome';

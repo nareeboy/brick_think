@@ -294,6 +294,13 @@ export function useOnboardingState(): OnboardingState {
       window.localStorage.removeItem(KEYS.tutorialGuest);
       setTutorialGuestSticky(false);
     }
+    // Keep the server column in step (server wins on conflict, so a purely
+    // local choice would otherwise be flipped back by hydration on the next
+    // load). Fire-and-forget; local state is already correct if this fails.
+    const role = choice === 'guest' ? 'participant' : choice;
+    void import('@/lib/onboarding/actions')
+      .then((m) => m.saveOnboardingConfig({ role }))
+      .catch(() => {});
     broadcastSync();
   }, []);
 

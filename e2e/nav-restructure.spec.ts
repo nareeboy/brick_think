@@ -26,7 +26,15 @@ test.describe('nav restructure', () => {
   // Workshops is hidden, leaving only My Designs. Their
   // session link (SessionNavLink) appears once they join a session. The
   // explicit choice overrides the fixture's pre-seeded facilitator answer.
-  test('guest header shows only My Designs', async ({ signedInPage }) => {
+  test('guest header shows only My Designs', async ({ signedInPage, signedInEmail }) => {
+    // The sign-in backdoor seeds a completed facilitator config server-side,
+    // and the hydrator makes the server win — reset it so the locally
+    // declared guest answer stands (this test emulates the declared choice
+    // itself, not the flow that records it).
+    const res = await signedInPage.request.post('/api/test/sign-in', {
+      data: { email: signedInEmail, onboarding: 'fresh' },
+    });
+    expect(res.ok()).toBeTruthy();
     await signedInPage.addInitScript(() => {
       window.localStorage.setItem('bt_role_choice', 'guest');
       window.localStorage.setItem('bt_tutorial_guest', '1');
