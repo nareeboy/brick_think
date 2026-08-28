@@ -34,7 +34,6 @@ import { SessionStagesProvider } from '@/components/session/SessionStagesProvide
 import { ParticipantCoachMark } from '@/components/onboarding/ParticipantCoachMark';
 import { SpotlightTour } from '@/components/onboarding/SpotlightTour';
 import { MarkTutorialGuest } from '@/components/onboarding/MarkTutorialGuest';
-import { StartModelSpotlight } from '@/components/onboarding/StartModelSpotlight';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,16 +49,8 @@ export async function generateMetadata({
   return { title: data?.title ? `${data.title} · Session` : 'Session' };
 }
 
-export default async function SessionDetailPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ onboarding?: string }>;
-}) {
+export default async function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { onboarding } = await searchParams;
-  const startModelSpotlightActive = onboarding === 'start-model';
   if (!isSupabaseConfigured()) {
     redirect(`/sign-in?reason=unconfigured&next=%2Fapp%2Fsessions%2F${id}`);
   }
@@ -568,13 +559,7 @@ export default async function SessionDetailPage({
                 currentUserId={user.id}
                 stageViewModels={stageViewModels}
               />
-              <SpotlightTour
-                canManageSession={canManageSession}
-                suppressed={startModelSpotlightActive}
-              />
-              <Suspense fallback={null}>
-                <StartModelSpotlight />
-              </Suspense>
+              <SpotlightTour canManageSession={canManageSession} />
               <ParticipantCoachMark />
               {viewerIsParticipant && !canManageSession ? <MarkTutorialGuest /> : null}
             </div>

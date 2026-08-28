@@ -55,8 +55,9 @@ const GAP = 16;
 const TOOLTIP_H_EST = 190;
 
 /**
- * Guided tour of the workshop page, chained from the create-workshop form
- * spotlight (`?onboarding=workshop-tour` on the redirect after creation).
+ * Guided tour of the workshop page. Fires on the first visit to any workshop
+ * page (own seen-flag, like the session tour) and via the chained
+ * `?onboarding=workshop-tour` param (redirect after creation).
  * Completing the last step fires confetti and ticks the welcome modal's
  * workshop pathway; Skip records an honest skip (no tick, no confetti); Esc
  * dismisses without any state change.
@@ -65,7 +66,15 @@ export function WorkshopPageTour() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const { markPathway } = useOnboardingState();
+  const {
+    markPathway,
+    hydrated,
+    role,
+    roleChoice,
+    tutorialGuestSticky,
+    workshopTourSeen,
+    markWorkshopTourSeen,
+  } = useOnboardingState();
   const titleId = useId();
   const bodyId = useId();
   const maskId = useId();
@@ -74,7 +83,17 @@ export function WorkshopPageTour() {
   const [dismissed, setDismissed] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
-  const active = requested && !dismissed && stepIndex < STEPS.length;
+  // First visit to any workshop page re-arms the tour (own seen-flag, like
+  // the session tour); the ?onboarding=workshop-tour param still forces it.
+  // Guests never get it auto-fired.
+  const firstVisit =
+    hydrated &&
+    !workshopTourSeen &&
+    role === 'facilitator' &&
+    roleChoice !== 'guest' &&
+    !tutorialGuestSticky;
+
+  const active = (requested || firstVisit) && !dismissed && stepIndex < STEPS.length;
   const step = active ? STEPS[stepIndex]! : null;
   const rect = useSpotlightRect(step ? step.selector : null, active);
 
@@ -94,25 +113,28 @@ export function WorkshopPageTour() {
 
   const complete = useCallback(() => {
     setDismissed(true);
+    markWorkshopTourSeen();
     // Genuine completion: tick the welcome modal's workshop card and
     // celebrate in place (the modal returns on the next hub visit).
     markPathway('workshop', 'completed');
     void celebrate();
     stripParam();
-  }, [markPathway, stripParam]);
+  }, [markPathway, markWorkshopTourSeen, stripParam]);
 
   // The Skip button records an honest skip: it stops the prompting but never
   // ticks the pathway and never celebrates. Esc stays quiet (no state).
   const skip = useCallback(() => {
     setDismissed(true);
+    markWorkshopTourSeen();
     markPathway('workshop', 'skipped');
     stripParam();
-  }, [markPathway, stripParam]);
+  }, [markPathway, markWorkshopTourSeen, stripParam]);
 
   const quietExit = useCallback(() => {
     setDismissed(true);
+    markWorkshopTourSeen();
     stripParam();
-  }, [stripParam]);
+  }, [markWorkshopTourSeen, stripParam]);
 
   const goNext = useCallback(() => {
     if (stepIndex + 1 >= STEPS.length) complete();

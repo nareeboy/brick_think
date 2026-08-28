@@ -31,6 +31,11 @@ const KEYS = {
   // or skips the tutorial; cleared by replayAll() so "Replay walkthrough"
   // re-triggers it. Gated on this flag ALONE (not role) so participants see it.
   canvasTutorialSeen: 'bt_canvas_tutorial_seen',
+  // First-visit workshop page tour (5 stops). Set when the tour exits any
+  // way (complete / skip / quiet), so it fires once per device like the
+  // session tour; ?onboarding=workshop-tour still forces a replay. Cleared
+  // by replayAll().
+  workshopTourSeen: 'bt_workshop_tour_seen',
   // Welcome-modal pathway state: '1' = genuinely completed, 'skipped' = the
   // user skipped that tour (stops the prompting, never renders as a tick,
   // never counts toward the finale), absent = not started. Completion is the
@@ -163,6 +168,8 @@ export interface OnboardingState {
   checklistComplete: boolean;
   checklistDismissed: boolean;
   sessionTourSeen: boolean;
+  /** True once the workshop page tour has run (any exit) on this device. */
+  workshopTourSeen: boolean;
   /** True once the canvas-builder tutorial has been finished or skipped. */
   canvasTutorialSeen: boolean;
   /** Welcome-modal pathway progress (build / workshop / session). */
@@ -175,6 +182,7 @@ export interface OnboardingState {
   markChecklistComplete: () => void;
   dismissChecklist: () => void;
   markSessionTourSeen: () => void;
+  markWorkshopTourSeen: () => void;
   markCanvasTutorialSeen: () => void;
   /** Record a pathway outcome locally + server-side. Completed is terminal. */
   markPathway: (path: OnboardingPath, outcome: 'completed' | 'skipped') => void;
@@ -199,6 +207,7 @@ export function useOnboardingState(): OnboardingState {
   const [checklistComplete, setChecklistComplete] = useState(false);
   const [checklistDismissed, setChecklistDismissed] = useState(false);
   const [sessionTourSeen, setSessionTourSeen] = useState(false);
+  const [workshopTourSeen, setWorkshopTourSeen] = useState(false);
   const [canvasTutorialSeen, setCanvasTutorialSeen] = useState(false);
   const [pathways, setPathways] = useState<Record<OnboardingPath, PathwayLocalState>>({
     build: 'not_started',
@@ -218,6 +227,7 @@ export function useOnboardingState(): OnboardingState {
       setChecklistComplete(readFlag(KEYS.checklistComplete));
       setChecklistDismissed(readFlag(KEYS.checklistDismissed));
       setSessionTourSeen(readFlag(KEYS.sessionTourSeen));
+      setWorkshopTourSeen(readFlag(KEYS.workshopTourSeen));
       setCanvasTutorialSeen(readFlag(KEYS.canvasTutorialSeen));
       setPathways({
         build: readPathway(KEYS.pathBuildDone),
@@ -274,6 +284,12 @@ export function useOnboardingState(): OnboardingState {
     broadcastSync();
   }, []);
 
+  const markWorkshopTourSeen = useCallback(() => {
+    window.localStorage.setItem(KEYS.workshopTourSeen, '1');
+    setWorkshopTourSeen(true);
+    broadcastSync();
+  }, []);
+
   const markCanvasTutorialSeen = useCallback(() => {
     window.localStorage.setItem(KEYS.canvasTutorialSeen, '1');
     setCanvasTutorialSeen(true);
@@ -326,6 +342,7 @@ export function useOnboardingState(): OnboardingState {
     window.localStorage.removeItem(KEYS.checklistComplete);
     window.localStorage.removeItem(KEYS.checklistDismissed);
     window.localStorage.removeItem(KEYS.sessionTourSeen);
+    window.localStorage.removeItem(KEYS.workshopTourSeen);
     window.localStorage.removeItem(KEYS.canvasTutorialSeen);
     window.localStorage.removeItem(KEYS.pathBuildDone);
     window.localStorage.removeItem(KEYS.pathWorkshopDone);
@@ -341,6 +358,7 @@ export function useOnboardingState(): OnboardingState {
     setChecklistComplete(false);
     setChecklistDismissed(false);
     setSessionTourSeen(false);
+    setWorkshopTourSeen(false);
     setCanvasTutorialSeen(false);
     setPathways({ build: 'not_started', workshop: 'not_started', session: 'not_started' });
     setWalkthroughReplay(true);
@@ -353,6 +371,7 @@ export function useOnboardingState(): OnboardingState {
     checklistComplete,
     checklistDismissed,
     sessionTourSeen,
+    workshopTourSeen,
     canvasTutorialSeen,
     pathways,
     walkthroughReplay,
@@ -361,6 +380,7 @@ export function useOnboardingState(): OnboardingState {
     markChecklistComplete,
     dismissChecklist,
     markSessionTourSeen,
+    markWorkshopTourSeen,
     markCanvasTutorialSeen,
     markPathway,
     tutorialGuestSticky,

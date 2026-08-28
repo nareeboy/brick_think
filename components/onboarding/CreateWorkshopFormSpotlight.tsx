@@ -48,7 +48,7 @@ const STEPS: Step[] = [
  * up. Clicking the highlighted Create button finishes the tour by stripping
  * the param with a synchronous history.replaceState: the form's own submit is
  * about to router.push to the new workshop, and a router.replace here would
- * race it (the replace-vs-push race the start-model spotlight hit).
+ * race it (a replace-vs-push race between param-strip and navigation).
  */
 export function CreateWorkshopFormSpotlight() {
   const searchParams = useSearchParams();

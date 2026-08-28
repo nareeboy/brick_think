@@ -11,12 +11,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   // No retries anywhere: a failing test should fail loudly, on CI and locally.
-  // A CI-only retry briefly absorbed the onboarding start-model spotlight
-  // race (the ?onboarding param-strip router.replace clobbering the
-  // createModelInStage navigation on slow runners); that race is fixed at the
-  // source — StartModelSpotlight strips the param via history.replaceState on
-  // target-click completion, so no competing router navigation exists. Don't
-  // reintroduce retries to paper over a deterministic failure.
+  // Don't reintroduce retries to paper over a deterministic failure.
   retries: 0,
   // File-level parallelism (fullyParallel stays false, so a worker always takes
   // a whole spec file and within-file ordering assumptions still hold). Cross-

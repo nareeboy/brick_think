@@ -105,6 +105,7 @@ export async function suppressFirstRunOverlays(page: Page | BrowserContext): Pro
     window.localStorage.setItem('bt_welcome_seen', '1');
     window.localStorage.setItem('bt_checklist_dismissed', '1');
     window.localStorage.setItem('bt_session_tour_seen', '1');
+    window.localStorage.setItem('bt_workshop_tour_seen', '1');
     window.localStorage.setItem('bt_canvas_tutorial_seen', '1');
     // Shape must match lib/consent/state.ts isDecision().
     window.localStorage.setItem(
