@@ -111,11 +111,18 @@ function broadcastSync(): void {
 }
 
 /**
- * Writes the server's `profiles.onboarding` truths into the local `bt_` caches
- * (server wins on conflict). Deliberately only SETS values the server actually
- * holds — server defaults (null role, not_started pathways) never clear local
- * flags, so pre-migration users keep their local progress untouched. Called by
- * OnboardingHydrator on every authed layout mount.
+ * Writes the server's CONFIGURATION answers into the local `bt_` caches
+ * (server wins on conflict): role, fluency, group size — a returning user
+ * on a new device never re-answers the wizard. Deliberately only SETS values
+ * the server actually holds, so pre-migration users keep their local state.
+ *
+ * The INSTRUCTION layer (welcome modal seen, pathway ticks, tour flags) is
+ * just as deliberately per-device and is NEVER hydrated: clearing
+ * localStorage — or arriving on a new device — re-arms the modal and every
+ * tour without touching the answers. The server still RECORDS pathway
+ * outcomes and the modal dismissal (setPathwayOutcome / dismissWelcome) so
+ * drop-off stays measurable; it just never replays them onto a device.
+ * Called by OnboardingHydrator on every authed layout mount.
  */
 export function hydrateOnboardingFromServer(server: OnboardingServerState): void {
   if (typeof window === 'undefined') return;
@@ -136,11 +143,6 @@ export function hydrateOnboardingFromServer(server: OnboardingServerState): void
   }
   if (server.config.fluency !== null) setIfDiffers(KEYS.fluency, server.config.fluency);
   if (server.config.groupSize !== null) setIfDiffers(KEYS.groupSize, server.config.groupSize);
-  for (const [path, key] of Object.entries(PATH_KEYS) as [OnboardingPath, string][]) {
-    const state = server.pathways[path];
-    if (state !== 'not_started') setIfDiffers(key, state === 'completed' ? '1' : 'skipped');
-  }
-  if (server.welcomeDismissedAt !== null) setIfDiffers(KEYS.welcomeSeen, '1');
 
   if (changed) broadcastSync();
 }
