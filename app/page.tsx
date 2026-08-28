@@ -285,7 +285,6 @@ function FeatureBento() {
             label="ai assist"
             title="An AI helper, on your side."
             body="Get build prompts from a topic. Spot themes across stories. Draft first-pass rules from the system model. Nothing reaches the room until you say yes."
-            status="roadmap"
           >
             <PromptVisual />
           </FeatureCard>
@@ -340,29 +339,19 @@ function FeatureCard({
   label,
   title,
   body,
-  status,
   children,
 }: {
   className?: string;
   label: string;
   title: string;
   body: string;
-  status?: 'roadmap';
   children?: React.ReactNode;
 }) {
   return (
     <article
       className={`group relative flex flex-col overflow-hidden rounded-[28px] border border-zinc-900/10 bg-white p-7 transition-shadow duration-300 hover:shadow-[0_30px_60px_-30px_rgba(60,30,15,0.25)] ${className}`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">{label}</p>
-        {status === 'roadmap' ? (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-zinc-900/10 bg-zinc-50 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">
-            <span className="inline-flex h-1.5 w-1.5 rounded-full bg-[#a8482a]" />
-            On the roadmap
-          </span>
-        ) : null}
-      </div>
+      <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">{label}</p>
       <h3 className="mt-3 max-w-[28ch] text-[22px] font-semibold leading-tight tracking-tight text-zinc-950">
         {title}
       </h3>
