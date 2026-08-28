@@ -161,6 +161,8 @@ export interface OnboardingState {
   chooseRole: (choice: RoleChoice) => void;
   /** LSP fluency from the configuration flow, or null while unanswered. */
   fluency: FluencyChoice | null;
+  /** Cache the fluency answer locally (the flow also persists it server-side). */
+  chooseFluency: (choice: FluencyChoice) => void;
   replayAll: () => void;
 }
 
@@ -275,6 +277,12 @@ export function useOnboardingState(): OnboardingState {
     broadcastSync();
   }, []);
 
+  const chooseFluency = useCallback((choice: FluencyChoice) => {
+    window.localStorage.setItem(KEYS.fluency, choice);
+    setFluency(choice);
+    broadcastSync();
+  }, []);
+
   const replayAll = useCallback(() => {
     window.localStorage.removeItem(KEYS.tutorialGuest);
     window.localStorage.removeItem(KEYS.roleChoice);
@@ -322,6 +330,7 @@ export function useOnboardingState(): OnboardingState {
     roleChoice,
     chooseRole,
     fluency,
+    chooseFluency,
     replayAll,
   };
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Suspense } from 'react';
 
 import { Avatar } from '@/components/app/Avatar';
 import { PageBanner } from '@/components/app/PageBanner';

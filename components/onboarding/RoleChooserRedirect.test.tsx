@@ -24,9 +24,9 @@ afterEach(() => {
 });
 
 describe('RoleChooserRedirect', () => {
-  it('sends an unanswered user on a hub page to /app/choose-role', async () => {
+  it('sends an unanswered user on a hub page to /app/welcome', async () => {
     render(<RoleChooserRedirect />);
-    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/app/choose-role'));
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/app/welcome'));
   });
 
   it('does nothing once the question is answered', async () => {
