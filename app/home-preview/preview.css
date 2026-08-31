@@ -1,0 +1,1271 @@
+/* Home-preview page styles — generated from the local brand test page.
+   Everything is scoped under .btp so nothing leaks into the rest of the app. */
+
+/* ============================================================
+   TOKENS — yellow colourway, derived with the brand guide's
+   own OKLCH maths (hue 86.74deg)
+   ============================================================ */
+.btp {
+  --light: #fff4dc; /* top plane — grounds only, never text */
+  --mid: #efbe3f; /* left plane — the hero colour */
+  --dark: #8a6900; /* right plane — text accents, dark fields */
+  --ink: #221800; /* outlines + dark grounds (hue-tinted near-black) */
+  --on-mid: #332609; /* the only text colour allowed on --mid */
+
+  --bg: #f9f5ee;
+  --bg-2: #f1ece1;
+  --card: #ffffff;
+  --fg: #221800;
+  --fg-2: #6b6250;
+  --line: #e0dacc;
+  --lattice: rgba(34, 24, 0, 0.055);
+  --lattice-inv: rgba(255, 244, 220, 0.075);
+
+  --display: var(--font-kaisei), Georgia, serif;
+  --sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --mono: var(--font-plex-mono), ui-monospace, Menlo, monospace;
+
+  --gut: clamp(20px, 4vw, 48px);
+  --max: 1200px;
+}
+.btp,
+.btp * {
+  box-sizing: border-box;
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .btp,
+  .btp * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.btp {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  /* the isometric lattice the bricks are built on — 30 degrees, barely there */
+  background-image:
+    repeating-linear-gradient(30deg, var(--lattice) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(150deg, var(--lattice) 0 1px, transparent 1px 46px);
+}
+.btp img,
+.btp svg,
+.btp video {
+  max-width: 100%;
+}
+.btp a {
+  color: inherit;
+  text-decoration: none;
+}
+.btp ul,
+.btp ol {
+  list-style: none;
+  padding: 0;
+}
+.btp button {
+  font-family: inherit;
+  cursor: pointer;
+}
+.btp .wrap {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gut);
+}
+.btp :focus-visible {
+  outline: 2px solid var(--dark);
+  outline-offset: 2px;
+}
+/* mono utility label — the working voice of the brand */
+.btp .tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .tag.accent {
+  color: var(--dark);
+}
+.btp .mono {
+  font-family: var(--mono);
+}
+/* display voice — CM Serif bold italic, straight off the wordmark */
+.btp .display {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.02;
+}
+/* ============================================================
+   BUTTONS — isometric brick blocks. The face is the primary
+   colour; the bottom and right edges are two darker tints of it,
+   sheared so the corners meet like the brick's side planes.
+   ============================================================ */
+.btp .btn {
+  position: relative;
+  z-index: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: var(--light);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 12px 22px;
+  /* extrusion depth — dy is always dx * 2/3 so the shear angles line up */
+  --dx: 9px;
+  --dy: calc(var(--dx) * 2/3);
+  --side-b: var(--mid); /* bottom face */
+  --side-r: var(--dark); /* right face  */
+  margin: 0 var(--dx) var(--dy) 0;
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease;
+}
+.btp .btn::before {
+  /* bottom face */
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 100%;
+  width: 100%;
+  height: var(--dy);
+  background: var(--side-b);
+  transform: skewX(56.31deg);
+  transform-origin: top left;
+}
+.btp .btn::after {
+  /* right face */
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 100%;
+  top: 0;
+  width: var(--dx);
+  height: 100%;
+  background: var(--side-r);
+  transform: skewY(33.69deg);
+  transform-origin: top left;
+}
+.btp .btn:hover {
+  background: #fffdf6;
+}
+.btp .btn:active {
+  /* press the block down onto the ground */
+  transform: translate(calc(var(--dx) / 3), calc(var(--dy) / 3));
+  --dx: 6px;
+}
+.btp .btn.small {
+  font-size: 13px;
+  padding: 8px 16px;
+  --dx: 7px;
+}
+.btp .btn.on-dark {
+  background: var(--light);
+  color: var(--ink);
+  --side-b: var(--mid);
+  --side-r: var(--dark);
+}
+.btp .btn.on-dark:hover {
+  background: #fff9ec;
+}
+/* bordered ghost — square, 1px line, mono-adjacent */
+/* secondary — same isometric block, but a quiet outlined face
+   with neutral side tints so it stays behind the primary */
+.btp .btn.ghost {
+  background: var(--card);
+  color: inherit;
+  border: 1px solid #cdc5b2;
+  --side-b: #e3dccb;
+  --side-r: #cbc2ac;
+}
+.btp .btn.ghost::before {
+  top: calc(100% + 1px);
+  left: -1px;
+  width: calc(100% + 2px);
+}
+.btp .btn.ghost::after {
+  left: calc(100% + 1px);
+  top: -1px;
+  height: calc(100% + 2px);
+}
+.btp .btn.ghost:hover {
+  background: var(--card);
+}
+.btp .btn.ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.btp .btn svg {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.15s ease;
+}
+.btp .btn:hover svg.arrow {
+  transform: translateX(2px);
+}
+/* ============================================================
+   NAV
+   ============================================================ */
+.btp .nav {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+.btp .nav-in {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gut);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 58px;
+  gap: 16px;
+}
+.btp .nav .mk {
+  height: 26px;
+  width: auto;
+  flex: 0 0 auto;
+}
+.btp .nav nav {
+  display: none;
+  align-items: center;
+  gap: 26px;
+}
+.btp .nav nav a {
+  font-size: 14px;
+  color: var(--fg-2);
+  transition: color 0.15s ease;
+}
+.btp .nav nav a:hover {
+  color: var(--fg);
+}
+@media (min-width: 820px) {
+  .btp .nav nav {
+    display: flex;
+  }
+}
+/* ============================================================
+   HERO
+   ============================================================ */
+/* hero sits on the same ground as the rest of the page — no overlay,
+   the body lattice shows straight through. Centred, screenshot-style. */
+.btp .hero {
+  position: relative;
+}
+.btp .hero-grid {
+  max-width: var(--max);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(56px, 7vw, 88px) var(--gut) 0;
+}
+.btp .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  padding: 5px 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .badge i {
+  display: inline-flex;
+  width: 6px;
+  height: 7px;
+  background: var(--mid);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.btp .hero-mark {
+  width: min(96px, 30vw);
+  height: auto;
+}
+.btp .hero h1 {
+  margin-top: 26px;
+  max-width: 20ch;
+  /* trying 'Kaisei Decol' */
+  font-family: var(--display);
+  font-style: normal;
+  font-weight: 500;
+  font-size: clamp(40px, 5.6vw, 70px);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.btp .hero h1 .a,
+.btp .sec h2 .a,
+.btp .cta-band h2 .a {
+  color: var(--dark);
+}
+.btp .hero .lede {
+  margin-top: 24px;
+  max-width: 58ch;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--fg-2);
+}
+.btp .hero .ctas {
+  margin-top: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.btp .hero .ghost {
+  color: var(--fg);
+}
+.btp .hero dl {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  gap: 0 clamp(24px, 4vw, 56px);
+}
+.btp .hero dt {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .hero dd {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fg);
+}
+/* the product video panel — framed like the feature cards, one cut corner */
+.btp .hero-media {
+  position: relative;
+  margin-top: clamp(40px, 5vw, 64px);
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  /* soft diffusion shadow, tinted to the page's warm hue */
+  box-shadow:
+    0 30px 70px -30px rgba(34, 24, 0, 0.22),
+    0 8px 24px -12px rgba(34, 24, 0, 0.1);
+}
+.btp .hero-media video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background: var(--bg-2);
+}
+.btp .hero-media .drop-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  pointer-events: none;
+}
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.btp .sec {
+}
+.btp .center-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.btp .center-head .intro {
+  max-width: 34rem;
+}
+.btp .rows.centered {
+  max-width: 56rem;
+  margin: clamp(36px, 4vw, 56px) auto 0;
+}
+.btp .sec-pad {
+  padding-top: clamp(64px, 8vw, 108px);
+  padding-bottom: clamp(64px, 8vw, 108px);
+}
+.btp .sec h2 {
+  margin-top: 12px;
+  font-family: var(--display);
+  font-style: normal;
+  font-weight: 500;
+  font-size: clamp(32px, 4.2vw, 46px);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.btp .sec .intro {
+  margin-top: 20px;
+  max-width: 28rem;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--fg-2);
+}
+.btp .grid-12 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+}
+@media (min-width: 820px) {
+  .btp .grid-12 {
+    grid-template-columns: repeat(12, 1fr);
+  }
+}
+.btp .col-4 {
+  grid-column: span 1;
+}
+.btp .col-5 {
+  grid-column: span 1;
+}
+.btp .col-7 {
+  grid-column: span 1;
+}
+.btp .col-8 {
+  grid-column: span 1;
+}
+@media (min-width: 820px) {
+  .btp .col-4 {
+    grid-column: span 4;
+  }
+  .btp .col-5 {
+    grid-column: span 5;
+  }
+  .btp .col-7 {
+    grid-column: span 7;
+  }
+  .btp .col-8 {
+    grid-column: span 8;
+  }
+}
+/* stage + persona lists — 1px rules, no boxes */
+.btp .rows li {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px 24px;
+  align-items: baseline;
+  padding: 26px 0;
+  transition: background 0.15s ease;
+}
+.btp .rows li:hover {
+  background: color-mix(in srgb, var(--card) 45%, transparent);
+}
+.btp .rows .n {
+  grid-column: span 2;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dark);
+}
+.btp .rows .body {
+  grid-column: span 10;
+}
+.btp .rows .body .name {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.btp .rows .body .blurb {
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-2);
+}
+.btp .rows .meta {
+  grid-column: span 12;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+@media (min-width: 820px) {
+  .btp .rows .n {
+    grid-column: span 1;
+  }
+  .btp .rows .body {
+    grid-column: span 7;
+  }
+  .btp .rows .meta {
+    grid-column: span 4;
+    text-align: right;
+  }
+  /* personas: label col left, body right — mirrors the live page */
+  .btp .rows.personas .meta {
+    grid-column: span 3 !important;
+    text-align: left;
+  }
+  .btp .rows.personas .body {
+    grid-column: span 9 !important;
+  }
+}
+/* ============================================================
+   FEATURE BENTO
+   ============================================================ */
+.btp .bento-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+@media (min-width: 820px) {
+  .btp .bento-head {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+}
+.btp .bento-head .aside {
+  max-width: 24rem;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-2);
+}
+.btp .bento {
+  margin-top: 48px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 820px) {
+  .btp .bento {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 20px;
+  }
+}
+.btp .fcard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 28px;
+  transition: border-color 0.2s ease;
+}
+.btp .fcard:hover {
+  border-color: #cdc5b2;
+}
+.btp .fcard .lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dark);
+}
+.btp .fcard h3 {
+  margin-top: 12px;
+  max-width: 28ch;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.btp .fcard .desc {
+  margin-top: 12px;
+  max-width: 42ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-2);
+}
+.btp .fcard .viz {
+  margin-top: 28px;
+  flex: 1;
+}
+@media (min-width: 820px) {
+  .btp .span-4 {
+    grid-column: span 4;
+  }
+  .btp .span-3 {
+    grid-column: span 3;
+  }
+  .btp .span-2 {
+    grid-column: span 2;
+  }
+  .btp .span-6 {
+    grid-column: span 6;
+  }
+  .btp .rows-2 {
+    grid-row: span 2;
+  }
+}
+/* canvas visual — bricks on the brand lattice */
+.btp .canvas-viz {
+  position: relative;
+  height: 100%;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--light);
+  background-image:
+    repeating-linear-gradient(30deg, rgba(34, 24, 0, 0.07) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(150deg, rgba(34, 24, 0, 0.07) 0 1px, transparent 1px 34px);
+}
+.btp .canvas-viz .brick {
+  position: absolute;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 6px 10px rgba(34, 24, 0, 0.18));
+}
+.btp .live-pill {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.85);
+  padding: 4px 10px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  backdrop-filter: blur(4px);
+}
+.btp .live-pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1b7a3e;
+  animation: btpPulse 2s infinite;
+}
+@keyframes btpPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+/* AI prompt visual */
+.btp .prompt-viz {
+  display: grid;
+  gap: 10px;
+}
+.btp .prompt-viz .p {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #4a4335;
+}
+.btp .prompt-viz .k {
+  margin-top: 2px;
+  display: inline-flex;
+  height: 16px;
+  width: 16px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--light);
+}
+/* narration visual */
+.btp .narr-viz {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 16px;
+}
+.btp .narr-viz .rec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .narr-viz .rec i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--dark);
+}
+.btp .narr-viz .wave {
+  margin-top: 12px;
+  display: flex;
+  height: 48px;
+  align-items: center;
+  gap: 3px;
+}
+.btp .narr-viz .wave span {
+  width: 4px;
+  background: #3a2e13;
+}
+.btp .narr-viz .quote {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #4a4335;
+}
+/* tooling visual */
+.btp .tool-viz {
+  display: grid;
+  gap: 10px;
+}
+.btp .tool-viz .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 10px 14px;
+}
+.btp .tool-viz .row .l {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #4a4335;
+}
+.btp .tool-viz .row .l i {
+  width: 6px;
+  height: 7px;
+  background: var(--dark);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.btp .tool-viz .row .t {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-2);
+}
+.btp .tool-viz .btns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.btp .tool-viz .btns button {
+  border: 1px solid var(--line);
+  background: var(--card);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a4335;
+}
+.btp .tool-viz .btns button.go {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--light);
+}
+.btp .roster {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 10px 14px;
+  flex-wrap: wrap;
+}
+.btp .roster .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #4a4335;
+}
+.btp .roster .pill i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.btp .roster .more {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+/* exports visual */
+.btp .exp-viz {
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.btp .exp-viz .file {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+}
+.btp .exp-viz .ext {
+  display: inline-flex;
+  height: 28px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--light);
+}
+.btp .exp-viz .fname {
+  min-width: 0;
+  flex: 1;
+}
+.btp .exp-viz .fname .nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 500;
+  color: #3a3222;
+}
+.btp .exp-viz .fname .mt {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .exp-viz svg {
+  width: 14px;
+  height: 14px;
+  color: var(--fg-2);
+  flex: 0 0 auto;
+}
+/* accessibility visual */
+.btp .a11y-viz {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 820px) {
+  .btp .a11y-viz {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.btp .a11y-viz .cell {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 16px;
+}
+.btp .a11y-viz .cell .lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .a11y-viz .cell p {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #3a3222;
+}
+.btp .a11y-viz .chips {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btp .a11y-viz .chips span {
+  padding: 4px 10px;
+  font-size: 11px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: #4a4335;
+}
+.btp .a11y-viz .chips span.on {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--light);
+}
+/* ============================================================
+   FIDELITY BAND — dark, reversed lattice
+   ============================================================ */
+.btp .fidelity {
+  background: var(--ink);
+  color: #f3ebd8;
+  background-image:
+    repeating-linear-gradient(30deg, var(--lattice-inv) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(150deg, var(--lattice-inv) 0 1px, transparent 1px 46px);
+}
+.btp .fidelity .tag {
+  color: #b7ab8b;
+}
+.btp .fidelity .big {
+  margin-top: 20px;
+  max-width: 34em;
+  font-family: var(--display);
+  font-style: normal;
+  font-weight: 400;
+  font-size: clamp(23px, 2.8vw, 30px);
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+.btp .fidelity .lic {
+  font-family: var(--mono);
+  font-style: normal;
+  font-weight: 500;
+  font-size: clamp(17px, 2vw, 21px);
+  color: var(--mid);
+  white-space: nowrap;
+}
+/* ============================================================
+   OPEN SOURCE
+   ============================================================ */
+.btp .os-cards {
+  margin-top: 48px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media (min-width: 820px) {
+  .btp .os-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+.btp .os-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  background: var(--card);
+  padding: 28px;
+}
+.btp .os-card.dark {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #f3ebd8;
+}
+.btp .os-card .top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.btp .os-card .top .t {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.btp .chip {
+  padding: 3px 9px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.btp .chip.soft {
+  background: var(--bg-2);
+  color: var(--fg-2);
+}
+.btp .chip.hot {
+  background: var(--mid);
+  color: var(--on-mid);
+}
+.btp .os-card .desc {
+  margin: 24px 0 32px;
+  max-width: 42ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-2);
+}
+.btp .os-card.dark .desc {
+  color: #cfc5ac;
+}
+.btp .os-card .btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+.btp .legal-line {
+  margin-top: 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+/* ============================================================
+   CTA BAND
+   ============================================================ */
+.btp .cta-band {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: linear-gradient(135deg, var(--card), var(--light));
+  padding: clamp(40px, 5vw, 56px);
+}
+.btp .cta-band::before {
+  /* isometric lattice, fading out towards the left */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(30deg, rgba(34, 24, 0, 0.08) 0 1px, transparent 1px 46px),
+    repeating-linear-gradient(150deg, rgba(34, 24, 0, 0.08) 0 1px, transparent 1px 46px);
+  -webkit-mask-image: linear-gradient(to left, black 30%, transparent 85%);
+  mask-image: linear-gradient(to left, black 30%, transparent 85%);
+}
+.btp .cta-band .bricks {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 50%;
+  pointer-events: none;
+  display: none;
+}
+@media (min-width: 820px) {
+  .btp .cta-band .bricks {
+    display: block;
+  }
+}
+.btp .cta-band .bricks span {
+  position: absolute;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 8px 14px rgba(34, 24, 0, 0.2));
+}
+.btp .cta-band .inner {
+  position: relative;
+  max-width: 36rem;
+}
+.btp .cta-band h2 {
+  margin-top: 12px;
+  font-family: var(--display);
+  font-style: normal;
+  font-weight: 500;
+  font-size: clamp(34px, 4.5vw, 52px);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+}
+.btp .cta-band p {
+  margin-top: 16px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: #4a4335;
+}
+.btp .cta-band .btn {
+  margin-top: 32px;
+}
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.btp .press-band {
+  text-align: center;
+  padding: clamp(40px, 4vw, 48px) var(--gut);
+}
+.btp .press-band .logos {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 40px 40px;
+}
+.btp .press-band .logos img {
+  height: 104px;
+  width: auto;
+  object-fit: contain;
+}
+.btp .launch-band {
+  text-align: center;
+  padding: clamp(40px, 4vw, 48px) var(--gut);
+}
+.btp .launch-band .names {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 28px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .foot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px 32px;
+  padding-top: 48px;
+  padding-bottom: 48px;
+}
+@media (min-width: 820px) {
+  .btp .foot-grid {
+    grid-template-columns: repeat(12, 1fr);
+  }
+}
+.btp .foot-brand {
+  grid-column: span 2;
+}
+@media (min-width: 820px) {
+  .btp .foot-brand {
+    grid-column: span 3;
+  }
+}
+.btp .foot-brand .mk {
+  width: 190px;
+  height: auto;
+}
+.btp .foot-brand p {
+  margin-top: 16px;
+  max-width: 24rem;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg-2);
+}
+.btp .socials {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btp .socials a {
+  display: inline-flex;
+  height: 36px;
+  width: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  color: #4a4335;
+  transition: all 0.15s ease;
+}
+.btp .socials a:hover {
+  border-color: #cdc5b2;
+  background: var(--card);
+  color: var(--fg);
+}
+.btp .socials svg {
+  width: 16px;
+  height: 16px;
+}
+.btp .foot-col {
+  grid-column: span 1;
+}
+@media (min-width: 820px) {
+  .btp .foot-col {
+    grid-column: span 2;
+  }
+}
+.btp .foot-col .h,
+.btp .foot-status .h {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+.btp .foot-col ul {
+  margin-top: 12px;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  color: #4a4335;
+}
+.btp .foot-col ul a:hover {
+  color: var(--fg);
+}
+.btp .foot-status {
+  grid-column: span 2;
+}
+@media (min-width: 820px) {
+  .btp .foot-status {
+    grid-column: span 3;
+  }
+}
+.btp .foot-status .phase {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4a4335;
+}
+.btp .foot-status .phase i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1b7a3e;
+}
+.btp .foot-status p {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--fg-2);
+}
+.btp .foot-legal .in {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  font-size: 12px;
+  color: var(--fg-2);
+}
+.btp .foot-legal nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+.btp .foot-legal nav a:hover {
+  color: var(--fg);
+}
+.btp .foot-legal .fine {
+  margin-top: 16px;
+  display: grid;
+  gap: 4px;
+  line-height: 1.5;
+}
+/* logo colour hooks — every <use> of a shared symbol */
+.btp .mk {
+  display: block;
+  --fc-light: var(--light);
+  --fc-mid: var(--mid);
+  --fc-dark: var(--dark);
+  --fc-mark: var(--mid);
+  --fc-line: var(--ink);
+  --fc-stud: var(--fc-light);
+}
+.btp .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

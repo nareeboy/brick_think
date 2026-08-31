@@ -14,7 +14,7 @@ const ERROR_COPY: Record<string, string> = {
 // before running their own. Open to every signed-in user; the action decides
 // between seeding and reopening, so this only needs to know which verb to
 // show. Seeding writes a lot of rows and takes a second or two — hence the
-// explicit pending label rather than a bare spinner.
+// spinner paired with an explicit pending label, not a bare spinner.
 export function ExampleWorkshopButton({ hasExample }: { hasExample: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -38,9 +38,28 @@ export function ExampleWorkshopButton({ hasExample }: { hasExample: boolean }) {
         disabled={pending}
         aria-busy={pending}
         data-testid="example-workshop-button"
-        className="inline-flex h-10 cursor-pointer items-center justify-center rounded-xl border border-zinc-900/15 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none disabled:cursor-default disabled:opacity-60"
+        className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-xl border border-zinc-900/15 bg-white px-4 text-[13px] font-semibold text-zinc-800 transition-colors hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-[#a8482a] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent focus-visible:outline-none disabled:cursor-default disabled:opacity-60"
       >
-        {pending ? 'Building your example…' : idleLabel}
+        {pending ? (
+          <>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 animate-spin"
+              data-testid="example-workshop-spinner"
+              aria-hidden="true"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+            Building your example…
+          </>
+        ) : (
+          idleLabel
+        )}
       </button>
       {error ? (
         <p role="alert" className="text-[11px] text-red-700">

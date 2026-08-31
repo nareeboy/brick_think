@@ -44,6 +44,7 @@ describe('ExampleWorkshopButton', () => {
     const button = screen.getByRole('button') as HTMLButtonElement;
     expect(button.disabled).toBe(true);
     expect(button.textContent).toMatch(/building/i);
+    expect(screen.getByTestId('example-workshop-spinner')).toBeTruthy();
 
     await act(async () => {
       release({ ok: false, code: 'seed_failed' });
