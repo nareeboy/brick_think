@@ -48,6 +48,16 @@ test('a new user can open an example workshop from the empty state', async ({ si
   await page.goto('/app/workshops');
   await expect(page.locator('li[data-scroll-target]')).toHaveCount(1);
 
+  // The card's art is the workshop's newest design thumbnail served from
+  // Supabase Storage — self-hosted, so no third-party outage (the old
+  // picsum.photos filler) can break it. Assert the image actually decodes.
+  const cardImg = page.locator('[data-testid^="workshop-thumb-"] img');
+  await expect(cardImg).toHaveCount(1);
+  await expect(cardImg).toHaveAttribute('src', /model-thumbnails/);
+  await expect
+    .poll(async () => cardImg.evaluate((el) => (el as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+
   // My designs lists the four room models the user owns. Nothing ever opens
   // these canvases in the builder, so the seeder is the only thing that can
   // give them a thumbnail — without one every card falls back to the empty

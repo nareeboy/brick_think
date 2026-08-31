@@ -444,17 +444,10 @@ function CanvasStage({
       >
         <div
           aria-hidden="true"
-          className="absolute inset-0 opacity-[0.45]"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(60,30,15,0.10) 1px, transparent 1px)',
-            backgroundSize: '22px 22px',
-          }}
-        />
-        <div
-          aria-hidden="true"
           className="absolute inset-0"
           style={{
-            background: 'radial-gradient(ellipse at center, rgba(192,97,61,0.06), transparent 55%)',
+            backgroundImage:
+              'repeating-linear-gradient(30deg, rgba(60,30,15,0.06) 0 1px, transparent 1px 46px), repeating-linear-gradient(150deg, rgba(60,30,15,0.06) 0 1px, transparent 1px 46px)',
           }}
         />
 
