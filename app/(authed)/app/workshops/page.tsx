@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 
 import { Avatar } from '@/components/app/Avatar';
 import { BrandEyebrow } from '@/components/app/BrandEyebrow';
+import { DotGridPlaceholder } from '@/components/app/DotGridPlaceholder';
 import { PageBanner } from '@/components/app/PageBanner';
 import { ExampleWorkshopButton } from './ExampleWorkshopButton';
 import { WorkshopsEmptyState } from './WorkshopsEmptyState';
@@ -13,6 +14,7 @@ import { loadBannerProfile } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
 import { AssistantEntrySlot } from '@/lib/premium/server-slots';
+import { latestThumbnailUrlByOrg } from '@/lib/thumbnails/latestDesignThumbnails';
 import type { OrgRole, OrgSummary } from '@/lib/orgs/types';
 
 export const metadata: Metadata = { title: 'Workshops' };
@@ -121,6 +123,15 @@ export default async function OrgsPage({
     member_count: countByOrg.get(o.id) ?? 0,
   }));
 
+  // Card art: the newest design thumbnail from each workshop's sessions
+  // (dot-grid placeholder when there is none yet). Real content replaced the
+  // old picsum.photos filler, which rendered every card broken whenever that
+  // third-party service was unreachable.
+  const thumbByOrg = await latestThumbnailUrlByOrg({
+    supabase,
+    orgIds: orgs.map((o) => o.id),
+  });
+
   return (
     <main className="min-h-[100dvh] bg-[#FAF7F1] text-zinc-900">
       <Suspense fallback={null}>
@@ -167,15 +178,22 @@ export default async function OrgsPage({
                   aria-label={`Open ${o.name}`}
                   className="block"
                 >
-                  <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl border border-zinc-900/5 bg-[#FBF7F1]">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- plain <img> per CLAUDE.md to avoid host whitelist */}
-                    <img
-                      src={`https://picsum.photos/seed/${o.id}/640/480`}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
+                  <div
+                    data-testid={`workshop-thumb-${o.id}`}
+                    className="relative mb-3 aspect-[4/3] overflow-hidden rounded-xl border border-zinc-900/5 bg-[#FBF7F1]"
+                  >
+                    {thumbByOrg.has(o.id) ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- Supabase signed URLs bypass next/image
+                      <img
+                        src={thumbByOrg.get(o.id)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 h-full w-full object-contain"
+                      />
+                    ) : (
+                      <DotGridPlaceholder />
+                    )}
                   </div>
                   <div className="flex max-w-full items-center gap-1.5">
                     <span

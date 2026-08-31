@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRef, useState, useTransition } from 'react';
 
 import { DeleteConfirmDialog } from '@/components/app/DeleteConfirmDialog';
+import { DotGridPlaceholder } from '@/components/app/DotGridPlaceholder';
 import { ExportMenu } from '@/components/exports/ExportMenu';
 import { InfoIcon, TrashIcon } from '@/components/icons';
 import { deleteModelAction } from '@/app/(authed)/app/designs/actions';
@@ -304,20 +305,6 @@ function Badge({ badge }: { badge: AggregateDesignRow['badge'] }) {
       </span>
       <span className="truncate text-[12px] text-zinc-600">{badge.sessionTitle}</span>
     </p>
-  );
-}
-
-function DotGridPlaceholder() {
-  return (
-    <div
-      aria-hidden="true"
-      data-testid="design-thumb-placeholder"
-      className="absolute inset-0"
-      style={{
-        backgroundImage: 'radial-gradient(rgba(60,30,15,0.10) 1px, transparent 1px)',
-        backgroundSize: '22px 22px',
-      }}
-    />
   );
 }
 
