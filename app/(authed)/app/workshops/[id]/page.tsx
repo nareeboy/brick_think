@@ -10,6 +10,7 @@ import { WorkshopPageTour } from '@/components/onboarding/WorkshopPageTour';
 import { loadBannerProfile } from '@/lib/account/displayName';
 import { isSupabaseConfigured } from '@/lib/db/env';
 import { createServerSupabaseClient } from '@/lib/db/server';
+import { latestThumbnailUrlBySession } from '@/lib/thumbnails/latestDesignThumbnails';
 import type { OrgMember, OrgRole } from '@/lib/orgs/types';
 import { AssistantEntrySlot } from '@/lib/premium/server-slots';
 
@@ -77,6 +78,18 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
   if (sessionsRes.error) {
     throw new Error(`Failed to load sessions: ${sessionsRes.error.message}`);
   }
+
+  // Card art for the sessions grid: newest design thumbnail per session,
+  // dot-grid placeholder (inside SessionsList) when a session has none.
+  const sessionRows = sessionsRes.data ?? [];
+  const thumbBySession = await latestThumbnailUrlBySession({
+    supabase,
+    sessionIds: sessionRows.map((s) => s.id),
+  });
+  const sessions = sessionRows.map((s) => ({
+    ...s,
+    thumbnail_url: thumbBySession.get(s.id) ?? null,
+  }));
 
   const viewerRole = viewerRoleRes.data.role as OrgRole;
   const isAdmin = viewerRole === 'owner' || viewerRole === 'admin';
@@ -159,7 +172,7 @@ export default async function OrgDetailPage({ params }: { params: Promise<{ id: 
       <div className="mx-auto flex max-w-[1200px] flex-col gap-8 px-5 py-10">
         <section data-tour-id="sessions-container" className="flex flex-col gap-3">
           <h2 className="text-[18px] font-semibold tracking-tight text-zinc-950">Sessions</h2>
-          <SessionsList sessions={sessionsRes.data ?? []} />
+          <SessionsList sessions={sessions} />
         </section>
 
         <section
