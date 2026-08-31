@@ -23,6 +23,7 @@ import { PresenceCursors } from './PresenceCursors';
 import { SaveStatus } from './SaveStatus';
 import { PiecesDrawer } from './PiecesDrawer';
 import { ScenarioPanel, type BuilderScenario } from './ScenarioPanel';
+import { ISO_LATTICE_BACKGROUND_IMAGE } from './canvasGeometry';
 import { useBrickComments } from './useBrickComments';
 import { useBrickOverlays } from './useBrickOverlays';
 import { useBrickReactions } from './useBrickReactions';
@@ -446,8 +447,7 @@ function CanvasStage({
           aria-hidden="true"
           className="absolute inset-0"
           style={{
-            backgroundImage:
-              'repeating-linear-gradient(30deg, rgba(60,30,15,0.06) 0 1px, transparent 1px 46px), repeating-linear-gradient(150deg, rgba(60,30,15,0.06) 0 1px, transparent 1px 46px)',
+            backgroundImage: ISO_LATTICE_BACKGROUND_IMAGE,
           }}
         />
 
