@@ -5,6 +5,18 @@ import type { BrickInstance } from './builderState';
 
 export const PAN_DRAG_THRESHOLD_PX = 3;
 
+// The brick artwork (public/bricks/*.png) is rendered with its top/bottom
+// face edges rising ~23.1° from horizontal (slope ≈0.427, measured off the
+// asset silhouettes), and BrickNode draws it at an aspect-preserving size —
+// so that is the one angle the canvas lattice can use without visibly
+// shearing against every placed brick.
+export const BRICK_EDGE_ANGLE_DEG = 23.1;
+
+const LATTICE_LINE = 'rgba(60,30,15,0.06) 0 1px, transparent 1px 46px';
+
+// Mirrored pair of hairline gradients forming the isometric ground lattice.
+export const ISO_LATTICE_BACKGROUND_IMAGE = `repeating-linear-gradient(${BRICK_EDGE_ANGLE_DEG}deg, ${LATTICE_LINE}), repeating-linear-gradient(${180 - BRICK_EDGE_ANGLE_DEG}deg, ${LATTICE_LINE})`;
+
 // World-space axis-aligned bounding box of a (possibly rotated) brick.
 export function brickAabb(brick: BrickInstance): {
   x1: number;
