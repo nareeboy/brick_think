@@ -19,6 +19,17 @@ const BASELINE_CSP = buildCsp(FRAME_ANCESTORS);
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Production runs `node .next/standalone/server.js` (see `pnpm start` and
+  // scripts/prepare-standalone.mjs): a traced, minimal server that skips the
+  // full node_modules tree — keeps the Railway web service small.
+  output: 'standalone',
+  // Tracing can't see files that are loaded lazily by a computed path.
+  // pdfkit (under @react-pdf, used for PDF reports in hosted builds) loads its
+  // built-in fonts like that, so pull its runtime files in explicitly. In a
+  // build without it, the glob just matches nothing.
+  outputFileTracingIncludes: {
+    '/**': ['./node_modules/.pnpm/pdfkit@*/node_modules/pdfkit/js/**/*'],
+  },
   // The premium overlay ships as TypeScript source; let Next compile it.
   transpilePackages: ['@brickthink/premium'],
   experimental: {

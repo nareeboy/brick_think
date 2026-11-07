@@ -1,11 +1,15 @@
 # Railway worker service config. Point a separate Railway service at this
 # repo and set its config path to worker/railway.toml. The worker shares
-# the root package.json so the build still happens at the repo root.
+# the root package.json so the install still happens at the repo root.
 
 [build]
 builder = "NIXPACKS"
+# Bundle only the worker (esbuild, ~1s) instead of the default `pnpm build`,
+# which would run a full Next build this service never uses.
+buildCommand = "pnpm worker:build"
 
 [deploy]
+# Plain node on the pre-built bundle: no tsx compiler held in memory.
 startCommand = "pnpm worker:start"
 healthcheckPath = "/"
 healthcheckTimeout = 30
